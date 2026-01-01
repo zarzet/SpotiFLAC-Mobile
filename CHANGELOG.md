@@ -1,14 +1,19 @@
 # Changelog
 
-## [1.5.0-hotfix3] - 2026-01-02
+## [1.5.0-hotfix6] - 2026-01-02
 
 ### Fixed
-- **App Signing**: Decode keystore in workflow before Gradle evaluation
+- **App Signing**: Use r0adkll/sign-android-release GitHub Action for reliable signing
 
-## [1.5.0-hotfix2] - 2026-01-02
+## [1.5.0-hotfix5] - 2026-01-02
 
 ### Fixed
-- **App Signing**: Fixed CI/CD signing configuration
+- **App Signing**: Use key.properties as per Flutter official documentation
+
+## [1.5.0-hotfix4] - 2026-01-02
+
+### Fixed
+- **App Signing**: Create keystore.properties in workflow for Gradle
 
 ## [1.5.0-hotfix] - 2026-01-02
 

@@ -28,6 +28,7 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 .metadata
+*.apk
 
 # Go backend build artifacts
 go_backend/*.aar
@@ -40,10 +41,10 @@ android/.gradle/
 android/app/libs/
 android/local.properties
 android/*.iml
-android/keystore.properties
+android/key.properties
 android/*.jks
 android/*.keystore
-android/app/ci-keystore.jks
+android/app/*.jks
 
 # iOS
 ios/Frameworks/
