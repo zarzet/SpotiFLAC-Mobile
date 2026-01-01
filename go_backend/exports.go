@@ -102,6 +102,7 @@ type DownloadRequest struct {
 	Quality              string `json:"quality"` // LOSSLESS, HI_RES, HI_RES_LOSSLESS
 	EmbedLyrics          bool   `json:"embed_lyrics"`
 	EmbedMaxQualityCover bool   `json:"embed_max_quality_cover"`
+	ConvertLyricsToRomaji bool  `json:"convert_lyrics_to_romaji"`
 	TrackNumber          int    `json:"track_number"`
 	DiscNumber           int    `json:"disc_number"`
 	TotalTracks          int    `json:"total_tracks"`
@@ -371,6 +372,12 @@ func EmbedLyricsToFile(filePath, lyrics string) (string, error) {
 
 	jsonBytes, _ := json.Marshal(resp)
 	return string(jsonBytes), nil
+}
+
+// ConvertToRomaji converts Japanese kana (Hiragana/Katakana) to romaji
+// Kanji characters are preserved as-is
+func ConvertToRomaji(text string) string {
+	return ToRomaji(text)
 }
 
 func errorResponse(msg string) (string, error) {

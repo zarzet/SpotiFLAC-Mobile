@@ -961,6 +961,17 @@ func downloadFromTidal(req DownloadRequest) (string, error) {
 				fmt.Println("[Tidal] No lyrics found for this track")
 			} else {
 				fmt.Printf("[Tidal] Lyrics found (%d lines), embedding...\n", len(lyrics.Lines))
+				
+				// Convert Japanese lyrics to romaji if enabled
+				if req.ConvertLyricsToRomaji {
+					for i := range lyrics.Lines {
+						if ContainsKana(lyrics.Lines[i].Words) {
+							lyrics.Lines[i].Words = ToRomaji(lyrics.Lines[i].Words)
+						}
+					}
+					fmt.Println("[Tidal] Converted Japanese lyrics to romaji")
+				}
+				
 				lrcContent := convertToLRC(lyrics)
 				if embedErr := EmbedLyrics(actualOutputPath, lrcContent); embedErr != nil {
 					fmt.Printf("[Tidal] Warning: failed to embed lyrics: %v\n", embedErr)

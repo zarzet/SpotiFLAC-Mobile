@@ -386,6 +386,52 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     state = state.copyWith(outputDir: dir);
   }
 
+  /// Build output directory based on folder organization setting
+  Future<String> _buildOutputDir(Track track, String folderOrganization) async {
+    String baseDir = state.outputDir;
+    
+    if (folderOrganization == 'none') {
+      return baseDir;
+    }
+    
+    // Sanitize folder names (remove invalid characters)
+    String sanitize(String name) {
+      return name
+          .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
+          .replaceAll(RegExp(r'\.+$'), '') // Remove trailing dots
+          .trim();
+    }
+    
+    String subPath = '';
+    switch (folderOrganization) {
+      case 'artist':
+        final artistName = sanitize(track.albumArtist ?? track.artistName);
+        subPath = artistName;
+        break;
+      case 'album':
+        final albumName = sanitize(track.albumName);
+        subPath = albumName;
+        break;
+      case 'artist_album':
+        final artistName = sanitize(track.albumArtist ?? track.artistName);
+        final albumName = sanitize(track.albumName);
+        subPath = '$artistName${Platform.pathSeparator}$albumName';
+        break;
+    }
+    
+    if (subPath.isNotEmpty) {
+      final fullPath = '$baseDir${Platform.pathSeparator}$subPath';
+      final dir = Directory(fullPath);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+        print('[DownloadQueue] Created folder: $fullPath');
+      }
+      return fullPath;
+    }
+    
+    return baseDir;
+  }
+
   void updateSettings(AppSettings settings) {
     state = state.copyWith(
       outputDir: settings.downloadDirectory.isNotEmpty ? settings.downloadDirectory : state.outputDir,
@@ -760,11 +806,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     updateItemStatus(item.id, DownloadStatus.downloading);
 
     try {
+      // Get folder organization setting and build output directory
+      final settings = ref.read(settingsProvider);
+      final outputDir = await _buildOutputDir(item.track, settings.folderOrganization);
+      
       Map<String, dynamic> result;
 
       if (state.autoFallback) {
         print('[DownloadQueue] Using auto-fallback mode');
         print('[DownloadQueue] Quality: ${state.audioQuality}');
+        print('[DownloadQueue] Output dir: $outputDir');
         result = await PlatformBridge.downloadWithFallback(
           isrc: item.track.isrc ?? '',
           spotifyId: item.track.id,
@@ -773,7 +824,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           albumName: item.track.albumName,
           albumArtist: item.track.albumArtist,
           coverUrl: item.track.coverUrl,
-          outputDir: state.outputDir,
+          outputDir: outputDir,
           filenameFormat: state.filenameFormat,
           quality: state.audioQuality,
           trackNumber: item.track.trackNumber ?? 1,
@@ -781,6 +832,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           releaseDate: item.track.releaseDate,
           preferredService: item.service,
           itemId: item.id, // Pass item ID for progress tracking
+          convertLyricsToRomaji: settings.convertLyricsToRomaji,
         );
       } else {
         result = await PlatformBridge.downloadTrack(
@@ -792,13 +844,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           albumName: item.track.albumName,
           albumArtist: item.track.albumArtist,
           coverUrl: item.track.coverUrl,
-          outputDir: state.outputDir,
+          outputDir: outputDir,
           filenameFormat: state.filenameFormat,
           quality: state.audioQuality,
           trackNumber: item.track.trackNumber ?? 1,
           discNumber: item.track.discNumber ?? 1,
           releaseDate: item.track.releaseDate,
           itemId: item.id, // Pass item ID for progress tracking
+          convertLyricsToRomaji: settings.convertLyricsToRomaji,
         );
       }
 
@@ -873,6 +926,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               quality: state.audioQuality,
             ),
           );
+          
+          // Auto-remove completed item from queue (it's now in history)
+          removeItem(item.id);
         }
       } else {
         final errorMsg = result['error'] as String? ?? 'Download failed';

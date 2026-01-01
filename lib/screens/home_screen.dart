@@ -177,9 +177,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onDestinationSelected: _onNavTap,
         destinations: [
           const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'Search',
           ),
           NavigationDestination(
             icon: Badge(

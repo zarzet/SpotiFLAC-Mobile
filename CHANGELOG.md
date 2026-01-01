@@ -1,5 +1,54 @@
 # Changelog
 
+## [1.5.5] - 2026-01-02
+
+### Added
+- **Share to App**: Share Spotify links directly from Spotify app or browser to SpotiFLAC
+  - Supports track, album, playlist, and artist URLs
+  - Auto-fetches metadata when link is shared
+  - Works with both `open.spotify.com` URLs and `spotify:` URIs
+- **Lyrics Viewer**: View lyrics for downloaded tracks in Track Metadata screen
+  - Fetches lyrics from LRCLIB on-demand
+  - Clean display without timestamps
+  - Copy lyrics to clipboard
+- **Artist URL Support**: Paste artist URL to browse their discography
+  - Shows all albums, singles, and compilations
+  - Horizontal scrollable album cards grouped by type
+  - Tap any album to view and download its tracks
+- **Folder Organization**: Organize downloads into folders by artist or album
+  - Options: None, By Artist, By Album, By Artist & Album
+  - Configurable in Settings > Download
+- **Japanese Lyrics to Romaji**: Auto-convert Hiragana/Katakana lyrics to romaji
+  - Useful for non-Japanese speakers who want to sing along
+  - Toggle in Settings > Options > Lyrics
+  - Kanji characters are preserved (requires dictionary lookup)
+- **History View Mode**: Choose between grid or list view for download history
+  - Grid view shows album art in a 3-column layout (default)
+  - List view shows detailed track info with date
+  - Configurable in Settings > Appearance > Layout
+- **Exit Confirmation**: Dialog prompt when pressing back to exit app (only at root)
+
+### Changed
+- **Downloads Tab Renamed to History**: Better reflects the tab's purpose
+  - Shows download queue at top when active
+  - Completed downloads auto-move to history section
+  - Cleaner separation between active downloads and history
+- **Smarter Back Navigation**: Back button now navigates properly
+  - Goes back through search history (album → artist → empty)
+  - Returns to Search tab from other tabs
+  - Only shows exit dialog when truly at root
+
+### Fixed
+- **Download Progress**: Fixed progress stuck at 0% when using item-based progress tracking (affected sequential downloads after multi-download feature was added)
+- **Artist View State**: Fixed UI state not clearing properly when switching between artist and album views
+- **Share Intent Timing**: Fixed shared URLs not being processed when app was cold-started from share intent
+
+### Improved
+- **Cleaner UI for Returning Users**: Helper text "Supports: Track, Album, Playlist URLs" now only shows for new users and hides after first search
+- **Cleaner Home Tab**: Removed redundant "Recent Downloads" section, renamed to "Search" tab
+- **Centered Search Bar**: Search bar now appears centered on screen when empty, moves to top when results are shown - easier to reach on large phones
+- **Back Navigation**: Android back button now works as expected - returns to previous view (album → artist → empty search)
+
 ## [1.5.0-hotfix6] - 2026-01-02
 
 ### Fixed

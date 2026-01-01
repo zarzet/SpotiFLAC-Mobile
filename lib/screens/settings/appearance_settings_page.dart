@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
 
 class AppearanceSettingsPage extends ConsumerWidget {
@@ -8,6 +9,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeSettings = ref.watch(themeProvider);
+    final settings = ref.watch(settingsProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -84,6 +86,18 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 onColorSelected: (color) => ref.read(themeProvider.notifier).setSeedColor(color),
               ),
             ),
+
+          // Layout section
+          SliverToBoxAdapter(child: _SectionHeader(title: 'Layout')),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _HistoryViewSelector(
+                currentMode: settings.historyViewMode,
+                onChanged: (mode) => ref.read(settingsProvider.notifier).setHistoryViewMode(mode),
+              ),
+            ),
+          ),
 
           // Fill remaining for scroll
           const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
@@ -198,6 +212,72 @@ class _ColorPicker extends StatelessWidget {
           );
         }).toList()),
       ]),
+    );
+  }
+}
+
+class _HistoryViewSelector extends StatelessWidget {
+  final String currentMode;
+  final ValueChanged<String> onChanged;
+  const _HistoryViewSelector({required this.currentMode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 8),
+              child: Text('History View', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+            ),
+            Row(children: [
+              _ViewModeChip(icon: Icons.view_list, label: 'List', isSelected: currentMode == 'list', onTap: () => onChanged('list')),
+              const SizedBox(width: 8),
+              _ViewModeChip(icon: Icons.grid_view, label: 'Grid', isSelected: currentMode == 'grid', onTap: () => onChanged('grid')),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ViewModeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _ViewModeChip({required this.icon, required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: Material(
+        color: isSelected ? colorScheme.primaryContainer : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Column(children: [
+              Icon(icon, color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant)),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

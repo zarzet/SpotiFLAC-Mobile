@@ -1,8 +1,8 @@
 /// App version and info constants
 /// Update version here only - all other files will reference this
 class AppInfo {
-  static const String version = '1.5.0-hotfix6';
-  static const String buildNumber = '20';
+  static const String version = '1.5.5';
+  static const String buildNumber = '22';
   static const String fullVersion = '$version+$buildNumber';
   
   static const String appName = 'SpotiFLAC';

@@ -20,6 +20,8 @@ const (
 	playlistBaseURL     = "https://api.spotify.com/v1/playlists/%s"
 	albumBaseURL        = "https://api.spotify.com/v1/albums/%s"
 	trackBaseURL        = "https://api.spotify.com/v1/tracks/%s"
+	artistBaseURL       = "https://api.spotify.com/v1/artists/%s"
+	artistAlbumsURL     = "https://api.spotify.com/v1/artists/%s/albums"
 	searchBaseURL       = "https://api.spotify.com/v1/search"
 )
 
@@ -131,6 +133,32 @@ type PlaylistResponsePayload struct {
 	TrackList    []AlbumTrackMetadata `json:"track_list"`
 }
 
+// ArtistInfoMetadata holds artist information
+type ArtistInfoMetadata struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Images     string `json:"images"`
+	Followers  int    `json:"followers"`
+	Popularity int    `json:"popularity"`
+}
+
+// ArtistAlbumMetadata holds album info for artist discography
+type ArtistAlbumMetadata struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	ReleaseDate string `json:"release_date"`
+	TotalTracks int    `json:"total_tracks"`
+	Images      string `json:"images"`
+	AlbumType   string `json:"album_type"` // album, single, compilation
+	Artists     string `json:"artists"`
+}
+
+// ArtistResponsePayload is the response for artist requests
+type ArtistResponsePayload struct {
+	ArtistInfo ArtistInfoMetadata    `json:"artist_info"`
+	Albums     []ArtistAlbumMetadata `json:"albums"`
+}
+
 // TrackResponse is the response for single track requests
 type TrackResponse struct {
 	Track TrackMetadata `json:"track"`
@@ -212,6 +240,8 @@ func (c *SpotifyMetadataClient) GetFilteredData(ctx context.Context, spotifyURL 
 		return c.fetchAlbum(ctx, parsed.ID, token)
 	case "playlist":
 		return c.fetchPlaylist(ctx, parsed.ID, token)
+	case "artist":
+		return c.fetchArtist(ctx, parsed.ID, token)
 	default:
 		return nil, fmt.Errorf("unsupported Spotify type: %s", parsed.Type)
 	}
@@ -402,6 +432,88 @@ func (c *SpotifyMetadataClient) fetchPlaylist(ctx context.Context, playlistID, t
 	return &PlaylistResponsePayload{
 		PlaylistInfo: info,
 		TrackList:    tracks,
+	}, nil
+}
+
+func (c *SpotifyMetadataClient) fetchArtist(ctx context.Context, artistID, token string) (*ArtistResponsePayload, error) {
+	// Fetch artist info
+	var artistData struct {
+		ID         string  `json:"id"`
+		Name       string  `json:"name"`
+		Images     []image `json:"images"`
+		Followers  struct {
+			Total int `json:"total"`
+		} `json:"followers"`
+		Popularity int `json:"popularity"`
+	}
+
+	if err := c.getJSON(ctx, fmt.Sprintf(artistBaseURL, artistID), token, &artistData); err != nil {
+		return nil, err
+	}
+
+	artistInfo := ArtistInfoMetadata{
+		ID:         artistData.ID,
+		Name:       artistData.Name,
+		Images:     firstImageURL(artistData.Images),
+		Followers:  artistData.Followers.Total,
+		Popularity: artistData.Popularity,
+	}
+
+	// Fetch artist albums (all types: album, single, compilation)
+	albums := make([]ArtistAlbumMetadata, 0)
+	offset := 0
+	limit := 50
+
+	for {
+		albumsURL := fmt.Sprintf("%s?include_groups=album,single,compilation&limit=%d&offset=%d",
+			fmt.Sprintf(artistAlbumsURL, artistID), limit, offset)
+
+		var albumsData struct {
+			Items []struct {
+				ID          string      `json:"id"`
+				Name        string      `json:"name"`
+				ReleaseDate string      `json:"release_date"`
+				TotalTracks int         `json:"total_tracks"`
+				Images      []image     `json:"images"`
+				AlbumType   string      `json:"album_type"`
+				Artists     []artist    `json:"artists"`
+				ExternalURL externalURL `json:"external_urls"`
+			} `json:"items"`
+			Next  string `json:"next"`
+			Total int    `json:"total"`
+		}
+
+		if err := c.getJSON(ctx, albumsURL, token, &albumsData); err != nil {
+			return nil, err
+		}
+
+		for _, album := range albumsData.Items {
+			albums = append(albums, ArtistAlbumMetadata{
+				ID:          album.ID,
+				Name:        album.Name,
+				ReleaseDate: album.ReleaseDate,
+				TotalTracks: album.TotalTracks,
+				Images:      firstImageURL(album.Images),
+				AlbumType:   album.AlbumType,
+				Artists:     joinArtists(album.Artists),
+			})
+		}
+
+		// Check if there are more albums
+		if albumsData.Next == "" || len(albumsData.Items) < limit {
+			break
+		}
+		offset += limit
+
+		// Safety limit to prevent infinite loops
+		if offset > 500 {
+			break
+		}
+	}
+
+	return &ArtistResponsePayload{
+		ArtistInfo: artistInfo,
+		Albums:     albums,
 	}, nil
 }
 

@@ -426,6 +426,17 @@ func downloadFromQobuz(req DownloadRequest) (string, error) {
 			fmt.Println("[Qobuz] No lyrics found for this track")
 		} else {
 			fmt.Printf("[Qobuz] Lyrics found (%d lines), embedding...\n", len(lyrics.Lines))
+			
+			// Convert Japanese lyrics to romaji if enabled
+			if req.ConvertLyricsToRomaji {
+				for i := range lyrics.Lines {
+					if ContainsKana(lyrics.Lines[i].Words) {
+						lyrics.Lines[i].Words = ToRomaji(lyrics.Lines[i].Words)
+					}
+				}
+				fmt.Println("[Qobuz] Converted Japanese lyrics to romaji")
+			}
+			
 			lrcContent := convertToLRC(lyrics)
 			if embedErr := EmbedLyrics(outputPath, lrcContent); embedErr != nil {
 				fmt.Printf("[Qobuz] Warning: failed to embed lyrics: %v\n", embedErr)

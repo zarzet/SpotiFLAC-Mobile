@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
 
 /// Screen to display detailed metadata for a downloaded track
 /// Designed with Material Expressive 3 style
@@ -21,6 +22,9 @@ class TrackMetadataScreen extends ConsumerStatefulWidget {
 class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   bool _fileExists = false;
   int? _fileSize;
+  String? _lyrics;
+  bool _lyricsLoading = false;
+  String? _lyricsError;
 
   @override
   void initState() {
@@ -112,6 +116,11 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   
                   // File info card
                   _buildFileInfoCard(context, colorScheme, _fileExists, _fileSize),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Lyrics card
+                  _buildLyricsCard(context, colorScheme),
                   
                   const SizedBox(height: 24),
                   
@@ -621,6 +630,156 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildLyricsCard(BuildContext context, ColorScheme colorScheme) {
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.lyrics_outlined,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Lyrics',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                if (_lyrics != null)
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () => _copyToClipboard(context, _lyrics!),
+                    tooltip: 'Copy lyrics',
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            if (_lyricsLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_lyricsError != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _lyricsError!,
+                        style: TextStyle(color: colorScheme.onErrorContainer),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _fetchLyrics,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            else if (_lyrics != null)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: SingleChildScrollView(
+                  child: Text(
+                    _lyrics!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: FilledButton.tonalIcon(
+                  onPressed: _fetchLyrics,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Load Lyrics'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _fetchLyrics() async {
+    if (_lyricsLoading) return;
+    
+    setState(() {
+      _lyricsLoading = true;
+      _lyricsError = null;
+    });
+
+    try {
+      final result = await PlatformBridge.getLyricsLRC(
+        item.spotifyId ?? '',
+        item.trackName,
+        item.artistName,
+      );
+      
+      if (mounted) {
+        if (result.isEmpty) {
+          setState(() {
+            _lyricsError = 'Lyrics not found';
+            _lyricsLoading = false;
+          });
+        } else {
+          // Clean up LRC timestamps for display
+          final cleanLyrics = _cleanLrcForDisplay(result);
+          setState(() {
+            _lyrics = cleanLyrics;
+            _lyricsLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _lyricsError = 'Failed to load lyrics';
+          _lyricsLoading = false;
+        });
+      }
+    }
+  }
+
+  String _cleanLrcForDisplay(String lrc) {
+    // Remove LRC timestamps [mm:ss.xx] for cleaner display
+    final lines = lrc.split('\n');
+    final cleanLines = <String>[];
+    final timestampPattern = RegExp(r'^\[\d{2}:\d{2}\.\d{2,3}\]');
+    
+    for (final line in lines) {
+      final cleanLine = line.replaceAll(timestampPattern, '').trim();
+      if (cleanLine.isNotEmpty) {
+        cleanLines.add(cleanLine);
+      }
+    }
+    
+    return cleanLines.join('\n');
   }
 
   Widget _buildActionButtons(BuildContext context, WidgetRef ref, ColorScheme colorScheme, bool fileExists) {

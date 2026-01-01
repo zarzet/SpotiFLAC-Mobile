@@ -76,6 +76,28 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(checkForUpdates: enabled);
     _saveSettings();
   }
+
+  void setHasSearchedBefore() {
+    if (!state.hasSearchedBefore) {
+      state = state.copyWith(hasSearchedBefore: true);
+      _saveSettings();
+    }
+  }
+
+  void setFolderOrganization(String organization) {
+    state = state.copyWith(folderOrganization: organization);
+    _saveSettings();
+  }
+
+  void setConvertLyricsToRomaji(bool enabled) {
+    state = state.copyWith(convertLyricsToRomaji: enabled);
+    _saveSettings();
+  }
+
+  void setHistoryViewMode(String mode) {
+    state = state.copyWith(historyViewMode: mode);
+    _saveSettings();
+  }
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(

@@ -267,5 +267,7 @@ func (pw *ItemProgressWriter) Write(p []byte) (int, error) {
 	}
 	pw.current += int64(n)
 	SetItemBytesReceived(pw.itemID, pw.current)
+	// Also update legacy progress for backward compatibility
+	SetBytesReceived(pw.current)
 	return n, nil
 }

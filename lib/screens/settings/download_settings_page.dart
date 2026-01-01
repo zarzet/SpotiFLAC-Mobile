@@ -99,6 +99,14 @@ class DownloadSettingsPage extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _pickDirectory(ref),
             ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              leading: Icon(Icons.create_new_folder_outlined, color: colorScheme.onSurfaceVariant),
+              title: const Text('Folder Organization'),
+              subtitle: Text(_getFolderOrganizationLabel(settings.folderOrganization)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showFolderOrganizationPicker(context, ref, settings.folderOrganization),
+            ),
           ])),
 
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -137,6 +145,73 @@ class DownloadSettingsPage extends ConsumerWidget {
   Future<void> _pickDirectory(WidgetRef ref) async {
     final result = await FilePicker.platform.getDirectoryPath();
     if (result != null) ref.read(settingsProvider.notifier).setDownloadDirectory(result);
+  }
+
+  String _getFolderOrganizationLabel(String value) {
+    switch (value) {
+      case 'artist':
+        return 'By Artist (Artist/Track.flac)';
+      case 'album':
+        return 'By Album (Album/Track.flac)';
+      case 'artist_album':
+        return 'By Artist & Album (Artist/Album/Track.flac)';
+      default:
+        return 'None (all in one folder)';
+    }
+  }
+
+  void _showFolderOrganizationPicker(BuildContext context, WidgetRef ref, String current) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Text('Folder Organization', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text('Organize downloaded files into folders', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+            ),
+            _FolderOption(
+              title: 'None',
+              subtitle: 'All files in download folder',
+              example: 'SpotiFLAC/Track.flac',
+              isSelected: current == 'none',
+              onTap: () { ref.read(settingsProvider.notifier).setFolderOrganization('none'); Navigator.pop(context); },
+            ),
+            _FolderOption(
+              title: 'By Artist',
+              subtitle: 'Separate folder for each artist',
+              example: 'SpotiFLAC/Artist Name/Track.flac',
+              isSelected: current == 'artist',
+              onTap: () { ref.read(settingsProvider.notifier).setFolderOrganization('artist'); Navigator.pop(context); },
+            ),
+            _FolderOption(
+              title: 'By Album',
+              subtitle: 'Separate folder for each album',
+              example: 'SpotiFLAC/Album Name/Track.flac',
+              isSelected: current == 'album',
+              onTap: () { ref.read(settingsProvider.notifier).setFolderOrganization('album'); Navigator.pop(context); },
+            ),
+            _FolderOption(
+              title: 'By Artist & Album',
+              subtitle: 'Nested folders for artist and album',
+              example: 'SpotiFLAC/Artist/Album/Track.flac',
+              isSelected: current == 'artist_album',
+              onTap: () { ref.read(settingsProvider.notifier).setFolderOrganization('artist_album'); Navigator.pop(context); },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -225,6 +300,34 @@ class _QualityOption extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
       title: Text(title),
       subtitle: Text(subtitle),
+      trailing: isSelected ? Icon(Icons.check_circle, color: colorScheme.primary) : Icon(Icons.circle_outlined, color: colorScheme.outline),
+      onTap: onTap,
+    );
+  }
+}
+
+class _FolderOption extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String example;
+  final bool isSelected;
+  final VoidCallback onTap;
+  const _FolderOption({required this.title, required this.subtitle, required this.example, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      title: Text(title),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(subtitle),
+          const SizedBox(height: 4),
+          Text(example, style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: colorScheme.primary)),
+        ],
+      ),
       trailing: isSelected ? Icon(Icons.check_circle, color: colorScheme.primary) : Icon(Icons.circle_outlined, color: colorScheme.outline),
       onTap: onTap,
     );

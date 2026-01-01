@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 
 class OptionsSettingsPage extends ConsumerWidget {
@@ -91,6 +92,19 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
           ),
 
+          // Lyrics section
+          SliverToBoxAdapter(child: _SectionHeader(title: 'Lyrics')),
+          SliverList(delegate: SliverChildListDelegate([
+            SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              secondary: Icon(Icons.translate, color: colorScheme.onSurfaceVariant),
+              title: const Text('Convert Japanese to Romaji'),
+              subtitle: const Text('Auto-convert Hiragana/Katakana lyrics'),
+              value: settings.convertLyricsToRomaji,
+              onChanged: (v) => ref.read(settingsProvider.notifier).setConvertLyricsToRomaji(v),
+            ),
+          ])),
+
           // App section
           SliverToBoxAdapter(child: _SectionHeader(title: 'App')),
           SliverToBoxAdapter(
@@ -104,7 +118,45 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
           ),
 
+          // Data section
+          SliverToBoxAdapter(child: _SectionHeader(title: 'Data')),
+          SliverToBoxAdapter(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              leading: Icon(Icons.delete_forever, color: colorScheme.error),
+              title: const Text('Clear Download History'),
+              subtitle: const Text('Remove all downloaded tracks from history'),
+              onTap: () => _showClearHistoryDialog(context, ref, colorScheme),
+            ),
+          ),
+
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
+      ),
+    );
+  }
+
+  void _showClearHistoryDialog(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear History'),
+        content: const Text('Are you sure you want to clear all download history? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(downloadHistoryProvider.notifier).clearHistory();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('History cleared')),
+              );
+            },
+            child: Text('Clear', style: TextStyle(color: colorScheme.error)),
+          ),
         ],
       ),
     );

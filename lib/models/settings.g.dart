@@ -17,6 +17,10 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   isFirstLaunch: json['isFirstLaunch'] as bool? ?? true,
   concurrentDownloads: (json['concurrentDownloads'] as num?)?.toInt() ?? 1,
   checkForUpdates: json['checkForUpdates'] as bool? ?? true,
+  hasSearchedBefore: json['hasSearchedBefore'] as bool? ?? false,
+  folderOrganization: json['folderOrganization'] as String? ?? 'none',
+  convertLyricsToRomaji: json['convertLyricsToRomaji'] as bool? ?? false,
+  historyViewMode: json['historyViewMode'] as String? ?? 'list',
 );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -31,4 +35,8 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'isFirstLaunch': instance.isFirstLaunch,
       'concurrentDownloads': instance.concurrentDownloads,
       'checkForUpdates': instance.checkForUpdates,
+      'hasSearchedBefore': instance.hasSearchedBefore,
+      'folderOrganization': instance.folderOrganization,
+      'convertLyricsToRomaji': instance.convertLyricsToRomaji,
+      'historyViewMode': instance.historyViewMode,
     };
