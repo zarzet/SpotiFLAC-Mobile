@@ -222,6 +222,36 @@ jobs:
       contents: write
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION=${{ needs.get-version.outputs.version }}
+          VERSION_NUM=${VERSION#v}  # Remove 'v' prefix
+          
+          # Extract changelog section for this version
+          # Look for ## [X.X.X] and capture until next ## [ or end of file
+          CHANGELOG=$(awk -v ver="$VERSION_NUM" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+          
+          # If no changelog found, use default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="See CHANGELOG.md for details."
+          fi
+          
+          # Save to file for multiline support
+          echo "$CHANGELOG" > /tmp/changelog.txt
+          echo "Extracted changelog:"
+          cat /tmp/changelog.txt
+
       - name: Download Android APK
         uses: actions/download-artifact@v4
         with:
@@ -234,24 +264,45 @@ jobs:
           name: ios-ipa
           path: ./release
 
+      - name: Prepare release body
+        run: |
+          VERSION=${{ needs.get-version.outputs.version }}
+          cat > /tmp/release_body.txt << 'HEADER'
+          ## SpotiFLAC $VERSION
+          
+          Download Spotify tracks in FLAC quality from Tidal, Qobuz & Amazon Music.
+          
+          ### What's New
+          HEADER
+          
+          # Replace $VERSION in header
+          sed -i "s/\$VERSION/$VERSION/g" /tmp/release_body.txt
+          
+          cat /tmp/changelog.txt >> /tmp/release_body.txt
+          
+          cat >> /tmp/release_body.txt << FOOTER
+          
+          ---
+          
+          ### Downloads
+          - **Android (arm64)**: \`SpotiFLAC-${VERSION}-arm64.apk\` (recommended)
+          - **Android (arm32)**: \`SpotiFLAC-${VERSION}-arm32.apk\` (older devices)
+          - **iOS**: \`SpotiFLAC-${VERSION}-ios-unsigned.ipa\` (sideload required)
+          
+          ### Installation
+          **Android**: Enable "Install from unknown sources" and install the APK
+          **iOS**: Use AltStore, Sideloadly, or similar tools to sideload the IPA
+          FOOTER
+          
+          echo "Release body:"
+          cat /tmp/release_body.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get-version.outputs.version }}
           name: SpotiFLAC ${{ needs.get-version.outputs.version }}
-          body: |
-            ## SpotiFLAC ${{ needs.get-version.outputs.version }}
-            
-            Download Spotify tracks in FLAC quality from Tidal, Qobuz & Amazon Music.
-            
-            ### Downloads
-            - **Android (arm64)**: `SpotiFLAC-${{ needs.get-version.outputs.version }}-arm64.apk` (recommended)
-            - **Android (arm32)**: `SpotiFLAC-${{ needs.get-version.outputs.version }}-arm32.apk` (older devices)
-            - **iOS**: `SpotiFLAC-${{ needs.get-version.outputs.version }}-ios-unsigned.ipa` (sideload required)
-            
-            ### Installation
-            **Android**: Enable "Install from unknown sources" and install the APK
-            **iOS**: Use AltStore, Sideloadly, or similar tools to sideload the IPA
+          body_path: /tmp/release_body.txt
           files: ./release/*
           draft: false
           prerelease: false

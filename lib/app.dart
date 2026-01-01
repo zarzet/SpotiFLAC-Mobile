@@ -7,10 +7,11 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/theme/dynamic_color_wrapper.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
-  final settings = ref.watch(settingsProvider);
+  // Only watch isFirstLaunch to prevent router rebuild on other settings changes
+  final isFirstLaunch = ref.watch(settingsProvider.select((s) => s.isFirstLaunch));
   
   return GoRouter(
-    initialLocation: settings.isFirstLaunch ? '/setup' : '/',
+    initialLocation: isFirstLaunch ? '/setup' : '/',
     routes: [
       GoRoute(
         path: '/',

@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -326,25 +327,28 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final fileExists = File(item.filePath).existsSync();
     
     return ListTile(
-      leading: item.coverUrl != null
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: item.coverUrl!,
+      leading: Hero(
+        tag: 'cover_${item.id}',
+        child: item.coverUrl != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: item.coverUrl!,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : Container(
                 width: 48,
                 height: 48,
-                fit: BoxFit.cover,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
               ),
-            )
-          : Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
-            ),
+      ),
       title: Text(item.trackName, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         item.artistName,
@@ -358,7 +362,26 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
               onPressed: () => _openFile(item.filePath),
             )
           : Icon(Icons.error_outline, color: colorScheme.error, size: 20),
-      onTap: fileExists ? () => _openFile(item.filePath) : null,
+      // Tap to show metadata details
+      onTap: () => _navigateToMetadataScreen(item),
+    );
+  }
+
+  void _navigateToMetadataScreen(DownloadHistoryItem item) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (context, animation, secondaryAnimation) => 
+            TrackMetadataScreen(item: item),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
     );
   }
 
@@ -443,10 +466,51 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
               child: ListView.builder(
                 controller: scrollController,
                 itemCount: historyState.items.length,
-                itemBuilder: (context, index) => _buildHistoryTile(
-                  historyState.items[index],
-                  colorScheme,
-                ),
+                itemBuilder: (context, index) {
+                  final item = historyState.items[index];
+                  final fileExists = File(item.filePath).existsSync();
+                  
+                  return ListTile(
+                    leading: item.coverUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: item.coverUrl!,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
+                          ),
+                    title: Text(item.trackName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      item.artistName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                    trailing: fileExists
+                        ? IconButton(
+                            icon: Icon(Icons.play_arrow, color: colorScheme.primary),
+                            onPressed: () => _openFile(item.filePath),
+                          )
+                        : Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                    onTap: () {
+                      Navigator.pop(context); // Close bottom sheet first
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        _navigateToMetadataScreen(item);
+                      });
+                    },
+                  );
+                },
               ),
             ),
           ],

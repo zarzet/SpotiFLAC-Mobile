@@ -859,8 +859,15 @@ func downloadFromTidal(req DownloadRequest) (string, error) {
 		return "EXISTS:" + outputPath, nil
 	}
 
+	// Determine quality to use (default to LOSSLESS if not specified)
+	quality := req.Quality
+	if quality == "" {
+		quality = "LOSSLESS"
+	}
+	fmt.Printf("[Tidal] Using quality: %s\n", quality)
+
 	// Get download URL using parallel API requests
-	downloadURL, err := downloader.GetDownloadURL(track.ID, "LOSSLESS")
+	downloadURL, err := downloader.GetDownloadURL(track.ID, quality)
 	if err != nil {
 		return "", fmt.Errorf("failed to get download URL: %w", err)
 	}

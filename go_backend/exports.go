@@ -99,6 +99,7 @@ type DownloadRequest struct {
 	CoverURL             string `json:"cover_url"`
 	OutputDir            string `json:"output_dir"`
 	FilenameFormat       string `json:"filename_format"`
+	Quality              string `json:"quality"` // LOSSLESS, HI_RES, HI_RES_LOSSLESS
 	EmbedLyrics          bool   `json:"embed_lyrics"`
 	EmbedMaxQualityCover bool   `json:"embed_max_quality_cover"`
 	TrackNumber          int    `json:"track_number"`

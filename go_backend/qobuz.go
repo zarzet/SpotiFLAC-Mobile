@@ -346,8 +346,22 @@ func downloadFromQobuz(req DownloadRequest) (string, error) {
 		return "EXISTS:" + outputPath, nil
 	}
 
+	// Map quality from Tidal format to Qobuz format
+	// Tidal: LOSSLESS (16-bit), HI_RES (24-bit), HI_RES_LOSSLESS (24-bit hi-res)
+	// Qobuz: 5 (MP3 320), 6 (16-bit), 7 (24-bit 96kHz), 27 (24-bit 192kHz)
+	qobuzQuality := "27" // Default to highest quality
+	switch req.Quality {
+	case "LOSSLESS":
+		qobuzQuality = "6" // 16-bit FLAC
+	case "HI_RES":
+		qobuzQuality = "7" // 24-bit 96kHz
+	case "HI_RES_LOSSLESS":
+		qobuzQuality = "27" // 24-bit 192kHz
+	}
+	fmt.Printf("[Qobuz] Using quality: %s (mapped from %s)\n", qobuzQuality, req.Quality)
+
 	// Get download URL using parallel API requests
-	downloadURL, err := downloader.GetDownloadURL(track.ID, "27") // 27 = FLAC 24-bit
+	downloadURL, err := downloader.GetDownloadURL(track.ID, qobuzQuality)
 	if err != nil {
 		return "", fmt.Errorf("failed to get download URL: %w", err)
 	}

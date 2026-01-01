@@ -9,6 +9,7 @@ import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 
@@ -18,20 +19,37 @@ class DownloadHistoryItem {
   final String trackName;
   final String artistName;
   final String albumName;
+  final String? albumArtist;
   final String? coverUrl;
   final String filePath;
   final String service;
   final DateTime downloadedAt;
+  // Additional metadata
+  final String? isrc;
+  final String? spotifyId;
+  final int? trackNumber;
+  final int? discNumber;
+  final int? duration;
+  final String? releaseDate;
+  final String? quality;
 
   const DownloadHistoryItem({
     required this.id,
     required this.trackName,
     required this.artistName,
     required this.albumName,
+    this.albumArtist,
     this.coverUrl,
     required this.filePath,
     required this.service,
     required this.downloadedAt,
+    this.isrc,
+    this.spotifyId,
+    this.trackNumber,
+    this.discNumber,
+    this.duration,
+    this.releaseDate,
+    this.quality,
   });
 
   Map<String, dynamic> toJson() => {
@@ -39,10 +57,18 @@ class DownloadHistoryItem {
     'trackName': trackName,
     'artistName': artistName,
     'albumName': albumName,
+    'albumArtist': albumArtist,
     'coverUrl': coverUrl,
     'filePath': filePath,
     'service': service,
     'downloadedAt': downloadedAt.toIso8601String(),
+    'isrc': isrc,
+    'spotifyId': spotifyId,
+    'trackNumber': trackNumber,
+    'discNumber': discNumber,
+    'duration': duration,
+    'releaseDate': releaseDate,
+    'quality': quality,
   };
 
   factory DownloadHistoryItem.fromJson(Map<String, dynamic> json) => DownloadHistoryItem(
@@ -50,10 +76,18 @@ class DownloadHistoryItem {
     trackName: json['trackName'] as String,
     artistName: json['artistName'] as String,
     albumName: json['albumName'] as String,
+    albumArtist: json['albumArtist'] as String?,
     coverUrl: json['coverUrl'] as String?,
     filePath: json['filePath'] as String,
     service: json['service'] as String,
     downloadedAt: DateTime.parse(json['downloadedAt'] as String),
+    isrc: json['isrc'] as String?,
+    spotifyId: json['spotifyId'] as String?,
+    trackNumber: json['trackNumber'] as int?,
+    discNumber: json['discNumber'] as int?,
+    duration: json['duration'] as int?,
+    releaseDate: json['releaseDate'] as String?,
+    quality: json['quality'] as String?,
   );
 }
 
@@ -151,6 +185,7 @@ class DownloadQueueState {
   final bool isProcessing;
   final String outputDir;
   final String filenameFormat;
+  final String audioQuality; // LOSSLESS, HI_RES, HI_RES_LOSSLESS
   final bool autoFallback;
   final int concurrentDownloads; // 1 = sequential, max 3
 
@@ -160,6 +195,7 @@ class DownloadQueueState {
     this.isProcessing = false,
     this.outputDir = '',
     this.filenameFormat = '{artist} - {title}',
+    this.audioQuality = 'LOSSLESS',
     this.autoFallback = true,
     this.concurrentDownloads = 1,
   });
@@ -170,6 +206,7 @@ class DownloadQueueState {
     bool? isProcessing,
     String? outputDir,
     String? filenameFormat,
+    String? audioQuality,
     bool? autoFallback,
     int? concurrentDownloads,
   }) {
@@ -179,6 +216,7 @@ class DownloadQueueState {
       isProcessing: isProcessing ?? this.isProcessing,
       outputDir: outputDir ?? this.outputDir,
       filenameFormat: filenameFormat ?? this.filenameFormat,
+      audioQuality: audioQuality ?? this.audioQuality,
       autoFallback: autoFallback ?? this.autoFallback,
       concurrentDownloads: concurrentDownloads ?? this.concurrentDownloads,
     );
@@ -284,12 +322,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     state = state.copyWith(
       outputDir: settings.downloadDirectory.isNotEmpty ? settings.downloadDirectory : state.outputDir,
       filenameFormat: settings.filenameFormat,
+      audioQuality: settings.audioQuality,
       autoFallback: settings.autoFallback,
       concurrentDownloads: settings.concurrentDownloads,
     );
   }
 
   String addToQueue(Track track, String service) {
+    // Sync settings before adding to queue
+    final settings = ref.read(settingsProvider);
+    updateSettings(settings);
+    
     final id = '${track.isrc ?? track.id}-${DateTime.now().millisecondsSinceEpoch}';
     final item = DownloadItem(
       id: id,
@@ -309,6 +352,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   void addMultipleToQueue(List<Track> tracks, String service) {
+    // Sync settings before adding to queue
+    final settings = ref.read(settingsProvider);
+    updateSettings(settings);
+    
     final newItems = tracks.map((track) {
       final id = '${track.isrc ?? track.id}-${DateTime.now().millisecondsSinceEpoch}';
       return DownloadItem(
@@ -561,6 +608,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       if (state.autoFallback) {
         print('[DownloadQueue] Using auto-fallback mode');
+        print('[DownloadQueue] Quality: ${state.audioQuality}');
         result = await PlatformBridge.downloadWithFallback(
           isrc: item.track.isrc ?? '',
           spotifyId: item.track.id,
@@ -571,6 +619,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           coverUrl: item.track.coverUrl,
           outputDir: state.outputDir,
           filenameFormat: state.filenameFormat,
+          quality: state.audioQuality,
           trackNumber: item.track.trackNumber ?? 1,
           discNumber: item.track.discNumber ?? 1,
           releaseDate: item.track.releaseDate,
@@ -588,6 +637,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           coverUrl: item.track.coverUrl,
           outputDir: state.outputDir,
           filenameFormat: state.filenameFormat,
+          quality: state.audioQuality,
           trackNumber: item.track.trackNumber ?? 1,
           discNumber: item.track.discNumber ?? 1,
           releaseDate: item.track.releaseDate,
@@ -642,10 +692,19 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               trackName: item.track.name,
               artistName: item.track.artistName,
               albumName: item.track.albumName,
+              albumArtist: item.track.albumArtist,
               coverUrl: item.track.coverUrl,
               filePath: filePath,
               service: result['service'] as String? ?? item.service,
               downloadedAt: DateTime.now(),
+              // Additional metadata
+              isrc: item.track.isrc,
+              spotifyId: item.track.id,
+              trackNumber: item.track.trackNumber,
+              discNumber: item.track.discNumber,
+              duration: item.track.duration,
+              releaseDate: item.track.releaseDate,
+              quality: state.audioQuality,
             ),
           );
         }

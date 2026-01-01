@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
 
@@ -140,6 +141,15 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
               : '${settings.concurrentDownloads} parallel downloads'),
           onTap: () => _showConcurrentDownloadsPicker(context, ref, settings.concurrentDownloads),
         ),
+
+        // Check for Updates
+        SwitchListTile(
+          secondary: Icon(Icons.system_update, color: colorScheme.primary),
+          title: const Text('Check for Updates'),
+          subtitle: const Text('Notify when new version is available'),
+          value: settings.checkForUpdates,
+          onChanged: (value) => ref.read(settingsProvider.notifier).setCheckForUpdates(value),
+        ),
         
         const Divider(),
         
@@ -148,22 +158,22 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
         
         ListTile(
           leading: Icon(Icons.code, color: colorScheme.primary),
-          title: const Text('SpotiFLAC Mobile'),
-          subtitle: const Text('github.com/zarzet/SpotiFLAC-Mobile'),
-          onTap: () => _launchUrl('https://github.com/zarzet/SpotiFLAC-Mobile'),
+          title: Text('${AppInfo.appName} Mobile'),
+          subtitle: Text('github.com/${AppInfo.githubRepo}'),
+          onTap: () => _launchUrl(AppInfo.githubUrl),
         ),
         
         ListTile(
           leading: Icon(Icons.computer, color: colorScheme.primary),
-          title: const Text('Original SpotiFLAC (Desktop)'),
-          subtitle: const Text('github.com/afkarxyz/SpotiFLAC'),
-          onTap: () => _launchUrl('https://github.com/afkarxyz/SpotiFLAC'),
+          title: Text('Original ${AppInfo.appName} (Desktop)'),
+          subtitle: Text('github.com/${AppInfo.originalAuthor}/SpotiFLAC'),
+          onTap: () => _launchUrl(AppInfo.originalGithubUrl),
         ),
         
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            'Mobile version maintained by zarzet\nOriginal project by afkarxyz',
+            'Mobile version maintained by ${AppInfo.mobileAuthor}\nOriginal project by ${AppInfo.originalAuthor}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -176,7 +186,7 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
         ListTile(
           leading: Icon(Icons.info, color: colorScheme.primary),
           title: const Text('About'),
-          subtitle: const Text('SpotiFLAC v1.1.1'),
+          subtitle: Text('${AppInfo.appName} v${AppInfo.version}'),
           onTap: () => _showAboutDialog(context),
         ),
         
@@ -195,21 +205,21 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
           children: [
             Image.asset('assets/images/logo.png', width: 40, height: 40, errorBuilder: (_, __, ___) => Icon(Icons.music_note, size: 40, color: colorScheme.primary)),
             const SizedBox(width: 12),
-            const Text('SpotiFLAC'),
+            Text(AppInfo.appName),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildAboutRow('Version', '1.1.1', colorScheme),
+            _buildAboutRow('Version', AppInfo.version, colorScheme),
             const SizedBox(height: 8),
-            _buildAboutRow('Mobile', 'zarzet', colorScheme),
+            _buildAboutRow('Mobile', AppInfo.mobileAuthor, colorScheme),
             const SizedBox(height: 8),
-            _buildAboutRow('Original', 'afkarxyz', colorScheme),
+            _buildAboutRow('Original', AppInfo.originalAuthor, colorScheme),
             const SizedBox(height: 16),
             Text(
-              '© 2026 SpotiFLAC',
+              AppInfo.copyright,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -268,8 +278,9 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
 
   String _getQualityName(String quality) {
     switch (quality) {
-      case 'LOSSLESS': return 'FLAC (Lossless)';
-      case 'HI_RES': return 'Hi-Res FLAC (24-bit)';
+      case 'LOSSLESS': return 'FLAC (16-bit / 44.1kHz)';
+      case 'HI_RES': return 'Hi-Res FLAC (24-bit / 96kHz)';
+      case 'HI_RES_LOSSLESS': return 'Hi-Res FLAC (24-bit / 192kHz)';
       default: return quality;
     }
   }
@@ -380,7 +391,8 @@ class _SettingsTabState extends ConsumerState<SettingsTab> with AutomaticKeepAli
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildQualityOption(context, ref, 'LOSSLESS', 'FLAC (Lossless)', '16-bit / 44.1kHz', current, colorScheme),
-            _buildQualityOption(context, ref, 'HI_RES', 'Hi-Res FLAC', '24-bit / up to 192kHz', current, colorScheme),
+            _buildQualityOption(context, ref, 'HI_RES', 'Hi-Res FLAC', '24-bit / up to 96kHz', current, colorScheme),
+            _buildQualityOption(context, ref, 'HI_RES_LOSSLESS', 'Hi-Res FLAC Max', '24-bit / up to 192kHz', current, colorScheme),
           ],
         ),
       ),

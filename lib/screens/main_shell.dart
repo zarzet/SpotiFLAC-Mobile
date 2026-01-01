@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/home_tab.dart';
 import 'package:spotiflac_android/screens/queue_tab.dart';
 import 'package:spotiflac_android/screens/settings_tab.dart';
+import 'package:spotiflac_android/services/update_checker.dart';
+import 'package:spotiflac_android/widgets/update_dialog.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -15,11 +18,43 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
   late PageController _pageController;
+  bool _hasCheckedUpdate = false;
+  bool _isAnimating = false;
+
+  // Cache tab widgets to prevent rebuilds
+  final List<Widget> _tabs = const [
+    HomeTab(),
+    QueueTab(),
+    SettingsTab(),
+  ];
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
+    // Check for updates after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdates();
+    });
+  }
+
+  Future<void> _checkForUpdates() async {
+    if (_hasCheckedUpdate) return;
+    _hasCheckedUpdate = true;
+
+    final settings = ref.read(settingsProvider);
+    if (!settings.checkForUpdates) return;
+
+    final updateInfo = await UpdateChecker.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      showUpdateDialog(
+        context,
+        updateInfo: updateInfo,
+        onDisableUpdates: () {
+          ref.read(settingsProvider.notifier).setCheckForUpdates(false);
+        },
+      );
+    }
   }
 
   @override
@@ -29,16 +64,21 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _onNavTap(int index) {
-    setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    if (_currentIndex != index && !_isAnimating) {
+      _isAnimating = true;
+      setState(() => _currentIndex = index);
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      ).then((_) => _isAnimating = false);
+    }
   }
 
   void _onPageChanged(int index) {
-    setState(() => _currentIndex = index);
+    if (_currentIndex != index) {
+      setState(() => _currentIndex = index);
+    }
   }
 
   @override
@@ -63,12 +103,8 @@ class _MainShellState extends ConsumerState<MainShell> {
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
-        physics: const BouncingScrollPhysics(),
-        children: const [
-          HomeTab(),
-          QueueTab(),
-          SettingsTab(),
-        ],
+        physics: const ClampingScrollPhysics(),
+        children: _tabs,
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

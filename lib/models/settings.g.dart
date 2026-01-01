@@ -16,6 +16,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   maxQualityCover: json['maxQualityCover'] as bool? ?? true,
   isFirstLaunch: json['isFirstLaunch'] as bool? ?? true,
   concurrentDownloads: (json['concurrentDownloads'] as num?)?.toInt() ?? 1,
+  checkForUpdates: json['checkForUpdates'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -29,4 +30,5 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'maxQualityCover': instance.maxQualityCover,
       'isFirstLaunch': instance.isFirstLaunch,
       'concurrentDownloads': instance.concurrentDownloads,
+      'checkForUpdates': instance.checkForUpdates,
     };

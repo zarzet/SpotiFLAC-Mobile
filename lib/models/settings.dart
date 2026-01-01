@@ -13,6 +13,7 @@ class AppSettings {
   final bool maxQualityCover;
   final bool isFirstLaunch;
   final int concurrentDownloads; // 1 = sequential (default), max 3
+  final bool checkForUpdates; // Check for updates on app start
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -24,6 +25,7 @@ class AppSettings {
     this.maxQualityCover = true,
     this.isFirstLaunch = true,
     this.concurrentDownloads = 1, // Default: sequential (off)
+    this.checkForUpdates = true, // Default: enabled
   });
 
   AppSettings copyWith({
@@ -36,6 +38,7 @@ class AppSettings {
     bool? maxQualityCover,
     bool? isFirstLaunch,
     int? concurrentDownloads,
+    bool? checkForUpdates,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -47,6 +50,7 @@ class AppSettings {
       maxQualityCover: maxQualityCover ?? this.maxQualityCover,
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
       concurrentDownloads: concurrentDownloads ?? this.concurrentDownloads,
+      checkForUpdates: checkForUpdates ?? this.checkForUpdates,
     );
   }
 
