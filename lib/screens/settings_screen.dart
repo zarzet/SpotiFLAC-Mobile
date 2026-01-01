@@ -132,11 +132,11 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: Icon(Icons.info, color: colorScheme.primary),
             title: const Text('About'),
-            subtitle: const Text('SpotiFLAC v1.0.0'),
+            subtitle: const Text('SpotiFLAC v1.0.1'),
             onTap: () => showAboutDialog(
               context: context,
               applicationName: 'SpotiFLAC',
-              applicationVersion: '1.0.0',
+              applicationVersion: '1.0.1',
               applicationLegalese: '© 2024 SpotiFLAC',
             ),
           ),
