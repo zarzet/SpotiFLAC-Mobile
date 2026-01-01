@@ -86,19 +86,18 @@ jobs:
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
-      - name: Decode Keystore
+      - name: Setup Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/ci-keystore.jks
+          echo "storeFile=ci-keystore.jks" > android/keystore.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/keystore.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/keystore.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/keystore.properties
           ls -la android/app/ci-keystore.jks
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          cat android/keystore.properties | head -1
 
       - name: Build APK (Release)
         run: flutter build apk --release --split-per-abi
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename APKs
         run: |
