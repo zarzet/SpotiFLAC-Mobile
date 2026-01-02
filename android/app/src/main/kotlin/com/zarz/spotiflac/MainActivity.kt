@@ -1,5 +1,6 @@
 package com.zarz.spotiflac
 
+import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -13,6 +14,12 @@ import kotlinx.coroutines.withContext
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.zarz.spotiflac/backend"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Update the intent so receive_sharing_intent can access the new data
+        setIntent(intent)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

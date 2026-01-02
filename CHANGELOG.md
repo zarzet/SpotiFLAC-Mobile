@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1] - 2026-01-02
+
+### Fixed
+- **Share Intent App Restart**: Fixed download queue being lost when sharing from Spotify while downloads are in progress
+  - Download queue is now persisted to storage and automatically restored on app restart
+  - Interrupted downloads (marked as "downloading") are reset to "queued" and auto-resumed
+  - Changed launch mode to `singleTask` to reuse existing activity instead of restarting
+  - Added `onNewIntent` handler to properly receive new share intents
+
 ## [1.6.0] - 2026-01-02
 
 ### Added
@@ -33,7 +42,6 @@
 ### Improved
 - **Code Quality**: Replaced all `print()` statements with structured logging using `logger` package
 - **Dependencies Updated**:
-  - `share_plus`: 10.1.4 → 12.0.1
   - `flutter_local_notifications`: 18.0.1 → 19.0.0
   - `build_runner`: 2.4.15 → 2.10.4
 

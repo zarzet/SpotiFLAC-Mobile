@@ -242,16 +242,88 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   Timer? _progressTimer;
   int _downloadCount = 0; // Counter for connection cleanup
   static const _cleanupInterval = 50; // Cleanup every 50 downloads
+  static const _queueStorageKey = 'download_queue'; // Storage key for queue persistence
   final NotificationService _notificationService = NotificationService();
   int _totalQueuedAtStart = 0; // Track total items when queue started
+  bool _isLoaded = false;
 
   @override
   DownloadQueueState build() {
-    // Initialize output directory asynchronously
+    // Initialize output directory and load persisted queue asynchronously
     Future.microtask(() async {
       await _initOutputDir();
+      await _loadQueueFromStorage();
     });
     return const DownloadQueueState();
+  }
+
+  /// Load persisted queue from storage (for app restart recovery)
+  Future<void> _loadQueueFromStorage() async {
+    if (_isLoaded) return;
+    _isLoaded = true;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_queueStorageKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List<dynamic> jsonList = jsonDecode(jsonStr);
+        final items = jsonList.map((e) => DownloadItem.fromJson(e as Map<String, dynamic>)).toList();
+        
+        // Reset downloading items to queued (they were interrupted)
+        final restoredItems = items.map((item) {
+          if (item.status == DownloadStatus.downloading) {
+            return item.copyWith(status: DownloadStatus.queued, progress: 0);
+          }
+          return item;
+        }).toList();
+        
+        // Only restore queued/downloading items (not completed/failed/skipped)
+        final pendingItems = restoredItems.where((item) => 
+          item.status == DownloadStatus.queued
+        ).toList();
+        
+        if (pendingItems.isNotEmpty) {
+          state = state.copyWith(items: pendingItems);
+          _log.i('Restored ${pendingItems.length} pending items from storage');
+          
+          // Auto-resume queue processing
+          Future.microtask(() => _processQueue());
+        } else {
+          _log.d('No pending items to restore');
+          // Clear storage since nothing to restore
+          await prefs.remove(_queueStorageKey);
+        }
+      } else {
+        _log.d('No queue found in storage');
+      }
+    } catch (e) {
+      _log.e('Failed to load queue from storage: $e');
+    }
+  }
+
+  /// Save current queue to storage (only pending items)
+  Future<void> _saveQueueToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Only persist queued and downloading items
+      final pendingItems = state.items.where((item) => 
+        item.status == DownloadStatus.queued || 
+        item.status == DownloadStatus.downloading
+      ).toList();
+      
+      if (pendingItems.isEmpty) {
+        // Clear storage if no pending items
+        await prefs.remove(_queueStorageKey);
+        _log.d('Cleared queue storage (no pending items)');
+      } else {
+        final jsonList = pendingItems.map((e) => e.toJson()).toList();
+        await prefs.setString(_queueStorageKey, jsonEncode(jsonList));
+        _log.d('Saved ${pendingItems.length} pending items to storage');
+      }
+    } catch (e) {
+      _log.e('Failed to save queue to storage: $e');
+    }
   }
 
   void _startProgressPolling(String itemId) {
@@ -461,6 +533,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     );
 
     state = state.copyWith(items: [...state.items, item]);
+    _saveQueueToStorage(); // Persist queue
 
     if (!state.isProcessing) {
       // Run in microtask to not block UI
@@ -487,6 +560,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }).toList();
 
     state = state.copyWith(items: [...state.items, ...newItems]);
+    _saveQueueToStorage(); // Persist queue
 
     if (!state.isProcessing) {
       // Run in microtask to not block UI
@@ -508,6 +582,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }).toList();
 
     state = state.copyWith(items: items);
+    
+    // Persist queue when status changes to completed/failed/skipped (item removed from pending)
+    if (status == DownloadStatus.completed || 
+        status == DownloadStatus.failed || 
+        status == DownloadStatus.skipped) {
+      _saveQueueToStorage();
+    }
   }
 
   void updateProgress(String id, double progress) {
@@ -526,10 +607,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     ).toList();
 
     state = state.copyWith(items: items);
+    _saveQueueToStorage(); // Persist queue
   }
 
   void clearAll() {
     state = state.copyWith(items: [], isPaused: false);
+    _saveQueueToStorage(); // Clear persisted queue
   }
 
   /// Pause the download queue
@@ -571,6 +654,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return item;
     }).toList();
     state = state.copyWith(items: items);
+    _saveQueueToStorage(); // Persist queue
     
     // Start processing if not already
     if (!state.isProcessing) {
@@ -582,6 +666,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   void removeItem(String id) {
     final items = state.items.where((item) => item.id != id).toList();
     state = state.copyWith(items: items);
+    _saveQueueToStorage(); // Persist queue
   }
 
   /// Embed metadata and cover to a FLAC file after M4A conversion
