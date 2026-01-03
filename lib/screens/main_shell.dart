@@ -125,6 +125,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _handleBackPress() {
     final trackState = ref.read(trackProvider);
     
+    // Check if keyboard is visible - if so, just dismiss keyboard, don't clear search
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    if (isKeyboardVisible) {
+      FocusScope.of(context).unfocus();
+      return;
+    }
+    
     // If on Home tab and has text in search bar or has content (but not loading), clear it
     if (_currentIndex == 0 && !trackState.isLoading && (trackState.hasSearchText || trackState.hasContent)) {
       ref.read(trackProvider.notifier).clear();
@@ -163,12 +170,17 @@ class _MainShellState extends ConsumerState<MainShell> {
     final queueState = ref.watch(downloadQueueProvider.select((s) => s.queuedCount));
     final trackState = ref.watch(trackProvider);
     
+    // Check if keyboard is visible (bottom inset > 0 means keyboard is showing)
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    
     // Determine if we can pop (for predictive back animation)
     // canPop is true when we're at root with no content - enables predictive back gesture
+    // IMPORTANT: Never allow pop when keyboard is visible to prevent accidental navigation
     final canPop = _currentIndex == 0 && 
                    !trackState.hasSearchText && 
                    !trackState.hasContent && 
-                   !trackState.isLoading;
+                   !trackState.isLoading &&
+                   !isKeyboardVisible;
 
     return PopScope(
       canPop: canPop,

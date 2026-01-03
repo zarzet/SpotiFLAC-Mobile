@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.3] - 2026-01-03
+
+### Added
+- **Custom Spotify API Credentials**: Set your own Spotify Client ID and Secret in Settings > Options to avoid rate limiting
+  - Toggle to enable/disable custom credentials without deleting them
+  - Material Expressive 3 bottom sheet UI for entering credentials
+- **Keyboard Dismiss on Scroll**: Keyboard now automatically dismisses when scrolling search results
+- **Rate Limit Error UI**: Shows friendly error card when API rate limit (429) is hit on Home, Artist, and Album screens
+
+### Changed
+- **Search on Enter Only**: Removed auto-search debounce, now only searches when pressing Enter key (saves API calls)
+
+### Fixed
+- **Download Cancel**: Fixed cancelled downloads still completing in background and appearing in history. Cancelled files are now properly deleted.
+- **Search Keyboard Dismiss**: Fixed keyboard randomly dismissing and navigating back when starting to search
+- **Back Button During Search**: Back button now properly dismisses keyboard first before clearing search
+- **Search Error Navigation**: Fixed pressing Enter during search (when loading or error) navigating back to home instead of staying on search screen
+- **Duplicate Search on Enter**: Enter key no longer triggers duplicate search if results already loaded
+
 ## [2.0.2] - 2026-01-03
 
 ### Added

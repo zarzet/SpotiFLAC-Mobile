@@ -118,7 +118,8 @@ class TrackNotifier extends Notifier<TrackState> {
     // Increment request ID to cancel any pending requests
     final requestId = ++_currentRequestId;
 
-    state = const TrackState(isLoading: true);
+    // Preserve hasSearchText during fetch
+    state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
       final parsed = await PlatformBridge.parseSpotifyUrl(url);
@@ -174,7 +175,8 @@ class TrackNotifier extends Notifier<TrackState> {
       }
     } catch (e) {
       if (!_isRequestValid(requestId)) return; // Request cancelled
-      state = TrackState(isLoading: false, error: e.toString());
+      // Preserve hasSearchText on error so user stays on search screen
+      state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
     }
   }
 
@@ -182,7 +184,8 @@ class TrackNotifier extends Notifier<TrackState> {
     // Increment request ID to cancel any pending requests
     final requestId = ++_currentRequestId;
 
-    state = const TrackState(isLoading: true);
+    // Preserve hasSearchText during search
+    state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
       final results = await PlatformBridge.searchSpotifyAll(query, trackLimit: 20, artistLimit: 5);
@@ -198,10 +201,12 @@ class TrackNotifier extends Notifier<TrackState> {
         tracks: tracks,
         searchArtists: artists,
         isLoading: false,
+        hasSearchText: state.hasSearchText,
       );
     } catch (e) {
       if (!_isRequestValid(requestId)) return; // Request cancelled
-      state = TrackState(isLoading: false, error: e.toString());
+      // Preserve hasSearchText on error so user stays on search screen
+      state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
     }
   }
 

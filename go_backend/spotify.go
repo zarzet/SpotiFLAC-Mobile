@@ -62,11 +62,32 @@ type SpotifyMetadataClient struct {
 	cacheMu     sync.RWMutex
 }
 
-// NewSpotifyMetadataClient creates a new Spotify client
-func NewSpotifyMetadataClient() *SpotifyMetadataClient {
-	src := rand.NewSource(time.Now().UnixNano())
+// Custom credentials storage (set from Flutter)
+var (
+	customClientID     string
+	customClientSecret string
+	credentialsMu      sync.RWMutex
+)
 
-	// Prefer environment variables for credentials (more secure), fall back to built-in
+// SetSpotifyCredentials sets custom Spotify API credentials
+// Pass empty strings to use default credentials
+func SetSpotifyCredentials(clientID, clientSecret string) {
+	credentialsMu.Lock()
+	defer credentialsMu.Unlock()
+	customClientID = clientID
+	customClientSecret = clientSecret
+}
+
+// getCredentials returns the current credentials (custom or default)
+func getCredentials() (string, string) {
+	credentialsMu.RLock()
+	defer credentialsMu.RUnlock()
+	
+	if customClientID != "" && customClientSecret != "" {
+		return customClientID, customClientSecret
+	}
+	
+	// Fall back to default credentials
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	if clientID == "" {
 		if decoded, err := base64.StdEncoding.DecodeString("NWY1NzNjOTYyMDQ5NGJhZTg3ODkwYzBmMDhhNjAyOTM="); err == nil {
@@ -80,6 +101,16 @@ func NewSpotifyMetadataClient() *SpotifyMetadataClient {
 			clientSecret = string(decoded)
 		}
 	}
+	
+	return clientID, clientSecret
+}
+
+// NewSpotifyMetadataClient creates a new Spotify client
+func NewSpotifyMetadataClient() *SpotifyMetadataClient {
+	src := rand.NewSource(time.Now().UnixNano())
+
+	// Get credentials (custom or default)
+	clientID, clientSecret := getCredentials()
 
 	c := &SpotifyMetadataClient{
 		httpClient:   NewHTTPClientWithTimeout(15 * time.Second), // Use shared transport for connection pooling

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/models/settings.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
 
 const _settingsKey = 'app_settings';
 
@@ -17,12 +18,30 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final json = prefs.getString(_settingsKey);
     if (json != null) {
       state = AppSettings.fromJson(jsonDecode(json));
+      // Apply Spotify credentials to Go backend on load
+      _applySpotifyCredentials();
     }
   }
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_settingsKey, jsonEncode(state.toJson()));
+  }
+
+  /// Apply current Spotify credentials to Go backend
+  Future<void> _applySpotifyCredentials() async {
+    // Only apply custom credentials if enabled and both fields are set
+    if (state.useCustomSpotifyCredentials && 
+        state.spotifyClientId.isNotEmpty && 
+        state.spotifyClientSecret.isNotEmpty) {
+      await PlatformBridge.setSpotifyCredentials(
+        state.spotifyClientId,
+        state.spotifyClientSecret,
+      );
+    } else {
+      // Clear to use default
+      await PlatformBridge.setSpotifyCredentials('', '');
+    }
   }
 
   void setDefaultService(String service) {
@@ -97,6 +116,40 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setAskQualityBeforeDownload(bool enabled) {
     state = state.copyWith(askQualityBeforeDownload: enabled);
     _saveSettings();
+  }
+
+  void setSpotifyClientId(String clientId) {
+    state = state.copyWith(spotifyClientId: clientId);
+    _saveSettings();
+  }
+
+  void setSpotifyClientSecret(String clientSecret) {
+    state = state.copyWith(spotifyClientSecret: clientSecret);
+    _saveSettings();
+  }
+
+  void setSpotifyCredentials(String clientId, String clientSecret) {
+    state = state.copyWith(
+      spotifyClientId: clientId,
+      spotifyClientSecret: clientSecret,
+    );
+    _saveSettings();
+    _applySpotifyCredentials();
+  }
+
+  void clearSpotifyCredentials() {
+    state = state.copyWith(
+      spotifyClientId: '',
+      spotifyClientSecret: '',
+    );
+    _saveSettings();
+    _applySpotifyCredentials();
+  }
+
+  void setUseCustomSpotifyCredentials(bool enabled) {
+    state = state.copyWith(useCustomSpotifyCredentials: enabled);
+    _saveSettings();
+    _applySpotifyCredentials();
   }
 }
 

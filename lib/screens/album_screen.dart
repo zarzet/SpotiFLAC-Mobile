@@ -126,10 +126,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
               padding: EdgeInsets.all(32),
               child: Center(child: CircularProgressIndicator()),
             )),
-          if (_error != null)
+            if (_error != null)
             SliverToBoxAdapter(child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(_error!, style: TextStyle(color: colorScheme.error)),
+              child: _buildErrorWidget(_error!, colorScheme),
             )),
           if (!_isLoading && _error == null && tracks.isNotEmpty) ...[
             _buildTrackListHeader(context, colorScheme),
@@ -364,6 +364,69 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             _QualityOption(title: 'Hi-Res FLAC', subtitle: '24-bit / up to 96kHz', icon: Icons.high_quality, onTap: () { Navigator.pop(context); onSelect('HI_RES'); }),
             _QualityOption(title: 'Hi-Res FLAC Max', subtitle: '24-bit / up to 192kHz', icon: Icons.four_k, onTap: () { Navigator.pop(context); onSelect('HI_RES_LOSSLESS'); }),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build error widget with special handling for rate limit (429)
+  Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
+    final isRateLimit = error.contains('429') || 
+                        error.toLowerCase().contains('rate limit') ||
+                        error.toLowerCase().contains('too many requests');
+    
+    if (isRateLimit) {
+      return Card(
+        elevation: 0,
+        color: colorScheme.errorContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.timer_off, color: colorScheme.onErrorContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rate Limited',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Too many requests. Please wait a moment and try again.',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Default error display
+    return Card(
+      elevation: 0,
+      color: colorScheme.errorContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(child: Text(error, style: TextStyle(color: colorScheme.error))),
           ],
         ),
       ),

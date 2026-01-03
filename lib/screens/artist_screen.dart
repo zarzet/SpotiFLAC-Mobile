@@ -128,7 +128,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               if (_error != null)
                 SliverToBoxAdapter(child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text(_error!, style: TextStyle(color: colorScheme.error)),
+                  child: _buildErrorWidget(_error!, colorScheme),
                 )),
               if (!_isLoadingDiscography && _error == null) ...[
                 if (albumsOnly.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection('Albums', albumsOnly, colorScheme)),
@@ -317,5 +317,68 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         // tracks: null - will be fetched in AlbumScreen
       ),
     ));
+  }
+
+  /// Build error widget with special handling for rate limit (429)
+  Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
+    final isRateLimit = error.contains('429') || 
+                        error.toLowerCase().contains('rate limit') ||
+                        error.toLowerCase().contains('too many requests');
+    
+    if (isRateLimit) {
+      return Card(
+        elevation: 0,
+        color: colorScheme.errorContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.timer_off, color: colorScheme.onErrorContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rate Limited',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Too many requests. Please wait a moment and try again.',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Default error display
+    return Card(
+      elevation: 0,
+      color: colorScheme.errorContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(child: Text(error, style: TextStyle(color: colorScheme.error))),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1030,6 +1030,26 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       
       _log.d('Result: $result');
       
+      // Check if item was cancelled while downloading
+      final currentItem = state.items.firstWhere((i) => i.id == item.id, orElse: () => item);
+      if (currentItem.status == DownloadStatus.skipped) {
+        _log.i('Download was cancelled, skipping result processing');
+        // Delete the downloaded file if it exists
+        final filePath = result['file_path'] as String?;
+        if (filePath != null && result['success'] == true) {
+          try {
+            final file = File(filePath);
+            if (await file.exists()) {
+              await file.delete();
+              _log.d('Deleted cancelled download file: $filePath');
+            }
+          } catch (e) {
+            _log.w('Failed to delete cancelled file: $e');
+          }
+        }
+        return;
+      }
+      
       if (result['success'] == true) {
         var filePath = result['file_path'] as String?;
         _log.i('Download success, file: $filePath');
@@ -1069,6 +1089,25 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               _log.w('Warning: Failed to embed metadata/cover: $e');
             }
           }
+        }
+        
+        // Check again if cancelled before updating status and adding to history
+        final itemAfterDownload = state.items.firstWhere((i) => i.id == item.id, orElse: () => item);
+        if (itemAfterDownload.status == DownloadStatus.skipped) {
+          _log.i('Download was cancelled during finalization, cleaning up');
+          // Delete the downloaded file
+          if (filePath != null) {
+            try {
+              final file = File(filePath);
+              if (await file.exists()) {
+                await file.delete();
+                _log.d('Deleted cancelled download file: $filePath');
+              }
+            } catch (e) {
+              _log.w('Failed to delete cancelled file: $e');
+            }
+          }
+          return;
         }
         
         updateItemStatus(

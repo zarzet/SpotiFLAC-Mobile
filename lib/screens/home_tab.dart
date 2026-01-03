@@ -22,7 +22,6 @@ class HomeTab extends ConsumerStatefulWidget {
 
 class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   final _urlController = TextEditingController();
-  Timer? _debounce;
   bool _isTyping = false;
   final FocusNode _searchFocusNode = FocusNode();
   String? _lastSearchQuery; // Track last searched query to avoid duplicate searches
@@ -38,7 +37,6 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   
   @override
   void dispose() {
-    _debounce?.cancel();
     _urlController.removeListener(_onSearchChanged);
     _urlController.dispose();
     _searchFocusNode.dispose();
@@ -48,17 +46,18 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   /// Called when trackState changes - used to sync search bar with state
   void _onTrackStateChanged(TrackState? previous, TrackState next) {
     // If state was cleared (no content, no search text, not loading), clear the search bar
+    // BUT only if search field is not focused (to prevent clearing while user is typing)
     if (previous != null && 
         !next.hasContent && 
         !next.hasSearchText && 
         !next.isLoading &&
-        _urlController.text.isNotEmpty) {
+        _urlController.text.isNotEmpty &&
+        !_searchFocusNode.hasFocus) {
       _urlController.clear();
       setState(() => _isTyping = false);
     }
   }  void _onSearchChanged() {
     final text = _urlController.text.trim();
-    final wasFocused = _searchFocusNode.hasFocus;
     
     // Update search text state for MainShell back button handling
     ref.read(trackProvider.notifier).setSearchText(text.isNotEmpty);
@@ -68,30 +67,13 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       setState(() => _isTyping = true);
     } else if (text.isEmpty && _isTyping) {
       setState(() => _isTyping = false);
-      ref.read(trackProvider.notifier).clear();
+      // Don't clear provider here - it causes focus issues
+      // Provider will be cleared when user explicitly clears or navigates away
       return;
     }
     
-    // Re-request focus after rebuild if it was focused
-    if (wasFocused) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _searchFocusNode.requestFocus();
-        }
-      });
-    }
-    
-    // Debounce all requests (URLs and searches)
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (text.isEmpty) return;
-      
-      if (text.startsWith('http') || text.startsWith('spotify:')) {
-        _fetchMetadata();
-      } else if (text.length >= 2) {
-        _performSearch(text);
-      }
-    });
+    // No auto-search - user must press Enter to search
+    // This saves API calls and avoids rate limiting
   }
 
   Future<void> _performSearch(String query) async {
@@ -116,7 +98,6 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   }
 
   Future<void> _clearAndRefresh() async {
-    _debounce?.cancel();
     _urlController.clear();
     _searchFocusNode.unfocus();
     _lastSearchQuery = null; // Reset last query
@@ -285,6 +266,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
 
     return Scaffold(
       body: CustomScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         slivers: [
           // App Bar - always present
           SliverAppBar(
@@ -479,6 +461,69 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     ));
   }
 
+  /// Build error widget with special handling for rate limit (429)
+  Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
+    final isRateLimit = error.contains('429') || 
+                        error.toLowerCase().contains('rate limit') ||
+                        error.toLowerCase().contains('too many requests');
+    
+    if (isRateLimit) {
+      return Card(
+        elevation: 0,
+        color: colorScheme.errorContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.timer_off, color: colorScheme.onErrorContainer),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rate Limited',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Too many requests. Please wait a moment before searching again.',
+                      style: TextStyle(
+                        color: colorScheme.onErrorContainer,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Default error display
+    return Card(
+      elevation: 0,
+      color: colorScheme.errorContainer.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(child: Text(error, style: TextStyle(color: colorScheme.error))),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Search results slivers - only shows search results (track list)
   List<Widget> _buildSearchResults({
     required List<Track> tracks,
@@ -493,11 +538,11 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     }
     
     return [
-      // Error message
+      // Error message - with special handling for rate limit (429)
       if (error != null)
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(error, style: TextStyle(color: colorScheme.error)),
+          child: _buildErrorWidget(error, colorScheme),
         )),
 
       // Loading indicator
@@ -674,8 +719,27 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
-      onSubmitted: (_) => _fetchMetadata(),
+      onSubmitted: (_) => _onSearchSubmitted(),
     );
+  }
+
+  /// Handle Enter key press - search or fetch URL
+  void _onSearchSubmitted() {
+    final text = _urlController.text.trim();
+    if (text.isEmpty) return;
+    
+    // If it's a URL, fetch metadata
+    if (text.startsWith('http') || text.startsWith('spotify:')) {
+      _fetchMetadata();
+      _searchFocusNode.unfocus();
+      return;
+    }
+    
+    // For search queries, always search (minimum 2 chars)
+    if (text.length >= 2) {
+      _performSearch(text);
+    }
+    _searchFocusNode.unfocus();
   }
 
 }

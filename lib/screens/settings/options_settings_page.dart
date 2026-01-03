@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -116,6 +117,38 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
           ),
 
+          // Spotify API section
+          const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Spotify API')),
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                SettingsItem(
+                  icon: Icons.key,
+                  title: 'Custom Credentials',
+                  subtitle: settings.spotifyClientId.isNotEmpty 
+                      ? 'Client ID: ${settings.spotifyClientId.length > 8 ? '${settings.spotifyClientId.substring(0, 8)}...' : settings.spotifyClientId}' 
+                      : 'Not configured',
+                  onTap: () => _showSpotifyCredentialsDialog(context, ref, settings),
+                  trailing: settings.spotifyClientId.isNotEmpty
+                      ? Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20)
+                      : Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 20),
+                  showDivider: settings.spotifyClientId.isNotEmpty,
+                ),
+                if (settings.spotifyClientId.isNotEmpty)
+                  SettingsSwitchItem(
+                    icon: Icons.toggle_on,
+                    title: 'Use Custom Credentials',
+                    subtitle: settings.useCustomSpotifyCredentials 
+                        ? 'Using your credentials' 
+                        : 'Using default credentials',
+                    value: settings.useCustomSpotifyCredentials,
+                    onChanged: (v) => ref.read(settingsProvider.notifier).setUseCustomSpotifyCredentials(v),
+                    showDivider: false,
+                  ),
+              ],
+            ),
+          ),
+
           // Data section
           const SliverToBoxAdapter(child: SettingsSectionHeader(title: 'Data')),
           SliverToBoxAdapter(
@@ -160,6 +193,132 @@ class OptionsSettingsPage extends ConsumerWidget {
             child: Text('Clear', style: TextStyle(color: colorScheme.error)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSpotifyCredentialsDialog(BuildContext context, WidgetRef ref, AppSettings settings) {
+    final clientIdController = TextEditingController(text: settings.spotifyClientId);
+    final clientSecretController = TextEditingController(text: settings.spotifyClientSecret);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: SingleChildScrollView(
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2)))),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                  child: Text('Spotify API Credentials', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Text(
+                    'Use your own credentials to avoid rate limiting.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: TextField(
+                    controller: clientIdController,
+                    decoration: InputDecoration(
+                      labelText: 'Client ID',
+                      hintText: 'Enter Spotify Client ID',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerLow,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: TextField(
+                    controller: clientSecretController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Client Secret',
+                      hintText: 'Enter Spotify Client Secret',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerLow,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colorScheme.primary, width: 2)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Row(
+                    children: [
+                      if (settings.spotifyClientId.isNotEmpty)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              ref.read(settingsProvider.notifier).clearSpotifyCredentials();
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Credentials cleared')),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colorScheme.error,
+                              side: BorderSide(color: colorScheme.error),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              minimumSize: const Size.fromHeight(52),
+                            ),
+                            child: const Text('Clear'),
+                          ),
+                        ),
+                      if (settings.spotifyClientId.isNotEmpty) const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            final clientId = clientIdController.text.trim();
+                            final clientSecret = clientSecretController.text.trim();
+                            
+                            if (clientId.isNotEmpty && clientSecret.isNotEmpty) {
+                              ref.read(settingsProvider.notifier).setSpotifyCredentials(clientId, clientSecret);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Credentials saved')),
+                              );
+                            } else if (clientId.isEmpty && clientSecret.isEmpty) {
+                              Navigator.pop(context);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please fill both Client ID and Secret')),
+                              );
+                            }
+                          },
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            minimumSize: const Size.fromHeight(52),
+                          ),
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

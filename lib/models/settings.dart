@@ -18,6 +18,9 @@ class AppSettings {
   final String folderOrganization; // none, artist, album, artist_album
   final String historyViewMode; // list, grid
   final bool askQualityBeforeDownload; // Show quality picker before each download
+  final String spotifyClientId; // Custom Spotify client ID (empty = use default)
+  final String spotifyClientSecret; // Custom Spotify client secret (empty = use default)
+  final bool useCustomSpotifyCredentials; // Whether to use custom credentials (if set)
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -34,6 +37,9 @@ class AppSettings {
     this.folderOrganization = 'none', // Default: no folder organization
     this.historyViewMode = 'grid', // Default: grid view
     this.askQualityBeforeDownload = true, // Default: ask quality before download
+    this.spotifyClientId = '', // Default: use built-in credentials
+    this.spotifyClientSecret = '', // Default: use built-in credentials
+    this.useCustomSpotifyCredentials = true, // Default: use custom if set
   });
 
   AppSettings copyWith({
@@ -51,6 +57,9 @@ class AppSettings {
     String? folderOrganization,
     String? historyViewMode,
     bool? askQualityBeforeDownload,
+    String? spotifyClientId,
+    String? spotifyClientSecret,
+    bool? useCustomSpotifyCredentials,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -67,6 +76,9 @@ class AppSettings {
       folderOrganization: folderOrganization ?? this.folderOrganization,
       historyViewMode: historyViewMode ?? this.historyViewMode,
       askQualityBeforeDownload: askQualityBeforeDownload ?? this.askQualityBeforeDownload,
+      spotifyClientId: spotifyClientId ?? this.spotifyClientId,
+      spotifyClientSecret: spotifyClientSecret ?? this.spotifyClientSecret,
+      useCustomSpotifyCredentials: useCustomSpotifyCredentials ?? this.useCustomSpotifyCredentials,
     );
   }
 

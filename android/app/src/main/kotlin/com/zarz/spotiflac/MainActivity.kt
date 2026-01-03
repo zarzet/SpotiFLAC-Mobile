@@ -200,6 +200,14 @@ class MainActivity: FlutterActivity() {
                         "isDownloadServiceRunning" -> {
                             result.success(DownloadService.isServiceRunning())
                         }
+                        "setSpotifyCredentials" -> {
+                            val clientId = call.argument<String>("client_id") ?: ""
+                            val clientSecret = call.argument<String>("client_secret") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setSpotifyAPICredentials(clientId, clientSecret)
+                            }
+                            result.success(null)
+                        }
                         else -> result.notImplemented()
                     }
                 } catch (e: Exception) {

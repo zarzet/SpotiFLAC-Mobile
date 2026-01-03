@@ -30,6 +30,12 @@ func ParseSpotifyURL(url string) (string, error) {
 	return string(jsonBytes), nil
 }
 
+// SetSpotifyAPICredentials sets custom Spotify API credentials from Flutter
+// Pass empty strings to use default credentials
+func SetSpotifyAPICredentials(clientID, clientSecret string) {
+	SetSpotifyCredentials(clientID, clientSecret)
+}
+
 // GetSpotifyMetadata fetches metadata from Spotify URL
 // Returns JSON with track/album/playlist data
 func GetSpotifyMetadata(spotifyURL string) (string, error) {

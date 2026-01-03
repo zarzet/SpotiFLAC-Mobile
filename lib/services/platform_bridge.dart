@@ -284,4 +284,13 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('isDownloadServiceRunning');
     return result as bool;
   }
+
+  /// Set custom Spotify API credentials
+  /// Pass empty strings to use default credentials
+  static Future<void> setSpotifyCredentials(String clientId, String clientSecret) async {
+    await _channel.invokeMethod('setSpotifyCredentials', {
+      'client_id': clientId,
+      'client_secret': clientSecret,
+    });
+  }
 }
