@@ -50,8 +50,8 @@ dependencies:
   receive_sharing_intent: ^1.8.1
   logger: ^2.5.0
   
-  # FFmpeg - using local custom AAR (arm64-v8a + armeabi-v7a only)
-  # ffmpeg_kit_flutter_new_audio: ^2.0.0  # Replaced with local AAR
+  # FFmpeg for iOS (uses plugin, Android uses custom AAR)
+  ffmpeg_kit_flutter_new_audio: ^2.0.0
   open_filex: ^4.7.0
   
   # Notifications

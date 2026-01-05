@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/models/track.dart';
@@ -745,25 +743,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       // For now, we'll use FFmpeg to embed cover since Go backend expects to download the file
       // FFmpeg can embed cover art to FLAC
       if (coverPath != null && await File(coverPath).exists()) {
-        final tempOutput = '$flacPath.tmp';
-        final command = '-i "$flacPath" -i "$coverPath" -map 0:a -map 1:0 -c copy -metadata:s:v title="Album cover" -metadata:s:v comment="Cover (front)" -disposition:v attached_pic "$tempOutput" -y';
+        final result = await FFmpegService.embedCover(flacPath, coverPath);
         
-        final session = await FFmpegKit.execute(command);
-        final returnCode = await session.getReturnCode();
-        
-        if (ReturnCode.isSuccess(returnCode)) {
-          // Replace original with temp
-          await File(flacPath).delete();
-          await File(tempOutput).rename(flacPath);
+        if (result != null) {
           _log.d('Cover embedded via FFmpeg');
         } else {
-          // Try alternative method using metaflac-style embedding
-          _log.w('FFmpeg cover embed failed, trying alternative...');
-          // Clean up temp file if exists
-          final tempFile = File(tempOutput);
-          if (await tempFile.exists()) {
-            await tempFile.delete();
-          }
+          _log.w('FFmpeg cover embed failed');
         }
         
         // Clean up cover file

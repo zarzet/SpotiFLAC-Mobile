@@ -229,6 +229,23 @@ jobs:
           channel: 'stable'
           cache: true
 
+      # Swap pubspec for iOS build (includes ffmpeg_kit_flutter)
+      - name: Use iOS pubspec with FFmpeg plugin
+        run: |
+          cp pubspec.yaml pubspec_android_backup.yaml
+          cp pubspec_ios.yaml pubspec.yaml
+          echo "Swapped to iOS pubspec with ffmpeg_kit_flutter"
+
+      # Swap FFmpeg service for iOS
+      - name: Use iOS FFmpeg service
+        run: |
+          cp lib/services/ffmpeg_service.dart lib/services/ffmpeg_service_android.dart
+          cp build_assets/ffmpeg_service_ios.dart lib/services/ffmpeg_service.dart
+          # Update class name in the swapped file
+          sed -i '' 's/FFmpegServiceIOS/FFmpegService/g' lib/services/ffmpeg_service.dart
+          sed -i '' 's/FFmpegResultIOS/FFmpegResult/g' lib/services/ffmpeg_service.dart
+          echo "Swapped to iOS FFmpeg service"
+
       - name: Get Flutter dependencies
         run: flutter pub get
 

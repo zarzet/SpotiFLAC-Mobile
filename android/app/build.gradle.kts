@@ -95,6 +95,7 @@ repositories {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(files("libs/gobackend.aar"))
+    implementation(files("libs/ffmpeg-kit-with-lame.aar"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 }

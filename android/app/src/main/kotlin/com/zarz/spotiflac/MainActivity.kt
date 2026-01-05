@@ -5,6 +5,8 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import gobackend.Gobackend
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,6 +15,7 @@ import kotlinx.coroutines.withContext
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.zarz.spotiflac/backend"
+    private val FFMPEG_CHANNEL = "com.zarz.spotiflac/ffmpeg"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onNewIntent(intent: Intent) {
@@ -212,6 +215,38 @@ class MainActivity: FlutterActivity() {
                     }
                 } catch (e: Exception) {
                     result.error("ERROR", e.message, null)
+                }
+            }
+        }
+        
+        // FFmpeg method channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, FFMPEG_CHANNEL).setMethodCallHandler { call, result ->
+            scope.launch {
+                try {
+                    when (call.method) {
+                        "execute" -> {
+                            val command = call.argument<String>("command") ?: ""
+                            val session = withContext(Dispatchers.IO) {
+                                FFmpegKit.execute(command)
+                            }
+                            val returnCode = session.returnCode
+                            val output = session.output ?: ""
+                            result.success(mapOf(
+                                "success" to ReturnCode.isSuccess(returnCode),
+                                "returnCode" to (returnCode?.value ?: -1),
+                                "output" to output
+                            ))
+                        }
+                        "getVersion" -> {
+                            val session = withContext(Dispatchers.IO) {
+                                FFmpegKit.execute("-version")
+                            }
+                            result.success(session.output ?: "unknown")
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (e: Exception) {
+                    result.error("FFMPEG_ERROR", e.message, null)
                 }
             }
         }
