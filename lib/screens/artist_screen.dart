@@ -69,10 +69,25 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   Future<void> _fetchDiscography() async {
     setState(() => _isLoadingDiscography = true);
     try {
-      final url = 'https://open.spotify.com/artist/${widget.artistId}';
-      final metadata = await PlatformBridge.getSpotifyMetadata(url);
-      final albumsList = metadata['albums'] as List<dynamic>;
-      final albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+      List<ArtistAlbum> albums;
+      
+      // Check if this is a Deezer artist ID (format: "deezer:123456")
+      if (widget.artistId.startsWith('deezer:')) {
+        final deezerArtistId = widget.artistId.replaceFirst('deezer:', '');
+        // ignore: avoid_print
+        print('[ArtistScreen] Fetching from Deezer: $deezerArtistId');
+        final metadata = await PlatformBridge.getDeezerMetadata('artist', deezerArtistId);
+        final albumsList = metadata['albums'] as List<dynamic>;
+        albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+      } else {
+        // Spotify artist - use fallback method
+        // ignore: avoid_print
+        print('[ArtistScreen] Fetching from Spotify with fallback: ${widget.artistId}');
+        final url = 'https://open.spotify.com/artist/${widget.artistId}';
+        final metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
+        final albumsList = metadata['albums'] as List<dynamic>;
+        albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+      }
       
       // Store in cache
       _ArtistCache.set(widget.artistId, albums);
@@ -290,7 +305,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       Text(album.name, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                       const Spacer(),
                       Text(
-                        '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} • ${album.totalTracks} tracks',
+                        album.totalTracks > 0 
+                            ? '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} • ${album.totalTracks} tracks'
+                            : album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 11),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

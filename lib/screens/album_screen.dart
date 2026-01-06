@@ -71,8 +71,22 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   Future<void> _fetchTracks() async {
     setState(() => _isLoading = true);
     try {
-      final url = 'https://open.spotify.com/album/${widget.albumId}';
-      final metadata = await PlatformBridge.getSpotifyMetadata(url);
+      Map<String, dynamic> metadata;
+      
+      // Check if this is a Deezer album ID (format: "deezer:123456")
+      if (widget.albumId.startsWith('deezer:')) {
+        final deezerAlbumId = widget.albumId.replaceFirst('deezer:', '');
+        // ignore: avoid_print
+        print('[AlbumScreen] Fetching from Deezer: $deezerAlbumId');
+        metadata = await PlatformBridge.getDeezerMetadata('album', deezerAlbumId);
+      } else {
+        // Spotify album - use fallback method
+        // ignore: avoid_print
+        print('[AlbumScreen] Fetching from Spotify with fallback: ${widget.albumId}');
+        final url = 'https://open.spotify.com/album/${widget.albumId}';
+        metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
+      }
+      
       final trackList = metadata['track_list'] as List<dynamic>;
       final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
       
