@@ -32,29 +32,13 @@ SpotiFLAC supports two metadata sources for searching tracks:
 | **Deezer** (Default) | No developer account needed, rate limit per user IP | Slightly less comprehensive catalog |
 | **Spotify** | More comprehensive catalog, better search results | Requires developer API credentials to avoid rate limiting |
 
-### Using Deezer (Recommended)
-Works out of the box. No setup required.
-
-### Using Spotify
-To use Spotify as your search source without hitting rate limits:
-1. Create a Spotify Developer account at [developer.spotify.com](https://developer.spotify.com)
-2. Create an app to get your Client ID and Client Secret
-3. Go to **Settings > Options > Spotify API > Custom Credentials**
-4. Enter your Client ID and Secret
-5. Change **Search Source** to Spotify
-
-> **Note**: Spotify URLs (track, album) are always supported regardless of your search source setting. The app will automatically fall back to Deezer if Spotify API is rate limited.
-
-## Support
-
-If you find this app useful, consider supporting the development:
-
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/zarzet)
 
 ## Other project
 
 ### [SpotiFLAC (Desktop)](https://github.com/afkarxyz/SpotiFLAC)
 Get Spotify tracks in true FLAC from Tidal, Qobuz & Amazon Music for Windows, macOS & Linux
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20Me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/zarzet)
 
 ## Disclaimer
 
