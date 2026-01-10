@@ -525,6 +525,12 @@ func ReadFileMetadata(filePath string) (string, error) {
 	// Also get audio quality info
 	quality, qualityErr := GetAudioQuality(filePath)
 
+	// Get duration from FLAC stream info
+	duration := 0
+	if qualityErr == nil && quality.SampleRate > 0 && quality.TotalSamples > 0 {
+		duration = int(quality.TotalSamples / int64(quality.SampleRate))
+	}
+
 	result := map[string]interface{}{
 		"title":        metadata.Title,
 		"artist":       metadata.Artist,
@@ -535,6 +541,7 @@ func ReadFileMetadata(filePath string) (string, error) {
 		"disc_number":  metadata.DiscNumber,
 		"isrc":         metadata.ISRC,
 		"lyrics":       metadata.Lyrics,
+		"duration":     duration,
 	}
 
 	// Add quality info if available
@@ -980,7 +987,7 @@ func errorResponse(msg string) (string, error) {
 	errorType := "unknown"
 	lowerMsg := strings.ToLower(msg)
 
-	if strings.Contains(lowerMsg, "isp blocking") || 
+	if strings.Contains(lowerMsg, "isp blocking") ||
 		strings.Contains(lowerMsg, "try using vpn") ||
 		strings.Contains(lowerMsg, "change dns") {
 		errorType = "isp_blocked"

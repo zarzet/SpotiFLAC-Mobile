@@ -11,6 +11,7 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
+import 'package:spotiflac_android/services/csv_import_service.dart';
 import 'package:spotiflac_android/screens/playlist_screen.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 
@@ -264,6 +265,104 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         ),
       ),
     );
+  }
+
+  Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
+    // Show loading dialog with progress
+    int currentProgress = 0;
+    int totalTracks = 0;
+    
+    // Use StatefulBuilder to update dialog content
+    final dialogContext = context;
+    bool dialogShown = false;
+    StateSetter? setDialogState;
+    
+    void showProgressDialog() {
+      if (dialogShown) return;
+      dialogShown = true;
+      showDialog(
+        context: dialogContext,
+        barrierDismissible: false,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) {
+            setDialogState = setState;
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    totalTracks > 0 
+                        ? 'Fetching metadata... $currentProgress/$totalTracks'
+                        : 'Reading CSV...',
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
+    
+    final tracks = await CsvImportService.pickAndParseCsv(
+      onProgress: (current, total) {
+        currentProgress = current;
+        totalTracks = total;
+        if (!dialogShown && total > 0) {
+          showProgressDialog();
+        }
+        setDialogState?.call(() {});
+      },
+    );
+    
+    // Close progress dialog
+    if (dialogShown && mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+    
+    if (tracks.isNotEmpty) {
+      final settings = ref.read(settingsProvider);
+      
+      // Optionally show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Import Playlist'),
+          content: Text('Found ${tracks.length} tracks in CSV. Add them to download queue?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Import'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added ${tracks.length} tracks to queue'),
+              action: SnackBarAction(
+                label: 'View Queue',
+                onPressed: () {
+                   // Navigate to queue tab (handled by main_shell index)
+                   // We don't have direct access to set index here easily without provider
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } else {
+       // Only show error if pick was not cancelled (handled inside service logging usually, but maybe show snackbar if file empty)
+    }
   }
 
   @override
@@ -770,12 +869,18 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                 onPressed: _clearAndRefresh,
                 tooltip: 'Clear',
               )
-            else
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.file_upload_outlined),
+                onPressed: () => _importCsv(context, ref),
+                tooltip: 'Import CSV',
+              ),
               IconButton(
                 icon: const Icon(Icons.paste),
                 onPressed: _pasteFromClipboard,
                 tooltip: 'Paste',
               ),
+            ],
           ],
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

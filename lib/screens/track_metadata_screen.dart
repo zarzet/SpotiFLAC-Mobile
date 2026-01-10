@@ -442,7 +442,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       _MetadataItem('Album', albumName),
       if (trackNumber != null && trackNumber! > 0)
         _MetadataItem('Track number', trackNumber.toString()),
-      if (discNumber != null && discNumber! > 1)
+      if (discNumber != null && discNumber! > 0)
         _MetadataItem('Disc number', discNumber.toString()),
       if (item.duration != null)
         _MetadataItem('Duration', _formatDuration(item.duration!)),

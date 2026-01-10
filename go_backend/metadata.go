@@ -58,7 +58,7 @@ func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
 	setComment(cmt, "ALBUM", metadata.Album)
 	setComment(cmt, "ALBUMARTIST", metadata.AlbumArtist)
 	setComment(cmt, "DATE", metadata.Date)
-	
+
 	if metadata.TrackNumber > 0 {
 		if metadata.TotalTracks > 0 {
 			setComment(cmt, "TRACKNUMBER", fmt.Sprintf("%d/%d", metadata.TrackNumber, metadata.TotalTracks))
@@ -66,15 +66,15 @@ func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
 			setComment(cmt, "TRACKNUMBER", strconv.Itoa(metadata.TrackNumber))
 		}
 	}
-	
+
 	if metadata.DiscNumber > 0 {
 		setComment(cmt, "DISCNUMBER", strconv.Itoa(metadata.DiscNumber))
 	}
-	
+
 	if metadata.ISRC != "" {
 		setComment(cmt, "ISRC", metadata.ISRC)
 	}
-	
+
 	if metadata.Description != "" {
 		setComment(cmt, "DESCRIPTION", metadata.Description)
 	}
@@ -105,7 +105,7 @@ func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
 						f.Meta = append(f.Meta[:i], f.Meta[i+1:]...)
 					}
 				}
-				
+
 				picture, err := flacpicture.NewFromImageData(
 					flacpicture.PictureTypeFrontCover,
 					"Front Cover",
@@ -162,7 +162,7 @@ func EmbedMetadataWithCoverData(filePath string, metadata Metadata, coverData []
 	setComment(cmt, "ALBUM", metadata.Album)
 	setComment(cmt, "ALBUMARTIST", metadata.AlbumArtist)
 	setComment(cmt, "DATE", metadata.Date)
-	
+
 	if metadata.TrackNumber > 0 {
 		if metadata.TotalTracks > 0 {
 			setComment(cmt, "TRACKNUMBER", fmt.Sprintf("%d/%d", metadata.TrackNumber, metadata.TotalTracks))
@@ -170,15 +170,15 @@ func EmbedMetadataWithCoverData(filePath string, metadata Metadata, coverData []
 			setComment(cmt, "TRACKNUMBER", strconv.Itoa(metadata.TrackNumber))
 		}
 	}
-	
+
 	if metadata.DiscNumber > 0 {
 		setComment(cmt, "DISCNUMBER", strconv.Itoa(metadata.DiscNumber))
 	}
-	
+
 	if metadata.ISRC != "" {
 		setComment(cmt, "ISRC", metadata.ISRC)
 	}
-	
+
 	if metadata.Description != "" {
 		setComment(cmt, "DESCRIPTION", metadata.Description)
 	}
@@ -204,7 +204,7 @@ func EmbedMetadataWithCoverData(filePath string, metadata Metadata, coverData []
 				f.Meta = append(f.Meta[:i], f.Meta[i+1:]...)
 			}
 		}
-		
+
 		picture, err := flacpicture.NewFromImageData(
 			flacpicture.PictureTypeFrontCover,
 			"Front Cover",
@@ -276,7 +276,7 @@ func ReadMetadata(filePath string) (*Metadata, error) {
 					fmt.Sscanf(discNum, "%d", &metadata.DiscNumber)
 				}
 			}
-			
+
 			// Try DATE variants
 			if metadata.Date == "" {
 				metadata.Date = getComment(cmt, "YEAR")
@@ -380,13 +380,13 @@ func ExtractLyrics(filePath string) (string, error) {
 			if err != nil {
 				continue
 			}
-			
+
 			// Try LYRICS tag first
 			lyrics, err := cmt.Get("LYRICS")
 			if err == nil && len(lyrics) > 0 && lyrics[0] != "" {
 				return lyrics[0], nil
 			}
-			
+
 			// Fallback to UNSYNCEDLYRICS
 			lyrics, err = cmt.Get("UNSYNCEDLYRICS")
 			if err == nil && len(lyrics) > 0 && lyrics[0] != "" {
@@ -400,8 +400,9 @@ func ExtractLyrics(filePath string) (string, error) {
 
 // AudioQuality represents audio quality info from a FLAC file
 type AudioQuality struct {
-	BitDepth   int `json:"bit_depth"`
-	SampleRate int `json:"sample_rate"`
+	BitDepth     int   `json:"bit_depth"`
+	SampleRate   int   `json:"sample_rate"`
+	TotalSamples int64 `json:"total_samples"`
 }
 
 // GetAudioQuality reads bit depth and sample rate from a FLAC file's StreamInfo block
@@ -419,7 +420,7 @@ func GetAudioQuality(filePath string) (AudioQuality, error) {
 	if _, err := file.Read(marker); err != nil {
 		return AudioQuality{}, fmt.Errorf("failed to read marker: %w", err)
 	}
-	
+
 	// Check if it's a FLAC file
 	if string(marker) == "fLaC" {
 		// Continue reading FLAC metadata
@@ -446,12 +447,20 @@ func GetAudioQuality(filePath string) (AudioQuality, error) {
 		// Parse bits per sample (5 bits)
 		bitsPerSample := ((int(streamInfo[12]) & 0x01) << 4) | (int(streamInfo[13]) >> 4) + 1
 
+		// Parse total samples (36 bits: 4 bits from byte 13, all of bytes 14-17)
+		totalSamples := int64(streamInfo[13]&0x0F)<<32 |
+			int64(streamInfo[14])<<24 |
+			int64(streamInfo[15])<<16 |
+			int64(streamInfo[16])<<8 |
+			int64(streamInfo[17])
+
 		return AudioQuality{
-			BitDepth:   bitsPerSample,
-			SampleRate: sampleRate,
+			BitDepth:     bitsPerSample,
+			SampleRate:   sampleRate,
+			TotalSamples: totalSamples,
 		}, nil
 	}
-	
+
 	// Check if it's an M4A/MP4 file (starts with size + "ftyp")
 	// First 4 bytes are size, next 4 should be "ftyp"
 	file.Seek(0, 0) // Reset to beginning
@@ -459,16 +468,15 @@ func GetAudioQuality(filePath string) (AudioQuality, error) {
 	if _, err := file.Read(header8); err != nil {
 		return AudioQuality{}, fmt.Errorf("failed to read header: %w", err)
 	}
-	
+
 	if string(header8[4:8]) == "ftyp" {
 		// It's an M4A/MP4 file, use M4A quality reader
 		file.Close() // Close before calling GetM4AQuality which opens the file again
 		return GetM4AQuality(filePath)
 	}
-	
+
 	return AudioQuality{}, fmt.Errorf("unsupported file format (not FLAC or M4A)")
 }
-
 
 // ========================================
 // M4A (MP4/AAC) Metadata Embedding
@@ -492,16 +500,16 @@ func EmbedM4AMetadata(filePath string, metadata Metadata, coverData []byte) erro
 	// Find udta atom inside moov, or create one
 	moovSize := int(data[moovPos]<<24 | data[moovPos+1]<<16 | data[moovPos+2]<<8 | data[moovPos+3])
 	udtaPos := findAtom(data, "udta", moovPos+8)
-	
+
 	// Build new metadata atoms
 	metaAtom := buildMetaAtom(metadata, coverData)
-	
+
 	var newData []byte
 	if udtaPos >= 0 && udtaPos < moovPos+moovSize {
 		// udta exists, find meta inside it or replace
 		udtaSize := int(data[udtaPos]<<24 | data[udtaPos+1]<<16 | data[udtaPos+2]<<8 | data[udtaPos+3])
 		metaPos := findAtom(data, "meta", udtaPos+8)
-		
+
 		if metaPos >= 0 && metaPos < udtaPos+udtaSize {
 			// Replace existing meta atom
 			metaSize := int(data[metaPos]<<24 | data[metaPos+1]<<16 | data[metaPos+2]<<8 | data[metaPos+3])
@@ -519,7 +527,7 @@ func EmbedM4AMetadata(filePath string, metadata Metadata, coverData []byte) erro
 			newUdta[3] = byte(newUdtaSize)
 			newUdta = append(newUdta, []byte("udta")...)
 			newUdta = append(newUdta, newUdtaContent...)
-			
+
 			newData = append(newData, data[:udtaPos]...)
 			newData = append(newData, newUdta...)
 			newData = append(newData, data[udtaPos+udtaSize:]...)
@@ -535,14 +543,14 @@ func EmbedM4AMetadata(filePath string, metadata Metadata, coverData []byte) erro
 		newUdta[3] = byte(udtaSize)
 		newUdta = append(newUdta, []byte("udta")...)
 		newUdta = append(newUdta, udtaContent...)
-		
+
 		// Insert udta at end of moov
 		insertPos := moovPos + moovSize
 		newData = append(newData, data[:insertPos]...)
 		newData = append(newData, newUdta...)
 		newData = append(newData, data[insertPos:]...)
 	}
-	
+
 	// Update moov size
 	newMoovSize := moovSize + len(newData) - len(data)
 	newData[moovPos] = byte(newMoovSize >> 24)
@@ -579,52 +587,52 @@ func findAtom(data []byte, name string, offset int) int {
 func buildMetaAtom(metadata Metadata, coverData []byte) []byte {
 	// Build ilst content
 	var ilst []byte
-	
+
 	// ©nam - Title
 	if metadata.Title != "" {
 		ilst = append(ilst, buildTextAtom("©nam", metadata.Title)...)
 	}
-	
+
 	// ©ART - Artist
 	if metadata.Artist != "" {
 		ilst = append(ilst, buildTextAtom("©ART", metadata.Artist)...)
 	}
-	
+
 	// ©alb - Album
 	if metadata.Album != "" {
 		ilst = append(ilst, buildTextAtom("©alb", metadata.Album)...)
 	}
-	
+
 	// aART - Album Artist
 	if metadata.AlbumArtist != "" {
 		ilst = append(ilst, buildTextAtom("aART", metadata.AlbumArtist)...)
 	}
-	
+
 	// ©day - Year/Date
 	if metadata.Date != "" {
 		ilst = append(ilst, buildTextAtom("©day", metadata.Date)...)
 	}
-	
+
 	// trkn - Track Number
 	if metadata.TrackNumber > 0 {
 		ilst = append(ilst, buildTrackNumberAtom(metadata.TrackNumber, metadata.TotalTracks)...)
 	}
-	
+
 	// disk - Disc Number
 	if metadata.DiscNumber > 0 {
 		ilst = append(ilst, buildDiscNumberAtom(metadata.DiscNumber, 0)...)
 	}
-	
+
 	// ©lyr - Lyrics
 	if metadata.Lyrics != "" {
 		ilst = append(ilst, buildTextAtom("©lyr", metadata.Lyrics)...)
 	}
-	
+
 	// covr - Cover Art
 	if len(coverData) > 0 {
 		ilst = append(ilst, buildCoverAtom(coverData)...)
 	}
-	
+
 	// Build ilst atom
 	ilstSize := 8 + len(ilst)
 	ilstAtom := make([]byte, 4)
@@ -634,7 +642,7 @@ func buildMetaAtom(metadata Metadata, coverData []byte) []byte {
 	ilstAtom[3] = byte(ilstSize)
 	ilstAtom = append(ilstAtom, []byte("ilst")...)
 	ilstAtom = append(ilstAtom, ilst...)
-	
+
 	// Build hdlr atom (required for meta)
 	hdlr := []byte{
 		0, 0, 0, 33, // size = 33
@@ -647,11 +655,11 @@ func buildMetaAtom(metadata Metadata, coverData []byte) []byte {
 		0, 0, 0, 0, // component flags mask
 		0, // null terminator
 	}
-	
+
 	// Build meta atom
 	metaContent := append([]byte{0, 0, 0, 0}, hdlr...) // version + flags + hdlr
 	metaContent = append(metaContent, ilstAtom...)
-	
+
 	metaSize := 8 + len(metaContent)
 	metaAtom := make([]byte, 4)
 	metaAtom[0] = byte(metaSize >> 24)
@@ -660,14 +668,14 @@ func buildMetaAtom(metadata Metadata, coverData []byte) []byte {
 	metaAtom[3] = byte(metaSize)
 	metaAtom = append(metaAtom, []byte("meta")...)
 	metaAtom = append(metaAtom, metaContent...)
-	
+
 	return metaAtom
 }
 
 // buildTextAtom builds a text metadata atom (©nam, ©ART, etc.)
 func buildTextAtom(name, value string) []byte {
 	valueBytes := []byte(value)
-	
+
 	// data atom
 	dataSize := 16 + len(valueBytes)
 	dataAtom := make([]byte, 4)
@@ -679,7 +687,7 @@ func buildTextAtom(name, value string) []byte {
 	dataAtom = append(dataAtom, 0, 0, 0, 1) // type = UTF-8
 	dataAtom = append(dataAtom, 0, 0, 0, 0) // locale
 	dataAtom = append(dataAtom, valueBytes...)
-	
+
 	// container atom
 	atomSize := 8 + len(dataAtom)
 	atom := make([]byte, 4)
@@ -689,7 +697,7 @@ func buildTextAtom(name, value string) []byte {
 	atom[3] = byte(atomSize)
 	atom = append(atom, []byte(name)...)
 	atom = append(atom, dataAtom...)
-	
+
 	return atom
 }
 
@@ -706,7 +714,7 @@ func buildTrackNumberAtom(track, total int) []byte {
 		byte(total >> 8), byte(total), // total tracks
 		0, 0, // padding
 	}
-	
+
 	// trkn atom
 	atomSize := 8 + len(dataAtom)
 	atom := make([]byte, 4)
@@ -716,7 +724,7 @@ func buildTrackNumberAtom(track, total int) []byte {
 	atom[3] = byte(atomSize)
 	atom = append(atom, []byte("trkn")...)
 	atom = append(atom, dataAtom...)
-	
+
 	return atom
 }
 
@@ -732,7 +740,7 @@ func buildDiscNumberAtom(disc, total int) []byte {
 		byte(disc >> 8), byte(disc), // disc number
 		byte(total >> 8), byte(total), // total discs
 	}
-	
+
 	// disk atom
 	atomSize := 8 + len(dataAtom)
 	atom := make([]byte, 4)
@@ -742,7 +750,7 @@ func buildDiscNumberAtom(disc, total int) []byte {
 	atom[3] = byte(atomSize)
 	atom = append(atom, []byte("disk")...)
 	atom = append(atom, dataAtom...)
-	
+
 	return atom
 }
 
@@ -753,7 +761,7 @@ func buildCoverAtom(coverData []byte) []byte {
 	if len(coverData) > 8 && coverData[0] == 0x89 && coverData[1] == 'P' && coverData[2] == 'N' && coverData[3] == 'G' {
 		imageType = 14 // PNG
 	}
-	
+
 	// data atom
 	dataSize := 16 + len(coverData)
 	dataAtom := make([]byte, 4)
@@ -765,7 +773,7 @@ func buildCoverAtom(coverData []byte) []byte {
 	dataAtom = append(dataAtom, 0, 0, 0, imageType) // type = JPEG or PNG
 	dataAtom = append(dataAtom, 0, 0, 0, 0)         // locale
 	dataAtom = append(dataAtom, coverData...)
-	
+
 	// covr atom
 	atomSize := 8 + len(dataAtom)
 	atom := make([]byte, 4)
@@ -775,7 +783,7 @@ func buildCoverAtom(coverData []byte) []byte {
 	atom[3] = byte(atomSize)
 	atom = append(atom, []byte("covr")...)
 	atom = append(atom, dataAtom...)
-	
+
 	return atom
 }
 

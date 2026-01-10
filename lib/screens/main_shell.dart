@@ -62,6 +62,9 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _handleSharedUrl(String url) {
+    // Pop any existing screens (Album, Artist, Settings sub-pages) to return to root
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    
     // Navigate to Home tab
     if (_currentIndex != 0) {
       _onNavTap(0);
