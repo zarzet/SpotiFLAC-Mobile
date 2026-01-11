@@ -794,14 +794,18 @@ class _MetadataSourceSelector extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
     
-    // Check if extension search provider is active
-    final hasExtensionSearch = settings.searchProvider != null && 
-        settings.searchProvider!.isNotEmpty;
+    // Check if extension search provider is active AND enabled
+    Extension? activeExtension;
+    if (settings.searchProvider != null && settings.searchProvider!.isNotEmpty) {
+      activeExtension = extState.extensions
+          .where((e) => e.id == settings.searchProvider && e.enabled)
+          .firstOrNull;
+    }
+    final hasExtensionSearch = activeExtension != null;
     
     String? extensionName;
     if (hasExtensionSearch) {
-      final ext = extState.extensions.where((e) => e.id == settings.searchProvider).firstOrNull;
-      extensionName = ext?.displayName ?? settings.searchProvider;
+      extensionName = activeExtension.displayName;
     }
     
     return Padding(

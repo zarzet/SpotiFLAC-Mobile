@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class DownloadSettingsPage extends ConsumerWidget {
@@ -596,7 +597,7 @@ class DownloadSettingsPage extends ConsumerWidget {
   }
 }
 
-class _ServiceSelector extends StatelessWidget {
+class _ServiceSelector extends ConsumerWidget {
   final String currentService;
   final ValueChanged<String> onChanged;
   const _ServiceSelector({
@@ -605,31 +606,75 @@ class _ServiceSelector extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final extState = ref.watch(extensionProvider);
+    
+    // Get enabled extension download providers
+    final extensionProviders = extState.extensions
+        .where((e) => e.enabled && e.hasDownloadProvider)
+        .toList();
+    
+    // Check if current service is an extension that's now disabled
+    final isExtensionService = !['tidal', 'qobuz', 'amazon'].contains(currentService);
+    final isCurrentExtensionEnabled = isExtensionService 
+        ? extensionProviders.any((e) => e.id == currentService)
+        : true;
+    
+    // If current extension is disabled, show it as not selected
+    final effectiveService = isCurrentExtensionEnabled ? currentService : '';
+    
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
         children: [
-          _ServiceChip(
-            icon: Icons.music_note,
-            label: 'Tidal',
-            isSelected: currentService == 'tidal',
-            onTap: () => onChanged('tidal'),
+          Row(
+            children: [
+              _ServiceChip(
+                icon: Icons.music_note,
+                label: 'Tidal',
+                isSelected: effectiveService == 'tidal',
+                onTap: () => onChanged('tidal'),
+              ),
+              const SizedBox(width: 8),
+              _ServiceChip(
+                icon: Icons.album,
+                label: 'Qobuz',
+                isSelected: effectiveService == 'qobuz',
+                onTap: () => onChanged('qobuz'),
+              ),
+              const SizedBox(width: 8),
+              _ServiceChip(
+                icon: Icons.shopping_bag,
+                label: 'Amazon',
+                isSelected: effectiveService == 'amazon',
+                onTap: () => onChanged('amazon'),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _ServiceChip(
-            icon: Icons.album,
-            label: 'Qobuz',
-            isSelected: currentService == 'qobuz',
-            onTap: () => onChanged('qobuz'),
-          ),
-          const SizedBox(width: 8),
-          _ServiceChip(
-            icon: Icons.shopping_bag,
-            label: 'Amazon',
-            isSelected: currentService == 'amazon',
-            onTap: () => onChanged('amazon'),
-          ),
+          // Show extension download providers if any
+          if (extensionProviders.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (int i = 0; i < extensionProviders.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: _ServiceChip(
+                      icon: Icons.extension,
+                      label: extensionProviders[i].displayName,
+                      isSelected: effectiveService == extensionProviders[i].id,
+                      onTap: () => onChanged(extensionProviders[i].id),
+                    ),
+                  ),
+                ],
+                // Fill remaining space if less than 3 extensions
+                for (int i = extensionProviders.length; i < 3; i++) ...[
+                  const SizedBox(width: 8),
+                  const Expanded(child: SizedBox()),
+                ],
+              ],
+            ),
+          ],
         ],
       ),
     );
