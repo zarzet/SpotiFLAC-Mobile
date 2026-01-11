@@ -32,9 +32,14 @@ func ParseSpotifyURL(url string) (string, error) {
 }
 
 // SetSpotifyAPICredentials sets custom Spotify API credentials from Flutter
-// Pass empty strings to use default credentials
 func SetSpotifyAPICredentials(clientID, clientSecret string) {
 	SetSpotifyCredentials(clientID, clientSecret)
+}
+
+// CheckSpotifyCredentials checks if Spotify credentials are configured
+// Returns true if credentials are available (custom or env vars)
+func CheckSpotifyCredentials() bool {
+	return HasSpotifyCredentials()
 }
 
 // GetSpotifyMetadata fetches metadata from Spotify URL
@@ -43,7 +48,10 @@ func GetSpotifyMetadata(spotifyURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client := NewSpotifyMetadataClient()
+	client, err := NewSpotifyMetadataClient()
+	if err != nil {
+		return "", err
+	}
 	data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
 	if err != nil {
 		return "", err
@@ -63,7 +71,10 @@ func SearchSpotify(query string, limit int) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	client := NewSpotifyMetadataClient()
+	client, err := NewSpotifyMetadataClient()
+	if err != nil {
+		return "", err
+	}
 	results, err := client.SearchTracks(ctx, query, limit)
 	if err != nil {
 		return "", err
@@ -83,7 +94,10 @@ func SearchSpotifyAll(query string, trackLimit, artistLimit int) (string, error)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	client := NewSpotifyMetadataClient()
+	client, err := NewSpotifyMetadataClient()
+	if err != nil {
+		return "", err
+	}
 	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit)
 	if err != nil {
 		return "", err
@@ -893,21 +907,26 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	defer cancel()
 
 	// Try Spotify first
-	client := NewSpotifyMetadataClient()
-	data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
-	if err == nil {
-		jsonBytes, err := json.Marshal(data)
-		if err != nil {
+	client, err := NewSpotifyMetadataClient()
+	if err != nil {
+		// No Spotify credentials - fall through to Deezer fallback
+		LogWarn("Spotify", "Credentials not configured, falling back to Deezer")
+	} else {
+		data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
+		if err == nil {
+			jsonBytes, err := json.Marshal(data)
+			if err != nil {
+				return "", err
+			}
+			return string(jsonBytes), nil
+		}
+
+		// Check if it's a rate limit error
+		errStr := strings.ToLower(err.Error())
+		if !strings.Contains(errStr, "429") && !strings.Contains(errStr, "rate") && !strings.Contains(errStr, "limit") {
+			// Not a rate limit error, return original error
 			return "", err
 		}
-		return string(jsonBytes), nil
-	}
-
-	// Check if it's a rate limit error
-	errStr := strings.ToLower(err.Error())
-	if !strings.Contains(errStr, "429") && !strings.Contains(errStr, "rate") && !strings.Contains(errStr, "limit") {
-		// Not a rate limit error, return original error
-		return "", err
 	}
 
 	// Rate limited - try Deezer fallback for tracks and albums

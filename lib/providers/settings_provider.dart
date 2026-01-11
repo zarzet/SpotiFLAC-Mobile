@@ -60,18 +60,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   /// Apply current Spotify credentials to Go backend
   Future<void> _applySpotifyCredentials() async {
-    // Only apply custom credentials if enabled and both fields are set
-    if (state.useCustomSpotifyCredentials && 
-        state.spotifyClientId.isNotEmpty && 
+    // Only apply if both fields are set
+    if (state.spotifyClientId.isNotEmpty && 
         state.spotifyClientSecret.isNotEmpty) {
       await PlatformBridge.setSpotifyCredentials(
         state.spotifyClientId,
         state.spotifyClientSecret,
       );
-    } else {
-      // Clear to use default
-      await PlatformBridge.setSpotifyCredentials('', '');
     }
+    // Note: If credentials are empty, Spotify API will return error
+    // User should use Deezer as metadata source instead
   }
 
   void setDefaultService(String service) {

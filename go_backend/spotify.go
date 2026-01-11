@@ -2,7 +2,6 @@ package gobackend
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,14 +16,14 @@ import (
 )
 
 const (
-	spotifyTokenURL     = "https://accounts.spotify.com/api/token"
-	playlistBaseURL     = "https://api.spotify.com/v1/playlists/%s"
-	albumBaseURL        = "https://api.spotify.com/v1/albums/%s"
-	trackBaseURL        = "https://api.spotify.com/v1/tracks/%s"
-	artistBaseURL       = "https://api.spotify.com/v1/artists/%s"
-	artistAlbumsURL     = "https://api.spotify.com/v1/artists/%s/albums"
-	searchBaseURL       = "https://api.spotify.com/v1/search"
-	
+	spotifyTokenURL = "https://accounts.spotify.com/api/token"
+	playlistBaseURL = "https://api.spotify.com/v1/playlists/%s"
+	albumBaseURL    = "https://api.spotify.com/v1/albums/%s"
+	trackBaseURL    = "https://api.spotify.com/v1/tracks/%s"
+	artistBaseURL   = "https://api.spotify.com/v1/artists/%s"
+	artistAlbumsURL = "https://api.spotify.com/v1/artists/%s/albums"
+	searchBaseURL   = "https://api.spotify.com/v1/search"
+
 	// Cache TTL settings
 	artistCacheTTL = 10 * time.Minute
 	searchCacheTTL = 5 * time.Minute
@@ -54,7 +53,7 @@ type SpotifyMetadataClient struct {
 	rng            *rand.Rand
 	rngMu          sync.Mutex
 	userAgent      string
-	
+
 	// Caches to reduce API calls
 	artistCache map[string]*cacheEntry // key: artistID
 	searchCache map[string]*cacheEntry // key: query+type
@@ -69,8 +68,10 @@ var (
 	credentialsMu      sync.RWMutex
 )
 
+// ErrNoSpotifyCredentials is returned when Spotify credentials are not configured
+var ErrNoSpotifyCredentials = errors.New("Spotify credentials not configured. Please set your own Client ID and Secret in Settings, or use Deezer as metadata source (free, no credentials required)")
+
 // SetSpotifyCredentials sets custom Spotify API credentials
-// Pass empty strings to use default credentials
 func SetSpotifyCredentials(clientID, clientSecret string) {
 	credentialsMu.Lock()
 	defer credentialsMu.Unlock()
@@ -78,39 +79,56 @@ func SetSpotifyCredentials(clientID, clientSecret string) {
 	customClientSecret = clientSecret
 }
 
-// getCredentials returns the current credentials (custom or default)
-func getCredentials() (string, string) {
+// HasSpotifyCredentials checks if Spotify credentials are configured
+func HasSpotifyCredentials() bool {
 	credentialsMu.RLock()
 	defer credentialsMu.RUnlock()
-	
+
+	// Check custom credentials first
 	if customClientID != "" && customClientSecret != "" {
-		return customClientID, customClientSecret
-	}
-	
-	// Fall back to default credentials
-	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	if clientID == "" {
-		if decoded, err := base64.StdEncoding.DecodeString("NWY1NzNjOTYyMDQ5NGJhZTg3ODkwYzBmMDhhNjAyOTM="); err == nil {
-			clientID = string(decoded)
-		}
+		return true
 	}
 
-	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	if clientSecret == "" {
-		if decoded, err := base64.StdEncoding.DecodeString("MjEyNDc2ZDliMGYzNDcyZWFhNzYyZDkwYjE5YjBiYTg="); err == nil {
-			clientSecret = string(decoded)
-		}
+	// Check environment variables
+	if os.Getenv("SPOTIFY_CLIENT_ID") != "" && os.Getenv("SPOTIFY_CLIENT_SECRET") != "" {
+		return true
 	}
-	
-	return clientID, clientSecret
+
+	return false
+}
+
+// getCredentials returns the current credentials or error if not configured
+func getCredentials() (string, string, error) {
+	credentialsMu.RLock()
+	defer credentialsMu.RUnlock()
+
+	// Check custom credentials first
+	if customClientID != "" && customClientSecret != "" {
+		return customClientID, customClientSecret, nil
+	}
+
+	// Check environment variables
+	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+
+	if clientID != "" && clientSecret != "" {
+		return clientID, clientSecret, nil
+	}
+
+	// No credentials available
+	return "", "", ErrNoSpotifyCredentials
 }
 
 // NewSpotifyMetadataClient creates a new Spotify client
-func NewSpotifyMetadataClient() *SpotifyMetadataClient {
-	src := rand.NewSource(time.Now().UnixNano())
+// Returns error if credentials are not configured
+func NewSpotifyMetadataClient() (*SpotifyMetadataClient, error) {
+	// Get credentials - will error if not configured
+	clientID, clientSecret, err := getCredentials()
+	if err != nil {
+		return nil, err
+	}
 
-	// Get credentials (custom or default)
-	clientID, clientSecret := getCredentials()
+	src := rand.NewSource(time.Now().UnixNano())
 
 	c := &SpotifyMetadataClient{
 		httpClient:   NewHTTPClientWithTimeout(15 * time.Second), // Use shared transport for connection pooling
@@ -122,7 +140,7 @@ func NewSpotifyMetadataClient() *SpotifyMetadataClient {
 		albumCache:   make(map[string]*cacheEntry),
 	}
 	c.userAgent = c.randomUserAgent()
-	return c
+	return c, nil
 }
 
 // TrackMetadata represents track information
@@ -331,14 +349,14 @@ func (c *SpotifyMetadataClient) SearchTracks(ctx context.Context, query string, 
 	}
 
 	searchURL := fmt.Sprintf("%s?q=%s&type=track&limit=%d", searchBaseURL, url.QueryEscape(query), limit)
-	
+
 	var response struct {
 		Tracks struct {
 			Items []trackFull `json:"items"`
 			Total int         `json:"total"`
 		} `json:"tracks"`
 	}
-	
+
 	if err := c.getJSON(ctx, searchURL, token, &response); err != nil {
 		return nil, err
 	}
@@ -373,7 +391,7 @@ func (c *SpotifyMetadataClient) SearchTracks(ctx context.Context, query string, 
 func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, trackLimit, artistLimit int) (*SearchAllResult, error) {
 	// Create cache key
 	cacheKey := fmt.Sprintf("all:%s:%d:%d", query, trackLimit, artistLimit)
-	
+
 	// Check cache first
 	c.cacheMu.RLock()
 	if entry, ok := c.searchCache[cacheKey]; ok && !entry.isExpired() {
@@ -388,24 +406,24 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 	}
 
 	searchURL := fmt.Sprintf("%s?q=%s&type=track,artist&limit=%d", searchBaseURL, url.QueryEscape(query), trackLimit)
-	
+
 	var response struct {
 		Tracks struct {
 			Items []trackFull `json:"items"`
 		} `json:"tracks"`
 		Artists struct {
 			Items []struct {
-				ID         string  `json:"id"`
-				Name       string  `json:"name"`
-				Images     []image `json:"images"`
-				Followers  struct {
+				ID        string  `json:"id"`
+				Name      string  `json:"name"`
+				Images    []image `json:"images"`
+				Followers struct {
 					Total int `json:"total"`
 				} `json:"followers"`
 				Popularity int `json:"popularity"`
 			} `json:"items"`
 		} `json:"artists"`
 	}
-	
+
 	if err := c.getJSON(ctx, searchURL, token, &response); err != nil {
 		return nil, err
 	}
@@ -438,7 +456,7 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 	if artistCount > artistLimit {
 		artistCount = artistLimit
 	}
-	
+
 	for i := 0; i < artistCount; i++ {
 		artist := response.Artists.Items[i]
 		result.Artists = append(result.Artists, SearchArtistResult{
@@ -534,7 +552,7 @@ func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token s
 	// Collect all tracks (including paginated)
 	allTrackItems := data.Tracks.Items
 	nextURL := data.Tracks.Next
-	
+
 	// Fetch remaining tracks using pagination (no limit)
 	for nextURL != "" {
 		var pageData struct {
@@ -563,7 +581,7 @@ func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token s
 	tracks := make([]AlbumTrackMetadata, 0, len(allTrackItems))
 	for _, item := range allTrackItems {
 		isrc := isrcMap[item.ID]
-		
+
 		tracks = append(tracks, AlbumTrackMetadata{
 			SpotifyID:   item.ID,
 			Artists:     joinArtists(item.Artists),
@@ -602,23 +620,23 @@ func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token s
 // Similar to Deezer implementation for consistency
 func (c *SpotifyMetadataClient) fetchISRCsParallel(ctx context.Context, trackIDs []string, token string) map[string]string {
 	const maxParallelISRC = 10 // Max concurrent ISRC fetches
-	
+
 	result := make(map[string]string)
 	var resultMu sync.Mutex
-	
+
 	if len(trackIDs) == 0 {
 		return result
 	}
-	
+
 	// Use semaphore to limit concurrent requests
 	sem := make(chan struct{}, maxParallelISRC)
 	var wg sync.WaitGroup
-	
+
 	for _, trackID := range trackIDs {
 		wg.Add(1)
 		go func(id string) {
 			defer wg.Done()
-			
+
 			// Acquire semaphore
 			select {
 			case sem <- struct{}{}:
@@ -626,15 +644,15 @@ func (c *SpotifyMetadataClient) fetchISRCsParallel(ctx context.Context, trackIDs
 			case <-ctx.Done():
 				return
 			}
-			
+
 			isrc := c.fetchTrackISRC(ctx, id, token)
-			
+
 			resultMu.Lock()
 			result[id] = isrc
 			resultMu.Unlock()
 		}(trackID)
 	}
-	
+
 	wg.Wait()
 	return result
 }
@@ -668,7 +686,7 @@ func (c *SpotifyMetadataClient) fetchPlaylist(ctx context.Context, playlistID, t
 
 	// Pre-allocate with expected capacity
 	tracks := make([]AlbumTrackMetadata, 0, data.Tracks.Total)
-	
+
 	// Add first batch of tracks
 	for _, item := range data.Tracks.Items {
 		if item.Track == nil {
@@ -695,7 +713,7 @@ func (c *SpotifyMetadataClient) fetchPlaylist(ctx context.Context, playlistID, t
 
 	// Fetch remaining tracks using pagination (NO LIMIT - fetch all tracks)
 	nextURL := data.Tracks.Next
-	
+
 	for nextURL != "" {
 		var pageData struct {
 			Items []struct {
@@ -755,10 +773,10 @@ func (c *SpotifyMetadataClient) fetchArtist(ctx context.Context, artistID, token
 
 	// Fetch artist info
 	var artistData struct {
-		ID         string  `json:"id"`
-		Name       string  `json:"name"`
-		Images     []image `json:"images"`
-		Followers  struct {
+		ID        string  `json:"id"`
+		Name      string  `json:"name"`
+		Images    []image `json:"images"`
+		Followers struct {
 			Total int `json:"total"`
 		} `json:"followers"`
 		Popularity int `json:"popularity"`
@@ -941,15 +959,15 @@ func (c *SpotifyMetadataClient) randomUserAgent() string {
 	defer c.rngMu.Unlock()
 
 	// Use Mac User-Agent format (same as PC version)
-	macMajor := c.rng.Intn(4) + 11    // 11-14
-	macMinor := c.rng.Intn(5) + 4     // 4-8
-	webkitMajor := c.rng.Intn(7) + 530 // 530-536
-	webkitMinor := c.rng.Intn(7) + 30  // 30-36
-	chromeMajor := c.rng.Intn(25) + 80 // 80-104
+	macMajor := c.rng.Intn(4) + 11         // 11-14
+	macMinor := c.rng.Intn(5) + 4          // 4-8
+	webkitMajor := c.rng.Intn(7) + 530     // 530-536
+	webkitMinor := c.rng.Intn(7) + 30      // 30-36
+	chromeMajor := c.rng.Intn(25) + 80     // 80-104
 	chromeBuild := c.rng.Intn(1500) + 3000 // 3000-4499
-	chromePatch := c.rng.Intn(65) + 60 // 60-124
-	safariMajor := c.rng.Intn(7) + 530 // 530-536
-	safariMinor := c.rng.Intn(6) + 30  // 30-35
+	chromePatch := c.rng.Intn(65) + 60     // 60-124
+	safariMajor := c.rng.Intn(7) + 530     // 530-536
+	safariMinor := c.rng.Intn(6) + 30      // 30-35
 
 	return fmt.Sprintf(
 		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_%d_%d) AppleWebKit/%d.%d (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/%d.%d",

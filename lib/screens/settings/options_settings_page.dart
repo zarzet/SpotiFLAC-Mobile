@@ -76,38 +76,50 @@ class OptionsSettingsPage extends ConsumerWidget {
                         .setMetadataSource(v),
                   ),
                   if (settings.metadataSource == 'spotify') ...[
-                    SettingsSwitchItem(
-                      icon: Icons.toggle_on,
-                      title: 'Use Custom Credentials',
-                      subtitle: settings.useCustomSpotifyCredentials
-                          ? 'Using your credentials'
-                          : 'Using default credentials',
-                      value: settings.useCustomSpotifyCredentials,
-                      onChanged: (v) {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .setUseCustomSpotifyCredentials(v);
-                        if (v && settings.spotifyClientId.isEmpty) {
-                          _showSpotifyCredentialsDialog(context, ref, settings);
-                        }
-                      },
-                      showDivider: true,
-                    ),
+                    // Info card about Spotify credentials requirement
+                    if (settings.spotifyClientId.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Card(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Theme.of(context).colorScheme.onErrorContainer,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Spotify requires your own API credentials. Get them free from developer.spotify.com',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onErrorContainer,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     SettingsItem(
                       icon: Icons.key,
-                      title: 'Set Credentials',
+                      title: 'Spotify Credentials',
                       subtitle: settings.spotifyClientId.isNotEmpty
                           ? 'Client ID: ${settings.spotifyClientId.length > 8 ? '${settings.spotifyClientId.substring(0, 8)}...' : settings.spotifyClientId}'
-                          : 'Not configured',
+                          : 'Required - tap to configure',
                       onTap: () =>
                           _showSpotifyCredentialsDialog(context, ref, settings),
                       trailing: Icon(
                         settings.spotifyClientId.isNotEmpty
-                            ? Icons.edit
-                            : Icons.add,
+                            ? Icons.check_circle
+                            : Icons.error_outline,
                         color: settings.spotifyClientId.isNotEmpty
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : Theme.of(context).colorScheme.primary,
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.error,
                         size: 20,
                       ),
                       showDivider: false,
@@ -820,6 +832,8 @@ class _MetadataSourceSelector extends ConsumerWidget {
               _SourceChip(
                 icon: Icons.graphic_eq,
                 label: 'Deezer',
+                badge: 'Free',
+                badgeColor: colorScheme.tertiary,
                 // Not selected if extension is active
                 isSelected: currentSource == 'deezer' && !hasExtensionSearch,
                 onTap: () {
@@ -834,6 +848,8 @@ class _MetadataSourceSelector extends ConsumerWidget {
               _SourceChip(
                 icon: Icons.music_note,
                 label: 'Spotify',
+                badge: 'API Key',
+                badgeColor: colorScheme.secondary,
                 // Not selected if extension is active
                 isSelected: currentSource == 'spotify' && !hasExtensionSearch,
                 onTap: () {
@@ -878,12 +894,16 @@ class _SourceChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback? onTap;
+  final String? badge;
+  final Color? badgeColor;
 
   const _SourceChip({
     required this.icon,
     required this.label,
     required this.isSelected,
     this.onTap,
+    this.badge,
+    this.badgeColor,
   });
 
   @override
@@ -929,6 +949,24 @@ class _SourceChip extends StatelessWidget {
                         : colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (badge != null) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (badgeColor ?? colorScheme.tertiary).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                        color: badgeColor ?? colorScheme.tertiary,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

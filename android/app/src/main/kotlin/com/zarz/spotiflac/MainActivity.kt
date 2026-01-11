@@ -218,6 +218,12 @@ class MainActivity: FlutterActivity() {
                             }
                             result.success(null)
                         }
+                        "hasSpotifyCredentials" -> {
+                            val hasCredentials = withContext(Dispatchers.IO) {
+                                Gobackend.checkSpotifyCredentials()
+                            }
+                            result.success(hasCredentials)
+                        }
                         "preWarmTrackCache" -> {
                             val tracksJson = call.argument<String>("tracks") ?: "[]"
                             withContext(Dispatchers.IO) {

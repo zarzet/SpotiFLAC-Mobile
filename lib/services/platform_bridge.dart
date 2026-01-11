@@ -331,12 +331,18 @@ class PlatformBridge {
   }
 
   /// Set custom Spotify API credentials
-  /// Pass empty strings to use default credentials
   static Future<void> setSpotifyCredentials(String clientId, String clientSecret) async {
     await _channel.invokeMethod('setSpotifyCredentials', {
       'client_id': clientId,
       'client_secret': clientSecret,
     });
+  }
+
+  /// Check if Spotify credentials are configured
+  /// Returns true if credentials are available (custom or env vars)
+  static Future<bool> hasSpotifyCredentials() async {
+    final result = await _channel.invokeMethod('hasSpotifyCredentials');
+    return result as bool;
   }
 
   /// Pre-warm track ID cache for album/playlist tracks

@@ -256,6 +256,10 @@ import Gobackend  // Import Go framework
             GobackendSetSpotifyAPICredentials(clientId, clientSecret)
             return nil
             
+        case "hasSpotifyCredentials":
+            let hasCredentials = GobackendCheckSpotifyCredentials()
+            return hasCredentials
+            
         // Log methods
         case "getLogs":
             let response = GobackendGetLogs()

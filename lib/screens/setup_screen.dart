@@ -380,11 +380,10 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           _clientIdController.text.trim(),
           _clientSecretController.text.trim(),
         );
-        ref.read(settingsProvider.notifier).setUseCustomSpotifyCredentials(true);
-        // Set search source to Spotify when using custom credentials
+        // Set search source to Spotify when credentials are provided
         ref.read(settingsProvider.notifier).setMetadataSource('spotify');
       } else {
-        // Use Deezer as default search source
+        // Use Deezer as default search source (free, no credentials required)
         ref.read(settingsProvider.notifier).setMetadataSource('deezer');
       }
       
