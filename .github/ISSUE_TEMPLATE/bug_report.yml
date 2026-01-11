@@ -16,7 +16,7 @@ body:
       options:
         - label: I have searched existing issues and this bug hasn't been reported yet
           required: true
-        - label: I am using the latest version of SpotiFLAC
+        - label: I am using the latest version of SpotiFLAC (Stable Version)
           required: true
 
   - type: textarea

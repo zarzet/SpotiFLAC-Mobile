@@ -16,7 +16,7 @@ body:
       options:
         - label: I have tried downloading with a different service (Tidal/Qobuz/Amazon)
           required: true
-        - label: I am using the latest version of SpotiFLAC
+        - label: I am using the latest version of SpotiFLAC (Stable Version)
           required: true
 
   - type: dropdown

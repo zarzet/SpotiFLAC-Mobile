@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.2.8] - 2026-01-12
+
+### Added
+
+- **Multi-Select Batch Delete**: Long-press tracks in History to enter selection mode
+  - Select multiple tracks at once
+  - "Select All" and "Delete Selected" actions
+  - Modern Material 3 bottom action bar (slides up from bottom)
+  - Works in both grid and list view modes
+- **History Filter Tabs**: Filter history by All/Albums/Singles
+  - Album = tracks where album has >1 track in history
+  - Single = tracks where album has only 1 track in history
+  - Filter chips show counts for each category
+- **Album Grouping View**: When "Albums" filter is selected, tracks are grouped by album
+  - Album cards displayed in 2-column grid with cover art and track count badge
+  - Tap album to open dedicated album detail screen
+  - Album detail shows all downloaded tracks from that album
+  - Multi-select delete support within album view
+  - Auto-navigates back when album has <2 tracks remaining
+
+### Changed
+
+- **Issue Templates**: Updated version confirmation checkbox to specify "(Stable Version)"
+
 ## [2.2.7] - 2026-01-11
 
 ### Added

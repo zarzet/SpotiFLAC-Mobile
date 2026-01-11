@@ -148,6 +148,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
+  void setHistoryFilterMode(String mode) {
+    state = state.copyWith(historyFilterMode: mode);
+    _saveSettings();
+  }
+
   void setAskQualityBeforeDownload(bool enabled) {
     state = state.copyWith(askQualityBeforeDownload: enabled);
     _saveSettings();

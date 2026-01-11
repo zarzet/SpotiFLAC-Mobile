@@ -359,8 +359,9 @@ class DownloadSettingsPage extends ConsumerWidget {
     } else {
       // Android: Use file picker
       final result = await FilePicker.platform.getDirectoryPath();
-      if (result != null)
+      if (result != null) {
         ref.read(settingsProvider.notifier).setDownloadDirectory(result);
+      }
     }
   }
 
@@ -512,9 +513,7 @@ class DownloadSettingsPage extends ConsumerWidget {
               example: 'SpotiFLAC/Track.flac',
               isSelected: current == 'none',
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setFolderOrganization('none');
+                ref.read(settingsProvider.notifier).setFolderOrganization('none');
                 Navigator.pop(context);
               },
             ),
@@ -524,9 +523,7 @@ class DownloadSettingsPage extends ConsumerWidget {
               example: 'SpotiFLAC/Artist Name/Track.flac',
               isSelected: current == 'artist',
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setFolderOrganization('artist');
+                ref.read(settingsProvider.notifier).setFolderOrganization('artist');
                 Navigator.pop(context);
               },
             ),
@@ -536,9 +533,7 @@ class DownloadSettingsPage extends ConsumerWidget {
               example: 'SpotiFLAC/Album Name/Track.flac',
               isSelected: current == 'album',
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setFolderOrganization('album');
+                ref.read(settingsProvider.notifier).setFolderOrganization('album');
                 Navigator.pop(context);
               },
             ),
@@ -548,9 +543,7 @@ class DownloadSettingsPage extends ConsumerWidget {
               example: 'SpotiFLAC/Artist/Album/Track.flac',
               isSelected: current == 'artist_album',
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setFolderOrganization('artist_album');
+                ref.read(settingsProvider.notifier).setFolderOrganization('artist_album');
                 Navigator.pop(context);
               },
             ),

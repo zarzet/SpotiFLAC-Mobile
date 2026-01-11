@@ -18,6 +18,7 @@ class AppSettings {
   final bool hasSearchedBefore; // Hide helper text after first search
   final String folderOrganization; // none, artist, album, artist_album
   final String historyViewMode; // list, grid
+  final String historyFilterMode; // all, albums, singles
   final bool askQualityBeforeDownload; // Show quality picker before each download
   final String spotifyClientId; // Custom Spotify client ID (empty = use default)
   final String spotifyClientSecret; // Custom Spotify client secret (empty = use default)
@@ -40,6 +41,7 @@ class AppSettings {
     this.hasSearchedBefore = false, // Default: show helper text
     this.folderOrganization = 'none', // Default: no folder organization
     this.historyViewMode = 'grid', // Default: grid view
+    this.historyFilterMode = 'all', // Default: show all
     this.askQualityBeforeDownload = true, // Default: ask quality before download
     this.spotifyClientId = '', // Default: use built-in credentials
     this.spotifyClientSecret = '', // Default: use built-in credentials
@@ -63,6 +65,7 @@ class AppSettings {
     bool? hasSearchedBefore,
     String? folderOrganization,
     String? historyViewMode,
+    String? historyFilterMode,
     bool? askQualityBeforeDownload,
     String? spotifyClientId,
     String? spotifyClientSecret,
@@ -85,6 +88,7 @@ class AppSettings {
       hasSearchedBefore: hasSearchedBefore ?? this.hasSearchedBefore,
       folderOrganization: folderOrganization ?? this.folderOrganization,
       historyViewMode: historyViewMode ?? this.historyViewMode,
+      historyFilterMode: historyFilterMode ?? this.historyFilterMode,
       askQualityBeforeDownload: askQualityBeforeDownload ?? this.askQualityBeforeDownload,
       spotifyClientId: spotifyClientId ?? this.spotifyClientId,
       spotifyClientSecret: spotifyClientSecret ?? this.spotifyClientSecret,

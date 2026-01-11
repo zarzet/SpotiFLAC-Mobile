@@ -1,7 +1,7 @@
 name: spotiflac_android
 description: Download Spotify tracks in FLAC from Tidal, Qobuz & Amazon Music
 publish_to: "none"
-version: 2.2.7+49
+version: 2.2.8+50
 
 environment:
   sdk: ^3.10.0
