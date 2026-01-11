@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 
 final _log = AppLogger('ExtensionProvider');
 
@@ -528,6 +529,15 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }).toList();
       
       state = state.copyWith(extensions: extensions);
+      
+      // If disabling an extension that is the current search provider, clear it
+      if (!enabled) {
+        final settings = ref.read(settingsProvider);
+        if (settings.searchProvider == extensionId) {
+          ref.read(settingsProvider.notifier).setSearchProvider(null);
+          _log.d('Cleared search provider because extension $extensionId was disabled');
+        }
+      }
     } catch (e) {
       _log.e('Failed to set extension enabled: $e');
       state = state.copyWith(error: e.toString());

@@ -779,10 +779,15 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     if (searchProvider != null && searchProvider.isNotEmpty) {
       final extState = ref.read(extensionProvider);
       final ext = extState.extensions.where((e) => e.id == searchProvider).firstOrNull;
-      if (ext?.searchBehavior?.placeholder != null) {
-        return ext!.searchBehavior!.placeholder!;
+      // Only show extension placeholder if extension exists AND is enabled
+      if (ext != null && ext.enabled) {
+        if (ext.searchBehavior?.placeholder != null) {
+          return ext.searchBehavior!.placeholder!;
+        }
+        return 'Search with ${ext.displayName}...';
       }
-      return 'Search with ${ext?.displayName ?? 'extension'}...';
+      // Extension not found or disabled - clear the search provider setting
+      // and return default hint
     }
     return 'Paste Spotify URL or search...';
   }

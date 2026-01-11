@@ -369,6 +369,13 @@ func (m *ExtensionManager) SetExtensionEnabled(extensionID string, enabled bool)
 
 	ext.Enabled = enabled
 	GoLog("[Extension] %s %s\n", extensionID, map[bool]string{true: "enabled", false: "disabled"}[enabled])
+
+	// Persist enabled state to settings store
+	store := GetExtensionSettingsStore()
+	if err := store.Set(extensionID, "_enabled", enabled); err != nil {
+		GoLog("[Extension] Failed to persist enabled state for %s: %v\n", extensionID, err)
+	}
+
 	return nil
 }
 
@@ -455,6 +462,15 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 		Enabled:   true,
 		DataDir:   extDataDir,
 		SourceDir: dirPath,
+	}
+
+	// Restore enabled state from settings store
+	store := GetExtensionSettingsStore()
+	if enabledVal, err := store.Get(manifest.Name, "_enabled"); err == nil {
+		if enabled, ok := enabledVal.(bool); ok {
+			ext.Enabled = enabled
+			GoLog("[Extension] Restored enabled state for %s: %v\n", manifest.Name, enabled)
+		}
 	}
 
 	// Initialize Goja VM
