@@ -281,6 +281,221 @@ import Gobackend  // Import Go framework
             GobackendSetLoggingEnabled(enabled)
             return nil
             
+        // Extension System methods
+        case "initExtensionSystem":
+            let args = call.arguments as! [String: Any]
+            let extensionsDir = args["extensions_dir"] as! String
+            let dataDir = args["data_dir"] as! String
+            GobackendInitExtensionSystem(extensionsDir, dataDir, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "loadExtensionsFromDir":
+            let args = call.arguments as! [String: Any]
+            let dirPath = args["dir_path"] as! String
+            let response = GobackendLoadExtensionsFromDir(dirPath, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "loadExtensionFromPath":
+            let args = call.arguments as! [String: Any]
+            let filePath = args["file_path"] as! String
+            let response = GobackendLoadExtensionFromPath(filePath, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "unloadExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            GobackendUnloadExtensionByID(extensionId, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "getInstalledExtensions":
+            let response = GobackendGetInstalledExtensions(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "setExtensionEnabled":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let enabled = args["enabled"] as? Bool ?? false
+            GobackendSetExtensionEnabledByID(extensionId, enabled, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "setProviderPriority":
+            let args = call.arguments as! [String: Any]
+            let priorityJson = args["priority"] as! String
+            GobackendSetProviderPriorityJSON(priorityJson, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "getProviderPriority":
+            let response = GobackendGetProviderPriorityJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "setMetadataProviderPriority":
+            let args = call.arguments as! [String: Any]
+            let priorityJson = args["priority"] as! String
+            GobackendSetMetadataProviderPriorityJSON(priorityJson, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "getMetadataProviderPriority":
+            let response = GobackendGetMetadataProviderPriorityJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "getExtensionSettings":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let response = GobackendGetExtensionSettingsJSON(extensionId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "setExtensionSettings":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let settingsJson = args["settings"] as! String
+            GobackendSetExtensionSettingsJSON(extensionId, settingsJson, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "searchTracksWithExtensions":
+            let args = call.arguments as! [String: Any]
+            let query = args["query"] as! String
+            let limit = args["limit"] as? Int ?? 20
+            let response = GobackendSearchTracksWithExtensionsJSON(query, Int(limit), &error)
+            if let error = error { throw error }
+            return response
+            
+        case "downloadWithExtensions":
+            let requestJson = call.arguments as! String
+            let response = GobackendDownloadWithExtensionsJSON(requestJson, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "removeExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            GobackendRemoveExtensionByID(extensionId, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "upgradeExtension":
+            let args = call.arguments as! [String: Any]
+            let filePath = args["file_path"] as! String
+            let response = GobackendUpgradeExtensionFromPath(filePath, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "checkExtensionUpgrade":
+            let args = call.arguments as! [String: Any]
+            let filePath = args["file_path"] as! String
+            let response = GobackendCheckExtensionUpgradeFromPath(filePath, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "cleanupExtensions":
+            GobackendCleanupExtensions()
+            return nil
+            
+        // Extension Auth API
+        case "getExtensionPendingAuth":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let response = GobackendGetExtensionPendingAuthJSON(extensionId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "setExtensionAuthCode":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let authCode = args["auth_code"] as! String
+            GobackendSetExtensionAuthCode(extensionId, authCode, &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "setExtensionTokens":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let accessToken = args["access_token"] as! String
+            let refreshToken = args["refresh_token"] as? String ?? ""
+            let expiresIn = args["expires_in"] as? Int ?? 0
+            GobackendSetExtensionTokens(extensionId, accessToken, refreshToken, Int(expiresIn), &error)
+            if let error = error { throw error }
+            return nil
+            
+        case "clearExtensionPendingAuth":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            GobackendClearExtensionPendingAuth(extensionId)
+            return nil
+            
+        case "isExtensionAuthenticated":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let response = GobackendIsExtensionAuthenticated(extensionId)
+            return response
+            
+        case "getAllPendingAuthRequests":
+            let response = GobackendGetAllPendingAuthRequestsJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        // Extension FFmpeg API
+        case "getPendingFFmpegCommand":
+            let args = call.arguments as! [String: Any]
+            let commandId = args["command_id"] as! String
+            let response = GobackendGetPendingFFmpegCommandJSON(commandId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "setFFmpegCommandResult":
+            let args = call.arguments as! [String: Any]
+            let commandId = args["command_id"] as! String
+            let success = args["success"] as? Bool ?? false
+            let output = args["output"] as? String ?? ""
+            let errorMsg = args["error"] as? String ?? ""
+            GobackendSetFFmpegCommandResult(commandId, success, output, errorMsg)
+            return nil
+            
+        case "getAllPendingFFmpegCommands":
+            let response = GobackendGetAllPendingFFmpegCommandsJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        // Extension Custom Search API
+        case "customSearchWithExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let query = args["query"] as! String
+            let optionsJson = args["options"] as? String ?? ""
+            let response = GobackendCustomSearchWithExtensionJSON(extensionId, query, optionsJson, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "getSearchProviders":
+            let response = GobackendGetSearchProvidersJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        // Extension Post-Processing API
+        case "runPostProcessing":
+            let args = call.arguments as! [String: Any]
+            let filePath = args["file_path"] as! String
+            let metadataJson = args["metadata"] as? String ?? ""
+            let response = GobackendRunPostProcessingJSON(filePath, metadataJson, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "getPostProcessingProviders":
+            let response = GobackendGetPostProcessingProvidersJSON(&error)
+            if let error = error { throw error }
+            return response
+            
         default:
             throw NSError(
                 domain: "SpotiFLAC",

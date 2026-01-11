@@ -233,7 +233,7 @@ func PreWarmTrackCache(requests []PreWarmCacheRequest) {
 	fmt.Printf("[Cache] Pre-warm complete. Cache size: %d\n", cache.Size())
 }
 
-func preWarmTidalCache(isrc, trackName, artistName string) {
+func preWarmTidalCache(isrc, _, _ string) {
 	downloader := NewTidalDownloader()
 	track, err := downloader.SearchTrackByISRC(isrc)
 	if err == nil && track != nil {
@@ -272,7 +272,7 @@ func PreWarmCache(tracksJSON string) error {
 	var requests []PreWarmCacheRequest
 	// Parse JSON (simplified - in production use proper JSON parsing)
 	// For now, this is called from exports.go with proper parsing
-	
+
 	go PreWarmTrackCache(requests) // Run in background
 	return nil
 }

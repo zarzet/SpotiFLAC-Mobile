@@ -173,7 +173,7 @@ func (a *AmazonDownloader) GetAvailableAPIs() []string {
 // downloadFromDoubleDoubleService downloads a track using DoubleDouble service (same as PC)
 // This uses submit → poll → download mechanism
 // Internal function - not exported to gomobile
-func (a *AmazonDownloader) downloadFromDoubleDoubleService(amazonURL, outputDir string) (string, string, string, error) {
+func (a *AmazonDownloader) downloadFromDoubleDoubleService(amazonURL, _ string) (string, string, string, error) {
 	var lastError error
 
 	for _, region := range a.regions {

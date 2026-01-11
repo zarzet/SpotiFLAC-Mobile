@@ -133,6 +133,7 @@ class SettingsSwitchItem extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
   final bool showDivider;
+  final bool enabled;
 
   const SettingsSwitchItem({
     super.key,
@@ -142,53 +143,60 @@ class SettingsSwitchItem extends StatelessWidget {
     required this.value,
     this.onChanged,
     this.showDivider = true,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDisabled = !enabled || onChanged == null;
     
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        InkWell(
-          onTap: onChanged != null ? () => onChanged!(!value) : null,
-          splashColor: colorScheme.primary.withValues(alpha: 0.12),
-          highlightColor: colorScheme.primary.withValues(alpha: 0.08),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, color: colorScheme.onSurfaceVariant, size: 24),
-                  const SizedBox(width: 16),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 2),
+        Opacity(
+          opacity: isDisabled ? 0.5 : 1.0,
+          child: InkWell(
+            onTap: isDisabled ? null : () => onChanged!(!value),
+            splashColor: colorScheme.primary.withValues(alpha: 0.12),
+            highlightColor: colorScheme.primary.withValues(alpha: 0.08),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, color: isDisabled ? colorScheme.outline : colorScheme.onSurfaceVariant, size: 24),
+                    const SizedBox(width: 16),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          subtitle!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                          title,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: isDisabled ? colorScheme.outline : null,
                           ),
                         ),
+                        if (subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle!,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isDisabled ? colorScheme.outline : colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Switch(
-                  value: value,
-                  onChanged: onChanged,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: value,
+                    onChanged: isDisabled ? null : onChanged,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -9,6 +9,7 @@ import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
@@ -831,6 +832,56 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _saveQueueToStorage(); // Persist queue
   }
 
+  /// Run post-processing hooks on a downloaded file
+  Future<void> _runPostProcessingHooks(String filePath, Track track) async {
+    try {
+      final settings = ref.read(settingsProvider);
+      final extensionState = ref.read(extensionProvider);
+      
+      // Check if post-processing is enabled and there are extensions with hooks
+      if (!settings.useExtensionProviders) return;
+      
+      final hasPostProcessing = extensionState.extensions.any(
+        (e) => e.enabled && e.hasPostProcessing,
+      );
+      if (!hasPostProcessing) return;
+      
+      _log.d('Running post-processing hooks on: $filePath');
+      
+      // Build metadata map for post-processing
+      final metadata = <String, dynamic>{
+        'title': track.name,
+        'artist': track.artistName,
+        'album': track.albumName,
+        'album_artist': track.albumArtist ?? track.artistName,
+        'track_number': track.trackNumber ?? 1,
+        'disc_number': track.discNumber ?? 1,
+        'isrc': track.isrc ?? '',
+        'release_date': track.releaseDate ?? '',
+        'duration_ms': track.duration * 1000,
+        'cover_url': track.coverUrl ?? '',
+      };
+      
+      final result = await PlatformBridge.runPostProcessing(filePath, metadata: metadata);
+      
+      if (result['success'] == true) {
+        final hooksRun = result['hooks_run'] as int? ?? 0;
+        final newPath = result['file_path'] as String?;
+        _log.i('Post-processing completed: $hooksRun hook(s) executed');
+        
+        if (newPath != null && newPath != filePath) {
+          _log.d('File path changed by post-processing: $newPath');
+        }
+      } else {
+        final error = result['error'] as String? ?? 'Unknown error';
+        _log.w('Post-processing failed: $error');
+      }
+    } catch (e) {
+      _log.w('Post-processing error: $e');
+      // Don't fail the download if post-processing fails
+    }
+  }
+
   /// Embed metadata and cover to a FLAC file after M4A conversion
   Future<void> _embedMetadataAndCover(String flacPath, Track track) async {
     // Download cover first
@@ -1282,7 +1333,37 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       Map<String, dynamic> result;
 
-      if (state.autoFallback) {
+      // Check if extension providers should be used
+      final extensionState = ref.read(extensionProvider);
+      final hasActiveExtensions = extensionState.extensions.any((e) => e.enabled);
+      final useExtensions = settings.useExtensionProviders && hasActiveExtensions;
+
+      if (useExtensions) {
+        // Use extension providers (includes fallback to built-in services)
+        _log.d('Using extension providers for download');
+        _log.d(
+          'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}',
+        );
+        _log.d('Output dir: $outputDir');
+        result = await PlatformBridge.downloadWithExtensions(
+          isrc: trackToDownload.isrc ?? '',
+          spotifyId: trackToDownload.id,
+          trackName: trackToDownload.name,
+          artistName: trackToDownload.artistName,
+          albumName: trackToDownload.albumName,
+          albumArtist: trackToDownload.albumArtist,
+          coverUrl: trackToDownload.coverUrl,
+          outputDir: outputDir,
+          filenameFormat: state.filenameFormat,
+          quality: quality,
+          trackNumber: trackToDownload.trackNumber ?? 1,
+          discNumber: trackToDownload.discNumber ?? 1,
+          releaseDate: trackToDownload.releaseDate,
+          itemId: item.id,
+          durationMs: trackToDownload.duration,
+          source: trackToDownload.source, // Pass extension ID that provided this track
+        );
+      } else if (state.autoFallback) {
         _log.d('Using auto-fallback mode');
         _log.d(
           'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}',
@@ -1501,6 +1582,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           progress: 1.0,
           filePath: filePath,
         );
+
+        // Run post-processing hooks if enabled
+        if (filePath != null) {
+          await _runPostProcessingHooks(filePath, trackToDownload);
+        }
 
         // Increment completed counter
         _completedInSession++;

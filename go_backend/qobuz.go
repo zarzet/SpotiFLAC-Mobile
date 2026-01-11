@@ -271,14 +271,15 @@ func qobuzIsLatinScript(s string) bool {
 }
 
 // qobuzIsASCIIString checks if a string contains only ASCII characters
-func qobuzIsASCIIString(s string) bool {
-	for _, r := range s {
-		if r > 127 {
-			return false
-		}
-	}
-	return true
-}
+// Kept for potential future use
+// func qobuzIsASCIIString(s string) bool {
+// 	for _, r := range s {
+// 		if r > 127 {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
 
 // containsQueryQobuz checks if a query already exists in the list
 func containsQueryQobuz(queries []string, query string) bool {

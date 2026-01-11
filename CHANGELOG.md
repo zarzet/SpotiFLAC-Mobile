@@ -1,5 +1,98 @@
 # Changelog
 
+## [3.0.0-alpha.1] - 2026-01-11
+
+#### Extension System
+- **Custom Search Providers**: Extensions can now provide custom search functionality
+  - YouTube, SoundCloud, and other platforms via extensions
+  - Custom search placeholder text per extension
+  - Configurable thumbnail aspect ratios (square, wide, portrait)
+- **Extension Upgrade System**: Upgrade extensions without losing data
+  - Preserves extension settings and cached data during upgrades
+  - Version comparison prevents downgrades
+  - Auto-detects upgrades when installing same extension
+- **Custom Thumbnail Ratios**: Extensions can specify thumbnail display format
+  - `"square"` (1:1) - Album art style (default)
+  - `"wide"` (16:9) - YouTube/video style
+  - `"portrait"` (2:3) - Poster style
+  - Custom width/height override available
+
+### Added
+
+- **Track Source Tracking**: Tracks now remember which extension provided them
+  - `Track.source` field stores extension ID
+  - `TrackState.searchExtensionId` for current search context
+  - Enables extension-specific UI customization
+- **Extension Upgrade API**: New methods for extension management
+  - `upgradeExtension(filePath)` - Upgrade existing extension
+  - `checkExtensionUpgrade(filePath)` - Check if file is an upgrade
+  - `RemoveExtensionByID` - Remove extension by ID
+- **iOS Extension Support**: Added missing iOS method handlers
+  - `upgradeExtension` - Upgrade extension from file
+  - `checkExtensionUpgrade` - Check upgrade compatibility
+- **Extension Documentation**: Comprehensive extension development guide
+  - Thumbnail ratio customization documentation
+  - Extension upgrade workflow documentation
+  - New troubleshooting entries for common issues
+
+### Changed
+
+- **Version Bump**: 2.2.7 → 3.0.0-alpha.1 (major version for extension system)
+- **Build Number**: 49 → 50
+- **Extension Manager**: Improved upgrade detection in `LoadExtensionFromFile`
+  - Auto-detects if installing same extension with higher version
+  - Calls `UpgradeExtension` automatically for seamless upgrades
+
+### Fixed
+
+- **Extension `registerExtension`**: Fixed global `extension` variable not being set
+  - Extensions can now access their own functions via `extension.functionName()`
+  - Required for `customSearch` and other provider functions
+- **Custom Search Empty Results**: Fixed error when extension returns null
+  - Now returns empty array instead of error
+  - Prevents crash when no results found
+- **Mutex Crash on Upgrade**: Fixed "Unlock of unlocked RWMutex" crash
+  - Removed `defer m.mu.Unlock()` when manual unlock is used
+  - Proper lock handling in upgrade flow
+- **Duplicate Error Messages**: Fixed extension install errors showing twice
+  - Added `clearError()` method to extension provider
+  - Improved PlatformException parsing to remove "null, null" artifacts
+- **Extension Images Field**: Fixed thumbnails not showing in search results
+  - Added `Images` field to `ExtTrackMetadata` struct
+  - Renamed `GetCoverURL` to `ResolvedCoverURL` (gomobile conflict)
+
+### Technical
+
+- **Go Backend Changes**:
+  - `go_backend/extension_manager.go`: Added `compareVersions()`, `UpgradeExtension()`, `CheckExtensionUpgradeJSON()`
+  - `go_backend/extension_providers.go`: Added `Images` field, `ResolvedCoverURL()` method
+  - `go_backend/extension_manifest.go`: Added `ThumbnailRatio`, `ThumbnailWidth`, `ThumbnailHeight` to `SearchBehaviorConfig`
+  - `go_backend/exports.go`: Added `RemoveExtensionByID`, `UpgradeExtensionFromPath`, `CheckExtensionUpgradeFromPath`
+- **Flutter Changes**:
+  - `lib/models/track.dart`: Added `source` field
+  - `lib/models/track.g.dart`: Updated for `source` field
+  - `lib/providers/track_provider.dart`: Added `searchExtensionId`, updated `_parseSearchTrack` with source parameter
+  - `lib/providers/extension_provider.dart`: Added `SearchBehavior.getThumbnailSize()`, `clearError()`
+  - `lib/screens/home_tab.dart`: Dynamic thumbnail size based on extension config
+  - `lib/screens/settings/extensions_page.dart`: Improved error handling
+  - `lib/services/platform_bridge.dart`: Added `upgradeExtension()`, `checkExtensionUpgrade()`, `removeExtension()`
+- **iOS Changes**:
+  - `ios/Runner/AppDelegate.swift`: Added `upgradeExtension`, `checkExtensionUpgrade` handlers
+- **Android Changes**:
+  - `android/app/src/main/kotlin/com/zarz/spotiflac/MainActivity.kt`: Already had upgrade methods
+
+### Documentation
+
+- Updated `docs/EXTENSION_DEVELOPMENT.md`:
+  - Added thumbnail ratio customization section
+  - Added extension upgrade documentation
+  - Added settings fields table with `secret` field
+  - Added new troubleshooting entries
+  - Updated table of contents
+  - Updated changelog
+
+---
+
 ## [2.2.7] - 2026-01-11
 
 ### Added

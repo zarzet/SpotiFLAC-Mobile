@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/screens/settings/appearance_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/download_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/extensions_page.dart';
 import 'package:spotiflac_android/screens/settings/options_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/about_page.dart';
 import 'package:spotiflac_android/screens/settings/log_screen.dart';
@@ -31,8 +32,11 @@ class SettingsTab extends ConsumerWidget {
             builder: (context, constraints) {
               final maxHeight = 120 + topPadding;
               final minHeight = kToolbarHeight + topPadding;
-              final expandRatio = ((constraints.maxHeight - minHeight) / (maxHeight - minHeight)).clamp(0.0, 1.0);
-              
+              final expandRatio =
+                  ((constraints.maxHeight - minHeight) /
+                          (maxHeight - minHeight))
+                      .clamp(0.0, 1.0);
+
               return FlexibleSpaceBar(
                 expandedTitleScale: 1.0,
                 titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
@@ -58,7 +62,8 @@ class SettingsTab extends ConsumerWidget {
                 icon: Icons.palette_outlined,
                 title: 'Appearance',
                 subtitle: 'Theme, colors, display',
-                onTap: () => _navigateTo(context, const AppearanceSettingsPage()),
+                onTap: () =>
+                    _navigateTo(context, const AppearanceSettingsPage()),
               ),
               SettingsItem(
                 icon: Icons.download_outlined,
@@ -71,6 +76,12 @@ class SettingsTab extends ConsumerWidget {
                 title: 'Options',
                 subtitle: 'Fallback, lyrics, cover art, updates',
                 onTap: () => _navigateTo(context, const OptionsSettingsPage()),
+              ),
+              SettingsItem(
+                icon: Icons.extension_outlined,
+                title: 'Extensions',
+                subtitle: 'Manage download providers',
+                onTap: () => _navigateTo(context, const ExtensionsPage()),
                 showDivider: false,
               ),
             ],
@@ -97,7 +108,7 @@ class SettingsTab extends ConsumerWidget {
             ],
           ),
         ),
-        
+
         // Fill remaining space
         const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
       ],

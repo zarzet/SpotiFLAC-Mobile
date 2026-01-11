@@ -7,6 +7,7 @@ import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
 /// Simple in-memory cache for album tracks
 class _AlbumCache {
@@ -316,10 +317,16 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   void _downloadTrack(BuildContext context, Track track) {
     final settings = ref.read(settingsProvider);
     if (settings.askQualityBeforeDownload) {
-      _showQualityPicker(context, (quality, service) {
-        ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
-      }, trackName: track.name, artistName: track.artistName, coverUrl: track.coverUrl);
+      DownloadServicePicker.show(
+        context,
+        trackName: track.name,
+        artistName: track.artistName,
+        coverUrl: track.coverUrl,
+        onSelect: (quality, service) {
+          ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+        },
+      );
     } else {
       ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
@@ -331,82 +338,19 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     if (tracks == null || tracks.isEmpty) return;
     final settings = ref.read(settingsProvider);
     if (settings.askQualityBeforeDownload) {
-      _showQualityPicker(context, (quality, service) {
-        ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, service, qualityOverride: quality);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
-      }, trackName: '${tracks.length} tracks', artistName: widget.albumName);
+      DownloadServicePicker.show(
+        context,
+        trackName: '${tracks.length} tracks',
+        artistName: widget.albumName,
+        onSelect: (quality, service) {
+          ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, service, qualityOverride: quality);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
+        },
+      );
     } else {
       ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
     }
-  }
-
-  void _showQualityPicker(BuildContext context, void Function(String quality, String service) onSelect, {String? trackName, String? artistName, String? coverUrl}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final settings = ref.read(settingsProvider);
-    String selectedService = settings.defaultService;
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (trackName != null) ...[
-                  _TrackInfoHeader(trackName: trackName, artistName: artistName, coverUrl: coverUrl),
-                  Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                ] else ...[
-                  const SizedBox(height: 8),
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2)))),
-                ],
-                // Service selector
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Text('Download From', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _ServiceChip(label: 'Tidal', isSelected: selectedService == 'tidal', onTap: () => setModalState(() => selectedService = 'tidal')),
-                      const SizedBox(width: 8),
-                      _ServiceChip(label: 'Qobuz', isSelected: selectedService == 'qobuz', onTap: () => setModalState(() => selectedService = 'qobuz')),
-                      const SizedBox(width: 8),
-                      _ServiceChip(label: 'Amazon', isSelected: selectedService == 'amazon', onTap: () => setModalState(() => selectedService = 'amazon')),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Text('Select Quality', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                // Disclaimer
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                  child: Text(
-                    'Actual quality depends on track availability. Hi-Res may not be available for all tracks.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-                _QualityOption(title: 'FLAC Lossless', subtitle: '16-bit / 44.1kHz', icon: Icons.music_note, onTap: () { Navigator.pop(context); onSelect('LOSSLESS', selectedService); }),
-                _QualityOption(title: 'Hi-Res FLAC', subtitle: '24-bit / up to 96kHz', icon: Icons.high_quality, onTap: () { Navigator.pop(context); onSelect('HI_RES', selectedService); }),
-                _QualityOption(title: 'Hi-Res FLAC Max', subtitle: '24-bit / up to 192kHz', icon: Icons.four_k, onTap: () { Navigator.pop(context); onSelect('HI_RES_LOSSLESS', selectedService); }),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   /// Build error widget with special handling for rate limit (429)
@@ -466,148 +410,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             Icon(Icons.error_outline, color: colorScheme.error),
             const SizedBox(width: 12),
             Expanded(child: Text(error, style: TextStyle(color: colorScheme.error))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QualityOption extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _QualityOption({required this.title, required this.subtitle, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 20)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: TextStyle(color: colorScheme.onSurfaceVariant)),
-      onTap: onTap,
-    );
-  }
-}
-
-class _ServiceChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const _ServiceChip({required this.label, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected ? null : Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrackInfoHeader extends StatefulWidget {
-  final String trackName;
-  final String? artistName;
-  final String? coverUrl;
-  const _TrackInfoHeader({required this.trackName, this.artistName, this.coverUrl});
-
-  @override
-  State<_TrackInfoHeader> createState() => _TrackInfoHeaderState();
-}
-
-class _TrackInfoHeaderState extends State<_TrackInfoHeader> {
-  bool _expanded = false;
-  bool _isOverflowing = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isOverflowing ? () => setState(() => _expanded = !_expanded) : null,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2))),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: widget.coverUrl != null
-                        ? Image.network(widget.coverUrl!, width: 56, height: 56, fit: BoxFit.cover,
-                            errorBuilder: (_, e, s) => Container(width: 56, height: 56, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant)))
-                        : Container(width: 56, height: 56, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
-                        final titleSpan = TextSpan(text: widget.trackName, style: titleStyle);
-                        final titlePainter = TextPainter(text: titleSpan, maxLines: 1, textDirection: TextDirection.ltr)..layout(maxWidth: constraints.maxWidth);
-                        final titleOverflows = titlePainter.didExceedMaxLines;
-                        
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted && _isOverflowing != titleOverflows) {
-                            setState(() => _isOverflowing = titleOverflows);
-                          }
-                        });
-                        
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.trackName,
-                              style: titleStyle,
-                              maxLines: _expanded ? 10 : 1,
-                              overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                            ),
-                            if (widget.artistName != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                widget.artistName!,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                                maxLines: _expanded ? 3 : 1,
-                                overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  if (_isOverflowing || _expanded)
-                    Icon(_expanded ? Icons.expand_less : Icons.expand_more, color: colorScheme.onSurfaceVariant, size: 20),
-                ],
-              ),
-            ),
           ],
         ),
       ),

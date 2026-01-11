@@ -8,12 +8,14 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
 import 'package:spotiflac_android/services/csv_import_service.dart';
 import 'package:spotiflac_android/screens/playlist_screen.dart';
 import 'package:spotiflac_android/models/download_item.dart';
+import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -78,12 +80,21 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   }
 
   Future<void> _performSearch(String query) async {
-    // Skip if same query already searched
-    if (_lastSearchQuery == query) return;
-    _lastSearchQuery = query;
-    
     final settings = ref.read(settingsProvider);
-    await ref.read(trackProvider.notifier).search(query, metadataSource: settings.metadataSource);
+    final searchProvider = settings.searchProvider;
+    
+    // Skip if same query already searched with same provider
+    final searchKey = '${searchProvider ?? 'default'}:$query';
+    if (_lastSearchQuery == searchKey) return;
+    _lastSearchQuery = searchKey;
+    
+    if (searchProvider != null && searchProvider.isNotEmpty) {
+      // Use custom search from extension
+      await ref.read(trackProvider.notifier).customSearch(searchProvider, query);
+    } else {
+      // Use default search (Deezer/Spotify)
+      await ref.read(trackProvider.notifier).search(query, metadataSource: settings.metadataSource);
+    }
     ref.read(settingsProvider.notifier).setHasSearchedBefore();
   }
 
@@ -173,98 +184,21 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       final settings = ref.read(settingsProvider);
       
       if (settings.askQualityBeforeDownload) {
-        _showQualityPicker(context, (quality, service) {
-          ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
-        }, trackName: track.name, artistName: track.artistName, coverUrl: track.coverUrl);
+        DownloadServicePicker.show(
+          context,
+          trackName: track.name,
+          artistName: track.artistName,
+          coverUrl: track.coverUrl,
+          onSelect: (quality, service) {
+            ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+          },
+        );
       } else {
         ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
       }
     }
-  }
-
-  void _showQualityPicker(BuildContext context, void Function(String quality, String service) onSelect, {String? trackName, String? artistName, String? coverUrl}) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final settings = ref.read(settingsProvider);
-    String selectedService = settings.defaultService;
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (trackName != null) ...[
-                  _TrackInfoHeader(trackName: trackName, artistName: artistName, coverUrl: coverUrl),
-                  Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                ] else ...[
-                  const SizedBox(height: 8),
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2)))),
-                ],
-                // Service selector
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Text('Download From', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _ServiceChip(label: 'Tidal', isSelected: selectedService == 'tidal', onTap: () => setModalState(() => selectedService = 'tidal')),
-                      const SizedBox(width: 8),
-                      _ServiceChip(label: 'Qobuz', isSelected: selectedService == 'qobuz', onTap: () => setModalState(() => selectedService = 'qobuz')),
-                      const SizedBox(width: 8),
-                      _ServiceChip(label: 'Amazon', isSelected: selectedService == 'amazon', onTap: () => setModalState(() => selectedService = 'amazon')),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                  child: Text('Select Quality', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                // Disclaimer
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                  child: Text(
-                    'Actual quality depends on track availability. Hi-Res may not be available for all tracks.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-                _QualityPickerOption(
-                  title: 'FLAC Lossless',
-                  subtitle: '16-bit / 44.1kHz',
-                  icon: Icons.music_note,
-                  onTap: () { Navigator.pop(context); onSelect('LOSSLESS', selectedService); },
-                ),
-                _QualityPickerOption(
-                  title: 'Hi-Res FLAC',
-                  subtitle: '24-bit / up to 96kHz',
-                  icon: Icons.high_quality,
-                  onTap: () { Navigator.pop(context); onSelect('HI_RES', selectedService); },
-                ),
-                _QualityPickerOption(
-                  title: 'Hi-Res FLAC Max',
-                  subtitle: '24-bit / up to 192kHz',
-                  icon: Icons.four_k,
-                  onTap: () { Navigator.pop(context); onSelect('HI_RES_LOSSLESS', selectedService); },
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
@@ -273,18 +207,17 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     int totalTracks = 0;
     
     // Use StatefulBuilder to update dialog content
-    final dialogContext = context;
     bool dialogShown = false;
     StateSetter? setDialogState;
     
     void showProgressDialog() {
-      if (dialogShown) return;
+      if (dialogShown || !mounted) return;
       dialogShown = true;
       showDialog(
-        context: dialogContext,
+        context: this.context,
         barrierDismissible: false,
-        builder: (context) => StatefulBuilder(
-          builder: (context, setState) {
+        builder: (dialogCtx) => StatefulBuilder(
+          builder: (dialogCtx, setState) {
             setDialogState = setState;
             return AlertDialog(
               content: Column(
@@ -318,25 +251,27 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     
     // Close progress dialog
     if (dialogShown && mounted) {
-      Navigator.of(dialogContext).pop();
+      Navigator.of(this.context).pop();
     }
     
     if (tracks.isNotEmpty) {
       final settings = ref.read(settingsProvider);
       
+      if (!mounted) return;
+      
       // Optionally show confirmation dialog
       final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
+        context: this.context,
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Import Playlist'),
           content: Text('Found ${tracks.length} tracks in CSV. Add them to download queue?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogCtx, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Import'),
             ),
           ],
@@ -346,7 +281,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (confirmed == true) {
         ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
+           ScaffoldMessenger.of(this.context).showSnackBar(
             SnackBar(
               content: Text('Added ${tracks.length} tracks to queue'),
               action: SnackBarAction(
@@ -836,6 +771,22 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     ));
   }
 
+  /// Get search hint based on selected provider
+  String _getSearchHint() {
+    final settings = ref.read(settingsProvider);
+    final searchProvider = settings.searchProvider;
+    
+    if (searchProvider != null && searchProvider.isNotEmpty) {
+      final extState = ref.read(extensionProvider);
+      final ext = extState.extensions.where((e) => e.id == searchProvider).firstOrNull;
+      if (ext?.searchBehavior?.placeholder != null) {
+        return ext!.searchBehavior!.placeholder!;
+      }
+      return 'Search with ${ext?.displayName ?? 'extension'}...';
+    }
+    return 'Paste Spotify URL or search...';
+  }
+
   Widget _buildSearchBar(ColorScheme colorScheme) {
     final hasText = _urlController.text.isNotEmpty;
     
@@ -844,7 +795,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       focusNode: _searchFocusNode,
       autofocus: false,
       decoration: InputDecoration(
-        hintText: 'Paste Spotify URL or search...',
+        hintText: _getSearchHint(),
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
@@ -910,147 +861,6 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
 
 }
 
-class _QualityPickerOption extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _QualityPickerOption({required this.title, required this.subtitle, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-      leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 20)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: TextStyle(color: colorScheme.onSurfaceVariant)),
-      onTap: onTap,
-    );
-  }
-}
-
-class _ServiceChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const _ServiceChip({required this.label, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected ? null : Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrackInfoHeader extends StatefulWidget {
-  final String trackName;
-  final String? artistName;
-  final String? coverUrl;
-  const _TrackInfoHeader({required this.trackName, this.artistName, this.coverUrl});
-
-  @override
-  State<_TrackInfoHeader> createState() => _TrackInfoHeaderState();
-}
-
-class _TrackInfoHeaderState extends State<_TrackInfoHeader> {
-  bool _expanded = false;
-  bool _isOverflowing = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isOverflowing ? () => setState(() => _expanded = !_expanded) : null,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2))),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: widget.coverUrl != null
-                        ? Image.network(widget.coverUrl!, width: 56, height: 56, fit: BoxFit.cover,
-                            errorBuilder: (_, e, s) => Container(width: 56, height: 56, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant)))
-                        : Container(width: 56, height: 56, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant)),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
-                        final titleSpan = TextSpan(text: widget.trackName, style: titleStyle);
-                        final titlePainter = TextPainter(text: titleSpan, maxLines: 1, textDirection: TextDirection.ltr)..layout(maxWidth: constraints.maxWidth);
-                        final titleOverflows = titlePainter.didExceedMaxLines;
-                        
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted && _isOverflowing != titleOverflows) {
-                            setState(() => _isOverflowing = titleOverflows);
-                          }
-                        });
-                        
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.trackName,
-                              style: titleStyle,
-                              maxLines: _expanded ? 10 : 1,
-                              overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                            ),
-                            if (widget.artistName != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                widget.artistName!,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                                maxLines: _expanded ? 3 : 1,
-                                overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  if (_isOverflowing || _expanded)
-                    Icon(_expanded ? Icons.expand_less : Icons.expand_more, color: colorScheme.onSurfaceVariant, size: 20),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Separate Consumer widget for each track item - only rebuilds when this specific track's status changes
 class _TrackItemWithStatus extends ConsumerWidget {
   final Track track;
@@ -1080,6 +890,28 @@ class _TrackItemWithStatus extends ConsumerWidget {
       return state.isDownloaded(track.id);
     }));
     
+    // Get thumbnail size from extension if track is from extension
+    double thumbWidth = 56;
+    double thumbHeight = 56;
+    
+    // Get extension ID from track.source or from TrackState.searchExtensionId
+    final trackState = ref.watch(trackProvider);
+    final extensionId = track.source ?? trackState.searchExtensionId;
+    
+    if (extensionId != null && extensionId.isNotEmpty) {
+      final extState = ref.watch(extensionProvider);
+      final extension = extState.extensions.where((e) => e.id == extensionId).firstOrNull;
+      if (extension?.searchBehavior != null) {
+        final size = extension!.searchBehavior!.getThumbnailSize(defaultSize: 56);
+        thumbWidth = size.$1;
+        thumbHeight = size.$2;
+        // Debug: log only when using custom size
+        if (thumbWidth != 56 || thumbHeight != 56) {
+          debugPrint('[Thumbnail] ${track.name}: using ${thumbWidth.toInt()}x${thumbHeight.toInt()} from ${extension.id}');
+        }
+      }
+    }
+    
     final isQueued = queueItem != null;
     final isDownloading = queueItem?.status == DownloadStatus.downloading;
     final isFinalizing = queueItem?.status == DownloadStatus.finalizing;
@@ -1100,21 +932,21 @@ class _TrackItemWithStatus extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                // Album art
+                // Album art with dynamic size based on extension config
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: track.coverUrl != null
                       ? CachedNetworkImage(
                           imageUrl: track.coverUrl!,
-                          width: 56,
-                          height: 56,
+                          width: thumbWidth,
+                          height: thumbHeight,
                           fit: BoxFit.cover,
-                          memCacheWidth: 112,
-                          memCacheHeight: 112,
+                          memCacheWidth: (thumbWidth * 2).toInt(),
+                          memCacheHeight: (thumbHeight * 2).toInt(),
                         )
                       : Container(
-                          width: 56,
-                          height: 56,
+                          width: thumbWidth,
+                          height: thumbHeight,
                           color: colorScheme.surfaceContainerHighest,
                           child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
                         ),
@@ -1151,7 +983,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
           Divider(
             height: 1,
             thickness: 1,
-            indent: 80,
+            indent: thumbWidth + 24, // Adjust divider indent based on thumbnail width
             endIndent: 12,
             color: colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),

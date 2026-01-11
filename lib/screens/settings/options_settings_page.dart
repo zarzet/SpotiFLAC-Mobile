@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class OptionsSettingsPage extends ConsumerWidget {
@@ -11,6 +12,8 @@ class OptionsSettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final extensionState = ref.watch(extensionProvider);
+    final hasExtensions = extensionState.extensions.isNotEmpty;
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -129,6 +132,18 @@ class OptionsSettingsPage extends ConsumerWidget {
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setAutoFallback(v),
                   ),
+                  if (hasExtensions)
+                    SettingsSwitchItem(
+                      icon: Icons.extension,
+                      title: 'Use Extension Providers',
+                      subtitle: settings.useExtensionProviders
+                          ? 'Extensions will be tried first'
+                          : 'Using built-in providers only',
+                      value: settings.useExtensionProviders,
+                      onChanged: (v) => ref
+                          .read(settingsProvider.notifier)
+                          .setUseExtensionProviders(v),
+                    ),
                   SettingsSwitchItem(
                     icon: Icons.lyrics,
                     title: 'Embed Lyrics',
@@ -345,11 +360,15 @@ class OptionsSettingsPage extends ConsumerWidget {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -380,11 +399,15 @@ class OptionsSettingsPage extends ConsumerWidget {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
+                        borderSide: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -745,7 +768,7 @@ class _ChannelChip extends StatelessWidget {
   }
 }
 
-class _MetadataSourceSelector extends StatelessWidget {
+class _MetadataSourceSelector extends ConsumerWidget {
   final String currentSource;
   final ValueChanged<String> onChanged;
   const _MetadataSourceSelector({
@@ -754,8 +777,21 @@ class _MetadataSourceSelector extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final settings = ref.watch(settingsProvider);
+    final extState = ref.watch(extensionProvider);
+    
+    // Check if extension search provider is active
+    final hasExtensionSearch = settings.searchProvider != null && 
+        settings.searchProvider!.isNotEmpty;
+    
+    String? extensionName;
+    if (hasExtensionSearch) {
+      final ext = extState.extensions.where((e) => e.id == settings.searchProvider).firstOrNull;
+      extensionName = ext?.displayName ?? settings.searchProvider;
+    }
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -769,9 +805,13 @@ class _MetadataSourceSelector extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Service used when searching by track name.',
+            hasExtensionSearch
+                ? 'Using extension: $extensionName'
+                : 'Service used when searching by track name.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+              color: hasExtensionSearch 
+                  ? colorScheme.primary 
+                  : colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 16),
@@ -780,18 +820,53 @@ class _MetadataSourceSelector extends StatelessWidget {
               _SourceChip(
                 icon: Icons.graphic_eq,
                 label: 'Deezer',
-                isSelected: currentSource == 'deezer',
-                onTap: () => onChanged('deezer'),
+                // Not selected if extension is active
+                isSelected: currentSource == 'deezer' && !hasExtensionSearch,
+                onTap: () {
+                  // If extension was active, reset it to default
+                  if (hasExtensionSearch) {
+                    ref.read(settingsProvider.notifier).setSearchProvider(null);
+                  }
+                  onChanged('deezer');
+                },
               ),
               const SizedBox(width: 12),
               _SourceChip(
                 icon: Icons.music_note,
                 label: 'Spotify',
-                isSelected: currentSource == 'spotify',
-                onTap: () => onChanged('spotify'),
+                // Not selected if extension is active
+                isSelected: currentSource == 'spotify' && !hasExtensionSearch,
+                onTap: () {
+                  // If extension was active, reset it to default
+                  if (hasExtensionSearch) {
+                    ref.read(settingsProvider.notifier).setSearchProvider(null);
+                  }
+                  onChanged('spotify');
+                },
               ),
             ],
           ),
+          if (hasExtensionSearch) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tap Deezer or Spotify to switch back from extension',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -802,13 +877,13 @@ class _SourceChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _SourceChip({
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.onTap,
+    this.onTap,
   });
 
   @override

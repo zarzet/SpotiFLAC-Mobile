@@ -192,11 +192,21 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
+  void setSearchProvider(String? provider) {
+    state = state.copyWith(searchProvider: provider);
+    _saveSettings();
+  }
+
   void setEnableLogging(bool enabled) {
     state = state.copyWith(enableLogging: enabled);
     _saveSettings();
     // Sync logging state to LogBuffer
     LogBuffer.loggingEnabled = enabled;
+  }
+
+  void setUseExtensionProviders(bool enabled) {
+    state = state.copyWith(useExtensionProviders: enabled);
+    _saveSettings();
   }
 }
 

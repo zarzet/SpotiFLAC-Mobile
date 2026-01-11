@@ -28,6 +28,8 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       json['useCustomSpotifyCredentials'] as bool? ?? true,
   metadataSource: json['metadataSource'] as String? ?? 'deezer',
   enableLogging: json['enableLogging'] as bool? ?? false,
+  useExtensionProviders: json['useExtensionProviders'] as bool? ?? true,
+  searchProvider: json['searchProvider'] as String?,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -52,4 +54,6 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'useCustomSpotifyCredentials': instance.useCustomSpotifyCredentials,
       'metadataSource': instance.metadataSource,
       'enableLogging': instance.enableLogging,
+      'useExtensionProviders': instance.useExtensionProviders,
+      'searchProvider': instance.searchProvider,
     };

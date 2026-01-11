@@ -23,7 +23,7 @@ type ItemProgress struct {
 	ItemID        string  `json:"item_id"`
 	BytesTotal    int64   `json:"bytes_total"`
 	BytesReceived int64   `json:"bytes_received"`
-	Progress      float64 `json:"progress"` // 0.0 to 1.0
+	Progress      float64 `json:"progress"`   // 0.0 to 1.0
 	SpeedMBps     float64 `json:"speed_mbps"` // Download speed in MB/s
 	IsDownloading bool    `json:"is_downloading"`
 	Status        string  `json:"status"` // "downloading", "finalizing", "completed"
@@ -204,11 +204,12 @@ func setDownloadDir(path string) error {
 }
 
 // getDownloadDir returns the default download directory
-func getDownloadDir() string {
-	downloadDirMu.RLock()
-	defer downloadDirMu.RUnlock()
-	return downloadDir
-}
+// Kept for potential future use
+// func getDownloadDir() string {
+// 	downloadDirMu.RLock()
+// 	defer downloadDirMu.RUnlock()
+// 	return downloadDir
+// }
 
 // ItemProgressWriter wraps io.Writer to track download progress for a specific item
 type ItemProgressWriter struct {
@@ -256,7 +257,7 @@ func (pw *ItemProgressWriter) Write(p []byte) (int, error) {
 			bytesInInterval := pw.current - pw.lastBytes
 			speedMBps = float64(bytesInInterval) / (1024 * 1024) / elapsed
 		}
-		
+
 		SetItemBytesReceivedWithSpeed(pw.itemID, pw.current, speedMBps)
 		pw.lastReported = pw.current
 		pw.lastTime = now

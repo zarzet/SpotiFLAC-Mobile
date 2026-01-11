@@ -24,6 +24,8 @@ class AppSettings {
   final bool useCustomSpotifyCredentials; // Whether to use custom credentials (if set)
   final String metadataSource; // spotify, deezer - source for search and metadata
   final bool enableLogging; // Enable detailed logging for debugging
+  final bool useExtensionProviders; // Use extension providers for downloads when available
+  final String? searchProvider; // null/empty = default (Deezer/Spotify), otherwise extension ID
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -46,6 +48,8 @@ class AppSettings {
     this.useCustomSpotifyCredentials = true, // Default: use custom if set
     this.metadataSource = 'deezer', // Default: Deezer (no rate limit)
     this.enableLogging = false, // Default: disabled for performance
+    this.useExtensionProviders = true, // Default: use extensions when available
+    this.searchProvider, // Default: null (use Deezer/Spotify)
   });
 
   AppSettings copyWith({
@@ -69,6 +73,8 @@ class AppSettings {
     bool? useCustomSpotifyCredentials,
     String? metadataSource,
     bool? enableLogging,
+    bool? useExtensionProviders,
+    String? searchProvider,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -91,6 +97,8 @@ class AppSettings {
       useCustomSpotifyCredentials: useCustomSpotifyCredentials ?? this.useCustomSpotifyCredentials,
       metadataSource: metadataSource ?? this.metadataSource,
       enableLogging: enableLogging ?? this.enableLogging,
+      useExtensionProviders: useExtensionProviders ?? this.useExtensionProviders,
+      searchProvider: searchProvider ?? this.searchProvider,
     );
   }
 

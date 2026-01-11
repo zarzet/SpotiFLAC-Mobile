@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 
 final _log = AppLogger('TrackProvider');
 
@@ -18,6 +20,7 @@ class TrackState {
   final List<ArtistAlbum>? artistAlbums; // For artist page
   final List<SearchArtist>? searchArtists; // For search results
   final bool hasSearchText; // For back button handling
+  final String? searchExtensionId; // Extension ID used for current search results
 
   const TrackState({
     this.tracks = const [],
@@ -32,6 +35,7 @@ class TrackState {
     this.artistAlbums,
     this.searchArtists,
     this.hasSearchText = false,
+    this.searchExtensionId,
   });
 
   bool get hasContent => tracks.isNotEmpty || artistAlbums != null || (searchArtists != null && searchArtists!.isNotEmpty);
@@ -49,6 +53,7 @@ class TrackState {
     List<ArtistAlbum>? artistAlbums,
     List<SearchArtist>? searchArtists,
     bool? hasSearchText,
+    String? searchExtensionId,
   }) {
     return TrackState(
       tracks: tracks ?? this.tracks,
@@ -63,6 +68,7 @@ class TrackState {
       artistAlbums: artistAlbums ?? this.artistAlbums,
       searchArtists: searchArtists ?? this.searchArtists,
       hasSearchText: hasSearchText ?? this.hasSearchText,
+      searchExtensionId: searchExtensionId,
     );
   }
 }
@@ -210,12 +216,43 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
+      // Check if extension providers should be used for search
+      final settings = ref.read(settingsProvider);
+      final extensionState = ref.read(extensionProvider);
+      final hasActiveMetadataExtensions = extensionState.extensions.any(
+        (e) => e.enabled && e.hasMetadataProvider,
+      );
+      final useExtensions = settings.useExtensionProviders && hasActiveMetadataExtensions;
+
       // Use Deezer or Spotify based on settings
       final source = metadataSource ?? 'deezer';
       
-      _log.i('Search started: source=$source, query="$query"');
+      _log.i('Search started: source=$source, query="$query", useExtensions=$useExtensions');
       
       Map<String, dynamic> results;
+      List<Track> extensionTracks = [];
+      
+      // Try extension providers first if enabled
+      if (useExtensions) {
+        try {
+          _log.d('Calling extension search API...');
+          final extResults = await PlatformBridge.searchTracksWithExtensions(query, limit: 20);
+          _log.i('Extensions returned ${extResults.length} tracks');
+          
+          // Parse extension results
+          for (final t in extResults) {
+            try {
+              extensionTracks.add(_parseSearchTrack(t));
+            } catch (e) {
+              _log.e('Failed to parse extension track: $e', e);
+            }
+          }
+        } catch (e) {
+          _log.w('Extension search failed, falling back to built-in: $e');
+        }
+      }
+      
+      // Also search with built-in providers
       if (source == 'deezer') {
         _log.d('Calling Deezer search API...');
         results = await PlatformBridge.searchDeezerAll(query, trackLimit: 20, artistLimit: 5);
@@ -238,11 +275,26 @@ class TrackNotifier extends Notifier<TrackState> {
       
       // Parse tracks with error handling per item
       final tracks = <Track>[];
+      
+      // Add extension tracks first (they have priority)
+      tracks.addAll(extensionTracks);
+      
+      // Add built-in provider tracks, avoiding duplicates by ISRC
+      final existingIsrcs = extensionTracks
+          .where((t) => t.isrc != null && t.isrc!.isNotEmpty)
+          .map((t) => t.isrc!)
+          .toSet();
+      
       for (int i = 0; i < trackList.length; i++) {
         final t = trackList[i];
         try {
           if (t is Map<String, dynamic>) {
-            tracks.add(_parseSearchTrack(t));
+            final track = _parseSearchTrack(t);
+            // Skip if we already have this track from extensions
+            if (track.isrc != null && existingIsrcs.contains(track.isrc)) {
+              continue;
+            }
+            tracks.add(track);
           } else {
             _log.w('Track[$i] is not a Map: ${t.runtimeType}');
           }
@@ -266,7 +318,7 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
       
-      _log.i('Search complete: ${tracks.length} tracks, ${artists.length} artists parsed successfully');
+      _log.i('Search complete: ${tracks.length} tracks (${extensionTracks.length} from extensions), ${artists.length} artists parsed successfully');
       
       state = TrackState(
         tracks: tracks,
@@ -277,6 +329,53 @@ class TrackNotifier extends Notifier<TrackState> {
     } catch (e, stackTrace) {
       if (!_isRequestValid(requestId)) return;
       _log.e('Search failed: $e', e, stackTrace);
+      state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
+    }
+  }
+
+  /// Perform custom search using a specific extension
+  Future<void> customSearch(String extensionId, String query, {Map<String, dynamic>? options}) async {
+    // Increment request ID to cancel any pending requests
+    final requestId = ++_currentRequestId;
+
+    // Preserve hasSearchText during search
+    state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
+
+    try {
+      _log.i('Custom search started: extension=$extensionId, query="$query"');
+      
+      final results = await PlatformBridge.customSearchWithExtension(extensionId, query, options: options);
+      
+      if (!_isRequestValid(requestId)) {
+        _log.w('Custom search request cancelled (requestId=$requestId)');
+        return;
+      }
+      
+      _log.i('Custom search returned ${results.length} tracks');
+      
+      // Parse tracks with error handling per item, setting source to extension ID
+      final tracks = <Track>[];
+      for (int i = 0; i < results.length; i++) {
+        final t = results[i];
+        try {
+          tracks.add(_parseSearchTrack(t, source: extensionId));
+        } catch (e) {
+          _log.e('Failed to parse custom search track[$i]: $e', e);
+        }
+      }
+      
+      _log.i('Custom search complete: ${tracks.length} tracks parsed (source=$extensionId)');
+      
+      state = TrackState(
+        tracks: tracks,
+        searchArtists: [], // Custom search doesn't return artists
+        isLoading: false,
+        hasSearchText: state.hasSearchText,
+        searchExtensionId: extensionId, // Store which extension was used
+      );
+    } catch (e, stackTrace) {
+      if (!_isRequestValid(requestId)) return;
+      _log.e('Custom search failed: $e', e, stackTrace);
       state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
     }
   }
@@ -344,7 +443,7 @@ class TrackNotifier extends Notifier<TrackState> {
     );
   }
 
-  Track _parseSearchTrack(Map<String, dynamic> data) {
+  Track _parseSearchTrack(Map<String, dynamic> data, {String? source}) {
     // Handle duration_ms which might be int or double
     int durationMs = 0;
     final durationValue = data['duration_ms'];
@@ -366,6 +465,7 @@ class TrackNotifier extends Notifier<TrackState> {
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date']?.toString(),
+      source: source ?? data['source']?.toString() ?? data['provider_id']?.toString(),
     );
   }
 

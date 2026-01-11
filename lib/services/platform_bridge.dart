@@ -439,4 +439,332 @@ class PlatformBridge {
   static Future<void> setGoLoggingEnabled(bool enabled) async {
     await _channel.invokeMethod('setLoggingEnabled', {'enabled': enabled});
   }
+
+  // ==================== EXTENSION SYSTEM ====================
+
+  /// Initialize the extension system
+  static Future<void> initExtensionSystem(String extensionsDir, String dataDir) async {
+    _log.d('initExtensionSystem: $extensionsDir, $dataDir');
+    await _channel.invokeMethod('initExtensionSystem', {
+      'extensions_dir': extensionsDir,
+      'data_dir': dataDir,
+    });
+  }
+
+  /// Load all extensions from directory
+  static Future<Map<String, dynamic>> loadExtensionsFromDir(String dirPath) async {
+    _log.d('loadExtensionsFromDir: $dirPath');
+    final result = await _channel.invokeMethod('loadExtensionsFromDir', {
+      'dir_path': dirPath,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Load a single extension from file
+  static Future<Map<String, dynamic>> loadExtensionFromPath(String filePath) async {
+    _log.d('loadExtensionFromPath: $filePath');
+    final result = await _channel.invokeMethod('loadExtensionFromPath', {
+      'file_path': filePath,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Unload an extension
+  static Future<void> unloadExtension(String extensionId) async {
+    _log.d('unloadExtension: $extensionId');
+    await _channel.invokeMethod('unloadExtension', {
+      'extension_id': extensionId,
+    });
+  }
+
+  /// Remove an extension completely (unload + delete files)
+  static Future<void> removeExtension(String extensionId) async {
+    _log.d('removeExtension: $extensionId');
+    await _channel.invokeMethod('removeExtension', {
+      'extension_id': extensionId,
+    });
+  }
+
+  /// Upgrade an existing extension from a new package file
+  static Future<Map<String, dynamic>> upgradeExtension(String filePath) async {
+    _log.d('upgradeExtension: $filePath');
+    final result = await _channel.invokeMethod('upgradeExtension', {
+      'file_path': filePath,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Check if a package file is an upgrade for an existing extension
+  static Future<Map<String, dynamic>> checkExtensionUpgrade(String filePath) async {
+    _log.d('checkExtensionUpgrade: $filePath');
+    final result = await _channel.invokeMethod('checkExtensionUpgrade', {
+      'file_path': filePath,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Get all installed extensions
+  static Future<List<Map<String, dynamic>>> getInstalledExtensions() async {
+    final result = await _channel.invokeMethod('getInstalledExtensions');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  /// Enable or disable an extension
+  static Future<void> setExtensionEnabled(String extensionId, bool enabled) async {
+    _log.d('setExtensionEnabled: $extensionId = $enabled');
+    await _channel.invokeMethod('setExtensionEnabled', {
+      'extension_id': extensionId,
+      'enabled': enabled,
+    });
+  }
+
+  /// Set provider priority order
+  static Future<void> setProviderPriority(List<String> providerIds) async {
+    _log.d('setProviderPriority: $providerIds');
+    await _channel.invokeMethod('setProviderPriority', {
+      'priority': jsonEncode(providerIds),
+    });
+  }
+
+  /// Get provider priority order
+  static Future<List<String>> getProviderPriority() async {
+    final result = await _channel.invokeMethod('getProviderPriority');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as String).toList();
+  }
+
+  /// Set metadata provider priority order
+  static Future<void> setMetadataProviderPriority(List<String> providerIds) async {
+    _log.d('setMetadataProviderPriority: $providerIds');
+    await _channel.invokeMethod('setMetadataProviderPriority', {
+      'priority': jsonEncode(providerIds),
+    });
+  }
+
+  /// Get metadata provider priority order
+  static Future<List<String>> getMetadataProviderPriority() async {
+    final result = await _channel.invokeMethod('getMetadataProviderPriority');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as String).toList();
+  }
+
+  /// Get extension settings
+  static Future<Map<String, dynamic>> getExtensionSettings(String extensionId) async {
+    final result = await _channel.invokeMethod('getExtensionSettings', {
+      'extension_id': extensionId,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Set extension settings
+  static Future<void> setExtensionSettings(String extensionId, Map<String, dynamic> settings) async {
+    _log.d('setExtensionSettings: $extensionId');
+    await _channel.invokeMethod('setExtensionSettings', {
+      'extension_id': extensionId,
+      'settings': jsonEncode(settings),
+    });
+  }
+
+  /// Search tracks using extension providers
+  static Future<List<Map<String, dynamic>>> searchTracksWithExtensions(String query, {int limit = 20}) async {
+    _log.d('searchTracksWithExtensions: "$query"');
+    final result = await _channel.invokeMethod('searchTracksWithExtensions', {
+      'query': query,
+      'limit': limit,
+    });
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  /// Download with extension providers (includes fallback)
+  static Future<Map<String, dynamic>> downloadWithExtensions({
+    required String isrc,
+    required String spotifyId,
+    required String trackName,
+    required String artistName,
+    required String albumName,
+    String? albumArtist,
+    String? coverUrl,
+    required String outputDir,
+    required String filenameFormat,
+    String quality = 'LOSSLESS',
+    bool embedLyrics = true,
+    bool embedMaxQualityCover = true,
+    int trackNumber = 1,
+    int discNumber = 1,
+    int totalTracks = 1,
+    String? releaseDate,
+    String? itemId,
+    int durationMs = 0,
+    String? source, // Extension ID that provided this track (prioritize this extension)
+  }) async {
+    _log.i('downloadWithExtensions: "$trackName" by $artistName${source != null ? ' (source: $source)' : ''}');
+    final request = jsonEncode({
+      'isrc': isrc,
+      'spotify_id': spotifyId,
+      'track_name': trackName,
+      'artist_name': artistName,
+      'album_name': albumName,
+      'album_artist': albumArtist ?? artistName,
+      'cover_url': coverUrl,
+      'output_dir': outputDir,
+      'filename_format': filenameFormat,
+      'quality': quality,
+      'embed_lyrics': embedLyrics,
+      'embed_max_quality_cover': embedMaxQualityCover,
+      'track_number': trackNumber,
+      'disc_number': discNumber,
+      'total_tracks': totalTracks,
+      'release_date': releaseDate ?? '',
+      'item_id': itemId ?? '',
+      'duration_ms': durationMs,
+      'source': source ?? '', // Extension ID that provided this track
+    });
+    
+    final result = await _channel.invokeMethod('downloadWithExtensions', request);
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Cleanup all extensions (call on app close)
+  static Future<void> cleanupExtensions() async {
+    _log.d('cleanupExtensions');
+    await _channel.invokeMethod('cleanupExtensions');
+  }
+
+  // ==================== EXTENSION AUTH API ====================
+
+  /// Get pending auth request for an extension (if any)
+  static Future<Map<String, dynamic>?> getExtensionPendingAuth(String extensionId) async {
+    final result = await _channel.invokeMethod('getExtensionPendingAuth', {
+      'extension_id': extensionId,
+    });
+    if (result == null) return null;
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Set auth code for an extension (after OAuth callback)
+  static Future<void> setExtensionAuthCode(String extensionId, String authCode) async {
+    _log.d('setExtensionAuthCode: $extensionId');
+    await _channel.invokeMethod('setExtensionAuthCode', {
+      'extension_id': extensionId,
+      'auth_code': authCode,
+    });
+  }
+
+  /// Set tokens for an extension (after token exchange)
+  static Future<void> setExtensionTokens(
+    String extensionId, {
+    required String accessToken,
+    String? refreshToken,
+    int? expiresIn,
+  }) async {
+    _log.d('setExtensionTokens: $extensionId');
+    await _channel.invokeMethod('setExtensionTokens', {
+      'extension_id': extensionId,
+      'access_token': accessToken,
+      'refresh_token': refreshToken ?? '',
+      'expires_in': expiresIn ?? 0,
+    });
+  }
+
+  /// Clear pending auth request for an extension
+  static Future<void> clearExtensionPendingAuth(String extensionId) async {
+    await _channel.invokeMethod('clearExtensionPendingAuth', {
+      'extension_id': extensionId,
+    });
+  }
+
+  /// Check if extension is authenticated
+  static Future<bool> isExtensionAuthenticated(String extensionId) async {
+    final result = await _channel.invokeMethod('isExtensionAuthenticated', {
+      'extension_id': extensionId,
+    });
+    return result as bool;
+  }
+
+  /// Get all pending auth requests (for polling)
+  static Future<List<Map<String, dynamic>>> getAllPendingAuthRequests() async {
+    final result = await _channel.invokeMethod('getAllPendingAuthRequests');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  // ==================== EXTENSION FFMPEG API ====================
+
+  /// Get pending FFmpeg command for execution
+  static Future<Map<String, dynamic>?> getPendingFFmpegCommand(String commandId) async {
+    final result = await _channel.invokeMethod('getPendingFFmpegCommand', {
+      'command_id': commandId,
+    });
+    if (result == null) return null;
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Set FFmpeg command result
+  static Future<void> setFFmpegCommandResult(
+    String commandId, {
+    required bool success,
+    String output = '',
+    String error = '',
+  }) async {
+    await _channel.invokeMethod('setFFmpegCommandResult', {
+      'command_id': commandId,
+      'success': success,
+      'output': output,
+      'error': error,
+    });
+  }
+
+  /// Get all pending FFmpeg commands
+  static Future<List<Map<String, dynamic>>> getAllPendingFFmpegCommands() async {
+    final result = await _channel.invokeMethod('getAllPendingFFmpegCommands');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  // ==================== EXTENSION CUSTOM SEARCH ====================
+
+  /// Perform custom search using an extension
+  static Future<List<Map<String, dynamic>>> customSearchWithExtension(
+    String extensionId,
+    String query, {
+    Map<String, dynamic>? options,
+  }) async {
+    final result = await _channel.invokeMethod('customSearchWithExtension', {
+      'extension_id': extensionId,
+      'query': query,
+      'options': options != null ? jsonEncode(options) : '',
+    });
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  /// Get all extensions that provide custom search
+  static Future<List<Map<String, dynamic>>> getSearchProviders() async {
+    final result = await _channel.invokeMethod('getSearchProviders');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  // ==================== EXTENSION POST-PROCESSING ====================
+
+  /// Run post-processing hooks on a file
+  static Future<Map<String, dynamic>> runPostProcessing(
+    String filePath, {
+    Map<String, dynamic>? metadata,
+  }) async {
+    final result = await _channel.invokeMethod('runPostProcessing', {
+      'file_path': filePath,
+      'metadata': metadata != null ? jsonEncode(metadata) : '',
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Get all extensions that provide post-processing
+  static Future<List<Map<String, dynamic>>> getPostProcessingProviders() async {
+    final result = await _channel.invokeMethod('getPostProcessingProviders');
+    final list = jsonDecode(result as String) as List<dynamic>;
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
 }

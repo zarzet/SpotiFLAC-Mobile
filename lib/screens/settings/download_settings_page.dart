@@ -8,12 +8,18 @@ import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class DownloadSettingsPage extends ConsumerWidget {
   const DownloadSettingsPage({super.key});
+  
+  // Built-in services that support quality options
+  static const _builtInServices = ['tidal', 'qobuz', 'amazon'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = MediaQuery.of(context).padding.top;
+    
+    // Check if current service is built-in (supports quality options)
+    final isBuiltInService = _builtInServices.contains(settings.defaultService);
 
     return PopScope(
       canPop: true,
@@ -87,13 +93,17 @@ class DownloadSettingsPage extends ConsumerWidget {
                   SettingsSwitchItem(
                     icon: Icons.tune,
                     title: 'Ask Before Download',
-                    subtitle: 'Choose quality for each download',
+                    subtitle: isBuiltInService 
+                        ? 'Choose quality for each download'
+                        : 'Select a built-in service to enable',
                     value: settings.askQualityBeforeDownload,
+                    // Not selected visually if extension is active
+                    enabled: isBuiltInService,
                     onChanged: (value) => ref
                         .read(settingsProvider.notifier)
                         .setAskQualityBeforeDownload(value),
                   ),
-                  if (!settings.askQualityBeforeDownload) ...[
+                  if (!settings.askQualityBeforeDownload && isBuiltInService) ...[
                     _QualityOption(
                       title: 'FLAC Lossless',
                       subtitle: '16-bit / 44.1kHz',
@@ -118,6 +128,29 @@ class DownloadSettingsPage extends ConsumerWidget {
                           .read(settingsProvider.notifier)
                           .setAudioQuality('HI_RES_LOSSLESS'),
                       showDivider: false,
+                    ),
+                  ],
+                  if (!isBuiltInService) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Select Tidal, Qobuz, or Amazon above to configure quality',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],
@@ -359,8 +392,9 @@ class DownloadSettingsPage extends ConsumerWidget {
     } else {
       // Android: Use file picker
       final result = await FilePicker.platform.getDirectoryPath();
-      if (result != null)
+      if (result != null) {
         ref.read(settingsProvider.notifier).setDownloadDirectory(result);
+      }
     }
   }
 

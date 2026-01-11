@@ -40,6 +40,31 @@ To use Spotify as your search source without hitting rate limits:
 4. Enter your Client ID and Secret
 5. Change **Search Source** to Spotify
 
+## Extensions (Alpha)
+
+> **Alpha Feature**: Extensions are now available in alpha. Some features may be unstable or change in future releases.
+
+SpotiFLAC supports extensions to add custom metadata and download providers. Extensions are written in JavaScript and run in a secure sandbox.
+
+### Features
+- **Metadata Providers**: Add new sources for track/album/artist search
+- **Download Providers**: Add new sources for audio downloads
+- **Custom Settings**: Extensions can have user-configurable settings
+- **Provider Priority**: Set the order in which providers are tried
+
+### Installing Extensions
+1. Download a `.spotiflac-ext` file
+2. Go to **Settings > Extensions**
+3. Tap **Install Extension** and select the file
+4. Configure extension settings if needed
+5. Set provider priority in **Settings > Extensions > Provider Priority**
+
+### Developing Extensions
+Want to create your own extension? Check out the [Extension Development Guide](docs/EXTENSION_DEVELOPMENT.md) for complete documentation.
+
+### Example Extensions
+Sample extensions are available in the [docs/extensions_example](docs/extensions_example) folder:
+
 ## Other project
 
 ### [SpotiFLAC (Desktop)](https://github.com/afkarxyz/SpotiFLAC)

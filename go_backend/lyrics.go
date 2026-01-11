@@ -250,29 +250,30 @@ func msToLRCTimestamp(ms int64) string {
 
 // convertToLRC converts lyrics to LRC format string (without metadata headers)
 // Use convertToLRCWithMetadata for full LRC with headers
-func convertToLRC(lyrics *LyricsResponse) string {
-	if lyrics == nil || len(lyrics.Lines) == 0 {
-		return ""
-	}
-
-	var builder strings.Builder
-
-	if lyrics.SyncType == "LINE_SYNCED" {
-		for _, line := range lyrics.Lines {
-			timestamp := msToLRCTimestamp(line.StartTimeMs)
-			builder.WriteString(timestamp)
-			builder.WriteString(line.Words)
-			builder.WriteString("\n")
-		}
-	} else {
-		for _, line := range lyrics.Lines {
-			builder.WriteString(line.Words)
-			builder.WriteString("\n")
-		}
-	}
-
-	return builder.String()
-}
+// Kept for potential future use
+// func convertToLRC(lyrics *LyricsResponse) string {
+// 	if lyrics == nil || len(lyrics.Lines) == 0 {
+// 		return ""
+// 	}
+//
+// 	var builder strings.Builder
+//
+// 	if lyrics.SyncType == "LINE_SYNCED" {
+// 		for _, line := range lyrics.Lines {
+// 			timestamp := msToLRCTimestamp(line.StartTimeMs)
+// 			builder.WriteString(timestamp)
+// 			builder.WriteString(line.Words)
+// 			builder.WriteString("\n")
+// 		}
+// 	} else {
+// 		for _, line := range lyrics.Lines {
+// 			builder.WriteString(line.Words)
+// 			builder.WriteString("\n")
+// 		}
+// 	}
+//
+// 	return builder.String()
+// }
 
 // convertToLRCWithMetadata converts lyrics to LRC format with metadata headers
 // Includes [ti:], [ar:], [by:] headers

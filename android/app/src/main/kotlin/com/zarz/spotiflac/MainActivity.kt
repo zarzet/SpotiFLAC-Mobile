@@ -317,6 +317,249 @@ class MainActivity: FlutterActivity() {
                             }
                             result.success(null)
                         }
+                        // Extension System methods
+                        "initExtensionSystem" -> {
+                            val extensionsDir = call.argument<String>("extensions_dir") ?: ""
+                            val dataDir = call.argument<String>("data_dir") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.initExtensionSystem(extensionsDir, dataDir)
+                            }
+                            result.success(null)
+                        }
+                        "loadExtensionsFromDir" -> {
+                            val dirPath = call.argument<String>("dir_path") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.loadExtensionsFromDir(dirPath)
+                            }
+                            result.success(response)
+                        }
+                        "loadExtensionFromPath" -> {
+                            val filePath = call.argument<String>("file_path") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.loadExtensionFromPath(filePath)
+                            }
+                            result.success(response)
+                        }
+                        "unloadExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.unloadExtensionByID(extensionId)
+                            }
+                            result.success(null)
+                        }
+                        "removeExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.removeExtensionByID(extensionId)
+                            }
+                            result.success(null)
+                        }
+                        "upgradeExtension" -> {
+                            val filePath = call.argument<String>("file_path") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.upgradeExtensionFromPath(filePath)
+                            }
+                            result.success(response)
+                        }
+                        "checkExtensionUpgrade" -> {
+                            val filePath = call.argument<String>("file_path") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.checkExtensionUpgradeFromPath(filePath)
+                            }
+                            result.success(response)
+                        }
+                        "getInstalledExtensions" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getInstalledExtensions()
+                            }
+                            result.success(response)
+                        }
+                        "setExtensionEnabled" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val enabled = call.argument<Boolean>("enabled") ?: false
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setExtensionEnabledByID(extensionId, enabled)
+                            }
+                            result.success(null)
+                        }
+                        "setProviderPriority" -> {
+                            val priorityJson = call.argument<String>("priority") ?: "[]"
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setProviderPriorityJSON(priorityJson)
+                            }
+                            result.success(null)
+                        }
+                        "getProviderPriority" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getProviderPriorityJSON()
+                            }
+                            result.success(response)
+                        }
+                        "setMetadataProviderPriority" -> {
+                            val priorityJson = call.argument<String>("priority") ?: "[]"
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setMetadataProviderPriorityJSON(priorityJson)
+                            }
+                            result.success(null)
+                        }
+                        "getMetadataProviderPriority" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getMetadataProviderPriorityJSON()
+                            }
+                            result.success(response)
+                        }
+                        "getExtensionSettings" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getExtensionSettingsJSON(extensionId)
+                            }
+                            result.success(response)
+                        }
+                        "setExtensionSettings" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val settingsJson = call.argument<String>("settings") ?: "{}"
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setExtensionSettingsJSON(extensionId, settingsJson)
+                            }
+                            result.success(null)
+                        }
+                        "searchTracksWithExtensions" -> {
+                            val query = call.argument<String>("query") ?: ""
+                            val limit = call.argument<Int>("limit") ?: 20
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.searchTracksWithExtensionsJSON(query, limit.toLong())
+                            }
+                            result.success(response)
+                        }
+                        "downloadWithExtensions" -> {
+                            val requestJson = call.arguments as String
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.downloadWithExtensionsJSON(requestJson)
+                            }
+                            result.success(response)
+                        }
+                        "removeExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.removeExtensionByID(extensionId)
+                            }
+                            result.success(null)
+                        }
+                        "cleanupExtensions" -> {
+                            withContext(Dispatchers.IO) {
+                                Gobackend.cleanupExtensions()
+                            }
+                            result.success(null)
+                        }
+                        // Extension Auth API methods
+                        "getExtensionPendingAuth" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getExtensionPendingAuthJSON(extensionId)
+                            }
+                            if (response.isNullOrEmpty()) {
+                                result.success(null)
+                            } else {
+                                result.success(response)
+                            }
+                        }
+                        "setExtensionAuthCode" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val authCode = call.argument<String>("auth_code") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setExtensionAuthCodeByID(extensionId, authCode)
+                            }
+                            result.success(null)
+                        }
+                        "setExtensionTokens" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val accessToken = call.argument<String>("access_token") ?: ""
+                            val refreshToken = call.argument<String>("refresh_token") ?: ""
+                            val expiresIn = call.argument<Int>("expires_in") ?: 0
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setExtensionTokensByID(extensionId, accessToken, refreshToken, expiresIn.toLong())
+                            }
+                            result.success(null)
+                        }
+                        "clearExtensionPendingAuth" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.clearExtensionPendingAuthByID(extensionId)
+                            }
+                            result.success(null)
+                        }
+                        "isExtensionAuthenticated" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val isAuth = withContext(Dispatchers.IO) {
+                                Gobackend.isExtensionAuthenticatedByID(extensionId)
+                            }
+                            result.success(isAuth)
+                        }
+                        "getAllPendingAuthRequests" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getAllPendingAuthRequestsJSON()
+                            }
+                            result.success(response)
+                        }
+                        // Extension FFmpeg API
+                        "getPendingFFmpegCommand" -> {
+                            val commandId = call.argument<String>("command_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getPendingFFmpegCommandJSON(commandId)
+                            }
+                            if (response.isNullOrEmpty()) {
+                                result.success(null)
+                            } else {
+                                result.success(response)
+                            }
+                        }
+                        "setFFmpegCommandResult" -> {
+                            val commandId = call.argument<String>("command_id") ?: ""
+                            val success = call.argument<Boolean>("success") ?: false
+                            val output = call.argument<String>("output") ?: ""
+                            val error = call.argument<String>("error") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setFFmpegCommandResultByID(commandId, success, output, error)
+                            }
+                            result.success(null)
+                        }
+                        "getAllPendingFFmpegCommands" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getAllPendingFFmpegCommandsJSON()
+                            }
+                            result.success(response)
+                        }
+                        // Extension Custom Search API
+                        "customSearchWithExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val query = call.argument<String>("query") ?: ""
+                            val optionsJson = call.argument<String>("options") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.customSearchWithExtensionJSON(extensionId, query, optionsJson)
+                            }
+                            result.success(response)
+                        }
+                        "getSearchProviders" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getSearchProvidersJSON()
+                            }
+                            result.success(response)
+                        }
+                        // Extension Post-Processing API
+                        "runPostProcessing" -> {
+                            val filePath = call.argument<String>("file_path") ?: ""
+                            val metadataJson = call.argument<String>("metadata") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.runPostProcessingJSON(filePath, metadataJson)
+                            }
+                            result.success(response)
+                        }
+                        "getPostProcessingProviders" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getPostProcessingProvidersJSON()
+                            }
+                            result.success(response)
+                        }
                         else -> result.notImplemented()
                     }
                 } catch (e: Exception) {
