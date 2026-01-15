@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 
@@ -14,19 +15,19 @@ class QueueScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Download Queue'),
+        title: Text(context.l10n.queueTitle),
         actions: [
           if (queueState.items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
               onPressed: () => ref.read(downloadQueueProvider.notifier).clearCompleted(),
-              tooltip: 'Clear completed',
+              tooltip: context.l10n.queueClearCompleted,
             ),
           if (queueState.items.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.clear_all),
               onPressed: () => _showClearAllDialog(context, ref),
-              tooltip: 'Clear all',
+              tooltip: context.l10n.queueClearAll,
             ),
         ],
       ),
@@ -51,14 +52,14 @@ class QueueScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No downloads in queue',
+            context.l10n.queueEmpty,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add tracks from the home screen',
+            context.l10n.queueEmptySubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
@@ -177,7 +178,7 @@ class QueueScreen extends ConsumerWidget {
           children: [
             Icon(Icons.error, color: colorScheme.error),
             const SizedBox(width: 8),
-            const Text('Download Failed'),
+            Text(context.l10n.queueDownloadFailed),
           ],
         ),
         content: SingleChildScrollView(
@@ -185,10 +186,10 @@ class QueueScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Track: ${item.track.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text('Artist: ${item.track.artistName}'),
+              Text('${context.l10n.queueTrackLabel} ${item.track.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('${context.l10n.queueArtistLabel} ${item.track.artistName}'),
               const SizedBox(height: 16),
-              const Text('Error:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(context.l10n.queueErrorLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.all(8),
@@ -197,7 +198,7 @@ class QueueScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  item.error ?? 'Unknown error',
+                  item.error ?? context.l10n.queueUnknownError,
                   style: TextStyle(
                     fontFamily: 'monospace', 
                     fontSize: 12,
@@ -211,7 +212,7 @@ class QueueScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(context.l10n.dialogClose),
           ),
         ],
       ),
@@ -223,19 +224,19 @@ class QueueScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All'),
-        content: const Text('Are you sure you want to clear all downloads?'),
+        title: Text(context.l10n.queueClearAll),
+        content: Text(context.l10n.queueClearAllMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           TextButton(
             onPressed: () {
               ref.read(downloadQueueProvider.notifier).clearAll();
               Navigator.pop(context);
             },
-            child: Text('Clear', style: TextStyle(color: colorScheme.error)),
+            child: Text(context.l10n.dialogClear, style: TextStyle(color: colorScheme.error)),
           ),
         ],
       ),

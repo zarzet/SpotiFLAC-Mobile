@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
 class MetadataProviderPriorityPage extends ConsumerStatefulWidget {
@@ -81,7 +82,7 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
                 if (_hasChanges)
                   TextButton(
                     onPressed: _saveChanges,
-                    child: const Text('Save'),
+                    child: Text(context.l10n.dialogSave),
                   ),
               ],
               flexibleSpace: LayoutBuilder(
@@ -96,7 +97,7 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                     title: Text(
-                      'Metadata Priority',
+                      context.l10n.metadataProviderPriorityTitle,
                       style: TextStyle(
                         fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -113,8 +114,7 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Drag to reorder metadata providers. The app will try providers '
-                  'from top to bottom when searching for tracks and fetching metadata.',
+                  context.l10n.metadataProviderPriorityDescription,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -166,8 +166,7 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Deezer has no rate limits and is recommended as primary. '
-                          'Spotify may rate limit after many requests.',
+                          context.l10n.metadataProviderPriorityInfo,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: colorScheme.onTertiaryContainer,
                           ),
@@ -190,16 +189,16 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Do you want to discard them?'),
+        title: Text(context.l10n.dialogDiscardChanges),
+        content: Text(context.l10n.dialogUnsavedChanges),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+            child: Text(context.l10n.dialogDiscard),
           ),
         ],
       ),
@@ -214,7 +213,7 @@ class _MetadataProviderPriorityPageState extends ConsumerState<MetadataProviderP
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Metadata provider priority saved')),
+        SnackBar(content: Text(context.l10n.snackbarMetadataProviderSaved)),
       );
     }
   }
@@ -246,7 +245,7 @@ class _MetadataProviderItem extends StatelessWidget {
           )
         : colorScheme.surfaceContainerHigh;
 
-    final info = _getProviderInfo(provider);
+    final info = _getProviderInfo(context, provider);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -323,20 +322,20 @@ class _MetadataProviderItem extends StatelessWidget {
     );
   }
 
-  _MetadataProviderInfo _getProviderInfo(String provider) {
+  _MetadataProviderInfo _getProviderInfo(BuildContext context, String provider) {
     switch (provider) {
       case 'deezer':
         return _MetadataProviderInfo(
           name: 'Deezer',
           icon: Icons.album,
-          description: 'No rate limits',
+          description: context.l10n.metadataNoRateLimits,
           isBuiltIn: true,
         );
       case 'spotify':
         return _MetadataProviderInfo(
           name: 'Spotify',
           icon: Icons.music_note,
-          description: 'May rate limit',
+          description: context.l10n.metadataMayRateLimit,
           isBuiltIn: true,
         );
       default:
@@ -344,7 +343,7 @@ class _MetadataProviderItem extends StatelessWidget {
         return _MetadataProviderInfo(
           name: provider,
           icon: Icons.extension,
-          description: 'Extension',
+          description: context.l10n.providerExtension,
           isBuiltIn: false,
         );
     }

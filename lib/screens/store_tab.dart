@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 import 'package:spotiflac_android/screens/store/extension_details_screen.dart';
@@ -74,7 +75,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     expandedTitleScale: 1.0,
                     titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
                     title: Text(
-                      'Store',
+                      context.l10n.storeTitle,
                       style: TextStyle(
                         fontSize: 20 + (14 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -93,7 +94,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search extensions...',
+                    hintText: context.l10n.storeSearch,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -141,7 +142,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 child: Row(
                   children: [
                     _CategoryChip(
-                      label: 'All',
+                      label: context.l10n.storeFilterAll,
                       icon: Icons.apps,
                       isSelected: state.selectedCategory == null,
                       onTap: () =>
@@ -149,7 +150,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Metadata',
+                      label: context.l10n.storeFilterMetadata,
                       icon: Icons.label_outline,
                       isSelected:
                           state.selectedCategory == StoreCategory.metadata,
@@ -159,7 +160,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Download',
+                      label: context.l10n.storeFilterDownload,
                       icon: Icons.download_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.download,
@@ -169,7 +170,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Utility',
+                      label: context.l10n.storeFilterUtility,
                       icon: Icons.build_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.utility,
@@ -179,7 +180,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Lyrics',
+                      label: context.l10n.storeFilterLyrics,
                       icon: Icons.lyrics_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.lyrics,
@@ -189,7 +190,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Integration',
+                      label: context.l10n.storeFilterIntegration,
                       icon: Icons.link,
                       isSelected:
                           state.selectedCategory == StoreCategory.integration,
@@ -286,7 +287,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               onPressed: () =>
                   ref.read(storeProvider.notifier).refresh(forceRefresh: true),
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.dialogRetry),
             ),
           ],
         ),
@@ -321,7 +322,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 _searchController.clear();
                 ref.read(storeProvider.notifier).clearSearch();
               },
-              child: const Text('Clear filters'),
+              child: Text(context.l10n.storeClearFilters),
             ),
           ],
         ],
@@ -574,7 +575,7 @@ class _ExtensionItem extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Update'),
+                    child: Text(context.l10n.storeUpdate),
                   )
                 else if (extension.isInstalled)
                   OutlinedButton(
@@ -602,7 +603,7 @@ class _ExtensionItem extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Install'),
+                    child: Text(context.l10n.storeInstall),
                   ),
               ],
             ),

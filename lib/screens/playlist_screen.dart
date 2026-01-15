@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
@@ -114,7 +115,7 @@ class PlaylistScreen extends ConsumerWidget {
                     children: [
                       Icon(Icons.playlist_play, size: 14, color: colorScheme.onTertiaryContainer),
                       const SizedBox(width: 4),
-                      Text('${tracks.length} tracks', style: TextStyle(color: colorScheme.onTertiaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                      Text(context.l10n.tracksCount(tracks.length), style: TextStyle(color: colorScheme.onTertiaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -122,7 +123,7 @@ class PlaylistScreen extends ConsumerWidget {
                 FilledButton.icon(
                   onPressed: () => _downloadAll(context, ref),
                   icon: const Icon(Icons.download),
-                  label: Text('Download All (${tracks.length})'),
+                  label: Text(context.l10n.downloadAllCount(tracks.length)),
                   style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                 ),
               ],
@@ -141,7 +142,7 @@ class PlaylistScreen extends ConsumerWidget {
           children: [
             Icon(Icons.queue_music, size: 20, color: colorScheme.primary),
             const SizedBox(width: 8),
-            Text('Tracks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(context.l10n.tracksHeader, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
           ],
         ),
       ),
@@ -176,12 +177,12 @@ class PlaylistScreen extends ConsumerWidget {
         coverUrl: track.coverUrl,
         onSelect: (quality, service) {
           ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
         },
       );
     } else {
       ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
     }
   }
 
@@ -195,12 +196,12 @@ class PlaylistScreen extends ConsumerWidget {
         artistName: playlistName,
         onSelect: (quality, service) {
           ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
         },
       );
     } else {
       ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
     }
   }
 }
@@ -264,7 +265,7 @@ class _PlaylistTrackItem extends ConsumerWidget {
         final fileExists = await File(historyItem.filePath).exists();
         if (fileExists) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${track.name}" already downloaded')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAlreadyDownloaded(track.name))));
           }
           return;
         } else {

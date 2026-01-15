@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/utils/mime_utils.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
@@ -139,21 +140,19 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Selected'),
-        content: Text(
-          'Delete $count ${count == 1 ? 'track' : 'tracks'} from history?\n\nThis will also delete the files from storage.',
-        ),
+        title: Text(context.l10n.dialogDeleteSelectedTitle),
+        content: Text(context.l10n.dialogDeleteSelectedMessage(count)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(context.l10n.dialogDelete),
           ),
         ],
       ),
@@ -184,9 +183,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Deleted $deletedCount ${deletedCount == 1 ? 'track' : 'tracks'}',
-            ),
+            content: Text(context.l10n.snackbarDeletedTracks(deletedCount)),
           ),
         );
       }
@@ -235,7 +232,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Cannot open file: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarCannotOpenFile(e.toString()))));
       }
     }
   }
@@ -493,7 +490,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       expandedTitleScale: 1.0,
                       titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
                       title: Text(
-                        'History',
+                        context.l10n.historyTitle,
                         style: TextStyle(
                           fontSize: 20 + (14 * expandRatio),
                           fontWeight: FontWeight.bold,
@@ -590,7 +587,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       child: Row(
                         children: [
                           _FilterChip(
-                            label: 'All',
+                            label: context.l10n.historyFilterAll,
                             count: allHistoryItems.length,
                             isSelected: historyFilterMode == 'all',
                             onTap: () {
@@ -599,7 +596,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           ),
                           const SizedBox(width: 8),
                           _FilterChip(
-                            label: 'Albums',
+                            label: context.l10n.historyFilterAlbums,
                             count: albumCount,
                             isSelected: historyFilterMode == 'albums',
                             onTap: () {
@@ -608,7 +605,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           ),
                           const SizedBox(width: 8),
                           _FilterChip(
-                            label: 'Singles',
+                            label: context.l10n.historyFilterSingles,
                             count: singleCount,
                             isSelected: historyFilterMode == 'singles',
                             onTap: () {
@@ -784,7 +781,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           ? () => _enterSelectionMode(historyItems.first.id)
                           : null,
                       icon: const Icon(Icons.checklist, size: 18),
-                      label: const Text('Select'),
+                      label: Text(context.l10n.actionSelect),
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                       ),

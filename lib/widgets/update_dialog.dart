@@ -4,6 +4,7 @@ import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/update_checker.dart';
 import 'package:spotiflac_android/services/apk_downloader.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 class UpdateDialog extends StatefulWidget {
   final UpdateInfo updateInfo;
@@ -42,7 +43,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
     setState(() {
       _isDownloading = true;
       _progress = 0;
-      _statusText = 'Starting download...';
+      _statusText = context.l10n.updateStartingDownload;
     });
 
     final notificationService = NotificationService();
@@ -91,11 +92,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Download failed';
+          _statusText = context.l10n.updateDownloadFailed;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to download update')),
+          SnackBar(content: Text(context.l10n.updateFailedMessage)),
         );
       }
     }
@@ -131,9 +132,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Update Available', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(context.l10n.updateAvailable, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text('A new version is ready', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+                      Text(context.l10n.updateNewVersionReady, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -154,11 +155,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _VersionChip(version: AppInfo.version, label: 'Current', colorScheme: colorScheme),
+                  _VersionChip(version: AppInfo.version, label: context.l10n.updateCurrent, colorScheme: colorScheme),
                   const SizedBox(width: 12),
                   Icon(Icons.arrow_forward_rounded, size: 20, color: colorScheme.primary),
                   const SizedBox(width: 12),
-                  _VersionChip(version: widget.updateInfo.version, label: 'New', colorScheme: colorScheme, isNew: true),
+                  _VersionChip(version: widget.updateInfo.version, label: context.l10n.updateNew, colorScheme: colorScheme, isNew: true),
                 ],
               ),
             ),
@@ -184,7 +185,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
                         ),
                         const SizedBox(width: 12),
-                        Text('Downloading...', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(context.l10n.updateDownloading, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -209,7 +210,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
               ),
             ] else ...[
               // Changelog section
-              Text("What's New", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(context.l10n.updateWhatsNew, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Container(
                 constraints: const BoxConstraints(maxHeight: 180),
@@ -240,7 +241,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.dialogCancel),
                 ),
               )
             else
@@ -251,7 +252,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     child: FilledButton.icon(
                       onPressed: _downloadAndInstall,
                       icon: const Icon(Icons.download_rounded, size: 20),
-                      label: const Text('Download & Install'),
+                      label: Text(context.l10n.updateDownloadInstall),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -271,7 +272,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: Text("Don't remind", style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                          child: Text(context.l10n.updateDontRemind, style: TextStyle(color: colorScheme.onSurfaceVariant)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -285,7 +286,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Later'),
+                          child: Text(context.l10n.updateLater),
                         ),
                       ),
                     ],

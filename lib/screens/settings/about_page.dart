@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class AboutPage extends StatelessWidget {
@@ -41,7 +42,7 @@ class AboutPage extends StatelessWidget {
                   expandedTitleScale: 1.0,
                   titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                   title: Text(
-                    'About',
+                    context.l10n.aboutTitle,
                     style: TextStyle(
                       fontSize: 20 + (8 * expandRatio), // 20 -> 28
                       fontWeight: FontWeight.bold,
@@ -62,27 +63,27 @@ class AboutPage extends StatelessWidget {
           ),
 
           // Contributors section
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Contributors'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.aboutContributors),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
                 _ContributorItem(
                   name: AppInfo.mobileAuthor,
-                  description: 'Mobile version developer',
+                  description: context.l10n.aboutMobileDeveloper,
                   githubUsername: AppInfo.mobileAuthor,
                   showDivider: true,
                 ),
                 _ContributorItem(
                   name: AppInfo.originalAuthor,
-                  description: 'Creator of the original SpotiFLAC',
+                  description: context.l10n.aboutOriginalCreator,
                   githubUsername: AppInfo.originalAuthor,
                   showDivider: true,
                 ),
                 _ContributorItem(
                   name: 'Amonoman',
-                  description: 'The talented artist who created our beautiful app logo!',
+                  description: context.l10n.aboutLogoArtist,
                   githubUsername: 'Amonoman',
                   showDivider: false,
                 ),
@@ -91,35 +92,35 @@ class AboutPage extends StatelessWidget {
           ),
 
           // Special Thanks section
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Special Thanks'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.aboutSpecialThanks),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
                 _ContributorItem(
                   name: 'binimum',
-                  description: 'The creator of QQDL & HiFi API. Without this API, Tidal downloads wouldn\'t exist!',
+                  description: context.l10n.aboutBinimumDesc,
                   githubUsername: 'binimum',
                   showDivider: true,
                 ),
                 _ContributorItem(
                   name: 'sachinsenal0x64',
-                  description: 'The original HiFi project creator. The foundation of Tidal integration!',
+                  description: context.l10n.aboutSachinsenalDesc,
                   githubUsername: 'sachinsenal0x64',
                   showDivider: true,
                 ),
                 _AboutSettingsItem(
                   icon: Icons.cloud_outlined,
-                  title: 'DoubleDouble',
-                  subtitle: 'Amazing API for Amazon Music downloads. Thank you for making it free!',
+                  title: context.l10n.aboutDoubleDouble,
+                  subtitle: context.l10n.aboutDoubleDoubleDesc,
                   onTap: () => _launchUrl('https://doubledouble.top'),
                   showDivider: true,
                 ),
                 _AboutSettingsItem(
                   icon: Icons.music_note_outlined,
-                  title: 'DAB Music',
-                  subtitle: 'The best Qobuz streaming API. Hi-Res downloads wouldn\'t be possible without this!',
+                  title: context.l10n.aboutDabMusic,
+                  subtitle: context.l10n.aboutDabMusicDesc,
                   onTap: () => _launchUrl('https://dabmusic.xyz'),
                   showDivider: false,
                 ),
@@ -128,37 +129,37 @@ class AboutPage extends StatelessWidget {
           ),
 
           // Links section
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Links'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.aboutLinks),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.phone_android,
-                  title: 'Mobile source code',
+                  title: context.l10n.aboutMobileSource,
                   subtitle: 'github.com/${AppInfo.githubRepo}',
                   onTap: () => _launchUrl(AppInfo.githubUrl),
                   showDivider: true,
                 ),
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.computer,
-                  title: 'PC source code',
+                  title: context.l10n.aboutPCSource,
                   subtitle: 'github.com/${AppInfo.originalAuthor}/SpotiFLAC',
                   onTap: () => _launchUrl(AppInfo.originalGithubUrl),
                   showDivider: true,
                 ),
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.bug_report_outlined,
-                  title: 'Report an issue',
-                  subtitle: 'Report any problems you encounter',
+                  title: context.l10n.aboutReportIssue,
+                  subtitle: context.l10n.aboutReportIssueSubtitle,
                   onTap: () => _launchUrl('${AppInfo.githubUrl}/issues/new'),
                   showDivider: true,
                 ),
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.lightbulb_outline,
-                  title: 'Feature request',
-                  subtitle: 'Suggest new features for the app',
+                  title: context.l10n.aboutFeatureRequest,
+                  subtitle: context.l10n.aboutFeatureRequestSubtitle,
                   onTap: () => _launchUrl('${AppInfo.githubUrl}/issues/new'),
                   showDivider: false,
                 ),
@@ -167,16 +168,16 @@ class AboutPage extends StatelessWidget {
           ),
 
           // Support section
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Support'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.aboutSupport),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.coffee_outlined,
-                  title: 'Buy me a coffee',
-                  subtitle: 'Support development on Ko-fi',
+                  title: context.l10n.aboutBuyMeCoffee,
+                  subtitle: context.l10n.aboutBuyMeCoffeeSubtitle,
                   onTap: () => _launchUrl(AppInfo.kofiUrl),
                   showDivider: false,
                 ),
@@ -185,15 +186,15 @@ class AboutPage extends StatelessWidget {
           ),
 
           // App info section
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'App'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.aboutApp),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
-                SettingsItem(
+                _AboutSettingsItem(
                   icon: Icons.info_outline,
-                  title: 'Version',
+                  title: context.l10n.aboutVersion,
                   subtitle: 'v${AppInfo.version} (build ${AppInfo.buildNumber})',
                   showDivider: false,
                 ),
@@ -300,7 +301,7 @@ class _AppHeaderCard extends StatelessWidget {
           const SizedBox(height: 16),
           // Description
           Text(
-            'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.',
+            context.l10n.aboutAppDescription,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,

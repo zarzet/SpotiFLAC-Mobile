@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
@@ -50,7 +51,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                     bottom: 16,
                   ),
                   title: Text(
-                    'Options',
+                    context.l10n.optionsTitle,
                     style: TextStyle(
                       fontSize: 20 + (8 * expandRatio), // 20 -> 28
                       fontWeight: FontWeight.bold,
@@ -63,8 +64,8 @@ class OptionsSettingsPage extends ConsumerWidget {
           ),
 
             // Search Source section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Search Source'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionSearchSource),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -93,7 +94,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    'Spotify requires your own API credentials. Get them free from developer.spotify.com',
+                                    context.l10n.optionsSpotifyWarning,
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.onErrorContainer,
                                       fontSize: 12,
@@ -107,10 +108,10 @@ class OptionsSettingsPage extends ConsumerWidget {
                       ),
                     SettingsItem(
                       icon: Icons.key,
-                      title: 'Spotify Credentials',
+                      title: context.l10n.optionsSpotifyCredentials,
                       subtitle: settings.spotifyClientId.isNotEmpty
-                          ? 'Client ID: ${settings.spotifyClientId.length > 8 ? '${settings.spotifyClientId.substring(0, 8)}...' : settings.spotifyClientId}'
-                          : 'Required - tap to configure',
+                          ? context.l10n.optionsSpotifyCredentialsConfigured(settings.spotifyClientId.length > 8 ? settings.spotifyClientId.substring(0, 8) : settings.spotifyClientId)
+                          : context.l10n.optionsSpotifyCredentialsRequired,
                       onTap: () =>
                           _showSpotifyCredentialsDialog(context, ref, settings),
                       trailing: Icon(
@@ -130,16 +131,16 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             // Download options section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Download'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionDownload),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.sync,
-                    title: 'Auto Fallback',
-                    subtitle: 'Try other services if download fails',
+                    title: context.l10n.optionsAutoFallback,
+                    subtitle: context.l10n.optionsAutoFallbackSubtitle,
                     value: settings.autoFallback,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setAutoFallback(v),
@@ -147,10 +148,10 @@ class OptionsSettingsPage extends ConsumerWidget {
                   if (hasExtensions)
                     SettingsSwitchItem(
                       icon: Icons.extension,
-                      title: 'Use Extension Providers',
+                      title: context.l10n.optionsUseExtensionProviders,
                       subtitle: settings.useExtensionProviders
-                          ? 'Extensions will be tried first'
-                          : 'Using built-in providers only',
+                          ? context.l10n.optionsUseExtensionProvidersOn
+                          : context.l10n.optionsUseExtensionProvidersOff,
                       value: settings.useExtensionProviders,
                       onChanged: (v) => ref
                           .read(settingsProvider.notifier)
@@ -158,16 +159,16 @@ class OptionsSettingsPage extends ConsumerWidget {
                     ),
                   SettingsSwitchItem(
                     icon: Icons.lyrics,
-                    title: 'Embed Lyrics',
-                    subtitle: 'Embed synced lyrics into FLAC files',
+                    title: context.l10n.optionsEmbedLyrics,
+                    subtitle: context.l10n.optionsEmbedLyricsSubtitle,
                     value: settings.embedLyrics,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setEmbedLyrics(v),
                   ),
                   SettingsSwitchItem(
                     icon: Icons.image,
-                    title: 'Max Quality Cover',
-                    subtitle: 'Download highest resolution cover art',
+                    title: context.l10n.optionsMaxQualityCover,
+                    subtitle: context.l10n.optionsMaxQualityCoverSubtitle,
                     value: settings.maxQualityCover,
                     onChanged: (v) => ref
                         .read(settingsProvider.notifier)
@@ -179,8 +180,8 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             // Performance section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Performance'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionPerformance),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -196,16 +197,16 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             // App section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'App'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionApp),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.store,
-                    title: 'Extension Store',
-                    subtitle: 'Show Store tab in navigation',
+                    title: context.l10n.optionsExtensionStore,
+                    subtitle: context.l10n.optionsExtensionStoreSubtitle,
                     value: settings.showExtensionStore,
                     onChanged: (v) => ref
                         .read(settingsProvider.notifier)
@@ -213,8 +214,8 @@ class OptionsSettingsPage extends ConsumerWidget {
                   ),
                   SettingsSwitchItem(
                     icon: Icons.system_update,
-                    title: 'Check for Updates',
-                    subtitle: 'Notify when new version is available',
+                    title: context.l10n.optionsCheckUpdates,
+                    subtitle: context.l10n.optionsCheckUpdatesSubtitle,
                     value: settings.checkForUpdates,
                     onChanged: (v) => ref
                         .read(settingsProvider.notifier)
@@ -230,16 +231,16 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             // Data section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Data'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionData),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsItem(
                     icon: Icons.delete_forever,
-                    title: 'Clear Download History',
-                    subtitle: 'Remove all downloaded tracks from history',
+                    title: context.l10n.optionsClearHistory,
+                    subtitle: context.l10n.optionsClearHistorySubtitle,
                     onTap: () =>
                         _showClearHistoryDialog(context, ref, colorScheme),
                     showDivider: false,
@@ -249,18 +250,18 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             // Debug section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Debug'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionDebug),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.bug_report,
-                    title: 'Detailed Logging',
+                    title: context.l10n.optionsDetailedLogging,
                     subtitle: settings.enableLogging
-                        ? 'Detailed logs are being recorded'
-                        : 'Enable for bug reports',
+                        ? context.l10n.optionsDetailedLoggingOn
+                        : context.l10n.optionsDetailedLoggingOff,
                     value: settings.enableLogging,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setEnableLogging(v),
@@ -285,14 +286,14 @@ class OptionsSettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear History'),
-        content: const Text(
-          'Are you sure you want to clear all download history? This cannot be undone.',
+        title: Text(context.l10n.dialogClearHistoryTitle),
+        content: Text(
+          context.l10n.dialogClearHistoryMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           TextButton(
             onPressed: () {
@@ -300,9 +301,9 @@ class OptionsSettingsPage extends ConsumerWidget {
               Navigator.pop(context);
               ScaffoldMessenger.of(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('History cleared')));
+              ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarHistoryCleared)));
             },
-            child: Text('Clear', style: TextStyle(color: colorScheme.error)),
+            child: Text(context.l10n.dialogClear, style: TextStyle(color: colorScheme.error)),
           ),
         ],
       ),
@@ -353,7 +354,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'Spotify Credentials',
+                    context.l10n.credentialsTitle,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -361,7 +362,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter your Client ID and Secret to use your own Spotify application quota.',
+                    context.l10n.credentialsDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -373,8 +374,8 @@ class OptionsSettingsPage extends ConsumerWidget {
                   TextField(
                     controller: clientIdController,
                     decoration: InputDecoration(
-                      labelText: 'Client ID',
-                      hintText: 'Paste Client ID',
+                      labelText: context.l10n.credentialsClientId,
+                      hintText: context.l10n.credentialsClientIdHint,
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest.withValues(
                         alpha: 0.3,
@@ -412,8 +413,8 @@ class OptionsSettingsPage extends ConsumerWidget {
                     controller: clientSecretController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: 'Client Secret',
-                      hintText: 'Paste Client Secret',
+                      labelText: context.l10n.credentialsClientSecret,
+                      hintText: context.l10n.credentialsClientSecretHint,
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest.withValues(
                         alpha: 0.3,
@@ -458,12 +459,12 @@ class OptionsSettingsPage extends ConsumerWidget {
                             .setSpotifyCredentials(clientId, clientSecret);
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Credentials saved')),
+                          SnackBar(content: Text(context.l10n.snackbarCredentialsSaved)),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please fill all fields'),
+                          SnackBar(
+                            content: Text(context.l10n.snackbarFillAllFields),
                           ),
                         );
                       }
@@ -474,9 +475,9 @@ class OptionsSettingsPage extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: const Text(
-                      'Save Credentials',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    child: Text(
+                      context.l10n.actionSaveCredentials,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
 
@@ -489,14 +490,14 @@ class OptionsSettingsPage extends ConsumerWidget {
                             .clearSpotifyCredentials();
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Credentials cleared')),
+                          SnackBar(content: Text(context.l10n.snackbarCredentialsCleared)),
                         );
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: colorScheme.error,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Remove Credentials'),
+                      child: Text(context.l10n.actionRemoveCredentials),
                     ),
                   ],
 
@@ -540,14 +541,14 @@ class _ConcurrentDownloadsItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Concurrent Downloads',
+                      context.l10n.optionsConcurrentDownloads,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       currentValue == 1
-                          ? 'Sequential (1 at a time)'
-                          : '$currentValue parallel downloads',
+                          ? context.l10n.optionsConcurrentSequential
+                          : context.l10n.optionsConcurrentParallel(currentValue),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -590,7 +591,7 @@ class _ConcurrentDownloadsItem extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Parallel downloads may trigger rate limiting',
+                  context.l10n.optionsConcurrentWarning,
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
@@ -682,14 +683,14 @@ class _UpdateChannelSelector extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Update Channel',
+                      context.l10n.optionsUpdateChannel,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       currentChannel == 'preview'
-                          ? 'Get preview releases'
-                          : 'Stable releases only',
+                          ? context.l10n.optionsUpdateChannelPreview
+                          : context.l10n.optionsUpdateChannelStable,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -703,13 +704,13 @@ class _UpdateChannelSelector extends StatelessWidget {
           Row(
             children: [
               _ChannelChip(
-                label: 'Stable',
+                label: context.l10n.channelStable,
                 isSelected: currentChannel == 'stable',
                 onTap: () => onChanged('stable'),
               ),
               const SizedBox(width: 8),
               _ChannelChip(
-                label: 'Preview',
+                label: context.l10n.channelPreview,
                 isSelected: currentChannel == 'preview',
                 onTap: () => onChanged('preview'),
               ),
@@ -726,7 +727,7 @@ class _UpdateChannelSelector extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Preview may contain bugs or incomplete features',
+                  context.l10n.optionsUpdateChannelWarning,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -823,7 +824,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Primary Provider',
+            context.l10n.optionsPrimaryProvider,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
@@ -831,8 +832,8 @@ class _MetadataSourceSelector extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             hasExtensionSearch
-                ? 'Using extension: $extensionName'
-                : 'Service used when searching by track name.',
+                ? context.l10n.optionsUsingExtension(extensionName!)
+                : context.l10n.optionsPrimaryProviderSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: hasExtensionSearch 
                   ? colorScheme.primary 
@@ -883,7 +884,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Tap Deezer or Spotify to switch back from extension',
+                    context.l10n.optionsSwitchBack,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

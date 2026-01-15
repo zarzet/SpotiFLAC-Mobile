@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/settings/extension_detail_page.dart';
@@ -74,7 +75,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
                   expandedTitleScale: 1.0,
                   titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                   title: Text(
-                    'Extensions',
+                    context.l10n.extensionsTitle,
                     style: TextStyle(
                       fontSize: 20 + (8 * expandRatio),
                       fontWeight: FontWeight.bold,
@@ -123,8 +124,8 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
             ),
 
           // Provider Priority
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Provider Priority'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.extensionsProviderPrioritySection),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
@@ -137,8 +138,8 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
           ),
 
           // Installed Extensions
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Installed Extensions'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.extensionsInstalledSection),
           ),
 
           if (extState.extensions.isEmpty && !extState.isLoading)
@@ -160,14 +161,14 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'No extensions installed',
+                        context.l10n.extensionsNoExtensions,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Install .spotiflac-ext files to add new providers',
+                        context.l10n.extensionsNoExtensionsSubtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -209,7 +210,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
               child: FilledButton.icon(
                 onPressed: _installExtension,
                 icon: const Icon(Icons.add),
-                label: const Text('Install Extension'),
+                label: Text(context.l10n.extensionsInstallButton),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -236,8 +237,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Extensions can add new metadata and download providers. '
-                        'Only install extensions from trusted sources.',
+                        context.l10n.extensionsInfoTip,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onTertiaryContainer,
                         ),
@@ -266,8 +266,8 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
         if (!file.path!.endsWith('.spotiflac-ext')) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please select a .spotiflac-ext file'),
+              SnackBar(
+                content: Text(context.l10n.snackbarSelectExtFile),
               ),
             );
           }
@@ -282,7 +282,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
           final extState = ref.read(extensionProvider);
           String message;
           if (success) {
-            message = 'Extension installed successfully';
+            message = context.l10n.extensionsInstalledSuccess;
           } else {
             // Parse friendly error message
             message = _getFriendlyErrorMessage(extState.error);
@@ -404,8 +404,8 @@ class _ExtensionItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         hasError
-                            ? extension.errorMessage ?? 'Error loading extension'
-                            : 'v${extension.version} by ${extension.author}',
+                            ? extension.errorMessage ?? context.l10n.extensionsErrorLoading
+                            : 'v${extension.version} ${context.l10n.extensionsAuthor(extension.author)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: hasError
                               ? colorScheme.error
@@ -474,7 +474,7 @@ class _DownloadPriorityItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Download Priority',
+                    context.l10n.extensionsDownloadPriority,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: hasDownloadExtensions 
                           ? null 
@@ -484,8 +484,8 @@ class _DownloadPriorityItem extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     hasDownloadExtensions 
-                        ? 'Set download service order'
-                        : 'No extensions with download provider',
+                        ? context.l10n.extensionsDownloadPrioritySubtitle
+                        : context.l10n.extensionsNoDownloadProvider,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -543,7 +543,7 @@ class _MetadataPriorityItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Metadata Priority',
+                    context.l10n.extensionsMetadataPriority,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: hasMetadataExtensions 
                           ? null 
@@ -553,8 +553,8 @@ class _MetadataPriorityItem extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     hasMetadataExtensions 
-                        ? 'Set search & metadata source order'
-                        : 'No extensions with metadata provider',
+                        ? context.l10n.extensionsMetadataPrioritySubtitle
+                        : context.l10n.extensionsNoMetadataProvider,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -590,7 +590,7 @@ class _SearchProviderSelector extends ConsumerWidget {
         .toList();
     
     // Get current provider name
-    String currentProviderName = 'Default (Deezer/Spotify)';
+    String currentProviderName = context.l10n.extensionDefaultProvider;
     if (settings.searchProvider != null && settings.searchProvider!.isNotEmpty) {
       final ext = searchProviders.where((e) => e.id == settings.searchProvider).firstOrNull;
       currentProviderName = ext?.displayName ?? settings.searchProvider!;
@@ -619,7 +619,7 @@ class _SearchProviderSelector extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Search Provider',
+                        context.l10n.extensionsSearchProvider,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: searchProviders.isEmpty 
                               ? colorScheme.outline 
@@ -629,7 +629,7 @@ class _SearchProviderSelector extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         searchProviders.isEmpty 
-                            ? 'No extensions with custom search'
+                            ? context.l10n.extensionsNoCustomSearch
                             : currentProviderName,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
@@ -674,7 +674,7 @@ class _SearchProviderSelector extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
-                'Search Provider',
+                ctx.l10n.extensionsSearchProvider,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -683,7 +683,7 @@ class _SearchProviderSelector extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
-                'Choose which service to use for searching tracks',
+                ctx.l10n.extensionsSearchProviderDescription,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -692,8 +692,8 @@ class _SearchProviderSelector extends ConsumerWidget {
             // Default option
             ListTile(
               leading: Icon(Icons.music_note, color: colorScheme.primary),
-              title: const Text('Default (Deezer/Spotify)'),
-              subtitle: const Text('Use built-in search'),
+              title: Text(ctx.l10n.extensionDefaultProvider),
+              subtitle: Text(ctx.l10n.extensionDefaultProviderSubtitle),
               trailing: (settings.searchProvider == null || settings.searchProvider!.isEmpty)
                   ? Icon(Icons.check_circle, color: colorScheme.primary)
                   : Icon(Icons.circle_outlined, color: colorScheme.outline),
@@ -706,7 +706,7 @@ class _SearchProviderSelector extends ConsumerWidget {
             ...searchProviders.map((ext) => ListTile(
               leading: Icon(Icons.extension, color: colorScheme.secondary),
               title: Text(ext.displayName),
-              subtitle: Text(ext.searchBehavior?.placeholder ?? 'Custom search'),
+              subtitle: Text(ext.searchBehavior?.placeholder ?? ctx.l10n.extensionsCustomSearch),
               trailing: settings.searchProvider == ext.id
                   ? Icon(Icons.check_circle, color: colorScheme.primary)
                   : Icon(Icons.circle_outlined, color: colorScheme.outline),

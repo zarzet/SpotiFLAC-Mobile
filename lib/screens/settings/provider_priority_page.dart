@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
 class ProviderPriorityPage extends ConsumerStatefulWidget {
@@ -82,7 +83,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                 if (_hasChanges)
                   TextButton(
                     onPressed: _saveChanges,
-                    child: const Text('Save'),
+                    child: Text(context.l10n.dialogSave),
                   ),
               ],
               flexibleSpace: LayoutBuilder(
@@ -97,7 +98,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                     title: Text(
-                      'Provider Priority',
+                      context.l10n.providerPriorityTitle,
                       style: TextStyle(
                         fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -114,8 +115,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Drag to reorder download providers. The app will try providers '
-                  'from top to bottom when downloading tracks.',
+                  context.l10n.providerPriorityDescription,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -167,8 +167,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'If a track is not available on the first provider, '
-                          'the app will automatically try the next one.',
+                          context.l10n.providerPriorityInfo,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: colorScheme.onTertiaryContainer,
                           ),
@@ -191,16 +190,16 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Do you want to discard them?'),
+        title: Text(context.l10n.dialogDiscardChanges),
+        content: Text(context.l10n.dialogUnsavedChanges),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+            child: Text(context.l10n.dialogDiscard),
           ),
         ],
       ),
@@ -215,7 +214,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Provider priority saved')),
+        SnackBar(content: Text(context.l10n.snackbarProviderPrioritySaved)),
       );
     }
   }
@@ -304,7 +303,7 @@ class _ProviderItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        info.isBuiltIn ? 'Built-in' : 'Extension',
+                        info.isBuiltIn ? context.l10n.providerBuiltIn : context.l10n.providerExtension,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),

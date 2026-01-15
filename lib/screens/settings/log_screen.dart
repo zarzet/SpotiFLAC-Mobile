@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -67,7 +68,7 @@ class _LogScreenState extends State<LogScreen> {
     Clipboard.setData(ClipboardData(text: logs));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Logs copied to clipboard'),
+        content: Text(context.l10n.logCopied),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
@@ -84,19 +85,19 @@ class _LogScreenState extends State<LogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Logs'),
-        content: const Text('Are you sure you want to clear all logs?'),
+        title: Text(context.l10n.logClearLogsTitle),
+        content: Text(context.l10n.logClearLogsMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () {
               LogBuffer().clear();
               Navigator.pop(context);
             },
-            child: const Text('Clear'),
+            child: Text(context.l10n.dialogClear),
           ),
         ],
       ),
@@ -166,19 +167,19 @@ class _LogScreenState extends State<LogScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'share',
                     child: ListTile(
-                      leading: Icon(Icons.share),
-                      title: Text('Share logs'),
+                      leading: const Icon(Icons.share),
+                      title: Text(context.l10n.logShareLogs),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'clear',
                     child: ListTile(
-                      leading: Icon(Icons.delete_outline),
-                        title: Text('Clear logs'),
+                      leading: const Icon(Icons.delete_outline),
+                        title: Text(context.l10n.logClearLogs),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
@@ -195,7 +196,7 @@ class _LogScreenState extends State<LogScreen> {
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                     title: Text(
-                      'Logs',
+                      context.l10n.logTitle,
                       style: TextStyle(
                         fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -208,8 +209,8 @@ class _LogScreenState extends State<LogScreen> {
             ),
 
             // Filter section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Filter'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.logFilterSection),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -225,10 +226,10 @@ class _LogScreenState extends State<LogScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Level', style: Theme.of(context).textTheme.bodyLarge),
+                              Text(context.l10n.logFilterLevel, style: Theme.of(context).textTheme.bodyLarge),
                               const SizedBox(height: 2),
                               Text(
-                                'Filter logs by severity',
+                                context.l10n.logFilterBySeverity,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -279,7 +280,7 @@ class _LogScreenState extends State<LogScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText: 'Search logs...',
+                              hintText: context.l10n.logSearchHint,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -316,7 +317,9 @@ class _LogScreenState extends State<LogScreen> {
             // Log entries section
             SliverToBoxAdapter(
               child: SettingsSectionHeader(
-                title: 'Entries (${logs.length}${_selectedLevel != 'ALL' || _searchQuery.isNotEmpty ? ' filtered' : ''})',
+                title: _selectedLevel != 'ALL' || _searchQuery.isNotEmpty 
+                    ? context.l10n.logEntriesFiltered(logs.length)
+                    : context.l10n.logEntries(logs.length),
               ),
             ),
             
@@ -342,14 +345,14 @@ class _LogScreenState extends State<LogScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No logs yet',
+                                context.l10n.logNoLogsYet,
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Logs will appear here as you use the app',
+                                context.l10n.logNoLogsYetSubtitle,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                 ),

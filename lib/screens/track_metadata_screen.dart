@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 /// Screen to display detailed metadata for a downloaded track
 /// Designed with Material Expressive 3 style
@@ -325,7 +326,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'File not found',
+                      context.l10n.trackFileNotFound,
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                         fontSize: 12,
@@ -361,7 +362,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Metadata',
+                  context.l10n.trackMetadata,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
@@ -383,7 +384,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   return OutlinedButton.icon(
                     onPressed: () => _openServiceUrl(context),
                     icon: const Icon(Icons.open_in_new, size: 18),
-                    label: Text(isDeezer ? 'Open in Deezer' : 'Open in Spotify'),
+                    label: Text(isDeezer ? context.l10n.trackOpenInDeezer : context.l10n.trackOpenInSpotify),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       shape: RoundedRectangleBorder(
@@ -440,7 +441,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         if (context.mounted) {
           _copyToClipboard(context, webUrl);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${isDeezer ? 'Deezer' : 'Spotify'} URL copied to clipboard')),
+            SnackBar(content: Text(context.l10n.snackbarUrlCopied(isDeezer ? 'Deezer' : 'Spotify'))),
           );
         }
       }
@@ -456,21 +457,21 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
     
     final items = <_MetadataItem>[
-      _MetadataItem('Track name', trackName),
-      _MetadataItem('Artist', artistName),
+      _MetadataItem(context.l10n.trackTrackName, trackName),
+      _MetadataItem(context.l10n.trackArtist, artistName),
       if (albumArtist != null && albumArtist != artistName)
-        _MetadataItem('Album artist', albumArtist!),
-      _MetadataItem('Album', albumName),
+        _MetadataItem(context.l10n.trackAlbumArtist, albumArtist!),
+      _MetadataItem(context.l10n.trackAlbum, albumName),
       if (trackNumber != null && trackNumber! > 0)
-        _MetadataItem('Track number', trackNumber.toString()),
+        _MetadataItem(context.l10n.trackTrackNumber, trackNumber.toString()),
       if (discNumber != null && discNumber! > 0)
-        _MetadataItem('Disc number', discNumber.toString()),
+        _MetadataItem(context.l10n.trackDiscNumber, discNumber.toString()),
       if (item.duration != null)
-        _MetadataItem('Duration', _formatDuration(item.duration!)),
+        _MetadataItem(context.l10n.trackDuration, _formatDuration(item.duration!)),
       if (audioQualityStr != null)
-        _MetadataItem('Audio quality', audioQualityStr),
+        _MetadataItem(context.l10n.trackAudioQuality, audioQualityStr),
       if (releaseDate != null && releaseDate!.isNotEmpty)
-        _MetadataItem('Release date', releaseDate!),
+        _MetadataItem(context.l10n.trackReleaseDate, releaseDate!),
       if (isrc != null && isrc!.isNotEmpty)
         _MetadataItem('ISRC', isrc!),
     ];
@@ -482,8 +483,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
     
     items.addAll([
-      _MetadataItem('Service', item.service.toUpperCase()),
-      _MetadataItem('Downloaded', _formatFullDate(item.downloadedAt)),
+      _MetadataItem(context.l10n.trackMetadataService, item.service.toUpperCase()),
+      _MetadataItem(context.l10n.trackDownloaded, _formatFullDate(item.downloadedAt)),
     ]);
 
     return Column(
@@ -557,7 +558,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'File Info',
+                  context.l10n.trackFileInfo,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
@@ -708,7 +709,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Lyrics',
+                  context.l10n.trackLyrics,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
@@ -719,7 +720,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   IconButton(
                     icon: const Icon(Icons.copy, size: 20),
                     onPressed: () => _copyToClipboard(context, _lyrics!),
-                    tooltip: 'Copy lyrics',
+                    tooltip: context.l10n.trackCopyLyrics,
                   ),
               ],
             ),
@@ -751,7 +752,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                     ),
                     TextButton(
                       onPressed: _fetchLyrics,
-                      child: const Text('Retry'),
+                      child: Text(context.l10n.dialogRetry),
                     ),
                   ],
                 ),
@@ -774,7 +775,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 child: FilledButton.tonalIcon(
                   onPressed: _fetchLyrics,
                   icon: const Icon(Icons.download),
-                  label: const Text('Load Lyrics'),
+                  label: Text(context.l10n.trackLoadLyrics),
                 ),
               ),
           ],
@@ -806,7 +807,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       if (mounted) {
         if (result.isEmpty) {
           setState(() {
-            _lyricsError = 'Lyrics not available for this track';
+            _lyricsError = context.l10n.trackLyricsNotAvailable;
             _lyricsLoading = false;
           });
         } else {
@@ -821,8 +822,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     } catch (e) {
       if (mounted) {
         final errorMsg = e.toString().contains('TimeoutException') 
-            ? 'Request timed out. Try again later.'
-            : 'Failed to load lyrics';
+            ? context.l10n.trackLyricsTimeout
+            : context.l10n.trackLyricsLoadFailed;
         setState(() {
           _lyricsError = errorMsg;
           _lyricsLoading = false;
@@ -856,7 +857,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           child: FilledButton.icon(
             onPressed: fileExists ? () => _openFile(context, cleanFilePath) : null,
             icon: const Icon(Icons.play_arrow),
-            label: const Text('Play'),
+            label: Text(context.l10n.trackMetadataPlay),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -872,7 +873,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           child: OutlinedButton.icon(
             onPressed: () => _confirmDelete(context, ref, colorScheme),
             icon: Icon(Icons.delete_outline, color: colorScheme.error),
-            label: Text('Delete', style: TextStyle(color: colorScheme.error)),
+            label: Text(context.l10n.trackMetadataDelete, style: TextStyle(color: colorScheme.error)),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -908,7 +909,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.copy),
-              title: const Text('Copy file path'),
+              title: Text(context.l10n.trackCopyFilePath),
               onTap: () {
                 Navigator.pop(context);
                 _copyToClipboard(context, cleanFilePath);
@@ -916,7 +917,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.share),
-              title: const Text('Share'),
+              title: Text(context.l10n.trackMetadataShare),
               onTap: () {
                 Navigator.pop(context);
                 _shareFile(context);
@@ -924,7 +925,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             ),
             ListTile(
               leading: Icon(Icons.delete, color: colorScheme.error),
-              title: Text('Remove from device', style: TextStyle(color: colorScheme.error)),
+              title: Text(context.l10n.trackRemoveFromDevice, style: TextStyle(color: colorScheme.error)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDelete(context, ref, colorScheme);
@@ -941,14 +942,12 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove from device?'),
-        content: const Text(
-          'This will permanently delete the downloaded file and remove it from your history.',
-        ),
+        title: Text(context.l10n.trackDeleteConfirmTitle),
+        content: Text(context.l10n.trackDeleteConfirmMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -970,7 +969,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 Navigator.pop(context); // Go back to history
               }
             },
-            child: Text('Delete', style: TextStyle(color: colorScheme.error)),
+            child: Text(context.l10n.dialogDelete, style: TextStyle(color: colorScheme.error)),
           ),
         ],
       ),
@@ -983,13 +982,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       final result = await OpenFilex.open(filePath, type: mimeType);
       if (result.type != ResultType.done && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot open: ${result.message}')),
+          SnackBar(content: Text(context.l10n.trackCannotOpen(result.message))),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot open file: $e')),
+          SnackBar(content: Text(context.l10n.snackbarCannotOpenFile(e.toString()))),
         );
       }
     }
@@ -998,9 +997,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   void _copyToClipboard(BuildContext context, String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Copied to clipboard'),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(context.l10n.trackCopiedToClipboard),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -1010,7 +1009,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     if (!await file.exists()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File not found')),
+          SnackBar(content: Text(context.l10n.snackbarFileNotFound)),
         );
       }
       return;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 /// Built-in service info with quality options
 class BuiltInService {
@@ -167,7 +168,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Text(
-                'Download From',
+                context.l10n.downloadFrom,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
@@ -202,7 +203,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Text(
-                'Select Quality',
+                context.l10n.downloadSelectQuality,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
@@ -212,7 +213,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                 child: Text(
-                  'Actual quality depends on track availability. Hi-Res may not be available for all tracks.',
+                  context.l10n.qualityNote,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,

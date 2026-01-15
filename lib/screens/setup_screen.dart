@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 class SetupScreen extends ConsumerStatefulWidget {
   const SetupScreen({super.key});
@@ -123,19 +124,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               final shouldOpen = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Storage Access Required'),
-                  content: const Text(
-                    'SpotiFLAC needs "All files access" permission to save music files to your chosen folder.\n\n'
-                    'Please enable "Allow access to manage all files" in the next screen.',
+                  title: Text(context.l10n.setupStorageAccessRequired),
+                  content: Text(
+                    '${context.l10n.setupStorageAccessMessage}\n\n'
+                    '${context.l10n.setupAllowAccessToManageFiles}',
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.dialogCancel),
                     ),
                     FilledButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Open Settings'),
+                      child: Text(context.l10n.setupOpenSettings),
                     ),
                   ],
                 ),
@@ -166,19 +167,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               final shouldOpen = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Storage Access Required'),
-                  content: const Text(
-                    'Android 11+ requires "All files access" permission to save music files.\n\n'
-                    'Please enable "Allow access to manage all files" in the next screen.',
+                  title: Text(context.l10n.setupStorageAccessRequired),
+                  content: Text(
+                    '${context.l10n.setupStorageAccessMessageAndroid11}\n\n'
+                    '${context.l10n.setupAllowAccessToManageFiles}',
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.dialogCancel),
                     ),
                     FilledButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Open Settings'),
+                      child: Text(context.l10n.setupOpenSettings),
                     ),
                   ],
                 ),
@@ -211,7 +212,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Permission denied. Please grant all permissions to continue.')),
+              SnackBar(content: Text(context.l10n.setupPermissionDeniedMessage)),
             );
           }
         }
@@ -256,22 +257,21 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$permissionType Permission Required'),
+        title: Text(context.l10n.setupPermissionRequired(permissionType)),
         content: Text(
-          '$permissionType permission is required for the best experience. '
-          'Please grant permission in app settings.',
+          context.l10n.setupPermissionRequiredMessage(permissionType),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(context.l10n.setupOpenSettings),
           ),
         ],
       ),
@@ -288,7 +288,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       } else {
         // Android: Use file picker
         String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
-          dialogTitle: 'Select Download Folder',
+          dialogTitle: context.l10n.setupSelectDownloadFolder,
         );
 
         if (selectedDirectory != null) {
@@ -299,11 +299,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             final useDefault = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Use Default Folder?'),
-                content: Text('No folder selected. Would you like to use the default Music folder?\n\n$defaultDir'),
+                title: Text(context.l10n.setupUseDefaultFolder),
+                content: Text('${context.l10n.setupNoFolderSelected}\n\n$defaultDir'),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Use Default')),
+                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.l10n.dialogCancel)),
+                  TextButton(onPressed: () => Navigator.pop(context, true), child: Text(context.l10n.setupUseDefault)),
                 ],
               ),
             );
@@ -333,19 +333,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-              child: Text('Download Location', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              child: Text(context.l10n.setupDownloadLocationTitle, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
-                'On iOS, downloads are saved to the app\'s Documents folder which is accessible via the Files app.',
+                context.l10n.setupDownloadLocationIosMessage,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
             ListTile(
               leading: Icon(Icons.folder_special, color: colorScheme.primary),
-              title: const Text('App Documents Folder'),
-              subtitle: const Text('Recommended - accessible via Files app'),
+              title: Text(context.l10n.setupAppDocumentsFolder),
+              subtitle: Text(context.l10n.setupAppDocumentsFolderSubtitle),
               trailing: Icon(Icons.check_circle, color: colorScheme.primary),
               onTap: () async {
                 final dir = await _getDefaultDirectory();
@@ -355,8 +355,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             ),
             ListTile(
               leading: Icon(Icons.cloud, color: colorScheme.onSurfaceVariant),
-              title: const Text('Choose from Files'),
-              subtitle: const Text('Select iCloud or other location'),
+              title: Text(context.l10n.setupChooseFromFiles),
+              subtitle: Text(context.l10n.setupChooseFromFilesSubtitle),
               onTap: () async {
                 Navigator.pop(ctx);
                 // Note: iOS requires folder to have at least one file to be selectable
@@ -380,7 +380,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'iOS limitation: Empty folders cannot be selected. Create a file inside first or use App Documents.',
+                        context.l10n.setupIosEmptyFolderWarning,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onTertiaryContainer),
                       ),
                     ),
@@ -486,16 +486,16 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 Column(
                   children: [
                     const SizedBox(height: 24),
-                    ClipRRect(
+                  ClipRRect(
                       borderRadius: BorderRadius.circular(24),
                       child: Image.asset('assets/images/logo.png', width: 96, height: 96),
                     ),
                     const SizedBox(height: 12),
-                    Text('SpotiFLAC',
+                    Text(context.l10n.appName,
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold, color: colorScheme.primary)),
                     const SizedBox(height: 4),
-                    Text('Download Spotify tracks in FLAC',
+                    Text(context.l10n.setupDownloadInFlac,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant)),
                   ],
@@ -529,8 +529,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
 
   Widget _buildStepIndicator(ColorScheme colorScheme) {
     final steps = _androidSdkVersion >= 33
-        ? ['Storage', 'Notification', 'Folder', 'Spotify']
-        : ['Permission', 'Folder', 'Spotify'];
+        ? [context.l10n.setupStepStorage, context.l10n.setupStepNotification, context.l10n.setupStepFolder, context.l10n.setupStepSpotify]
+        : [context.l10n.setupStepPermission, context.l10n.setupStepFolder, context.l10n.setupStepSpotify];
     
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -653,7 +653,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          _storagePermissionGranted ? 'Storage Permission Granted!' : 'Storage Permission Required',
+          _storagePermissionGranted ? context.l10n.setupStorageGranted : context.l10n.setupStorageRequired,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
@@ -662,8 +662,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             _storagePermissionGranted
-                ? 'You can now proceed to the next step.'
-                : 'SpotiFLAC needs storage access to save downloaded music files to your device.',
+                ? context.l10n.setupProceedToNextStep
+                : context.l10n.setupStorageDescription,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
@@ -676,7 +676,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 ? SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.onPrimary))
                 : const Icon(Icons.security_rounded),
-            label: const Text('Grant Permission'),
+            label: Text(context.l10n.setupGrantPermission),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -707,7 +707,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          _notificationPermissionGranted ? 'Notification Permission Granted!' : 'Enable Notifications',
+          _notificationPermissionGranted ? context.l10n.setupNotificationGranted : context.l10n.setupNotificationEnable,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
@@ -716,8 +716,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             _notificationPermissionGranted
-                ? 'You will receive download progress notifications.'
-                : 'Get notified about download progress and completion. This helps you track downloads when the app is in background.',
+                ? context.l10n.setupNotificationProgressDescription
+                : context.l10n.setupNotificationBackgroundDescription,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
@@ -730,7 +730,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 ? SizedBox(width: 20, height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.onPrimary))
                 : const Icon(Icons.notifications_active_rounded),
-            label: const Text('Enable Notifications'),
+            label: Text(context.l10n.setupEnableNotifications),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -742,7 +742,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Skip for now'),
+            child: Text(context.l10n.setupSkipForNow),
           ),
         ],
       ],
@@ -770,7 +770,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          _selectedDirectory != null ? 'Download Folder Selected!' : 'Choose Download Folder',
+          _selectedDirectory != null ? context.l10n.setupFolderSelected : context.l10n.setupFolderChoose,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
@@ -802,7 +802,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Select a folder where your downloaded music will be saved.',
+              context.l10n.setupFolderDescription,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
@@ -814,7 +814,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               ? SizedBox(width: 20, height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.onPrimary))
               : Icon(_selectedDirectory != null ? Icons.edit_rounded : Icons.folder_open_rounded),
-          label: Text(_selectedDirectory != null ? 'Change Folder' : 'Select Folder'),
+          label: Text(_selectedDirectory != null ? context.l10n.setupChangeFolder : context.l10n.setupSelectFolder),
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -845,7 +845,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Spotify API (Optional)',
+          context.l10n.setupSpotifyApiOptional,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
@@ -853,7 +853,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Add your Spotify API credentials for better search results, or skip to use Deezer instead.',
+            context.l10n.setupSpotifyApiDescription,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
@@ -868,9 +868,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           clipBehavior: Clip.antiAlias,
           child: SwitchListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            title: Text('Use Spotify API', style: Theme.of(context).textTheme.titleSmall),
+            title: Text(context.l10n.setupUseSpotifyApi, style: Theme.of(context).textTheme.titleSmall),
             subtitle: Text(
-              _useSpotifyApi ? 'Enter your credentials below' : 'Using Deezer (no account needed)',
+              _useSpotifyApi ? context.l10n.setupEnterCredentialsBelow : context.l10n.setupUsingDeezer,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             secondary: Container(
@@ -907,12 +907,12 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Client ID
-                    Text('Client ID', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+                    Text(context.l10n.credentialsClientId, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _clientIdController,
                       decoration: InputDecoration(
-                        hintText: 'Enter Spotify Client ID',
+                        hintText: context.l10n.setupEnterClientId,
                         prefixIcon: const Icon(Icons.key_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -926,13 +926,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                     const SizedBox(height: 16),
                     
                     // Client Secret
-                    Text('Client Secret', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+                    Text(context.l10n.credentialsClientSecret, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _clientSecretController,
                       obscureText: !_showClientSecret,
                       decoration: InputDecoration(
-                        hintText: 'Enter Spotify Client Secret',
+                        hintText: context.l10n.setupEnterClientSecret,
                         prefixIcon: const Icon(Icons.lock_rounded),
                         suffixIcon: IconButton(
                           icon: Icon(_showClientSecret ? Icons.visibility_off_rounded : Icons.visibility_rounded),
@@ -962,7 +962,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Get credentials from developer.spotify.com',
+                              context.l10n.setupGetCredentialsFromSpotify,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onTertiaryContainer),
                             ),
                           ),
@@ -995,7 +995,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           TextButton.icon(
             onPressed: () => setState(() => _currentStep--),
             icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('Back'),
+            label: Text(context.l10n.setupBack),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
@@ -1011,9 +1011,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [Text('Next'), SizedBox(width: 8), Icon(Icons.arrow_forward_rounded, size: 18)],
+              children: [Text(context.l10n.setupNext), const SizedBox(width: 8), const Icon(Icons.arrow_forward_rounded, size: 18)],
             ),
           )
         else
@@ -1029,7 +1029,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_useSpotifyApi ? 'Get Started' : 'Skip & Start'),
+                      Text(_useSpotifyApi ? context.l10n.setupGetStarted : context.l10n.setupSkipAndStart),
                       const SizedBox(width: 8),
                       const Icon(Icons.check_rounded, size: 18),
                     ],

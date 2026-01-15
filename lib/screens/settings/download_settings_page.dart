@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -55,7 +56,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                     bottom: 16,
                   ),
                   title: Text(
-                    'Download',
+                    context.l10n.downloadTitle,
                     style: TextStyle(
                       fontSize: 20 + (8 * expandRatio), // 20 -> 28
                       fontWeight: FontWeight.bold,
@@ -68,8 +69,8 @@ class DownloadSettingsPage extends ConsumerWidget {
           ),
 
             // Service section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Service'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionService),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -85,17 +86,17 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
 
             // Quality section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Audio Quality'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionAudioQuality),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.tune,
-                    title: 'Ask Before Download',
+                    title: context.l10n.downloadAskBeforeDownload,
                     subtitle: isBuiltInService 
-                        ? 'Choose quality for each download'
+                        ? context.l10n.downloadAskQualitySubtitle
                         : 'Select a built-in service to enable',
                     value: settings.askQualityBeforeDownload,
                     // Not selected visually if extension is active
@@ -106,24 +107,24 @@ class DownloadSettingsPage extends ConsumerWidget {
                   ),
                   if (!settings.askQualityBeforeDownload && isBuiltInService) ...[
                     _QualityOption(
-                      title: 'FLAC Lossless',
-                      subtitle: '16-bit / 44.1kHz',
+                      title: context.l10n.qualityFlacLossless,
+                      subtitle: context.l10n.qualityFlacLosslessSubtitle,
                       isSelected: settings.audioQuality == 'LOSSLESS',
                       onTap: () => ref
                           .read(settingsProvider.notifier)
                           .setAudioQuality('LOSSLESS'),
                     ),
                     _QualityOption(
-                      title: 'Hi-Res FLAC',
-                      subtitle: '24-bit / up to 96kHz',
+                      title: context.l10n.qualityHiResFlac,
+                      subtitle: context.l10n.qualityHiResFlacSubtitle,
                       isSelected: settings.audioQuality == 'HI_RES',
                       onTap: () => ref
                           .read(settingsProvider.notifier)
                           .setAudioQuality('HI_RES'),
                     ),
                     _QualityOption(
-                      title: 'Hi-Res FLAC Max',
-                      subtitle: '24-bit / up to 192kHz',
+                      title: context.l10n.qualityHiResFlacMax,
+                      subtitle: context.l10n.qualityHiResFlacMaxSubtitle,
                       isSelected: settings.audioQuality == 'HI_RES_LOSSLESS',
                       onTap: () => ref
                           .read(settingsProvider.notifier)
@@ -159,15 +160,15 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
 
             // File settings section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'File Settings'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionFileSettings),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsItem(
                     icon: Icons.text_fields,
-                    title: 'Filename Format',
+                    title: context.l10n.downloadFilenameFormat,
                     subtitle: settings.filenameFormat,
                     onTap: () => _showFormatEditor(
                       context,
@@ -177,17 +178,17 @@ class DownloadSettingsPage extends ConsumerWidget {
                   ),
                   SettingsItem(
                     icon: Icons.folder_outlined,
-                    title: 'Download Directory',
+                    title: context.l10n.downloadDirectory,
                     subtitle: settings.downloadDirectory.isEmpty
                         ? (Platform.isIOS
-                              ? 'App Documents Folder'
+                              ? context.l10n.setupAppDocumentsFolder
                               : 'Music/SpotiFLAC')
                         : settings.downloadDirectory,
                     onTap: () => _pickDirectory(context, ref),
                   ),
                   SettingsSwitchItem(
                     icon: Icons.library_music_outlined,
-                    title: 'Separate Singles Folder',
+                    title: context.l10n.downloadSeparateSinglesFolder,
                     subtitle: settings.separateSingles
                         ? 'Albums/ and Singles/ folders'
                         : 'All files in same structure',
@@ -199,7 +200,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                   if (settings.separateSingles)
                     SettingsItem(
                       icon: Icons.folder_outlined,
-                      title: 'Album Folder Structure',
+                      title: context.l10n.downloadAlbumFolderStructure,
                       subtitle: _getAlbumFolderStructureLabel(settings.albumFolderStructure),
                       onTap: () => _showAlbumFolderStructurePicker(
                         context,
@@ -210,7 +211,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                   if (!settings.separateSingles)
                     SettingsItem(
                       icon: Icons.create_new_folder_outlined,
-                      title: 'Folder Organization',
+                      title: context.l10n.downloadFolderOrganization,
                       subtitle: _getFolderOrganizationLabel(
                         settings.folderOrganization,
                       ),
@@ -254,8 +255,8 @@ class DownloadSettingsPage extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.folder_outlined),
-              title: const Text('Artist / Album'),
-              subtitle: const Text('Albums/Artist Name/Album Name/'),
+              title: Text(context.l10n.albumFolderArtistAlbum),
+              subtitle: Text(context.l10n.albumFolderArtistAlbumSubtitle),
               trailing: current == 'artist_album' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setAlbumFolderStructure('artist_album');
@@ -264,8 +265,8 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text('Artist / [Year] Album'),
-              subtitle: const Text('Albums/Artist Name/[2005] Album Name/'),
+              title: Text(context.l10n.albumFolderArtistYearAlbum),
+              subtitle: Text(context.l10n.albumFolderArtistYearAlbumSubtitle),
               trailing: current == 'artist_year_album' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setAlbumFolderStructure('artist_year_album');
@@ -274,8 +275,8 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.album_outlined),
-              title: const Text('Album Only'),
-              subtitle: const Text('Albums/Album Name/'),
+              title: Text(context.l10n.albumFolderAlbumOnly),
+              subtitle: Text(context.l10n.albumFolderAlbumOnlySubtitle),
               trailing: current == 'album_only' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setAlbumFolderStructure('album_only');
@@ -284,8 +285,8 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.event_outlined),
-              title: const Text('[Year] Album Only'),
-              subtitle: const Text('Albums/[2005] Album Name/'),
+              title: Text(context.l10n.albumFolderYearAlbum),
+              subtitle: Text(context.l10n.albumFolderYearAlbumSubtitle),
               trailing: current == 'year_album' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setAlbumFolderStructure('year_album');
@@ -367,7 +368,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'Filename Format',
+                    context.l10n.filenameFormat,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -433,7 +434,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: TextButton(
+                          child: TextButton(
                           onPressed: () => Navigator.pop(context),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -441,7 +442,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text('Cancel'),
+                          child: Text(context.l10n.dialogCancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -460,7 +461,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text('Save Format'),
+                          child: Text(context.l10n.dialogSave),
                         ),
                       ),
                     ],
@@ -504,7 +505,7 @@ class DownloadSettingsPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
-                'Download Location',
+                context.l10n.setupDownloadLocationTitle,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -513,7 +514,7 @@ class DownloadSettingsPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
-                'On iOS, downloads are saved to the app\'s Documents folder which is accessible via the Files app.',
+                context.l10n.setupDownloadLocationIosMessage,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -521,8 +522,8 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
             ListTile(
               leading: Icon(Icons.folder_special, color: colorScheme.primary),
-              title: const Text('App Documents Folder'),
-              subtitle: const Text('Recommended - accessible via Files app'),
+              title: Text(context.l10n.setupAppDocumentsFolder),
+              subtitle: Text(context.l10n.setupAppDocumentsFolderSubtitle),
               trailing: Icon(Icons.check_circle, color: colorScheme.primary),
               onTap: () async {
                 final dir = await getApplicationDocumentsDirectory();
@@ -534,8 +535,8 @@ class DownloadSettingsPage extends ConsumerWidget {
             ),
             ListTile(
               leading: Icon(Icons.cloud, color: colorScheme.onSurfaceVariant),
-              title: const Text('Choose from Files'),
-              subtitle: const Text('Select iCloud or other location'),
+              title: Text(context.l10n.setupChooseFromFiles),
+              subtitle: Text(context.l10n.setupChooseFromFilesSubtitle),
               onTap: () async {
                 Navigator.pop(ctx);
                 // Note: iOS requires folder to have at least one file to be selectable
@@ -565,7 +566,7 @@ class DownloadSettingsPage extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'iOS limitation: Empty folders cannot be selected. Create a file inside first or use App Documents.',
+                        context.l10n.setupIosEmptyFolderWarning,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onTertiaryContainer,
                         ),
@@ -589,7 +590,7 @@ class DownloadSettingsPage extends ConsumerWidget {
       case 'album':
         return 'By Album';
       case 'artist_album':
-        return 'By Artist & Album';
+        return 'Artist/Album';
       default:
         return 'None';
     }
@@ -629,15 +630,15 @@ class DownloadSettingsPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                 child: Text(
-                  'Organize downloaded files into folders',
+                  context.l10n.folderOrganizationDescription,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
               _FolderOption(
-                title: 'None',
-                subtitle: 'All files in download folder',
+                title: context.l10n.folderOrganizationNone,
+                subtitle: context.l10n.folderOrganizationNoneSubtitle,
                 example: 'SpotiFLAC/Track.flac',
                 isSelected: current == 'none',
                 onTap: () {
@@ -646,8 +647,8 @@ class DownloadSettingsPage extends ConsumerWidget {
                 },
               ),
               _FolderOption(
-                title: 'By Artist',
-                subtitle: 'Separate folder for each artist',
+                title: context.l10n.folderOrganizationByArtist,
+                subtitle: context.l10n.folderOrganizationByArtistSubtitle,
                 example: 'SpotiFLAC/Artist Name/Track.flac',
                 isSelected: current == 'artist',
                 onTap: () {
@@ -656,8 +657,8 @@ class DownloadSettingsPage extends ConsumerWidget {
                 },
               ),
               _FolderOption(
-                title: 'By Album',
-                subtitle: 'Separate folder for each album',
+                title: context.l10n.folderOrganizationByAlbum,
+                subtitle: context.l10n.folderOrganizationByAlbumSubtitle,
                 example: 'SpotiFLAC/Album Name/Track.flac',
                 isSelected: current == 'album',
                 onTap: () {
@@ -666,8 +667,8 @@ class DownloadSettingsPage extends ConsumerWidget {
                 },
               ),
               _FolderOption(
-                title: 'By Artist & Album',
-                subtitle: 'Nested folders for artist and album',
+                title: context.l10n.folderOrganizationByArtistAlbum,
+                subtitle: context.l10n.folderOrganizationByArtistAlbumSubtitle,
                 example: 'SpotiFLAC/Artist/Album/Track.flac',
                 isSelected: current == 'artist_album',
                 onTap: () {

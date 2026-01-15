@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -32,7 +33,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: _AppBarTitle(
-              title: 'Appearance',
+              title: context.l10n.appearanceTitle,
               topPadding: topPadding,
             ),
           ),
@@ -49,8 +50,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
             ),
 
             // Color section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Color'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionColor),
             ),
 
             SliverToBoxAdapter(
@@ -58,8 +59,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.wallpaper,
-                    title: 'Dynamic Color',
-                    subtitle: 'Use colors from your wallpaper',
+                    title: context.l10n.appearanceDynamicColor,
+                    subtitle: context.l10n.appearanceDynamicColorSubtitle,
                     value: themeSettings.useDynamicColor,
                     onChanged: (value) => ref
                         .read(themeProvider.notifier)
@@ -82,8 +83,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
               ),
 
             // Theme section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Theme'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionTheme),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -96,8 +97,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
                   if (Theme.of(context).brightness == Brightness.dark)
                     SettingsSwitchItem(
                       icon: Icons.brightness_2,
-                      title: 'AMOLED Dark',
-                      subtitle: 'Pure black background',
+                      title: context.l10n.appearanceAmoledDark,
+                      subtitle: context.l10n.appearanceAmoledDarkSubtitle,
                       value: themeSettings.useAmoled,
                       onChanged: (value) =>
                           ref.read(themeProvider.notifier).setUseAmoled(value),
@@ -108,8 +109,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
             ),
 
             // Layout section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Layout'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionLayout),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -283,7 +284,7 @@ class _ThemePreviewCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isDark ? 'Dark Mode' : 'Light Mode',
+                  isDark ? context.l10n.appearanceThemeDark : context.l10n.appearanceThemeLight,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -451,21 +452,21 @@ class _ThemeModeSelector extends StatelessWidget {
         children: [
           _ThemeModeChip(
             icon: Icons.brightness_auto,
-            label: 'System',
+            label: context.l10n.appearanceThemeSystem,
             isSelected: currentMode == ThemeMode.system,
             onTap: () => onChanged(ThemeMode.system),
           ),
           const SizedBox(width: 8),
           _ThemeModeChip(
             icon: Icons.light_mode,
-            label: 'Light',
+            label: context.l10n.appearanceThemeLight,
             isSelected: currentMode == ThemeMode.light,
             onTap: () => onChanged(ThemeMode.light),
           ),
           const SizedBox(width: 8),
           _ThemeModeChip(
             icon: Icons.dark_mode,
-            label: 'Dark',
+            label: context.l10n.appearanceThemeDark,
             isSelected: currentMode == ThemeMode.dark,
             onTap: () => onChanged(ThemeMode.dark),
           ),
@@ -575,7 +576,7 @@ class _HistoryViewSelector extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 8, bottom: 8),
             child: Text(
-              'History View',
+              context.l10n.appearanceHistoryView,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -585,14 +586,14 @@ class _HistoryViewSelector extends StatelessWidget {
             children: [
               _ViewModeChip(
                 icon: Icons.view_list,
-                label: 'List',
+                label: context.l10n.appearanceHistoryViewList,
                 isSelected: currentMode == 'list',
                 onTap: () => onChanged('list'),
               ),
               const SizedBox(width: 8),
               _ViewModeChip(
                 icon: Icons.grid_view,
-                label: 'Grid',
+                label: context.l10n.appearanceHistoryViewGrid,
                 isSelected: currentMode == 'grid',
                 onTap: () => onChanged('grid'),
               ),

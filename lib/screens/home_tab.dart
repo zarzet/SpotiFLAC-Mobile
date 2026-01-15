@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
@@ -202,12 +203,12 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
           coverUrl: track.coverUrl,
           onSelect: (quality, service) {
             ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
           },
         );
       } else {
         ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
       }
     }
   }
@@ -238,8 +239,8 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                   const SizedBox(height: 16),
                   Text(
                     totalTracks > 0 
-                        ? 'Fetching metadata... $currentProgress/$totalTracks'
-                        : 'Reading CSV...',
+                        ? context.l10n.progressFetchingMetadata(currentProgress, totalTracks)
+                        : context.l10n.progressReadingCsv,
                   ),
                 ],
               ),
@@ -274,16 +275,16 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       final confirmed = await showDialog<bool>(
         context: this.context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('Import Playlist'),
-          content: Text('Found ${tracks.length} tracks in CSV. Add them to download queue?'),
+          title: Text(context.l10n.dialogImportPlaylistTitle),
+          content: Text(context.l10n.dialogImportPlaylistMessage(tracks.length)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.dialogCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Import'),
+              child: Text(context.l10n.dialogImport),
             ),
           ],
         ),
@@ -294,9 +295,9 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         if (mounted) {
            ScaffoldMessenger.of(this.context).showSnackBar(
             SnackBar(
-              content: Text('Added ${tracks.length} tracks to queue'),
+              content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length)),
               action: SnackBarAction(
-                label: 'View Queue',
+                label: context.l10n.snackbarViewQueue,
                 onPressed: () {
                    // Navigate to queue tab (handled by main_shell index)
                    // We don't have direct access to set index here easily without provider
@@ -364,7 +365,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                   expandedTitleScale: 1.0,
                   titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
                   title: Text(
-                    'Home',
+                    context.l10n.homeTitle,
                     style: TextStyle(
                       fontSize: 20 + (14 * expandRatio), // 20 -> 34
                       fontWeight: FontWeight.bold,
@@ -418,7 +419,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Paste a Spotify link or search by name',
+                          context.l10n.homeSubtitle,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
@@ -450,7 +451,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              'Supports: Track, Album, Playlist, Artist URLs',
+                              context.l10n.homeSupports,
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
@@ -490,7 +491,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Text(
-            'Recent',
+            context.l10n.homeRecent,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -663,7 +664,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (artistItems.isNotEmpty)
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text('Artists', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          child: Text(context.l10n.searchArtists, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         )),
       if (artistItems.isNotEmpty)
         SliverToBoxAdapter(
@@ -698,7 +699,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (albumItems.isNotEmpty)
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text('Albums', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          child: Text(context.l10n.searchAlbums, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         )),
       if (albumItems.isNotEmpty)
         SliverToBoxAdapter(
@@ -733,7 +734,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (playlistItems.isNotEmpty)
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text('Playlists', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          child: Text(context.l10n.searchPlaylists, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         )),
       if (playlistItems.isNotEmpty)
         SliverToBoxAdapter(
@@ -768,7 +769,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (realTracks.isNotEmpty)
         SliverToBoxAdapter(child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text('Songs', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          child: Text(context.l10n.searchSongs, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         )),
 
       // Track list in grouped card
@@ -813,7 +814,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text('Artists', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+          child: Text(context.l10n.searchArtists, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
         ),
         SizedBox(
           height: 160,
@@ -901,7 +902,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final extensionId = albumItem.source;
     if (extensionId == null || extensionId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot load album: missing extension source')),
+        SnackBar(content: Text(context.l10n.errorMissingExtensionSource('album'))),
       );
       return;
     }
@@ -923,7 +924,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final extensionId = playlistItem.source;
     if (extensionId == null || extensionId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot load playlist: missing extension source')),
+        SnackBar(content: Text(context.l10n.errorMissingExtensionSource('playlist'))),
       );
       return;
     }
@@ -945,7 +946,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final extensionId = artistItem.source;
     if (extensionId == null || extensionId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot load artist: missing extension source')),
+        SnackBar(content: Text(context.l10n.errorMissingExtensionSource('artist'))),
       );
       return;
     }
@@ -1206,7 +1207,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
           // File exists, show snackbar
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('"${track.name}" already downloaded')),
+              SnackBar(content: Text(context.l10n.snackbarAlreadyDownloaded(track.name))),
             );
           }
           return;
@@ -1511,7 +1512,7 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
             children: [
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _fetchTracks, child: const Text('Retry')),
+              ElevatedButton(onPressed: _fetchTracks, child: Text(context.l10n.dialogRetry)),
             ],
           ),
         ),
@@ -1649,7 +1650,7 @@ class _ExtensionPlaylistScreenState extends ConsumerState<ExtensionPlaylistScree
             children: [
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _fetchTracks, child: const Text('Retry')),
+              ElevatedButton(onPressed: _fetchTracks, child: Text(context.l10n.dialogRetry)),
             ],
           ),
         ),
@@ -1772,7 +1773,7 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
             children: [
               Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _fetchArtist, child: const Text('Retry')),
+              ElevatedButton(onPressed: _fetchArtist, child: Text(context.l10n.dialogRetry)),
             ],
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
@@ -147,9 +148,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   child: _buildErrorWidget(_error!, colorScheme),
                 )),
               if (!_isLoadingDiscography && _error == null) ...[
-                if (albumsOnly.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection('Albums', albumsOnly, colorScheme)),
-                if (singles.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection('Singles & EPs', singles, colorScheme)),
-                if (compilations.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection('Compilations', compilations, colorScheme)),
+                if (albumsOnly.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection(context.l10n.artistAlbums, albumsOnly, colorScheme)),
+                if (singles.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection(context.l10n.artistSingles, singles, colorScheme)),
+                if (compilations.isNotEmpty) SliverToBoxAdapter(child: _buildAlbumSection(context.l10n.artistCompilations, compilations, colorScheme)),
               ],
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
@@ -255,7 +256,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       children: [
                         Icon(Icons.album, size: 14, color: colorScheme.onPrimaryContainer),
                         const SizedBox(width: 4),
-                        Text('${_albums!.length} releases', style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                        Text(context.l10n.artistReleases(_albums!.length), style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -327,7 +328,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       const Spacer(),
                       Text(
                         album.totalTracks > 0 
-                            ? '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} • ${album.totalTracks} tracks'
+                            ? '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} • ${context.l10n.tracksCount(album.totalTracks)}'
                             : album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 11),
                         maxLines: 1,
@@ -394,7 +395,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Rate Limited',
+                      context.l10n.errorRateLimited,
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                         fontWeight: FontWeight.bold,
@@ -402,7 +403,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Too many requests. Please wait a moment and try again.',
+                      context.l10n.errorRateLimitedMessage,
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                         fontSize: 12,

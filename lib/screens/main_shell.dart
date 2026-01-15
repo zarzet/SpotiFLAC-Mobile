@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
@@ -77,7 +78,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     // Show snackbar
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Loading shared link...')),
+        SnackBar(content: Text(context.l10n.loadingSharedLink)),
       );
     }
   }
@@ -162,9 +163,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     } else {
       _lastBackPress = now;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to exit'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.l10n.pressBackAgainToExit),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -201,11 +202,12 @@ class _MainShellState extends ConsumerState<MainShell> {
       const SettingsTab(),
     ];
 
+    final l10n = context.l10n;
     final destinations = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.home_outlined),
-        selectedIcon: Icon(Icons.home),
-        label: 'Home',
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: l10n.navHome,
       ),
       NavigationDestination(
         icon: Badge(
@@ -218,18 +220,18 @@ class _MainShellState extends ConsumerState<MainShell> {
           label: Text('$queueState'),
           child: const Icon(Icons.history),
         ),
-        label: 'History',
+        label: l10n.navHistory,
       ),
       if (showStore)
-        const NavigationDestination(
-          icon: Icon(Icons.store_outlined),
-          selectedIcon: Icon(Icons.store),
-          label: 'Store',
+        NavigationDestination(
+          icon: const Icon(Icons.store_outlined),
+          selectedIcon: const Icon(Icons.store),
+          label: l10n.navStore,
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.settings_outlined),
-        selectedIcon: Icon(Icons.settings),
-        label: 'Settings',
+      NavigationDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: l10n.navSettings,
       ),
     ];
 
