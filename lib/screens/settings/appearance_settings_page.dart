@@ -709,48 +709,109 @@ class _LanguageSelector extends StatelessWidget {
     required this.onChanged,
   });
 
+  static const _languages = [
+    ('system', 'System Default', Icons.phone_android),
+    ('en', 'English', Icons.language),
+    ('id', 'Bahasa Indonesia', Icons.language),
+    ('de', 'Deutsch', Icons.language),
+    ('es', 'Español', Icons.language),
+    ('fr', 'Français', Icons.language),
+    ('hi', 'हिन्दी', Icons.language),
+    ('ja', '日本語', Icons.language),
+    ('ko', '한국어', Icons.language),
+    ('nl', 'Nederlands', Icons.language),
+    ('pt', 'Português', Icons.language),
+    ('ru', 'Русский', Icons.language),
+    ('zh', '简体中文', Icons.language),
+    ('zh_TW', '繁體中文', Icons.language),
+  ];
+
+  String _getLanguageName(String code) {
+    for (final lang in _languages) {
+      if (lang.$1 == code) return lang.$2;
+    }
+    return code;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 8),
-            child: Text(
-              context.l10n.appearanceLanguage,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+    return ListTile(
+      leading: Icon(
+        Icons.language,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      title: Text(context.l10n.appearanceLanguage),
+      subtitle: Text(_getLanguageName(currentLocale)),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      onTap: () => _showLanguagePicker(context),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                context.l10n.appearanceLanguage,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          Row(
-            children: [
-              _ViewModeChip(
-                icon: Icons.phone_android,
-                label: context.l10n.languageSystem,
-                isSelected: currentLocale == 'system',
-                onTap: () => onChanged('system'),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _languages.length,
+                itemBuilder: (context, index) {
+                  final lang = _languages[index];
+                  final isSelected = currentLocale == lang.$1;
+                  return ListTile(
+                    leading: Icon(
+                      lang.$3,
+                      color: isSelected 
+                          ? colorScheme.primary 
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    title: Text(
+                      lang.$2,
+                      style: TextStyle(
+                        color: isSelected 
+                            ? colorScheme.primary 
+                            : colorScheme.onSurface,
+                        fontWeight: isSelected 
+                            ? FontWeight.w600 
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected 
+                        ? Icon(Icons.check, color: colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      onChanged(lang.$1);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
               ),
-              const SizedBox(width: 8),
-              _ViewModeChip(
-                icon: Icons.language,
-                label: context.l10n.languageEnglish,
-                isSelected: currentLocale == 'en',
-                onTap: () => onChanged('en'),
-              ),
-              const SizedBox(width: 8),
-              _ViewModeChip(
-                icon: Icons.language,
-                label: context.l10n.languageIndonesian,
-                isSelected: currentLocale == 'id',
-                onTap: () => onChanged('id'),
-              ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
