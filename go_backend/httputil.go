@@ -20,13 +20,11 @@ import (
 // getRandomUserAgent generates a random Windows Chrome User-Agent string
 // Uses same format as PC version (referensi/backend/spotify_metadata.go) for better API compatibility
 func getRandomUserAgent() string {
-	// Windows 10/11 Chrome format - same as PC version for maximum compatibility
-	// Some APIs may block mobile User-Agents, so we use desktop format
-	winMajor := rand.Intn(2) + 10 // Windows 10 or 11
+	winMajor := rand.Intn(2) + 10
 
-	chromeVersion := rand.Intn(25) + 100  // Chrome 100-124
-	chromeBuild := rand.Intn(1500) + 3000 // Build 3000-4500
-	chromePatch := rand.Intn(65) + 60     // Patch 60-125
+	chromeVersion := rand.Intn(25) + 100
+	chromeBuild := rand.Intn(1500) + 3000
+	chromePatch := rand.Intn(65) + 60
 
 	return fmt.Sprintf(
 		"Mozilla/5.0 (Windows NT %d.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/537.36",
@@ -39,7 +37,6 @@ func getRandomUserAgent() string {
 
 // getRandomMacUserAgent generates a random Mac Chrome User-Agent string
 // Alternative format matching referensi/backend/spotify_metadata.go exactly
-// Kept for potential future use
 // func getRandomMacUserAgent() string {
 // 	macMajor := rand.Intn(4) + 11 // macOS 11-14
 // 	macMinor := rand.Intn(5) + 4  // Minor 4-8
@@ -66,7 +63,6 @@ func getRandomUserAgent() string {
 // }
 
 // getRandomDesktopUserAgent randomly picks between Windows and Mac User-Agent
-// Kept for potential future use
 // func getRandomDesktopUserAgent() string {
 // 	if rand.Intn(2) == 0 {
 // 		return getRandomUserAgent() // Windows
@@ -74,17 +70,15 @@ func getRandomUserAgent() string {
 // 	return getRandomMacUserAgent() // Mac
 // }
 
-// Default timeout values
 const (
-	DefaultTimeout    = 60 * time.Second  // Default HTTP timeout
-	DownloadTimeout   = 120 * time.Second // Timeout for file downloads
-	SongLinkTimeout   = 30 * time.Second  // Timeout for SongLink API
-	DefaultMaxRetries = 3                 // Default retry count
-	DefaultRetryDelay = 1 * time.Second   // Initial retry delay
+	DefaultTimeout    = 60 * time.Second
+	DownloadTimeout   = 120 * time.Second
+	SongLinkTimeout   = 30 * time.Second
+	DefaultMaxRetries = 3
+	DefaultRetryDelay = 1 * time.Second
 )
 
 // Shared transport with connection pooling to prevent TCP exhaustion
-// Optimized for large file downloads (FLAC ~30-50MB)
 var sharedTransport = &http.Transport{
 	DialContext: (&net.Dialer{
 		Timeout:   30 * time.Second,
@@ -96,27 +90,24 @@ var sharedTransport = &http.Transport{
 	IdleConnTimeout:       90 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
-	DisableKeepAlives:     false, // Enable keep-alives for connection reuse
+	DisableKeepAlives:     false,
 	ForceAttemptHTTP2:     true,
-	WriteBufferSize:       64 * 1024, // 64KB write buffer
-	ReadBufferSize:        64 * 1024, // 64KB read buffer
-	DisableCompression:    true,      // FLAC is already compressed
+	WriteBufferSize:       64 * 1024,
+	ReadBufferSize:        64 * 1024,
+	DisableCompression:    true,
 }
 
-// Shared HTTP client for general requests (reuses connections)
 var sharedClient = &http.Client{
 	Transport: sharedTransport,
 	Timeout:   DefaultTimeout,
 }
 
-// Shared HTTP client for downloads (longer timeout, reuses connections)
 var downloadClient = &http.Client{
 	Transport: sharedTransport,
 	Timeout:   DownloadTimeout,
 }
 
 // NewHTTPClientWithTimeout creates an HTTP client with specified timeout
-// Uses shared transport for connection reuse
 func NewHTTPClientWithTimeout(timeout time.Duration) *http.Client {
 	return &http.Client{
 		Transport: sharedTransport,
@@ -124,18 +115,15 @@ func NewHTTPClientWithTimeout(timeout time.Duration) *http.Client {
 	}
 }
 
-// GetSharedClient returns the shared HTTP client for general requests
 func GetSharedClient() *http.Client {
 	return sharedClient
 }
 
-// GetDownloadClient returns the shared HTTP client for downloads
 func GetDownloadClient() *http.Client {
 	return downloadClient
 }
 
 // CloseIdleConnections closes idle connections in the shared transport
-// Call this periodically during large batch downloads to prevent connection buildup
 func CloseIdleConnections() {
 	sharedTransport.CloseIdleConnections()
 }
@@ -146,7 +134,6 @@ func DoRequestWithUserAgent(client *http.Client, req *http.Request) (*http.Respo
 	req.Header.Set("User-Agent", getRandomUserAgent())
 	resp, err := client.Do(req)
 	if err != nil {
-		// Check for ISP blocking
 		CheckAndLogISPBlocking(err, req.URL.String(), "HTTP")
 	}
 	return resp, err

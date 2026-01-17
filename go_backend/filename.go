@@ -11,23 +11,18 @@ var invalidChars = regexp.MustCompile(`[<>:"/\\|?*\x00-\x1f]`)
 
 // sanitizeFilename removes invalid characters from filename
 func sanitizeFilename(filename string) string {
-	// Replace invalid characters with underscore
 	sanitized := invalidChars.ReplaceAllString(filename, "_")
 	
-	// Remove leading/trailing spaces and dots
 	sanitized = strings.TrimSpace(sanitized)
 	sanitized = strings.Trim(sanitized, ".")
 	
-	// Collapse multiple underscores
 	multiUnderscore := regexp.MustCompile(`_+`)
 	sanitized = multiUnderscore.ReplaceAllString(sanitized, "_")
 	
-	// Limit length (Android has 255 byte limit for filenames)
 	if len(sanitized) > 200 {
 		sanitized = sanitized[:200]
 	}
 	
-	// Ensure not empty
 	if sanitized == "" {
 		sanitized = "untitled"
 	}
@@ -43,7 +38,6 @@ func buildFilenameFromTemplate(template string, metadata map[string]interface{})
 	
 	result := template
 	
-	// Replace placeholders
 	placeholders := map[string]string{
 		"{title}":  getString(metadata, "title"),
 		"{artist}": getString(metadata, "artist"),
@@ -63,7 +57,6 @@ func buildFilenameFromTemplate(template string, metadata map[string]interface{})
 func getString(m map[string]interface{}, key string) string {
 	if v, ok := m[key]; ok {
 		if s, ok := v.(string); ok {
-			// Trim leading/trailing whitespace to prevent filename issues
 			return strings.TrimSpace(s)
 		}
 	}

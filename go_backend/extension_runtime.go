@@ -10,10 +10,8 @@ import (
 	"github.com/dop251/goja"
 )
 
-// Default timeout for JS execution (30 seconds)
 const DefaultJSTimeout = 30 * time.Second
 
-// Global auth state for extensions (stores pending auth codes)
 var (
 	extensionAuthState   = make(map[string]*ExtensionAuthState)
 	extensionAuthStateMu sync.RWMutex
@@ -39,7 +37,6 @@ type PendingAuthRequest struct {
 	CallbackURL string
 }
 
-// Global pending auth requests (Flutter polls this)
 var (
 	pendingAuthRequests   = make(map[string]*PendingAuthRequest)
 	pendingAuthRequestsMu sync.RWMutex
@@ -52,7 +49,6 @@ func GetPendingAuthRequest(extensionID string) *PendingAuthRequest {
 	return pendingAuthRequests[extensionID]
 }
 
-// ClearPendingAuthRequest clears pending auth request (called from Flutter after opening URL)
 func ClearPendingAuthRequest(extensionID string) {
 	pendingAuthRequestsMu.Lock()
 	defer pendingAuthRequestsMu.Unlock()
@@ -101,7 +97,6 @@ type ExtensionRuntime struct {
 
 // NewExtensionRuntime creates a new runtime for an extension
 func NewExtensionRuntime(ext *LoadedExtension) *ExtensionRuntime {
-	// Create a cookie jar for this extension
 	jar, _ := newSimpleCookieJar()
 
 	runtime := &ExtensionRuntime{

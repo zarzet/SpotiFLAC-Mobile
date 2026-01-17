@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 import 'package:spotiflac_android/screens/store/extension_details_screen.dart';
@@ -28,7 +29,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
 
     final cacheDir = await getApplicationCacheDirectory();
 
-    // Check if widget is still mounted after async operation
     if (!mounted) return;
 
     await ref.read(storeProvider.notifier).initialize(cacheDir.path);
@@ -52,7 +52,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
             ref.read(storeProvider.notifier).refresh(forceRefresh: true),
         child: CustomScrollView(
           slivers: [
-            // App Bar - consistent with other tabs
             SliverAppBar(
               expandedHeight: 120 + topPadding,
               collapsedHeight: kToolbarHeight,
@@ -74,7 +73,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     expandedTitleScale: 1.0,
                     titlePadding: const EdgeInsets.only(left: 24, bottom: 16),
                     title: Text(
-                      'Store',
+                      context.l10n.storeTitle,
                       style: TextStyle(
                         fontSize: 20 + (14 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -86,14 +85,13 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               ),
             ),
 
-            // Search Bar
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search extensions...',
+                    hintText: context.l10n.storeSearch,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -130,7 +128,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               ),
             ),
 
-            // Category Chips
             SliverToBoxAdapter(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -141,7 +138,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 child: Row(
                   children: [
                     _CategoryChip(
-                      label: 'All',
+                      label: context.l10n.storeFilterAll,
                       icon: Icons.apps,
                       isSelected: state.selectedCategory == null,
                       onTap: () =>
@@ -149,7 +146,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Metadata',
+                      label: context.l10n.storeFilterMetadata,
                       icon: Icons.label_outline,
                       isSelected:
                           state.selectedCategory == StoreCategory.metadata,
@@ -159,7 +156,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Download',
+                      label: context.l10n.storeFilterDownload,
                       icon: Icons.download_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.download,
@@ -169,7 +166,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Utility',
+                      label: context.l10n.storeFilterUtility,
                       icon: Icons.build_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.utility,
@@ -179,7 +176,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Lyrics',
+                      label: context.l10n.storeFilterLyrics,
                       icon: Icons.lyrics_outlined,
                       isSelected:
                           state.selectedCategory == StoreCategory.lyrics,
@@ -189,7 +186,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     ),
                     const SizedBox(width: 8),
                     _CategoryChip(
-                      label: 'Integration',
+                      label: context.l10n.storeFilterIntegration,
                       icon: Icons.link,
                       isSelected:
                           state.selectedCategory == StoreCategory.integration,
@@ -202,7 +199,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               ),
             ),
 
-            // Content
             if (state.isLoading && state.extensions.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
@@ -214,7 +210,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
             else if (state.filteredExtensions.isEmpty)
               SliverFillRemaining(child: _buildEmptyState(state, colorScheme))
             else ...[
-              // Extensions count
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -227,7 +222,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 ),
               ),
 
-              // Extensions list in grouped card (like queue_tab)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -251,7 +245,6 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 ),
               ),
 
-              // Bottom padding
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
             ],
           ],
@@ -286,7 +279,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               onPressed: () =>
                   ref.read(storeProvider.notifier).refresh(forceRefresh: true),
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.dialogRetry),
             ),
           ],
         ),
@@ -321,7 +314,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 _searchController.clear();
                 ref.read(storeProvider.notifier).clearSearch();
               },
-              child: const Text('Clear filters'),
+              child: Text(context.l10n.storeClearFilters),
             ),
           ],
         ],
@@ -456,7 +449,6 @@ class _ExtensionItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Extension icon - custom or category-based
                 Container(
                   width: 44,
                   height: 44,
@@ -506,7 +498,6 @@ class _ExtensionItem extends StatelessWidget {
                         ),
                 ),
                 const SizedBox(width: 16),
-                // Extension info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +511,6 @@ class _ExtensionItem extends StatelessWidget {
                                   ?.copyWith(fontWeight: FontWeight.w500),
                             ),
                           ),
-                          // Version badge
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -547,20 +537,44 @@ class _ExtensionItem extends StatelessWidget {
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        extension.description,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                      if (extension.requiresNewerApp) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.warning_amber_rounded, size: 12, color: colorScheme.onErrorContainer),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Requires v${extension.minAppVersion}+',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onErrorContainer,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ] else ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          extension.description,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Action button
                 if (isDownloading)
                   const SizedBox(
                     width: 24,
@@ -574,7 +588,7 @@ class _ExtensionItem extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Update'),
+                    child: Text(context.l10n.storeUpdate),
                   )
                 else if (extension.isInstalled)
                   OutlinedButton(
@@ -602,7 +616,7 @@ class _ExtensionItem extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Install'),
+                    child: Text(context.l10n.storeInstall),
                   ),
               ],
             ),

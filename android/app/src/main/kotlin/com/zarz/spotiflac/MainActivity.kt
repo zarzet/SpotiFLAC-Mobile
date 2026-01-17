@@ -117,6 +117,13 @@ class MainActivity: FlutterActivity() {
                             }
                             result.success(null)
                         }
+                        "cancelDownload" -> {
+                            val itemId = call.argument<String>("item_id") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.cancelDownload(itemId)
+                            }
+                            result.success(null)
+                        }
                         "setDownloadDirectory" -> {
                             val path = call.argument<String>("path") ?: ""
                             withContext(Dispatchers.IO) {
@@ -569,6 +576,30 @@ class MainActivity: FlutterActivity() {
                         "getURLHandlers" -> {
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getURLHandlersJSON()
+                            }
+                            result.success(response)
+                        }
+                        "getAlbumWithExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val albumId = call.argument<String>("album_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getAlbumWithExtensionJSON(extensionId, albumId)
+                            }
+                            result.success(response)
+                        }
+                        "getPlaylistWithExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val playlistId = call.argument<String>("playlist_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getPlaylistWithExtensionJSON(extensionId, playlistId)
+                            }
+                            result.success(response)
+                        }
+                        "getArtistWithExtension" -> {
+                            val extensionId = call.argument<String>("extension_id") ?: ""
+                            val artistId = call.argument<String>("artist_id") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.getArtistWithExtensionJSON(extensionId, artistId)
                             }
                             result.success(response)
                         }

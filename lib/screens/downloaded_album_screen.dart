@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
+import 'package:spotiflac_android/utils/mime_utils.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 
@@ -25,7 +27,6 @@ class DownloadedAlbumScreen extends ConsumerStatefulWidget {
 }
 
 class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
-  // Multi-select state
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
@@ -83,19 +84,19 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Selected'),
-        content: Text('Delete $count ${count == 1 ? 'track' : 'tracks'} from this album?\n\nThis will also delete the files from storage.'),
+        title: Text(context.l10n.downloadedAlbumDeleteSelected),
+        content: Text(context.l10n.downloadedAlbumDeleteMessage(count)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(context.l10n.dialogDelete),
           ),
         ],
       ),
@@ -124,7 +125,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted $deletedCount ${deletedCount == 1 ? 'track' : 'tracks'}')),
+          SnackBar(content: Text(context.l10n.snackbarDeletedTracks(deletedCount))),
         );
       }
     }
@@ -132,11 +133,12 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
 
   Future<void> _openFile(String filePath) async {
     try {
-      await OpenFilex.open(filePath);
+      final mimeType = audioMimeTypeForPath(filePath);
+      await OpenFilex.open(filePath, type: mimeType);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cannot open file: $e')),
+          SnackBar(content: Text(context.l10n.snackbarCannotOpenFile(e.toString()))),
         );
       }
     }
@@ -156,11 +158,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     
-    // Watch history and get tracks for this album (reactive!)
     final allHistoryItems = ref.watch(downloadHistoryProvider.select((s) => s.items));
     final tracks = _getAlbumTracks(allHistoryItems);
     
-    // Auto-pop if album has less than 2 tracks (no longer an "album")
     if (tracks.length < 2) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.pop(context);
@@ -168,7 +168,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       return const SizedBox.shrink();
     }
     
-    // Clean up selected IDs that no longer exist
     final validIds = tracks.map((t) => t.id).toSet();
     _selectedIds.removeWhere((id) => !validIds.contains(id));
     if (_selectedIds.isEmpty && _isSelectionMode) {
@@ -197,7 +196,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
               ],
             ),
             
-            // Bottom Selection Action Bar
             AnimatedPositioned(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOutCubic,
@@ -321,7 +319,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                         children: [
                           Icon(Icons.download_done, size: 14, color: colorScheme.onPrimaryContainer),
                           const SizedBox(width: 4),
-                          Text('${tracks.length} downloaded', style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                          Text(context.l10n.downloadedAlbumDownloadedCount(tracks.length), style: TextStyle(color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -374,13 +372,13 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           children: [
             Icon(Icons.queue_music, size: 20, color: colorScheme.primary),
             const SizedBox(width: 8),
-            Text('Tracks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(context.l10n.downloadedAlbumTracksHeader, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
             const Spacer(),
             if (!_isSelectionMode)
               TextButton.icon(
                 onPressed: tracks.isNotEmpty ? () => _enterSelectionMode(tracks.first.id) : null,
                 icon: const Icon(Icons.checklist, size: 18),
-                label: const Text('Select'),
+                label: Text(context.l10n.actionSelect),
                 style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
               ),
           ],
@@ -521,11 +519,11 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$selectedCount selected',
+                          context.l10n.downloadedAlbumSelectedCount(selectedCount),
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          allSelected ? 'All tracks selected' : 'Tap tracks to select',
+                          allSelected ? context.l10n.downloadedAlbumAllSelected : context.l10n.downloadedAlbumTapToSelect,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
@@ -540,7 +538,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       }
                     },
                     icon: Icon(allSelected ? Icons.deselect : Icons.select_all, size: 20),
-                    label: Text(allSelected ? 'Deselect' : 'Select All'),
+                    label: Text(allSelected ? context.l10n.actionDeselect : context.l10n.actionSelectAll),
                     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
                   ),
                 ],
@@ -553,8 +551,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                   icon: const Icon(Icons.delete_outline),
                   label: Text(
                     selectedCount > 0 
-                        ? 'Delete $selectedCount ${selectedCount == 1 ? 'track' : 'tracks'}'
-                        : 'Select tracks to delete',
+                        ? context.l10n.downloadedAlbumDeleteCount(selectedCount)
+                        : context.l10n.downloadedAlbumSelectToDelete,
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: selectedCount > 0 ? colorScheme.error : colorScheme.surfaceContainerHighest,

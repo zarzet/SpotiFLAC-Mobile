@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -24,14 +25,12 @@ class _LogScreenState extends State<LogScreen> {
   void initState() {
     super.initState();
     LogBuffer().addListener(_onLogUpdate);
-    // Start polling Go backend logs
     LogBuffer().startGoLogPolling();
   }
 
   @override
   void dispose() {
     LogBuffer().removeListener(_onLogUpdate);
-    // Stop polling when leaving screen
     LogBuffer().stopGoLogPolling();
     _scrollController.dispose();
     _searchController.dispose();
@@ -67,7 +66,7 @@ class _LogScreenState extends State<LogScreen> {
     Clipboard.setData(ClipboardData(text: logs));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Logs copied to clipboard'),
+        content: Text(context.l10n.logCopied),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
@@ -84,19 +83,19 @@ class _LogScreenState extends State<LogScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Logs'),
-        content: const Text('Are you sure you want to clear all logs?'),
+        title: Text(context.l10n.logClearLogsTitle),
+        content: Text(context.l10n.logClearLogsMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () {
               LogBuffer().clear();
               Navigator.pop(context);
             },
-            child: const Text('Clear'),
+            child: Text(context.l10n.dialogClear),
           ),
         ],
       ),
@@ -130,7 +129,6 @@ class _LogScreenState extends State<LogScreen> {
         body: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // Collapsing App Bar with back button - same as other settings pages
             SliverAppBar(
             expandedHeight: 120 + topPadding,
             collapsedHeight: kToolbarHeight,
@@ -166,19 +164,19 @@ class _LogScreenState extends State<LogScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'share',
                     child: ListTile(
-                      leading: Icon(Icons.share),
-                      title: Text('Share logs'),
+                      leading: const Icon(Icons.share),
+                      title: Text(context.l10n.logShareLogs),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'clear',
                     child: ListTile(
-                      leading: Icon(Icons.delete_outline),
-                        title: Text('Clear logs'),
+                      leading: const Icon(Icons.delete_outline),
+                        title: Text(context.l10n.logClearLogs),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
@@ -195,7 +193,7 @@ class _LogScreenState extends State<LogScreen> {
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
                     title: Text(
-                      'Logs',
+                      context.l10n.logTitle,
                       style: TextStyle(
                         fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
@@ -207,14 +205,12 @@ class _LogScreenState extends State<LogScreen> {
               ),
             ),
 
-            // Filter section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Filter'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.logFilterSection),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
-                  // Level filter
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     child: Row(
@@ -225,10 +221,10 @@ class _LogScreenState extends State<LogScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Level', style: Theme.of(context).textTheme.bodyLarge),
+                              Text(context.l10n.logFilterLevel, style: Theme.of(context).textTheme.bodyLarge),
                               const SizedBox(height: 2),
                               Text(
-                                'Filter logs by severity',
+                                context.l10n.logFilterBySeverity,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -268,7 +264,6 @@ class _LogScreenState extends State<LogScreen> {
                     endIndent: 20,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
-                  // Search field
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     child: Row(
@@ -279,7 +274,7 @@ class _LogScreenState extends State<LogScreen> {
                           child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
-                              hintText: 'Search logs...',
+                              hintText: context.l10n.logSearchHint,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -313,19 +308,18 @@ class _LogScreenState extends State<LogScreen> {
               ),
             ),
 
-            // Log entries section
             SliverToBoxAdapter(
               child: SettingsSectionHeader(
-                title: 'Entries (${logs.length}${_selectedLevel != 'ALL' || _searchQuery.isNotEmpty ? ' filtered' : ''})',
+                title: _selectedLevel != 'ALL' || _searchQuery.isNotEmpty 
+                    ? context.l10n.logEntriesFiltered(logs.length)
+                    : context.l10n.logEntries(logs.length),
               ),
             ),
             
-            // Error summary card - shows detected issues
             SliverToBoxAdapter(
               child: _LogSummaryCard(logs: LogBuffer().entries),
             ),
             
-            // Log list
             logs.isEmpty
                 ? SliverToBoxAdapter(
                     child: SettingsGroup(
@@ -342,14 +336,14 @@ class _LogScreenState extends State<LogScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'No logs yet',
+                                context.l10n.logNoLogsYet,
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Logs will appear here as you use the app',
+                                context.l10n.logNoLogsYetSubtitle,
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                 ),
@@ -376,7 +370,6 @@ class _LogScreenState extends State<LogScreen> {
                     ),
                   ),
 
-            // Bottom padding
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -415,7 +408,6 @@ class _LogEntryTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: time, level, tag
               Row(
                 children: [
                   Text(
@@ -475,7 +467,6 @@ class _LogEntryTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              // Message
               Text(
                 entry.message,
                 style: TextStyle(
@@ -485,7 +476,6 @@ class _LogEntryTile extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              // Error if present
               if (entry.error != null) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -523,10 +513,8 @@ class _LogSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    // Analyze logs for issues
     final analysis = _analyzeLogs();
     
-    // Don't show if no issues detected
     if (!analysis.hasIssues) {
       return const SizedBox.shrink();
     }
@@ -544,7 +532,6 @@ class _LogSummaryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 children: [
                   Icon(
@@ -564,7 +551,6 @@ class _LogSummaryCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               
-              // ISP Blocking detected
               if (analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.block,
@@ -577,7 +563,6 @@ class _LogSummaryCard extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               
-              // Rate limiting
               if (analysis.hasRateLimit) ...[
                 _IssueBadge(
                   icon: Icons.speed,
@@ -589,7 +574,6 @@ class _LogSummaryCard extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               
-              // Network errors
               if (analysis.hasNetworkError && !analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.wifi_off,
@@ -601,7 +585,6 @@ class _LogSummaryCard extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
               
-              // Track not found
               if (analysis.hasNotFound) ...[
                 _IssueBadge(
                   icon: Icons.search_off,
@@ -612,7 +595,6 @@ class _LogSummaryCard extends StatelessWidget {
                 ),
               ],
               
-              // Error count
               const SizedBox(height: 12),
               Text(
                 'Total errors: ${analysis.errorCount}',
@@ -644,7 +626,6 @@ class _LogSummaryCard extends StatelessWidget {
       final errorLower = (log.error ?? '').toLowerCase();
       final combined = '$msgLower $errorLower';
 
-      // Check for ISP blocking (detected by Go backend)
       if (combined.contains('isp blocking') ||
           combined.contains('isp may be') ||
           combined.contains('blocked by isp') ||
@@ -652,21 +633,18 @@ class _LogSummaryCard extends StatelessWidget {
           combined.contains('connection refused')) {
         hasISPBlocking = true;
         
-        // Try to extract domain
         final domainMatch = RegExp(r'domain:\s*([^\s,]+)', caseSensitive: false).firstMatch(combined);
         if (domainMatch != null) {
           blockedDomains.add(domainMatch.group(1)!);
         }
       }
 
-      // Check for rate limiting
       if (combined.contains('rate limit') ||
           combined.contains('429') ||
           combined.contains('too many requests')) {
         hasRateLimit = true;
       }
 
-      // Check for network errors
       if (combined.contains('connection') ||
           combined.contains('timeout') ||
           combined.contains('network') ||
@@ -674,7 +652,6 @@ class _LogSummaryCard extends StatelessWidget {
         hasNetworkError = true;
       }
 
-      // Check for not found
       if (combined.contains('not found') ||
           combined.contains('no results') ||
           combined.contains('could not find')) {

@@ -22,13 +22,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (json != null) {
       state = AppSettings.fromJson(jsonDecode(json));
       
-      // Run migrations if needed
       await _runMigrations(prefs);
       
-      // Apply Spotify credentials to Go backend on load
       _applySpotifyCredentials();
       
-      // Sync logging state
       LogBuffer.loggingEnabled = state.enableLogging;
     }
   }
@@ -38,16 +35,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final lastMigration = prefs.getInt(_migrationVersionKey) ?? 0;
     
     if (lastMigration < 1) {
-      // Migration 1: Set metadataSource to 'deezer' for existing users
-      // Only apply if user hasn't enabled custom Spotify credentials
-      // (users with custom credentials likely prefer Spotify)
       if (!state.useCustomSpotifyCredentials) {
         state = state.copyWith(metadataSource: 'deezer');
         await _saveSettings();
       }
     }
     
-    // Save current migration version
     if (lastMigration < _currentMigrationVersion) {
       await prefs.setInt(_migrationVersionKey, _currentMigrationVersion);
     }
@@ -60,7 +53,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   /// Apply current Spotify credentials to Go backend
   Future<void> _applySpotifyCredentials() async {
-    // Only apply if both fields are set
     if (state.spotifyClientId.isNotEmpty && 
         state.spotifyClientSecret.isNotEmpty) {
       await PlatformBridge.setSpotifyCredentials(
@@ -68,8 +60,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
         state.spotifyClientSecret,
       );
     }
-    // Note: If credentials are empty, Spotify API will return error
-    // User should use Deezer as metadata source instead
   }
 
   void setDefaultService(String service) {
@@ -113,7 +103,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   void setConcurrentDownloads(int count) {
-    // Clamp between 1 and 3
     final clamped = count.clamp(1, 3);
     state = state.copyWith(concurrentDownloads: clamped);
     _saveSettings();
@@ -207,7 +196,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setEnableLogging(bool enabled) {
     state = state.copyWith(enableLogging: enabled);
     _saveSettings();
-    // Sync logging state to LogBuffer
     LogBuffer.loggingEnabled = enabled;
   }
 
@@ -228,6 +216,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setShowExtensionStore(bool enabled) {
     state = state.copyWith(showExtensionStore: enabled);
+    _saveSettings();
+  }
+
+  void setLocale(String locale) {
+    state = state.copyWith(locale: locale);
     _saveSettings();
   }
 }

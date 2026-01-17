@@ -14,7 +14,6 @@ class ApkDownloader {
     required String version,
     ProgressCallback? onProgress,
   }) async {
-    // Validate URL for security
     final uri = Uri.tryParse(url);
     if (uri == null || uri.scheme != 'https') {
       _log.e('Refusing to download from invalid or non-HTTPS URL');
@@ -35,7 +34,6 @@ class ApkDownloader {
 
       final contentLength = response.contentLength ?? 0;
       
-      // Get download directory
       final dir = await getExternalStorageDirectory();
       if (dir == null) {
         _log.e('Could not get storage directory');
@@ -45,7 +43,6 @@ class ApkDownloader {
       final filePath = '${dir.path}/SpotiFLAC-$version.apk';
       final file = File(filePath);
       
-      // Delete if exists
       if (await file.exists()) {
         await file.delete();
       }

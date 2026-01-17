@@ -120,6 +120,12 @@ import Gobackend  // Import Go framework
             let itemId = args["item_id"] as! String
             GobackendClearItemProgress(itemId)
             return nil
+
+        case "cancelDownload":
+            let args = call.arguments as! [String: Any]
+            let itemId = args["item_id"] as! String
+            GobackendCancelDownload(itemId)
+            return nil
             
         case "setDownloadDirectory":
             let args = call.arguments as! [String: Any]
@@ -500,6 +506,30 @@ import Gobackend  // Import Go framework
             
         case "getURLHandlers":
             let response = GobackendGetURLHandlersJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "getAlbumWithExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let albumId = args["album_id"] as! String
+            let response = GobackendGetAlbumWithExtensionJSON(extensionId, albumId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "getPlaylistWithExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let playlistId = args["playlist_id"] as! String
+            let response = GobackendGetPlaylistWithExtensionJSON(extensionId, playlistId, &error)
+            if let error = error { throw error }
+            return response
+            
+        case "getArtistWithExtension":
+            let args = call.arguments as! [String: Any]
+            let extensionId = args["extension_id"] as! String
+            let artistId = args["artist_id"] as! String
+            let response = GobackendGetArtistWithExtensionJSON(extensionId, artistId, &error)
             if let error = error { throw error }
             return response
             

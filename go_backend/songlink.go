@@ -31,7 +31,6 @@ type TrackAvailability struct {
 }
 
 var (
-	// Global SongLink client instance for connection reuse
 	globalSongLinkClient *SongLinkClient
 	songLinkClientOnce   sync.Once
 )
@@ -40,7 +39,7 @@ var (
 func NewSongLinkClient() *SongLinkClient {
 	songLinkClientOnce.Do(func() {
 		globalSongLinkClient = &SongLinkClient{
-			client: NewHTTPClientWithTimeout(SongLinkTimeout), // 30s timeout
+			client: NewHTTPClientWithTimeout(SongLinkTimeout),
 		}
 	})
 	return globalSongLinkClient
@@ -48,15 +47,12 @@ func NewSongLinkClient() *SongLinkClient {
 
 // CheckTrackAvailability checks track availability on streaming platforms
 func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc string) (*TrackAvailability, error) {
-	// Validate Spotify ID format (should be 22 characters alphanumeric)
 	if spotifyTrackID == "" {
 		return nil, fmt.Errorf("spotify track ID is empty")
 	}
 	
-	// Use global rate limiter - blocks until request is allowed
 	songLinkRateLimiter.WaitForSlot()
 
-	// Build API URL
 	spotifyBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9vcGVuLnNwb3RpZnkuY29tL3RyYWNrLw==")
 	spotifyURL := fmt.Sprintf("%s%s", string(spotifyBase), spotifyTrackID)
 
@@ -68,7 +64,6 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Use retry logic with User-Agent
 	retryConfig := DefaultRetryConfig()
 	resp, err := DoRequestWithRetry(s.client, req, retryConfig)
 	if err != nil {
@@ -76,7 +71,6 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 	}
 	defer resp.Body.Close()
 
-	// Handle specific error codes
 	if resp.StatusCode == 400 {
 		return nil, fmt.Errorf("track not found on SongLink (invalid Spotify ID or track unavailable)")
 	}
@@ -109,27 +103,22 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 		SpotifyID: spotifyTrackID,
 	}
 
-	// Check Tidal
 	if tidalLink, ok := songLinkResp.LinksByPlatform["tidal"]; ok && tidalLink.URL != "" {
 		availability.Tidal = true
 		availability.TidalURL = tidalLink.URL
 	}
 
-	// Check Amazon
 	if amazonLink, ok := songLinkResp.LinksByPlatform["amazonMusic"]; ok && amazonLink.URL != "" {
 		availability.Amazon = true
 		availability.AmazonURL = amazonLink.URL
 	}
 
-	// Check Deezer
 	if deezerLink, ok := songLinkResp.LinksByPlatform["deezer"]; ok && deezerLink.URL != "" {
 		availability.Deezer = true
 		availability.DeezerURL = deezerLink.URL
-		// Extract Deezer ID from URL (e.g., https://www.deezer.com/track/123456)
 		availability.DeezerID = extractDeezerIDFromURL(deezerLink.URL)
 	}
 
-	// Check Qobuz using ISRC (SongLink doesn't support Qobuz directly)
 	if isrc != "" {
 		availability.Qobuz = checkQobuzAvailability(isrc)
 	}
@@ -191,12 +180,9 @@ func checkQobuzAvailability(isrc string) bool {
 
 // extractDeezerIDFromURL extracts Deezer track/album/artist ID from URL
 func extractDeezerIDFromURL(deezerURL string) string {
-	// URL format: https://www.deezer.com/track/123456 or https://www.deezer.com/en/track/123456
 	parts := strings.Split(deezerURL, "/")
 	if len(parts) > 0 {
-		// Get the last part which should be the ID
 		lastPart := parts[len(parts)-1]
-		// Remove any query parameters
 		if idx := strings.Index(lastPart, "?"); idx > 0 {
 			lastPart = lastPart[:idx]
 		}
@@ -274,7 +260,6 @@ func (s *SongLinkClient) CheckAlbumAvailability(spotifyAlbumID string) (*AlbumAv
 		SpotifyID: spotifyAlbumID,
 	}
 
-	// Check Deezer
 	if deezerLink, ok := songLinkResp.LinksByPlatform["deezer"]; ok && deezerLink.URL != "" {
 		availability.Deezer = true
 		availability.DeezerURL = deezerLink.URL
@@ -309,13 +294,10 @@ func (s *SongLinkClient) CheckAvailabilityFromDeezer(deezerTrackID string) (*Tra
 		return nil, fmt.Errorf("deezer track ID is empty")
 	}
 	
-	// Use global rate limiter
 	songLinkRateLimiter.WaitForSlot()
 
-	// Build Deezer URL
 	deezerURL := fmt.Sprintf("https://www.deezer.com/track/%s", deezerTrackID)
 
-	// Build API URL using Deezer URL as source
 	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkuc29uZy5saW5rL3YxLWFscGhhLjEvbGlua3M/dXJsPQ==")
 	apiURL := fmt.Sprintf("%s%s&userCountry=US", string(apiBase), url.QueryEscape(deezerURL))
 
@@ -371,25 +353,20 @@ func (s *SongLinkClient) CheckAvailabilityFromDeezer(deezerTrackID string) (*Tra
 		DeezerID: deezerTrackID,
 	}
 
-	// Check Spotify
 	if spotifyLink, ok := songLinkResp.LinksByPlatform["spotify"]; ok && spotifyLink.URL != "" {
-		// Extract Spotify ID from URL
 		availability.SpotifyID = extractSpotifyIDFromURL(spotifyLink.URL)
 	}
 
-	// Check Tidal
 	if tidalLink, ok := songLinkResp.LinksByPlatform["tidal"]; ok && tidalLink.URL != "" {
 		availability.Tidal = true
 		availability.TidalURL = tidalLink.URL
 	}
 
-	// Check Amazon
 	if amazonLink, ok := songLinkResp.LinksByPlatform["amazonMusic"]; ok && amazonLink.URL != "" {
 		availability.Amazon = true
 		availability.AmazonURL = amazonLink.URL
 	}
 
-	// Check Deezer URL
 	if deezerLink, ok := songLinkResp.LinksByPlatform["deezer"]; ok && deezerLink.URL != "" {
 		availability.DeezerURL = deezerLink.URL
 	}
@@ -459,24 +436,20 @@ func (s *SongLinkClient) CheckAvailabilityByPlatform(platform, entityType, entit
 
 	availability := &TrackAvailability{}
 
-	// Check Spotify
 	if spotifyLink, ok := songLinkResp.LinksByPlatform["spotify"]; ok && spotifyLink.URL != "" {
 		availability.SpotifyID = extractSpotifyIDFromURL(spotifyLink.URL)
 	}
 
-	// Check Tidal
 	if tidalLink, ok := songLinkResp.LinksByPlatform["tidal"]; ok && tidalLink.URL != "" {
 		availability.Tidal = true
 		availability.TidalURL = tidalLink.URL
 	}
 
-	// Check Amazon
 	if amazonLink, ok := songLinkResp.LinksByPlatform["amazonMusic"]; ok && amazonLink.URL != "" {
 		availability.Amazon = true
 		availability.AmazonURL = amazonLink.URL
 	}
 
-	// Check Deezer
 	if deezerLink, ok := songLinkResp.LinksByPlatform["deezer"]; ok && deezerLink.URL != "" {
 		availability.Deezer = true
 		availability.DeezerURL = deezerLink.URL
@@ -488,10 +461,8 @@ func (s *SongLinkClient) CheckAvailabilityByPlatform(platform, entityType, entit
 
 // extractSpotifyIDFromURL extracts Spotify track ID from URL
 func extractSpotifyIDFromURL(spotifyURL string) string {
-	// URL format: https://open.spotify.com/track/0Jcij1eWd5bDMU5iPbxe2i
 	parts := strings.Split(spotifyURL, "/track/")
 	if len(parts) > 1 {
-		// Get the ID part and remove any query parameters
 		idPart := parts[1]
 		if idx := strings.Index(idPart, "?"); idx > 0 {
 			idPart = idPart[:idx]

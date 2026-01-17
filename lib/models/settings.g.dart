@@ -32,8 +32,10 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   useExtensionProviders: json['useExtensionProviders'] as bool? ?? true,
   searchProvider: json['searchProvider'] as String?,
   separateSingles: json['separateSingles'] as bool? ?? false,
-  albumFolderStructure: json['albumFolderStructure'] as String? ?? 'artist_album',
+  albumFolderStructure:
+      json['albumFolderStructure'] as String? ?? 'artist_album',
   showExtensionStore: json['showExtensionStore'] as bool? ?? true,
+  locale: json['locale'] as String? ?? 'system',
 );
 
 Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
@@ -64,4 +66,5 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'separateSingles': instance.separateSingles,
       'albumFolderStructure': instance.albumFolderStructure,
       'showExtensionStore': instance.showExtensionStore,
+      'locale': instance.locale,
     };

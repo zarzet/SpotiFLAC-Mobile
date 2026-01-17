@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -61,7 +62,6 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            // App Bar
             SliverAppBar(
             expandedHeight: 120 + topPadding,
             collapsedHeight: kToolbarHeight,
@@ -97,7 +97,6 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ),
 
-          // Extension Info Card
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -186,12 +185,12 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    _InfoRow(label: 'Author', value: extension.author),
-                    _InfoRow(label: 'ID', value: extension.id),
-                    _InfoRow(label: 'Version', value: 'v${extension.version}'),
+                    _InfoRow(label: context.l10n.extensionAuthor, value: extension.author),
+                    _InfoRow(label: context.l10n.extensionId, value: extension.id),
+                    _InfoRow(label: context.l10n.extensionsVersion(extension.version), value: ''),
                     if (hasError && extension.errorMessage != null)
                       _InfoRow(
-                        label: 'Error',
+                        label: context.l10n.extensionError,
                         value: extension.errorMessage!,
                         isError: true,
                       ),
@@ -201,51 +200,50 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ),
 
-          // Capabilities
-          const SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: 'Capabilities'),
+          SliverToBoxAdapter(
+            child: SettingsSectionHeader(title: context.l10n.extensionCapabilities),
           ),
           SliverToBoxAdapter(
             child: SettingsGroup(
               children: [
                 _CapabilityItem(
                   icon: Icons.search,
-                  title: 'Metadata Provider',
+                  title: context.l10n.extensionMetadataProvider,
                   enabled: extension.hasMetadataProvider,
                 ),
                 _CapabilityItem(
                   icon: Icons.download,
-                  title: 'Download Provider',
+                  title: context.l10n.extensionDownloadProvider,
                   enabled: extension.hasDownloadProvider,
                 ),
                 _CapabilityItem(
                   icon: Icons.manage_search,
-                  title: 'Custom Search',
+                  title: context.l10n.extensionsSearchProvider,
                   enabled: extension.hasCustomSearch,
                   subtitle: extension.searchBehavior?.placeholder,
                 ),
                 _CapabilityItem(
                   icon: Icons.compare_arrows,
-                  title: 'Custom Track Matching',
+                  title: context.l10n.extensionCustomTrackMatching,
                   enabled: extension.hasCustomMatching,
                   subtitle: extension.trackMatching?.strategy != null 
-                      ? 'Strategy: ${extension.trackMatching!.strategy}'
+                      ? context.l10n.extensionStrategy(extension.trackMatching!.strategy!)
                       : null,
                 ),
                 _CapabilityItem(
                   icon: Icons.auto_fix_high,
-                  title: 'Post-Processing',
+                  title: context.l10n.extensionPostProcessing,
                   enabled: extension.hasPostProcessing,
                   subtitle: extension.postProcessing?.hooks.isNotEmpty == true
-                      ? '${extension.postProcessing!.hooks.length} hook(s) available'
+                      ? context.l10n.extensionHooksAvailable(extension.postProcessing!.hooks.length)
                       : null,
                 ),
                 _CapabilityItem(
                   icon: Icons.link,
-                  title: 'URL Handler',
+                  title: context.l10n.extensionUrlHandler,
                   enabled: extension.hasURLHandler,
                   subtitle: extension.urlHandler?.patterns.isNotEmpty == true
-                      ? '${extension.urlHandler!.patterns.length} pattern(s)'
+                      ? context.l10n.extensionPatternsCount(extension.urlHandler!.patterns.length)
                       : null,
                   showDivider: false,
                 ),
@@ -253,12 +251,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ),
 
-
-
-          // URL Handler Section (if extension handles URLs)
           if (extension.hasURLHandler && extension.urlHandler!.patterns.isNotEmpty) ...[
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'URL Handler'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.extensionUrlHandler),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -271,10 +266,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ],
 
-          // Quality Options Section (for download providers)
           if (extension.hasDownloadProvider && extension.qualityOptions.isNotEmpty) ...[
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Quality Options'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.extensionQualityOptions),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -290,10 +284,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ],
 
-          // Post-Processing Hooks (if available)
           if (extension.hasPostProcessing && extension.postProcessing!.hooks.isNotEmpty) ...[
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Post-Processing Hooks'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.extensionPostProcessingHooks),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -309,10 +302,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ],
 
-          // Permissions
           if (extension.permissions.isNotEmpty) ...[
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Permissions'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.extensionPermissions),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -328,10 +320,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
             ),
           ],
 
-          // Settings
           if (extension.settings.isNotEmpty) ...[
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Settings'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.extensionSettings),
             ),
             if (_isLoadingSettings)
               const SliverToBoxAdapter(
@@ -357,14 +348,13 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
               ),
           ],
 
-          // Remove button
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: OutlinedButton.icon(
                 onPressed: () => _confirmRemove(context),
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Remove Extension'),
+                label: Text(context.l10n.extensionRemoveButton),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colorScheme.error,
                   side: BorderSide(color: colorScheme.error),
@@ -398,22 +388,21 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Extension'),
-        content: const Text(
-          'Are you sure you want to remove this extension? '
-          'This action cannot be undone.',
+        title: Text(context.l10n.dialogRemoveExtension),
+        content: Text(
+          context.l10n.dialogRemoveExtensionMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: colorScheme.error,
             ),
-            child: const Text('Remove'),
+            child: Text(context.l10n.dialogRemove),
           ),
         ],
       ),
@@ -424,7 +413,6 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
           .read(extensionProvider.notifier)
           .removeExtension(widget.extensionId);
       if (success && mounted) {
-        // Refresh store to update isInstalled status
         ref.read(storeProvider.notifier).refresh();
         Navigator.pop(this.context);
       }
@@ -557,7 +545,6 @@ class _PermissionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    // Parse permission to get icon and description
     IconData icon = Icons.security;
     String description = permission;
     
@@ -725,7 +712,7 @@ class _SettingItem extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () {
@@ -735,7 +722,7 @@ class _SettingItem extends StatelessWidget {
               onChanged(newValue);
               Navigator.pop(context);
             },
-            child: const Text('Save'),
+            child: Text(context.l10n.dialogSave),
           ),
         ],
       ),

@@ -1,5 +1,138 @@
 # Changelog
 
+## [3.1.0] - 2026-01-19
+
+### Added
+
+- **Recent Access History**: Quick access to recently visited content when tapping the search bar
+  - Shows recently visited artists, albums, playlists, and downloaded tracks
+  - Merged view combining navigation history and download history
+  - Tap to quickly navigate back to previously accessed content
+  - X button to remove individual items from history
+  - "Clear All" button to clear entire history
+  - Persists across app restarts (stored in SharedPreferences)
+  - Max 20 items stored, sorted by most recent
+  - Multi-language support (Artist/Album/Song/Playlist labels localized)
+
+- **Artist Screen Redesign**
+  - Full-width header image (380px) with gradient overlay
+  - Artist name displayed at bottom of header with text shadow
+  - Monthly listeners count display (formatted with compact notation)
+  - "Popular" section showing top 5 tracks with download status indicators
+  - Dynamic download button states (queued, downloading, completed)
+  - Header image and top tracks fetched from extension metadata
+  - Image alignment set to top-center to show faces properly
+
+- **Extension Store Update Badge**: Badge indicator on Store tab icon showing number of available updates
+  - Users can see extension updates are available without opening Store tab
+  - Badge shows count of extensions with updates
+
+- **Extension Compatibility Warning**: Warning badge for extensions requiring newer app version
+  - Extensions with `minAppVersion` higher than current app show warning label
+  - Label displays "Requires vX.X.X+" to encourage users to upgrade
+  - Users can still install the extension (not blocked)
+
+- **Year in Album Folder Name** ([#50](https://github.com/zarzet/SpotiFLAC-Mobile/issues/50)): New album folder structure options with release year
+
+  - `Artist / [Year] Album`: Albums/Coldplay/[2005] X&Y/
+  - `[Year] Album Only`: Albums/[2005] X&Y/
+  - Year extracted from release date metadata
+  - Matches desktop SpotiFLAC folder structure
+
+- **Extension Album/Playlist/Artist Support**: Extensions can now return albums, playlists, and artists in search results
+
+  - Search results now properly separated into Albums, Playlists, Artists, and Songs sections
+  - Albums, playlists, and artists show chevron icon (navigate to detail) instead of download button
+  - Tap album/playlist to view track list and download
+  - Tap artist to view their albums/discography
+  - New `getAlbum()`, `getPlaylist()`, and `getArtist()` extension functions
+  - New `ExtensionAlbumScreen`, `ExtensionPlaylistScreen`, and `ExtensionArtistScreen` for fetching content from extensions
+  - YouTube Music extension updated with album/playlist/artist support
+
+- **Odesli (song.link) Integration for YouTube Music Extension**
+  - New `enrichTrack()` function to fetch ISRC and external service links
+  - Uses Odesli API to convert YouTube Music tracks to Deezer/Tidal/Qobuz
+  - Enables built-in service fallback for high-quality audio downloads
+  - Extension version updated to 1.4.0 with `api.song.link` and `odesli.io` network permissions
+- **Download Cancel**: Canceling a download now stops in-flight built-in provider downloads (Tidal/Qobuz/Amazon) and clears backend progress tracking.
+
+### Changed
+
+- **Search Bar Behavior**: Tapping search bar now immediately moves it to top position
+  - Logo and subtitle hide when search bar is focused
+  - Recent access history appears in the content area below
+  - More space for recent items, not blocked by keyboard
+
+### Fixed
+
+- Fixed search source chips still referencing removed badge props.
+- Fixed extension artist album metadata to preserve provider IDs and cover URLs for correct navigation.
+- Fixed extension playlist fetch to populate provider IDs and reject disabled extensions.
+- Fixed extension collection screens calling setState after dispose during async loads.
+- Fixed URL handler responses to include provider IDs for extension albums and artists.
+- Fixed YTMusic extension not extracting album name and duration from search results.
+  - Album name is now extracted from flexColumns/subtitle when linked to album browseId.
+  - Duration is now extracted from fixedColumns/flexColumns in addition to existing sources.
+- Fixed "Separate Singles" setting not working ([#54](https://github.com/zarzet/SpotiFLAC-Mobile/issues/54)) - singles were going to Albums folder.
+  - Root cause: `albumType` was not being extracted from Deezer API during metadata enrichment.
+  - Deezer track responses now correctly include `album_type` (single/ep/album/compilation).
+  - Track creation now preserves `albumType` and `source` fields throughout download flow.
+- Fixed PageView overscroll at edges (BouncingScrollPhysics → ClampingScrollPhysics)
+- Fixed settings item highlight on swipe (highlightColor: Colors.transparent)
+- Fixed extension duplicate load error (skip silently instead of throwing error)
+- Fixed keyboard appearing when swiping between tabs (unfocus on page change)
+- Removed "Free"/"API Key" badges from search source selector
+- Fixed cancel action briefly resuming downloads in the queue UI after ~1 second.
+- Fixed cancelled downloads being marked as failed when the backend returns after cancellation.
+- Fixed cancel triggering provider fallback (cancel now stops the download flow immediately).
+- Fixed stale ISRC cache returning deleted files after cancel.
+- Fixed search results mixing extension and built-in artists when using default provider.
+- Fixed audio files opening with non-music apps by passing audio MIME type on open.
+- Fixed album artist showing null/blank by normalizing empty metadata and using artist fallback for tags.
+- Fixed `use_build_context_synchronously` lint warnings in `home_tab.dart`
+- Fixed `unnecessary_underscores` lint warnings in error widget callbacks
+- Fixed duplicate artist entries in recent history (recording now only happens in screen's initState)
+- **Go Backend: Missing `item_type` and `album_type` fields**
+  - Added `ItemType` and `AlbumType` fields to `ExtTrackMetadata` struct
+  - Fixed `CustomSearchWithExtensionJSON` - now includes `item_type` and `album_type` in response
+  - Fixed `HandleURLWithExtensionJSON` - now includes `item_type` and `album_type` for tracks
+  - Fixed `GetAlbumWithExtensionJSON` - now includes `item_type` and `album_type` for album tracks
+  - Fixed `GetPlaylistWithExtensionJSON` - now includes `item_type` and `album_type` for playlist tracks
+- **Album/Playlist Track Thumbnails**: Tracks inside albums/playlists now use album/playlist cover as fallback when no individual cover exists
+- **YouTube Music Extension getArtist**: Fixed `getArtist()` function not being registered in extension, causing artist pages to fail with "returned null" error
+- **Recent Access UI**: Fixed recent access list disappearing when keyboard is dismissed - now stays visible until user presses Back button
+- **Extension Artist Top Tracks**: Fixed top tracks not appearing when opening artist from extension search results
+  - YT Music extension `getArtist()` now returns `top_tracks` array with up to 10 popular songs
+  - Go backend `GetArtistWithExtensionJSON` now forwards `top_tracks`, `header_image`, and `listeners` to Flutter
+  - `ExtensionArtistScreen` now parses and passes top tracks to `ArtistScreen`
+  - `ArtistScreen` with `extensionId` skips Spotify/Deezer fetch, uses extension data only (fixes "Rate Limited" errors)
+- **Search Bar Unfocus**: Fixed search bar not unfocusing when tapping outside - now properly dismisses keyboard and unfocus when tapping anywhere outside the search field
+- **Keyboard Appearing on Settings Navigation**: Fixed keyboard randomly appearing when returning from Settings sub-pages (e.g., Appearance) - now uses `FocusManager.instance.primaryFocus?.unfocus()` for more aggressive unfocus
+- **Recent Access Artist Navigation**: Fixed opening artist from recent access using wrong screen - now correctly uses `ExtensionArtistScreen` for extension artists (YT Music, Spotify Web) instead of trying to fetch from Spotify API
+
+### Extensions
+
+- **YouTube Music Extension**: Updated to v1.5.0
+  - `getArtist()` now returns `top_tracks` array with popular songs
+  - Added `header_image` and `listeners` to artist response
+- **Spotify Web Extension**: Updated to v1.6.0
+
+### Localization
+
+- **Multi-Language Support**: App now supports multiple languages with community contributions via Crowdin
+  - Available languages: English, Indonesian (Bahasa Indonesia)
+  - More languages coming soon with community translations
+  - Contribute translations at [Crowdin](https://crowdin.com/project/spotiflac-mobile)
+- Added new localization strings for recent access types:
+  - `recentTypeArtist` - "Artist" / "Artis"
+  - `recentTypeAlbum` - "Album" / "Album"
+  - `recentTypeSong` - "Song" / "Lagu"
+  - `recentTypePlaylist` - "Playlist" / "Playlist"
+  - `recentPlaylistInfo` - "Playlist: {name}"
+  - `errorGeneric` - "Error: {message}"
+
+---
+
 ## [3.0.0] - 2026-01-14
 
 ### Extension System (Major Feature)
@@ -57,6 +190,13 @@ SpotiFLAC 3.0 introduces a powerful extension system that allows third-party int
 
   - Based on `album_type` from Spotify/Deezer metadata
   - Toggle in Settings > Download > Separate Singles Folder
+
+- **Year in Album Folder Name**: New album folder structure options with release year
+
+  - `Artist / [Year] Album`: Albums/Coldplay/[2005] X&Y/
+  - `[Year] Album Only`: Albums/[2005] X&Y/
+  - Year extracted from release date metadata
+  - Matches desktop SpotiFLAC folder structure
 
 - **Parallel API Calls**: Download URL fetching now uses parallel requests
   - Tidal: All 8 APIs requested simultaneously, first success wins

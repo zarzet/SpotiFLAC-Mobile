@@ -35,7 +35,7 @@ func GetTrackIDCache() *TrackIDCache {
 	trackIDCacheOnce.Do(func() {
 		globalTrackIDCache = &TrackIDCache{
 			cache: make(map[string]*TrackIDCacheEntry),
-			ttl:   30 * time.Minute, // Cache for 30 minutes
+			ttl:   30 * time.Minute,
 		}
 	})
 	return globalTrackIDCache
@@ -135,7 +135,6 @@ func FetchCoverAndLyricsParallel(
 	result := &ParallelDownloadResult{}
 	var wg sync.WaitGroup
 
-	// Download cover in parallel
 	if coverURL != "" {
 		wg.Add(1)
 		go func() {
@@ -165,7 +164,6 @@ func FetchCoverAndLyricsParallel(
 				fmt.Printf("[Parallel] Lyrics fetch failed: %v\n", err)
 			} else if lyrics != nil && len(lyrics.Lines) > 0 {
 				result.LyricsData = lyrics
-				// Use LRC with metadata headers (like PC version)
 				result.LyricsLRC = convertToLRCWithMetadata(lyrics, trackName, artistName)
 				fmt.Printf("[Parallel] Lyrics fetched: %d lines\n", len(lyrics.Lines))
 			} else {
@@ -202,12 +200,10 @@ func PreWarmTrackCache(requests []PreWarmCacheRequest) {
 	fmt.Printf("[Cache] Pre-warming cache for %d tracks...\n", len(requests))
 	cache := GetTrackIDCache()
 
-	// Limit concurrent pre-warm requests
-	semaphore := make(chan struct{}, 3) // Max 3 concurrent
+	semaphore := make(chan struct{}, 3)
 	var wg sync.WaitGroup
 
 	for _, req := range requests {
-		// Skip if already cached
 		if cached := cache.Get(req.ISRC); cached != nil {
 			continue
 		}
@@ -252,11 +248,9 @@ func preWarmQobuzCache(isrc string) {
 }
 
 func preWarmAmazonCache(isrc, spotifyID string) {
-	// Amazon uses SongLink to get URL, so we pre-warm by checking availability
 	client := NewSongLinkClient()
 	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
 	if err == nil && availability != nil && availability.Amazon {
-		// Store Amazon URL in cache (using ISRC as key)
 		GetTrackIDCache().SetAmazon(isrc, availability.AmazonURL)
 		fmt.Printf("[Cache] Cached Amazon URL for ISRC %s\n", isrc)
 	}
@@ -270,10 +264,8 @@ func preWarmAmazonCache(isrc, spotifyID string) {
 // tracksJSON is a JSON array of {isrc, track_name, artist_name, service}
 func PreWarmCache(tracksJSON string) error {
 	var requests []PreWarmCacheRequest
-	// Parse JSON (simplified - in production use proper JSON parsing)
-	// For now, this is called from exports.go with proper parsing
 
-	go PreWarmTrackCache(requests) // Run in background
+	go PreWarmTrackCache(requests)
 	return nil
 }
 

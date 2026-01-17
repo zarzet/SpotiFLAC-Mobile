@@ -22,8 +22,7 @@ const (
 
 	deezerCacheTTL = 10 * time.Minute
 
-	// Parallel ISRC fetching settings
-	deezerMaxParallelISRC = 10 // Max concurrent ISRC fetches
+	deezerMaxParallelISRC = 10
 )
 
 // DeezerClient handles Deezer API interactions (no auth required)
@@ -36,7 +35,6 @@ type DeezerClient struct {
 	cacheMu     sync.RWMutex
 }
 
-// Singleton instance
 var (
 	deezerClient     *DeezerClient
 	deezerClientOnce sync.Once
@@ -89,11 +87,9 @@ type deezerAlbumSimple struct {
 	CoverBig    string `json:"cover_big"`
 	CoverXL     string `json:"cover_xl"`
 	ReleaseDate string `json:"release_date"` // Sometimes at album level
+	RecordType  string `json:"record_type"`  // album, single, ep, compile
 }
 
-// ... (skip other structs as they are fine/unchanged) ...
-
-// ... (in convertTrack) ...
 func (c *DeezerClient) convertTrack(track deezerTrack) TrackMetadata {
 	artistName := track.Artist.Name
 	if len(track.Contributors) > 0 {
@@ -115,7 +111,6 @@ func (c *DeezerClient) convertTrack(track deezerTrack) TrackMetadata {
 		albumImage = track.Album.Cover
 	}
 
-	// Try to find release date
 	releaseDate := track.ReleaseDate
 	if releaseDate == "" {
 		releaseDate = track.Album.ReleaseDate
@@ -543,7 +538,6 @@ func (c *DeezerClient) SearchByISRC(ctx context.Context, isrc string) (*TrackMet
 		return &result, nil
 	}
 
-	// Check if we got a valid response (ID > 0)
 	if track.ID == 0 {
 		return nil, fmt.Errorf("no track found for ISRC: %s", isrc)
 	}
@@ -566,7 +560,6 @@ func (c *DeezerClient) fetchISRCsParallel(ctx context.Context, tracks []deezerTr
 	result := make(map[string]string)
 	var resultMu sync.Mutex
 
-	// First, check cache for existing ISRCs
 	var tracksToFetch []deezerTrack
 	c.cacheMu.RLock()
 	for _, track := range tracks {
@@ -624,7 +617,6 @@ func (c *DeezerClient) fetchISRCsParallel(ctx context.Context, tracks []deezerTr
 // GetTrackISRC fetches ISRC for a single track (with caching)
 // Use this when you need ISRC for download
 func (c *DeezerClient) GetTrackISRC(ctx context.Context, trackID string) (string, error) {
-	// Check cache first
 	c.cacheMu.RLock()
 	if isrc, ok := c.isrcCache[trackID]; ok {
 		c.cacheMu.RUnlock()

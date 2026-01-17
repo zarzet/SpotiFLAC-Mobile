@@ -17,9 +17,13 @@ class TrackState {
   final String? artistId;
   final String? artistName;
   final String? coverUrl;
+  final String? headerImageUrl; // Artist header image for background
+  final int? monthlyListeners; // Artist monthly listeners
   final List<ArtistAlbum>? artistAlbums; // For artist page
+  final List<Track>? artistTopTracks; // Artist's popular tracks
   final List<SearchArtist>? searchArtists; // For search results
   final bool hasSearchText; // For back button handling
+  final bool isShowingRecentAccess; // For recent access mode
   final String? searchExtensionId; // Extension ID used for current search results
 
   const TrackState({
@@ -32,9 +36,13 @@ class TrackState {
     this.artistId,
     this.artistName,
     this.coverUrl,
+    this.headerImageUrl,
+    this.monthlyListeners,
     this.artistAlbums,
+    this.artistTopTracks,
     this.searchArtists,
     this.hasSearchText = false,
+    this.isShowingRecentAccess = false,
     this.searchExtensionId,
   });
 
@@ -50,9 +58,13 @@ class TrackState {
     String? artistId,
     String? artistName,
     String? coverUrl,
+    String? headerImageUrl,
+    int? monthlyListeners,
     List<ArtistAlbum>? artistAlbums,
+    List<Track>? artistTopTracks,
     List<SearchArtist>? searchArtists,
     bool? hasSearchText,
+    bool? isShowingRecentAccess,
     String? searchExtensionId,
   }) {
     return TrackState(
@@ -65,9 +77,13 @@ class TrackState {
       artistId: artistId ?? this.artistId,
       artistName: artistName ?? this.artistName,
       coverUrl: coverUrl ?? this.coverUrl,
+      headerImageUrl: headerImageUrl ?? this.headerImageUrl,
+      monthlyListeners: monthlyListeners ?? this.monthlyListeners,
       artistAlbums: artistAlbums ?? this.artistAlbums,
+      artistTopTracks: artistTopTracks ?? this.artistTopTracks,
       searchArtists: searchArtists ?? this.searchArtists,
       hasSearchText: hasSearchText ?? this.hasSearchText,
+      isShowingRecentAccess: isShowingRecentAccess ?? this.isShowingRecentAccess,
       searchExtensionId: searchExtensionId,
     );
   }
@@ -82,6 +98,7 @@ class ArtistAlbum {
   final String? coverUrl;
   final String albumType; // album, single, compilation
   final String artists;
+  final String? providerId; // Extension ID if from extension
 
   const ArtistAlbum({
     required this.id,
@@ -91,6 +108,7 @@ class ArtistAlbum {
     this.coverUrl,
     required this.albumType,
     required this.artists,
+    this.providerId,
   });
 }
 
@@ -124,14 +142,11 @@ class TrackNotifier extends Notifier<TrackState> {
   bool _isRequestValid(int requestId) => requestId == _currentRequestId;
 
   Future<void> fetchFromUrl(String url, {bool useDeezerFallback = true}) async {
-    // Increment request ID to cancel any pending requests
     final requestId = ++_currentRequestId;
 
-    // Preserve hasSearchText during fetch
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
-      // First, check if any extension can handle this URL
       final extensionHandler = await PlatformBridge.findURLHandler(url);
       if (extensionHandler != null) {
         _log.i('Found extension URL handler: $extensionHandler for URL: $url');
@@ -169,13 +184,20 @@ class TrackNotifier extends Notifier<TrackState> {
             final artistData = result['artist'] as Map<String, dynamic>;
             final albumsList = artistData['albums'] as List<dynamic>? ?? [];
             final albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+            
+            final topTracksList = artistData['top_tracks'] as List<dynamic>? ?? [];
+            final topTracks = topTracksList.map((t) => _parseSearchTrack(t as Map<String, dynamic>, source: extensionId)).toList();
+            
             state = TrackState(
               tracks: [],
               isLoading: false,
               artistId: artistData['id'] as String?,
               artistName: artistData['name'] as String?,
               coverUrl: artistData['image_url'] as String? ?? artistData['images'] as String?,
+              headerImageUrl: artistData['header_image'] as String?,
+              monthlyListeners: artistData['listeners'] as int?,
               artistAlbums: albums,
+              artistTopTracks: topTracks.isNotEmpty ? topTracks : null,
               searchExtensionId: extensionId,
             );
             return;
@@ -183,13 +205,11 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
       
-      // No extension handler found, try Spotify URL parsing
       final parsed = await PlatformBridge.parseSpotifyUrl(url);
       if (!_isRequestValid(requestId)) return; // Request cancelled
       
       final type = parsed['type'] as String;
 
-      // Use the new fallback-enabled method
       Map<String, dynamic> metadata;
       
       try {
@@ -199,7 +219,6 @@ class TrackNotifier extends Notifier<TrackState> {
         // ignore: avoid_print
         print('[FetchURL] Metadata fetch success');
       } catch (e) {
-        // If fallback also fails, show error
         // ignore: avoid_print
         print('[FetchURL] Metadata fetch failed: $e');
         rethrow;
@@ -226,7 +245,6 @@ class TrackNotifier extends Notifier<TrackState> {
           albumName: albumInfo['name'] as String?,
           coverUrl: albumInfo['images'] as String?,
         );
-        // Pre-warm cache for album tracks in background
         _preWarmCacheForTracks(tracks);
       } else if (type == 'playlist') {
         final playlistInfo = metadata['playlist_info'] as Map<String, dynamic>;
@@ -239,7 +257,6 @@ class TrackNotifier extends Notifier<TrackState> {
           playlistName: owner?['name'] as String?,
           coverUrl: owner?['images'] as String?,
         );
-        // Pre-warm cache for playlist tracks in background
         _preWarmCacheForTracks(tracks);
       } else if (type == 'artist') {
         final artistInfo = metadata['artist_info'] as Map<String, dynamic>;
@@ -255,44 +272,44 @@ class TrackNotifier extends Notifier<TrackState> {
         );
       }
     } catch (e) {
-      if (!_isRequestValid(requestId)) return; // Request cancelled
-      // Preserve hasSearchText on error so user stays on search screen
+      if (!_isRequestValid(requestId)) return;
       state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
     }
   }
 
   Future<void> search(String query, {String? metadataSource}) async {
-    // Increment request ID to cancel any pending requests
     final requestId = ++_currentRequestId;
 
-    // Preserve hasSearchText during search
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
-      // Check if extension providers should be used for search
       final settings = ref.read(settingsProvider);
       final extensionState = ref.read(extensionProvider);
       final hasActiveMetadataExtensions = extensionState.extensions.any(
         (e) => e.enabled && e.hasMetadataProvider,
       );
-      final useExtensions = settings.useExtensionProviders && hasActiveMetadataExtensions;
+      final searchProvider = settings.searchProvider;
+      final useExtensions =
+          settings.useExtensionProviders &&
+          hasActiveMetadataExtensions &&
+          searchProvider != null &&
+          searchProvider.isNotEmpty;
 
-      // Use Deezer or Spotify based on settings
       final source = metadataSource ?? 'deezer';
       
-      _log.i('Search started: source=$source, query="$query", useExtensions=$useExtensions');
+      _log.i(
+        'Search started: source=$source, query="$query", useExtensions=$useExtensions',
+      );
       
       Map<String, dynamic> results;
       List<Track> extensionTracks = [];
       
-      // Try extension providers first if enabled
       if (useExtensions) {
         try {
           _log.d('Calling extension search API...');
           final extResults = await PlatformBridge.searchTracksWithExtensions(query, limit: 20);
           _log.i('Extensions returned ${extResults.length} tracks');
           
-          // Parse extension results
           for (final t in extResults) {
             try {
               extensionTracks.add(_parseSearchTrack(t));
@@ -305,7 +322,6 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
       
-      // Also search with built-in providers
       if (source == 'deezer') {
         _log.d('Calling Deezer search API...');
         results = await PlatformBridge.searchDeezerAll(query, trackLimit: 20, artistLimit: 5);
@@ -326,13 +342,10 @@ class TrackNotifier extends Notifier<TrackState> {
       
       _log.d('Raw results: ${trackList.length} tracks, ${artistList.length} artists');
       
-      // Parse tracks with error handling per item
       final tracks = <Track>[];
       
-      // Add extension tracks first (they have priority)
       tracks.addAll(extensionTracks);
       
-      // Add built-in provider tracks, avoiding duplicates by ISRC
       final existingIsrcs = extensionTracks
           .where((t) => t.isrc != null && t.isrc!.isNotEmpty)
           .map((t) => t.isrc!)
@@ -343,7 +356,6 @@ class TrackNotifier extends Notifier<TrackState> {
         try {
           if (t is Map<String, dynamic>) {
             final track = _parseSearchTrack(t);
-            // Skip if we already have this track from extensions
             if (track.isrc != null && existingIsrcs.contains(track.isrc)) {
               continue;
             }
@@ -356,7 +368,6 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
       
-      // Parse artists with error handling per item
       final artists = <SearchArtist>[];
       for (int i = 0; i < artistList.length; i++) {
         final a = artistList[i];
@@ -388,10 +399,8 @@ class TrackNotifier extends Notifier<TrackState> {
 
   /// Perform custom search using a specific extension
   Future<void> customSearch(String extensionId, String query, {Map<String, dynamic>? options}) async {
-    // Increment request ID to cancel any pending requests
     final requestId = ++_currentRequestId;
 
-    // Preserve hasSearchText during search
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
@@ -406,7 +415,6 @@ class TrackNotifier extends Notifier<TrackState> {
       
       _log.i('Custom search returned ${results.length} tracks');
       
-      // Parse tracks with error handling per item, setting source to extension ID
       final tracks = <Track>[];
       for (int i = 0; i < results.length; i++) {
         final t = results[i];
@@ -453,6 +461,8 @@ class TrackNotifier extends Notifier<TrackState> {
         trackNumber: track.trackNumber,
         discNumber: track.discNumber,
         releaseDate: track.releaseDate,
+        albumType: track.albumType,
+        source: track.source,
         availability: ServiceAvailability(
           tidal: availability['tidal'] as bool? ?? false,
           qobuz: availability['qobuz'] as bool? ?? false,
@@ -467,7 +477,6 @@ class TrackNotifier extends Notifier<TrackState> {
       tracks[index] = updatedTrack;
       state = state.copyWith(tracks: tracks);
     } catch (e) {
-      // Silently fail availability check
     }
   }
 
@@ -478,6 +487,28 @@ class TrackNotifier extends Notifier<TrackState> {
   /// Set search text state for back button handling
   void setSearchText(bool hasText) {
     state = state.copyWith(hasSearchText: hasText);
+  }
+  
+  /// Set recent access mode state
+  void setShowingRecentAccess(bool showing) {
+    state = state.copyWith(isShowingRecentAccess: showing);
+  }
+  
+  /// Set tracks from a collection (album/playlist) opened from search results
+  void setTracksFromCollection({
+    required List<Track> tracks,
+    String? albumName,
+    String? playlistName,
+    String? coverUrl,
+  }) {
+    state = TrackState(
+      tracks: tracks,
+      isLoading: false,
+      albumName: albumName,
+      playlistName: playlistName,
+      coverUrl: coverUrl,
+      hasSearchText: state.hasSearchText,
+    );
   }
 
   Track _parseTrack(Map<String, dynamic> data) {
@@ -497,7 +528,6 @@ class TrackNotifier extends Notifier<TrackState> {
   }
 
   Track _parseSearchTrack(Map<String, dynamic> data, {String? source}) {
-    // Handle duration_ms which might be int or double
     int durationMs = 0;
     final durationValue = data['duration_ms'];
     if (durationValue is int) {
@@ -506,13 +536,15 @@ class TrackNotifier extends Notifier<TrackState> {
       durationMs = durationValue.toInt();
     }
     
+    final itemType = data['item_type']?.toString();
+    
     return Track(
       id: (data['spotify_id'] ?? data['id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
       albumArtist: data['album_artist']?.toString(),
-      coverUrl: data['images']?.toString(),
+      coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
@@ -520,6 +552,7 @@ class TrackNotifier extends Notifier<TrackState> {
       releaseDate: data['release_date']?.toString(),
       source: source ?? data['source']?.toString() ?? data['provider_id']?.toString(),
       albumType: data['album_type']?.toString(),
+      itemType: itemType,
     );
   }
 
@@ -529,9 +562,10 @@ class TrackNotifier extends Notifier<TrackState> {
       name: data['name'] as String? ?? '',
       releaseDate: data['release_date'] as String? ?? '',
       totalTracks: data['total_tracks'] as int? ?? 0,
-      coverUrl: data['images'] as String?,
+      coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       albumType: data['album_type'] as String? ?? 'album',
       artists: data['artists'] as String? ?? '',
+      providerId: data['provider_id']?.toString(),
     );
   }
 
@@ -548,23 +582,18 @@ class TrackNotifier extends Notifier<TrackState> {
   /// Pre-warm track ID cache for faster downloads
   /// Runs in background, doesn't block UI
   void _preWarmCacheForTracks(List<Track> tracks) {
-    // Only pre-warm if we have tracks with ISRC
     final tracksWithIsrc = tracks.where((t) => t.isrc != null && t.isrc!.isNotEmpty).toList();
     if (tracksWithIsrc.isEmpty) return;
 
-    // Build request list for Go backend
     final cacheRequests = tracksWithIsrc.map((t) => {
       'isrc': t.isrc!,
       'track_name': t.name,
       'artist_name': t.artistName,
       'spotify_id': t.id, // Include Spotify ID for Amazon lookup
-      'service': 'tidal', // Default to tidal for pre-warming
+      'service': 'tidal',
     }).toList();
 
-    // Fire and forget - runs in background
-    PlatformBridge.preWarmTrackCache(cacheRequests).catchError((_) {
-      // Silently ignore errors - this is just an optimization
-    });
+    PlatformBridge.preWarmTrackCache(cacheRequests).catchError((_) {});
   }
 }
 

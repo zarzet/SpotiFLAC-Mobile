@@ -199,6 +199,11 @@ class PlatformBridge {
     await _channel.invokeMethod('clearItemProgress', {'item_id': itemId});
   }
 
+  /// Cancel an in-progress download
+  static Future<void> cancelDownload(String itemId) async {
+    await _channel.invokeMethod('cancelDownload', {'item_id': itemId});
+  }
+
   /// Set download directory
   static Future<void> setDownloadDirectory(String path) async {
     await _channel.invokeMethod('setDownloadDirectory', {'path': path});
@@ -765,7 +770,6 @@ class PlatformBridge {
       if (result == null || result == '') return null;
       return jsonDecode(result as String) as Map<String, dynamic>;
     } catch (e) {
-      // No extension found or error handling URL
       return null;
     }
   }
@@ -785,6 +789,60 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getURLHandlers');
     final list = jsonDecode(result as String) as List<dynamic>;
     return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  /// Get album tracks using an extension
+  static Future<Map<String, dynamic>?> getAlbumWithExtension(
+    String extensionId,
+    String albumId,
+  ) async {
+    try {
+      final result = await _channel.invokeMethod('getAlbumWithExtension', {
+        'extension_id': extensionId,
+        'album_id': albumId,
+      });
+      if (result == null || result == '') return null;
+      return jsonDecode(result as String) as Map<String, dynamic>;
+    } catch (e) {
+      _log.e('getAlbumWithExtension failed: $e');
+      return null;
+    }
+  }
+
+  /// Get playlist tracks using an extension
+  static Future<Map<String, dynamic>?> getPlaylistWithExtension(
+    String extensionId,
+    String playlistId,
+  ) async {
+    try {
+      final result = await _channel.invokeMethod('getPlaylistWithExtension', {
+        'extension_id': extensionId,
+        'playlist_id': playlistId,
+      });
+      if (result == null || result == '') return null;
+      return jsonDecode(result as String) as Map<String, dynamic>;
+    } catch (e) {
+      _log.e('getPlaylistWithExtension failed: $e');
+      return null;
+    }
+  }
+
+  /// Get artist info and albums using an extension
+  static Future<Map<String, dynamic>?> getArtistWithExtension(
+    String extensionId,
+    String artistId,
+  ) async {
+    try {
+      final result = await _channel.invokeMethod('getArtistWithExtension', {
+        'extension_id': extensionId,
+        'artist_id': artistId,
+      });
+      if (result == null || result == '') return null;
+      return jsonDecode(result as String) as Map<String, dynamic>;
+    } catch (e) {
+      _log.e('getArtistWithExtension failed: $e');
+      return null;
+    }
   }
 
   // ==================== EXTENSION POST-PROCESSING ====================

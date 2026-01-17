@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 /// Built-in service info with quality options
 class BuiltInService {
@@ -104,20 +105,17 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
 
   /// Get quality options for the selected service
   List<QualityOption> _getQualityOptions() {
-    // Check if it's a built-in service
     final builtIn = _builtInServices.where((s) => s.id == _selectedService).firstOrNull;
     if (builtIn != null) {
       return builtIn.qualityOptions;
     }
 
-    // Check if it's an extension
     final extensionState = ref.read(extensionProvider);
     final ext = extensionState.extensions.where((e) => e.id == _selectedService).firstOrNull;
     if (ext != null && ext.qualityOptions.isNotEmpty) {
       return ext.qualityOptions;
     }
 
-    // Default quality options if extension doesn't specify any
     return const [
       QualityOption(id: 'DEFAULT', label: 'Default Quality', description: 'Best available'),
     ];
@@ -128,7 +126,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
     final colorScheme = Theme.of(context).colorScheme;
     final extensionState = ref.watch(extensionProvider);
     
-    // Get enabled download provider extensions
     final downloadExtensions = extensionState.extensions
         .where((ext) => ext.enabled && ext.hasDownloadProvider)
         .toList();
@@ -141,7 +138,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Track info header (if provided)
             if (widget.trackName != null) ...[
               _TrackInfoHeader(
                 trackName: widget.trackName!,
@@ -163,30 +159,26 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
               ),
             ],
 
-            // Service selector section
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Text(
-                'Download From',
+                context.l10n.downloadFrom,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
 
-            // Built-in services
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  // Built-in services
                   for (final service in _builtInServices)
                     _ServiceChip(
                       label: service.label,
                       isSelected: _selectedService == service.id,
                       onTap: () => setState(() => _selectedService = service.id),
                     ),
-                  // Extension services
                   for (final ext in downloadExtensions)
                     _ServiceChip(
                       label: ext.displayName,
@@ -198,21 +190,19 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
               ),
             ),
 
-            // Quality selector section
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
               child: Text(
-                'Select Quality',
+                context.l10n.downloadSelectQuality,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
 
-            // Disclaimer for built-in services
             if (_builtInServices.any((s) => s.id == _selectedService))
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                 child: Text(
-                  'Actual quality depends on track availability. Hi-Res may not be available for all tracks.',
+                  context.l10n.qualityNote,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -220,7 +210,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
                 ),
               ),
 
-            // Quality options
             for (final quality in qualityOptions)
               _QualityOption(
                 title: quality.label,

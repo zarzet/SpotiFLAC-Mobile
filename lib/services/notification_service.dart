@@ -32,7 +32,6 @@ class NotificationService {
 
     await _notifications.initialize(initSettings);
 
-    // Create notification channel for Android
     if (Platform.isAndroid) {
       await _notifications
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
@@ -227,7 +226,6 @@ class NotificationService {
     await _notifications.cancel(downloadProgressId);
   }
 
-  // Update APK download notifications
   Future<void> showUpdateDownloadProgress({
     required String version,
     required int received,

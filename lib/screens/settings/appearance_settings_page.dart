@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
+import 'package:spotiflac_android/l10n/supported_locales.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/theme_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -19,7 +21,6 @@ class AppearanceSettingsPage extends ConsumerWidget {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            // Collapsing App Bar with back button
             SliverAppBar(
             expandedHeight: 120 + topPadding,
             collapsedHeight: kToolbarHeight,
@@ -32,12 +33,11 @@ class AppearanceSettingsPage extends ConsumerWidget {
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: _AppBarTitle(
-              title: 'Appearance',
+              title: context.l10n.appearanceTitle,
               topPadding: topPadding,
             ),
           ),
 
-            // Preview Section
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -48,9 +48,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
               ),
             ),
 
-            // Color section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Color'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionColor),
             ),
 
             SliverToBoxAdapter(
@@ -58,8 +57,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
                 children: [
                   SettingsSwitchItem(
                     icon: Icons.wallpaper,
-                    title: 'Dynamic Color',
-                    subtitle: 'Use colors from your wallpaper',
+                    title: context.l10n.appearanceDynamicColor,
+                    subtitle: context.l10n.appearanceDynamicColorSubtitle,
                     value: themeSettings.useDynamicColor,
                     onChanged: (value) => ref
                         .read(themeProvider.notifier)
@@ -78,12 +77,11 @@ class AppearanceSettingsPage extends ConsumerWidget {
                     onColorSelected: (color) =>
                         ref.read(themeProvider.notifier).setSeedColor(color),
                   ),
-                ),
               ),
+            ),
 
-            // Theme section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Theme'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionTheme),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -96,8 +94,8 @@ class AppearanceSettingsPage extends ConsumerWidget {
                   if (Theme.of(context).brightness == Brightness.dark)
                     SettingsSwitchItem(
                       icon: Icons.brightness_2,
-                      title: 'AMOLED Dark',
-                      subtitle: 'Pure black background',
+                      title: context.l10n.appearanceAmoledDark,
+                      subtitle: context.l10n.appearanceAmoledDarkSubtitle,
                       value: themeSettings.useAmoled,
                       onChanged: (value) =>
                           ref.read(themeProvider.notifier).setUseAmoled(value),
@@ -107,9 +105,24 @@ class AppearanceSettingsPage extends ConsumerWidget {
               ),
             ),
 
-            // Layout section
-            const SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: 'Layout'),
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionLanguage),
+            ),
+            SliverToBoxAdapter(
+              child: SettingsGroup(
+                children: [
+                  _LanguageSelector(
+                    currentLocale: settings.locale,
+                    onChanged: (locale) => ref
+                        .read(settingsProvider.notifier)
+                        .setLocale(locale),
+                  ),
+                ],
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(title: context.l10n.sectionLayout),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
@@ -124,7 +137,6 @@ class AppearanceSettingsPage extends ConsumerWidget {
               ),
             ),
 
-            // Fill remaining for scroll
             const SliverFillRemaining(
               hasScrollBody: false,
               child: SizedBox(height: 32),
@@ -155,7 +167,6 @@ class _ThemePreviewCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            // Decorative background blobs
             Positioned(
               top: -50,
               right: -50,
@@ -181,7 +192,6 @@ class _ThemePreviewCard extends StatelessWidget {
               ),
             ),
 
-            // Foreground "fake UI"
             Center(
               child: Container(
                 width: 260,
@@ -200,7 +210,6 @@ class _ThemePreviewCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Fake Album Art
                     Container(
                       width: 108,
                       height: 108,
@@ -216,7 +225,6 @@ class _ThemePreviewCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 16),
 
-                    // Fake Text Info
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +277,6 @@ class _ThemePreviewCard extends StatelessWidget {
               ),
             ),
 
-            // Label badge
             Positioned(
               bottom: 12,
               right: 12,
@@ -283,7 +290,7 @@ class _ThemePreviewCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isDark ? 'Dark Mode' : 'Light Mode',
+                  isDark ? context.l10n.appearanceThemeDark : context.l10n.appearanceThemeLight,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -451,21 +458,21 @@ class _ThemeModeSelector extends StatelessWidget {
         children: [
           _ThemeModeChip(
             icon: Icons.brightness_auto,
-            label: 'System',
+            label: context.l10n.appearanceThemeSystem,
             isSelected: currentMode == ThemeMode.system,
             onTap: () => onChanged(ThemeMode.system),
           ),
           const SizedBox(width: 8),
           _ThemeModeChip(
             icon: Icons.light_mode,
-            label: 'Light',
+            label: context.l10n.appearanceThemeLight,
             isSelected: currentMode == ThemeMode.light,
             onTap: () => onChanged(ThemeMode.light),
           ),
           const SizedBox(width: 8),
           _ThemeModeChip(
             icon: Icons.dark_mode,
-            label: 'Dark',
+            label: context.l10n.appearanceThemeDark,
             isSelected: currentMode == ThemeMode.dark,
             onTap: () => onChanged(ThemeMode.dark),
           ),
@@ -491,10 +498,7 @@ class _ThemeModeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Unselected chips need contrast with card background
-    // Card uses: dark = white 8% overlay, light = surfaceContainerHighest
-    // So chips use: dark = white 5% overlay (darker), light = black 5% overlay (darker than card)
+    
     final unselectedColor = isDark
         ? Color.alphaBlend(
             Colors.white.withValues(alpha: 0.05),
@@ -575,7 +579,7 @@ class _HistoryViewSelector extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 8, bottom: 8),
             child: Text(
-              'History View',
+              context.l10n.appearanceHistoryView,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -585,14 +589,14 @@ class _HistoryViewSelector extends StatelessWidget {
             children: [
               _ViewModeChip(
                 icon: Icons.view_list,
-                label: 'List',
+                label: context.l10n.appearanceHistoryViewList,
                 isSelected: currentMode == 'list',
                 onTap: () => onChanged('list'),
               ),
               const SizedBox(width: 8),
               _ViewModeChip(
                 icon: Icons.grid_view,
-                label: 'Grid',
+                label: context.l10n.appearanceHistoryViewGrid,
                 isSelected: currentMode == 'grid',
                 onTap: () => onChanged('grid'),
               ),
@@ -621,7 +625,6 @@ class _ViewModeChip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Unselected chips need contrast with card background
     final unselectedColor = isDark
         ? Color.alphaBlend(
             Colors.white.withValues(alpha: 0.05),
@@ -677,6 +680,131 @@ class _ViewModeChip extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageSelector extends StatelessWidget {
+  final String currentLocale;
+  final ValueChanged<String> onChanged;
+  const _LanguageSelector({
+    required this.currentLocale,
+    required this.onChanged,
+  });
+
+  static const _allLanguages = [
+    ('system', 'System Default', Icons.phone_android),
+    ('en', 'English', Icons.language),
+    ('id', 'Bahasa Indonesia', Icons.language),
+    ('de', 'Deutsch', Icons.language),
+    ('es', 'Español', Icons.language),
+    ('fr', 'Français', Icons.language),
+    ('hi', 'हिन्दी', Icons.language),
+    ('ja', '日本語', Icons.language),
+    ('ko', '한국어', Icons.language),
+    ('nl', 'Nederlands', Icons.language),
+    ('pt', 'Português', Icons.language),
+    ('ru', 'Русский', Icons.language),
+    ('zh', '简体中文', Icons.language),
+    ('zh_TW', '繁體中文', Icons.language),
+  ];
+
+  /// Get only languages that meet the translation threshold.
+  /// Uses filteredLocaleCodes from supported_locales.dart (generated file).
+  List<(String, String, IconData)> get _languages {
+    return _allLanguages.where((lang) {
+      if (lang.$1 == 'system') return true;
+      return filteredLocaleCodes.contains(lang.$1);
+    }).toList();
+  }
+
+  String _getLanguageName(String code) {
+    for (final lang in _allLanguages) {
+      if (lang.$1 == code) return lang.$2;
+    }
+    return code;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(
+        Icons.language,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      title: Text(context.l10n.appearanceLanguage),
+      subtitle: Text(_getLanguageName(currentLocale)),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      onTap: () => _showLanguagePicker(context),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                context.l10n.appearanceLanguage,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _languages.length,
+                itemBuilder: (context, index) {
+                  final lang = _languages[index];
+                  final isSelected = currentLocale == lang.$1;
+                  return ListTile(
+                    leading: Icon(
+                      lang.$3,
+                      color: isSelected 
+                          ? colorScheme.primary 
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    title: Text(
+                      lang.$2,
+                      style: TextStyle(
+                        color: isSelected 
+                            ? colorScheme.primary 
+                            : colorScheme.onSurface,
+                        fontWeight: isSelected 
+                            ? FontWeight.w600 
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSelected 
+                        ? Icon(Icons.check, color: colorScheme.primary)
+                        : null,
+                    onTap: () {
+                      onChanged(lang.$1);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

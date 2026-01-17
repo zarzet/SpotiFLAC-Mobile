@@ -5,9 +5,12 @@ package gobackend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/dop251/goja"
 )
 
 // ParseSpotifyURL parses and validates a Spotify URL
@@ -150,6 +153,10 @@ type DownloadRequest struct {
 	ItemID               string `json:"item_id"`     // Unique ID for progress tracking
 	DurationMS           int    `json:"duration_ms"` // Expected duration in milliseconds (for verification)
 	Source               string `json:"source"`      // Extension ID that provided this track (prioritize this extension)
+	// Enriched IDs from Odesli/song.link - used to skip search and directly fetch
+	TidalID  string `json:"tidal_id,omitempty"`
+	QobuzID  string `json:"qobuz_id,omitempty"`
+	DeezerID string `json:"deezer_id,omitempty"`
 }
 
 // DownloadResponse represents the result of a download
@@ -177,7 +184,6 @@ type DownloadResponse struct {
 	SkipMetadataEnrichment bool `json:"skip_metadata_enrichment,omitempty"`
 }
 
-// DownloadResult is a generic result type for all downloaders
 // DownloadResult is a generic result type for all downloaders
 type DownloadResult struct {
 	FilePath    string
@@ -276,10 +282,8 @@ func DownloadTrack(requestJSON string) (string, error) {
 		return errorResponse(err.Error())
 	}
 
-	// Check if file already exists
 	if len(result.FilePath) > 7 && result.FilePath[:7] == "EXISTS:" {
 		actualPath := result.FilePath[7:]
-		// Read actual quality from existing file
 		quality, qErr := GetAudioQuality(actualPath)
 		if qErr == nil {
 			result.BitDepth = quality.BitDepth
@@ -305,7 +309,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 		return string(jsonBytes), nil
 	}
 
-	// Read actual quality from downloaded file (more accurate than API)
 	quality, qErr := GetAudioQuality(result.FilePath)
 	if qErr == nil {
 		result.BitDepth = quality.BitDepth
@@ -355,7 +358,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 		AddAllowedDownloadDir(req.OutputDir)
 	}
 
-	// Build service order starting with preferred service
 	allServices := []string{"tidal", "qobuz", "amazon"}
 	preferredService := req.Service
 	if preferredService == "" {
@@ -364,7 +366,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	GoLog("[DownloadWithFallback] Preferred service from request: '%s'\n", req.Service)
 
-	// Create ordered list: preferred first, then others
 	services := []string{preferredService}
 	for _, s := range allServices {
 		if s != preferredService {
@@ -399,7 +400,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 					DiscNumber:  tidalResult.DiscNumber,
 					ISRC:        tidalResult.ISRC,
 				}
-			} else {
+			} else if !errors.Is(tidalErr, ErrDownloadCancelled) {
 				GoLog("[DownloadWithFallback] Tidal error: %v\n", tidalErr)
 			}
 			err = tidalErr
@@ -418,7 +419,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 					DiscNumber:  qobuzResult.DiscNumber,
 					ISRC:        qobuzResult.ISRC,
 				}
-			} else {
+			} else if !errors.Is(qobuzErr, ErrDownloadCancelled) {
 				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
 			}
 			err = qobuzErr
@@ -437,17 +438,19 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 					DiscNumber:  amazonResult.DiscNumber,
 					ISRC:        amazonResult.ISRC,
 				}
-			} else {
+			} else if !errors.Is(amazonErr, ErrDownloadCancelled) {
 				GoLog("[DownloadWithFallback] Amazon error: %v\n", amazonErr)
 			}
 			err = amazonErr
 		}
 
+		if err != nil && errors.Is(err, ErrDownloadCancelled) {
+			return errorResponse("Download cancelled")
+		}
+
 		if err == nil {
-			// Check if file already exists
 			if len(result.FilePath) > 7 && result.FilePath[:7] == "EXISTS:" {
 				actualPath := result.FilePath[7:]
-				// Read actual quality from existing file
 				quality, qErr := GetAudioQuality(actualPath)
 				if qErr == nil {
 					result.BitDepth = quality.BitDepth
@@ -473,7 +476,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				return string(jsonBytes), nil
 			}
 
-			// Read actual quality from downloaded file (more accurate than API)
 			quality, qErr := GetAudioQuality(result.FilePath)
 			if qErr == nil {
 				result.BitDepth = quality.BitDepth
@@ -528,12 +530,16 @@ func InitItemProgress(itemID string) {
 // FinishItemProgress marks a download item as complete and removes tracking
 func FinishItemProgress(itemID string) {
 	CompleteItemProgress(itemID)
-	// Don't remove immediately - let Flutter poll one more time to see 100%
 }
 
 // ClearItemProgress removes progress tracking for a specific item
 func ClearItemProgress(itemID string) {
 	RemoveItemProgress(itemID)
+}
+
+// CancelDownload cancels an in-progress download for the given item.
+func CancelDownload(itemID string) {
+	cancelDownload(itemID)
 }
 
 // CleanupConnections closes idle HTTP connections
@@ -551,10 +557,8 @@ func ReadFileMetadata(filePath string) (string, error) {
 		return "", fmt.Errorf("failed to read metadata: %w", err)
 	}
 
-	// Also get audio quality info
 	quality, qualityErr := GetAudioQuality(filePath)
 
-	// Get duration from FLAC stream info
 	duration := 0
 	if qualityErr == nil && quality.SampleRate > 0 && quality.TotalSamples > 0 {
 		duration = int(quality.TotalSamples / int64(quality.SampleRate))
@@ -573,7 +577,6 @@ func ReadFileMetadata(filePath string) (string, error) {
 		"duration":     duration,
 	}
 
-	// Add quality info if available
 	if qualityErr == nil {
 		result["bit_depth"] = quality.BitDepth
 		result["sample_rate"] = quality.SampleRate
@@ -624,7 +627,6 @@ func PreBuildDuplicateIndex(outputDir string) error {
 }
 
 // InvalidateDuplicateIndex clears the ISRC index cache for a directory
-// Call this when files are deleted or moved
 func InvalidateDuplicateIndex(outputDir string) {
 	InvalidateISRCCache(outputDir)
 }
@@ -672,7 +674,6 @@ func FetchLyrics(spotifyID, trackName, artistName string) (string, error) {
 // GetLyricsLRC fetches lyrics and converts to LRC format string with metadata headers
 // First tries to extract from file, then falls back to fetching from internet
 func GetLyricsLRC(spotifyID, trackName, artistName string, filePath string) (string, error) {
-	// Try to extract from file first (much faster)
 	if filePath != "" {
 		lyrics, err := ExtractLyrics(filePath)
 		if err == nil && lyrics != "" {
@@ -680,14 +681,12 @@ func GetLyricsLRC(spotifyID, trackName, artistName string, filePath string) (str
 		}
 	}
 
-	// Fallback to fetching from internet
 	client := NewLyricsClient()
 	lyricsData, err := client.FetchLyricsAllSources(spotifyID, trackName, artistName)
 	if err != nil {
 		return "", err
 	}
 
-	// Convert to LRC format with metadata headers (like PC version)
 	lrcContent := convertToLRCWithMetadata(lyricsData, trackName, artistName)
 	return lrcContent, nil
 }
@@ -724,7 +723,6 @@ func PreWarmTrackCacheJSON(tracksJSON string) (string, error) {
 		return errorResponse("Invalid JSON: " + err.Error())
 	}
 
-	// Convert to PreWarmCacheRequest
 	requests := make([]PreWarmCacheRequest, len(tracks))
 	for i, t := range tracks {
 		requests[i] = PreWarmCacheRequest{
@@ -736,7 +734,6 @@ func PreWarmTrackCacheJSON(tracksJSON string) (string, error) {
 		}
 	}
 
-	// Run in background
 	go PreWarmTrackCache(requests)
 
 	resp := map[string]interface{}{
@@ -856,7 +853,6 @@ func SearchDeezerByISRC(isrc string) (string, error) {
 }
 
 // ConvertSpotifyToDeezer converts a Spotify track/album ID to Deezer and fetches metadata
-// This uses SongLink API to find the Deezer equivalent, then fetches from Deezer
 // Useful when Spotify API is rate limited
 func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -865,14 +861,12 @@ func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
 	songlink := NewSongLinkClient()
 	deezerClient := GetDeezerClient()
 
-	// For tracks, we can use SongLink to get Deezer ID
 	if resourceType == "track" {
 		deezerID, err := songlink.GetDeezerIDFromSpotify(spotifyID)
 		if err != nil {
 			return "", fmt.Errorf("could not find Deezer equivalent: %w", err)
 		}
 
-		// Fetch metadata from Deezer
 		trackResp, err := deezerClient.GetTrack(ctx, deezerID)
 		if err != nil {
 			return "", fmt.Errorf("failed to fetch Deezer metadata: %w", err)
@@ -886,14 +880,12 @@ func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
 		return string(jsonBytes), nil
 	}
 
-	// For albums, SongLink also provides mapping
 	if resourceType == "album" {
 		deezerID, err := songlink.GetDeezerAlbumIDFromSpotify(spotifyID)
 		if err != nil {
 			return "", fmt.Errorf("could not find Deezer album: %w", err)
 		}
 
-		// Fetch album metadata from Deezer
 		albumResp, err := deezerClient.GetAlbum(ctx, deezerID)
 		if err != nil {
 			return "", fmt.Errorf("failed to fetch Deezer album metadata: %w", err)
@@ -916,10 +908,8 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Try Spotify first
 	client, err := NewSpotifyMetadataClient()
 	if err != nil {
-		// No Spotify credentials - fall through to Deezer fallback
 		LogWarn("Spotify", "Credentials not configured, falling back to Deezer")
 	} else {
 		data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
@@ -931,15 +921,12 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 			return string(jsonBytes), nil
 		}
 
-		// Check if it's a rate limit error
 		errStr := strings.ToLower(err.Error())
 		if !strings.Contains(errStr, "429") && !strings.Contains(errStr, "rate") && !strings.Contains(errStr, "limit") {
-			// Not a rate limit error, return original error
 			return "", err
 		}
 	}
 
-	// Rate limited - try Deezer fallback for tracks and albums
 	parsed, parseErr := parseSpotifyURI(spotifyURL)
 	if parseErr != nil {
 		return "", fmt.Errorf("spotify rate limited and failed to parse URL: %w", parseErr)
@@ -948,11 +935,9 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	GoLog("[Fallback] Spotify rate limited for %s, trying Deezer...\n", parsed.Type)
 
 	if parsed.Type == "track" || parsed.Type == "album" {
-		// Convert to Deezer
 		return ConvertSpotifyToDeezer(parsed.Type, parsed.ID)
 	}
 
-	// Artist and playlist not supported for fallback
 	if parsed.Type == "artist" {
 		return "", fmt.Errorf("spotify rate limited. Artist pages require Spotify API - please try again later")
 	}
@@ -1017,7 +1002,6 @@ func GetAmazonURLFromDeezerTrack(deezerTrackID string) (string, error) {
 }
 
 func errorResponse(msg string) (string, error) {
-	// Determine error type based on message
 	errorType := "unknown"
 	lowerMsg := strings.ToLower(msg)
 
@@ -1025,6 +1009,8 @@ func errorResponse(msg string) (string, error) {
 		strings.Contains(lowerMsg, "try using vpn") ||
 		strings.Contains(lowerMsg, "change dns") {
 		errorType = "isp_blocked"
+	} else if strings.Contains(lowerMsg, "cancel") {
+		errorType = "cancelled"
 	} else if strings.Contains(lowerMsg, "permission") ||
 		strings.Contains(lowerMsg, "operation not permitted") ||
 		strings.Contains(lowerMsg, "access denied") ||
@@ -1104,7 +1090,6 @@ func LoadExtensionFromPath(filePath string) (string, error) {
 		return "", err
 	}
 
-	// Initialize with saved settings
 	settingsStore := GetExtensionSettingsStore()
 	settings := settingsStore.GetAll(ext.ID)
 	if len(settings) > 0 {
@@ -1255,7 +1240,6 @@ func SetExtensionSettingsJSON(extensionID, settingsJSON string) error {
 		return err
 	}
 
-	// Re-initialize extension with new settings
 	manager := GetExtensionManager()
 	return manager.InitializeExtension(extensionID, settings)
 }
@@ -1354,7 +1338,6 @@ func IsExtensionAuthenticatedByID(extensionID string) bool {
 		return false
 	}
 
-	// Check if token is expired
 	if state.IsAuthenticated && !state.ExpiresAt.IsZero() && time.Now().After(state.ExpiresAt) {
 		return false
 	}
@@ -1451,7 +1434,6 @@ func EnrichTrackWithExtensionJSON(extensionID, trackJSON string) (string, error)
 	}
 
 	if !ext.Manifest.IsMetadataProvider() {
-		// Not a metadata provider, return original
 		return trackJSON, nil
 	}
 
@@ -1463,7 +1445,6 @@ func EnrichTrackWithExtensionJSON(extensionID, trackJSON string) (string, error)
 	provider := NewExtensionProviderWrapper(ext)
 	enrichedTrack, err := provider.EnrichTrack(&track)
 	if err != nil {
-		// Error enriching, return original
 		return trackJSON, nil
 	}
 
@@ -1500,7 +1481,6 @@ func CustomSearchWithExtensionJSON(extensionID, query string, optionsJSON string
 		return "", err
 	}
 
-	// Convert to map format for Flutter, ensuring images field is set
 	result := make([]map[string]interface{}, len(tracks))
 	for i, track := range tracks {
 		result[i] = map[string]interface{}{
@@ -1516,6 +1496,8 @@ func CustomSearchWithExtensionJSON(extensionID, query string, optionsJSON string
 			"disc_number":  track.DiscNumber,
 			"isrc":         track.ISRC,
 			"provider_id":  track.ProviderID,
+			"item_type":    track.ItemType,  // track, album, or playlist
+			"album_type":   track.AlbumType, // album, single, ep, compilation
 		}
 	}
 
@@ -1565,12 +1547,10 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 	result := resultWithID.Result
 	extensionID := resultWithID.ExtensionID
 
-	// Check if result is nil (handler found but returned error)
 	if result == nil {
 		return "", fmt.Errorf("extension %s failed to handle URL", extensionID)
 	}
 
-	// Build response
 	response := map[string]interface{}{
 		"type":         result.Type,
 		"extension_id": extensionID,
@@ -1578,7 +1558,6 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 		"cover_url":    result.CoverURL,
 	}
 
-	// Add track if single track
 	if result.Track != nil {
 		response["track"] = map[string]interface{}{
 			"id":           result.Track.ID,
@@ -1596,7 +1575,6 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 		}
 	}
 
-	// Add tracks if multiple
 	if len(result.Tracks) > 0 {
 		tracks := make([]map[string]interface{}, len(result.Tracks))
 		for i, track := range result.Tracks {
@@ -1613,6 +1591,8 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 				"disc_number":  track.DiscNumber,
 				"isrc":         track.ISRC,
 				"provider_id":  track.ProviderID,
+				"item_type":    track.ItemType,
+				"album_type":   track.AlbumType,
 			}
 		}
 		response["tracks"] = tracks
@@ -1627,18 +1607,21 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 			"cover_url":    result.Album.CoverURL,
 			"release_date": result.Album.ReleaseDate,
 			"total_tracks": result.Album.TotalTracks,
+			"album_type":   result.Album.AlbumType,
+			"provider_id":  result.Album.ProviderID,
 		}
 	}
 
-	// Add artist info if present
 	if result.Artist != nil {
 		artistResponse := map[string]interface{}{
-			"id":        result.Artist.ID,
-			"name":      result.Artist.Name,
-			"image_url": result.Artist.ImageURL,
+			"id":           result.Artist.ID,
+			"name":         result.Artist.Name,
+			"image_url":    result.Artist.ImageURL,
+			"header_image": result.Artist.HeaderImage,
+			"listeners":    result.Artist.Listeners,
+			"provider_id":  result.Artist.ProviderID,
 		}
 
-		// Add albums if present
 		if len(result.Artist.Albums) > 0 {
 			albums := make([]map[string]interface{}, len(result.Artist.Albums))
 			for i, album := range result.Artist.Albums {
@@ -1651,12 +1634,36 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 					"name":         album.Name,
 					"artists":      album.Artists,
 					"images":       album.CoverURL,
+					"cover_url":    album.CoverURL,
 					"release_date": album.ReleaseDate,
 					"total_tracks": album.TotalTracks,
 					"album_type":   albumType,
+					"provider_id":  album.ProviderID,
 				}
 			}
 			artistResponse["albums"] = albums
+		}
+
+		if len(result.Artist.TopTracks) > 0 {
+			topTracks := make([]map[string]interface{}, len(result.Artist.TopTracks))
+			for i, track := range result.Artist.TopTracks {
+				topTracks[i] = map[string]interface{}{
+					"id":           track.ID,
+					"name":         track.Name,
+					"artists":      track.Artists,
+					"album_name":   track.AlbumName,
+					"album_artist": track.AlbumArtist,
+					"duration_ms":  track.DurationMS,
+					"images":       track.ResolvedCoverURL(),
+					"release_date": track.ReleaseDate,
+					"track_number": track.TrackNumber,
+					"disc_number":  track.DiscNumber,
+					"isrc":         track.ISRC,
+					"provider_id":  track.ProviderID,
+					"spotify_id":   track.SpotifyID,
+				}
+			}
+			artistResponse["top_tracks"] = topTracks
 		}
 
 		response["artist"] = artistResponse
@@ -1679,6 +1686,253 @@ func FindURLHandlerJSON(url string) string {
 		return ""
 	}
 	return handler.extension.ID
+}
+
+// GetAlbumWithExtensionJSON gets album tracks using an extension
+func GetAlbumWithExtensionJSON(extensionID, albumID string) (string, error) {
+	manager := GetExtensionManager()
+	ext, err := manager.GetExtension(extensionID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ext.Manifest.IsMetadataProvider() {
+		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
+	}
+	if !ext.Enabled {
+		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
+	}
+
+	provider := NewExtensionProviderWrapper(ext)
+	album, err := provider.GetAlbum(albumID)
+	if err != nil {
+		return "", err
+	}
+
+	if album == nil {
+		return "", fmt.Errorf("album not found")
+	}
+
+	tracks := make([]map[string]interface{}, len(album.Tracks))
+	for i, track := range album.Tracks {
+		trackCover := track.ResolvedCoverURL()
+		if trackCover == "" {
+			trackCover = album.CoverURL
+		}
+		tracks[i] = map[string]interface{}{
+			"id":           track.ID,
+			"name":         track.Name,
+			"artists":      track.Artists,
+			"album_name":   track.AlbumName,
+			"album_artist": track.AlbumArtist,
+			"duration_ms":  track.DurationMS,
+			"cover_url":    trackCover,
+			"release_date": track.ReleaseDate,
+			"track_number": track.TrackNumber,
+			"disc_number":  track.DiscNumber,
+			"isrc":         track.ISRC,
+			"provider_id":  track.ProviderID,
+			"item_type":    track.ItemType,
+			"album_type":   track.AlbumType,
+		}
+	}
+
+	response := map[string]interface{}{
+		"id":           album.ID,
+		"name":         album.Name,
+		"artists":      album.Artists,
+		"cover_url":    album.CoverURL,
+		"release_date": album.ReleaseDate,
+		"total_tracks": album.TotalTracks,
+		"album_type":   album.AlbumType,
+		"tracks":       tracks,
+		"provider_id":  album.ProviderID,
+	}
+
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+// GetPlaylistWithExtensionJSON gets playlist tracks using an extension
+func GetPlaylistWithExtensionJSON(extensionID, playlistID string) (string, error) {
+	manager := GetExtensionManager()
+	ext, err := manager.GetExtension(extensionID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ext.Manifest.IsMetadataProvider() {
+		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
+	}
+
+	provider := NewExtensionProviderWrapper(ext)
+
+	script := fmt.Sprintf(`
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.getPlaylist === 'function') {
+				return extension.getPlaylist(%q);
+			}
+			if (typeof extension !== 'undefined' && typeof extension.getAlbum === 'function') {
+				return extension.getAlbum(%q);
+			}
+			return null;
+		})()
+	`, playlistID, playlistID)
+
+	result, err := RunWithTimeoutAndRecover(provider.vm, script, DefaultJSTimeout)
+	if err != nil {
+		return "", fmt.Errorf("getPlaylist failed: %w", err)
+	}
+
+	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
+		return "", fmt.Errorf("playlist not found")
+	}
+
+	exported := result.Export()
+	jsonBytes, err := json.Marshal(exported)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	// Parse into album metadata (same structure)
+	var album ExtAlbumMetadata
+	if err := json.Unmarshal(jsonBytes, &album); err != nil {
+		return "", fmt.Errorf("failed to parse playlist: %w", err)
+	}
+	album.ProviderID = ext.ID
+	for i := range album.Tracks {
+		album.Tracks[i].ProviderID = ext.ID
+	}
+
+	tracks := make([]map[string]interface{}, len(album.Tracks))
+	for i, track := range album.Tracks {
+		trackCover := track.ResolvedCoverURL()
+		if trackCover == "" {
+			trackCover = album.CoverURL
+		}
+		tracks[i] = map[string]interface{}{
+			"id":           track.ID,
+			"name":         track.Name,
+			"artists":      track.Artists,
+			"album_name":   track.AlbumName,
+			"album_artist": track.AlbumArtist,
+			"duration_ms":  track.DurationMS,
+			"cover_url":    trackCover,
+			"release_date": track.ReleaseDate,
+			"track_number": track.TrackNumber,
+			"disc_number":  track.DiscNumber,
+			"isrc":         track.ISRC,
+			"provider_id":  track.ProviderID,
+			"item_type":    track.ItemType,
+			"album_type":   track.AlbumType,
+		}
+	}
+
+	response := map[string]interface{}{
+		"id":           album.ID,
+		"name":         album.Name,
+		"owner":        album.Artists,
+		"cover_url":    album.CoverURL,
+		"total_tracks": album.TotalTracks,
+		"tracks":       tracks,
+		"provider_id":  album.ProviderID,
+	}
+
+	jsonBytes, err = json.Marshal(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+// GetArtistWithExtensionJSON gets artist info and albums using an extension
+func GetArtistWithExtensionJSON(extensionID, artistID string) (string, error) {
+	manager := GetExtensionManager()
+	ext, err := manager.GetExtension(extensionID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ext.Manifest.IsMetadataProvider() {
+		return "", fmt.Errorf("extension '%s' is not a metadata provider", extensionID)
+	}
+
+	provider := NewExtensionProviderWrapper(ext)
+	artist, err := provider.GetArtist(artistID)
+	if err != nil {
+		return "", err
+	}
+
+	if artist == nil {
+		return "", fmt.Errorf("artist not found")
+	}
+
+	albums := make([]map[string]interface{}, len(artist.Albums))
+	for i, album := range artist.Albums {
+		albums[i] = map[string]interface{}{
+			"id":           album.ID,
+			"name":         album.Name,
+			"artists":      album.Artists,
+			"cover_url":    album.CoverURL,
+			"release_date": album.ReleaseDate,
+			"total_tracks": album.TotalTracks,
+			"album_type":   album.AlbumType,
+			"provider_id":  album.ProviderID,
+		}
+	}
+
+	response := map[string]interface{}{
+		"id":          artist.ID,
+		"name":        artist.Name,
+		"cover_url":   artist.ImageURL,
+		"albums":      albums,
+		"provider_id": artist.ProviderID,
+	}
+
+	// Add header image if present
+	if artist.HeaderImage != "" {
+		response["header_image"] = artist.HeaderImage
+	}
+
+	// Add listeners if present
+	if artist.Listeners > 0 {
+		response["listeners"] = artist.Listeners
+	}
+
+	// Add top tracks if present
+	if len(artist.TopTracks) > 0 {
+		topTracks := make([]map[string]interface{}, len(artist.TopTracks))
+		for i, track := range artist.TopTracks {
+			topTracks[i] = map[string]interface{}{
+				"id":           track.ID,
+				"name":         track.Name,
+				"artists":      track.Artists,
+				"album_name":   track.AlbumName,
+				"album_artist": track.AlbumArtist,
+				"duration_ms":  track.DurationMS,
+				"images":       track.ResolvedCoverURL(),
+				"release_date": track.ReleaseDate,
+				"track_number": track.TrackNumber,
+				"disc_number":  track.DiscNumber,
+				"isrc":         track.ISRC,
+				"provider_id":  track.ProviderID,
+				"spotify_id":   track.SpotifyID,
+			}
+		}
+		response["top_tracks"] = topTracks
+	}
+
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
 }
 
 // GetURLHandlersJSON returns all extensions that handle custom URLs

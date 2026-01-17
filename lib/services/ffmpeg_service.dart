@@ -31,14 +31,12 @@ class FFmpegService {
   static Future<String?> convertM4aToFlac(String inputPath) async {
     final outputPath = inputPath.replaceAll('.m4a', '.flac');
 
-    // FFmpeg command to remux M4A to FLAC
     final command =
         '-i "$inputPath" -c:a flac -compression_level 8 "$outputPath" -y';
 
     final result = await _execute(command);
 
     if (result.success) {
-      // Delete original M4A file
       try {
         await File(inputPath).delete();
       } catch (_) {}
@@ -59,7 +57,6 @@ class FFmpegService {
         inputPath.split(Platform.pathSeparator).last.replaceAll('.flac', '');
     final outputDir = '$dir${Platform.pathSeparator}MP3';
 
-    // Create output directory
     await Directory(outputDir).create(recursive: true);
 
     final outputPath = '$outputDir${Platform.pathSeparator}$baseName.mp3';
@@ -88,18 +85,15 @@ class FFmpegService {
         inputPath.split(Platform.pathSeparator).last.replaceAll('.flac', '');
     final outputDir = '$dir${Platform.pathSeparator}M4A';
 
-    // Create output directory
     await Directory(outputDir).create(recursive: true);
 
     final outputPath = '$outputDir${Platform.pathSeparator}$baseName.m4a';
 
     String command;
     if (codec == 'alac') {
-      // ALAC - lossless
       command =
           '-i "$inputPath" -codec:a alac -map 0:a -map_metadata 0 "$outputPath" -y';
     } else {
-      // AAC - lossy
       command =
           '-i "$inputPath" -codec:a aac -b:a $bitrate -map 0:a -map_metadata 0 "$outputPath" -y';
     }
@@ -141,25 +135,19 @@ class FFmpegService {
     String? coverPath,
     Map<String, String>? metadata,
   }) async {
-    // Android Scoped Storage: Cannot write directly to Music folder with FFmpeg
-    // Use app-internal cache directory for temp output
     final tempDir = await getTemporaryDirectory();
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
     final tempOutput = '${tempDir.path}/temp_embed_$uniqueId.flac';
     
-    // Construct command
     final StringBuffer cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$flacPath" ');
     
-    // Add cover input if available
     if (coverPath != null) {
       cmdBuffer.write('-i "$coverPath" ');
     }
     
-    // Map audio stream
     cmdBuffer.write('-map 0:a ');
     
-    // Map cover stream if available
     if (coverPath != null) {
       cmdBuffer.write('-map 1:0 ');
       cmdBuffer.write('-c:v copy ');
@@ -168,13 +156,10 @@ class FFmpegService {
       cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
     }
     
-    // Copy audio codec (don't re-encode)
     cmdBuffer.write('-c:a copy ');
     
-    // Add text metadata
     if (metadata != null) {
       metadata.forEach((key, value) {
-        // Sanitize value: escape double quotes
         final sanitizedValue = value.replaceAll('"', '\\"');
         cmdBuffer.write('-metadata $key="$sanitizedValue" ');
       });
@@ -189,18 +174,14 @@ class FFmpegService {
 
     if (result.success) {
       try {
-        // Copy temp output back to original location (replace)
         final tempFile = File(tempOutput);
         final originalFile = File(flacPath);
         
         if (await tempFile.exists()) {
-             // Delete original file
              if (await originalFile.exists()) {
                await originalFile.delete();
              }
-             // Copy temp file to original location
              await tempFile.copy(flacPath);
-             // Delete temp file
              await tempFile.delete();
              
              return flacPath;
@@ -215,7 +196,6 @@ class FFmpegService {
       }
     }
 
-    // Clean up temp file if exists
     try {
       final tempFile = File(tempOutput);
       if (await tempFile.exists()) {

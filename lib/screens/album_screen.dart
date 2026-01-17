@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/models/download_item.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
@@ -62,7 +64,18 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   @override
   void initState() {
     super.initState();
-    // Priority: widget.tracks > cache > fetch
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final providerId = widget.albumId.startsWith('deezer:') ? 'deezer' : 'spotify';
+      ref.read(recentAccessProvider.notifier).recordAlbumAccess(
+        id: widget.albumId,
+        name: widget.albumName,
+        artistName: widget.tracks?.firstOrNull?.artistName,
+        imageUrl: widget.coverUrl,
+        providerId: providerId,
+      );
+    });
+    
     _tracks = widget.tracks ?? _AlbumCache.get(widget.albumId);
     if (_tracks == null) {
       _fetchTracks();
@@ -74,14 +87,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     try {
       Map<String, dynamic> metadata;
       
-      // Check if this is a Deezer album ID (format: "deezer:123456")
       if (widget.albumId.startsWith('deezer:')) {
         final deezerAlbumId = widget.albumId.replaceFirst('deezer:', '');
         // ignore: avoid_print
         print('[AlbumScreen] Fetching from Deezer: $deezerAlbumId');
         metadata = await PlatformBridge.getDeezerMetadata('album', deezerAlbumId);
       } else {
-        // Spotify album - use fallback method
         // ignore: avoid_print
         print('[AlbumScreen] Fetching from Spotify with fallback: ${widget.albumId}');
         final url = 'https://open.spotify.com/album/${widget.albumId}';
@@ -91,7 +102,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       final trackList = metadata['track_list'] as List<dynamic>;
       final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
       
-      // Store in cache
       _AlbumCache.set(widget.albumId, tracks);
       
       if (mounted) {
@@ -260,7 +270,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                       children: [
                         Icon(Icons.music_note, size: 14, color: colorScheme.onSecondaryContainer),
                         const SizedBox(width: 4),
-                        Text('${tracks.length} tracks', style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                        Text(context.l10n.tracksCount(tracks.length), style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -269,7 +279,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                   FilledButton.icon(
                     onPressed: () => _downloadAll(context),
                     icon: const Icon(Icons.download),
-                    label: Text('Download All (${tracks.length})'),
+                    label: Text(context.l10n.downloadAllCount(tracks.length)),
                     style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                   ),
                 ],
@@ -289,7 +299,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           children: [
             Icon(Icons.queue_music, size: 20, color: colorScheme.primary),
             const SizedBox(width: 8),
-            Text('Tracks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+            Text(context.l10n.tracksHeader, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
           ],
         ),
       ),
@@ -324,12 +334,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         coverUrl: track.coverUrl,
         onSelect: (quality, service) {
           ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
         },
       );
     } else {
       ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))));
     }
   }
 
@@ -344,12 +354,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         artistName: widget.albumName,
         onSelect: (quality, service) {
           ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
         },
       );
     } else {
       ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added ${tracks.length} tracks to queue')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
     }
   }
 
@@ -375,7 +385,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Rate Limited',
+                      context.l10n.errorRateLimited,
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                         fontWeight: FontWeight.bold,
@@ -383,7 +393,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Too many requests. Please wait a moment and try again.',
+                      context.l10n.errorRateLimitedMessage,
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                         fontSize: 12,
@@ -398,7 +408,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       );
     }
     
-    // Default error display
     return Card(
       elevation: 0,
       color: colorScheme.errorContainer.withValues(alpha: 0.5),
@@ -428,12 +437,10 @@ class _AlbumTrackItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     
-    // Only watch the specific item for this track
     final queueItem = ref.watch(downloadQueueProvider.select((state) {
       return state.items.where((item) => item.track.id == track.id).firstOrNull;
     }));
     
-    // Check if track is in history (already downloaded before)
     final isInHistory = ref.watch(downloadHistoryProvider.select((state) {
       return state.isDownloaded(track.id);
     }));
@@ -444,7 +451,6 @@ class _AlbumTrackItem extends ConsumerWidget {
     final isCompleted = queueItem?.status == DownloadStatus.completed;
     final progress = queueItem?.progress ?? 0.0;
     
-    // Show as downloaded if in queue completed OR in history
     final showAsDownloaded = isCompleted || (!isQueued && isInHistory);
 
     return Padding(
@@ -476,7 +482,7 @@ class _AlbumTrackItem extends ConsumerWidget {
         final fileExists = await File(historyItem.filePath).exists();
         if (fileExists) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${track.name}" already downloaded')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAlreadyDownloaded(track.name))));
           }
           return;
         } else {

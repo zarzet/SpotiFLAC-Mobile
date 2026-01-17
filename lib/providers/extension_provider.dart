@@ -175,12 +175,10 @@ class SearchBehavior {
   /// Get thumbnail size based on configuration
   /// Returns (width, height) tuple
   (double, double) getThumbnailSize({double defaultSize = 56}) {
-    // If custom dimensions specified, use them
     if (thumbnailWidth != null && thumbnailHeight != null) {
       return (thumbnailWidth!.toDouble(), thumbnailHeight!.toDouble());
     }
     
-    // Otherwise use ratio presets
     switch (thumbnailRatio) {
       case 'wide': // 16:9 - YouTube style
         return (defaultSize * 16 / 9, defaultSize);
@@ -558,10 +556,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       await PlatformBridge.setExtensionEnabled(extensionId, enabled);
       _log.d('Set extension $extensionId enabled: $enabled');
       
-      // Get extension info before updating state
       final ext = state.extensions.where((e) => e.id == extensionId).firstOrNull;
       
-      // Update local state
       final extensions = state.extensions.map((e) {
         if (e.id == extensionId) {
           return e.copyWith(enabled: enabled);
@@ -571,18 +567,15 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       
       state = state.copyWith(extensions: extensions);
       
-      // If disabling an extension, reset related settings
       if (!enabled && ext != null) {
         final settings = ref.read(settingsProvider);
         
-        // If this extension was the search provider, clear it and reset to Deezer
         if (settings.searchProvider == extensionId) {
           ref.read(settingsProvider.notifier).setSearchProvider(null);
           ref.read(settingsProvider.notifier).setMetadataSource('deezer');
           _log.d('Cleared search provider and reset to Deezer because extension $extensionId was disabled');
         }
         
-        // If this extension was the default download service, reset to Tidal
         if (ext.hasDownloadProvider && settings.defaultService == extensionId) {
           ref.read(settingsProvider.notifier).setDefaultService('tidal');
           _log.d('Reset default service to Tidal because extension $extensionId was disabled');

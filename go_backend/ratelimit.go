@@ -30,31 +30,25 @@ func (r *RateLimiter) WaitForSlot() {
 
 	now := time.Now()
 
-	// Remove timestamps outside the window
 	r.cleanOldTimestamps(now)
 
-	// If under limit, record and return immediately
 	if len(r.timestamps) < r.maxRequests {
 		r.timestamps = append(r.timestamps, now)
 		return
 	}
 
-	// Calculate wait time until oldest timestamp expires
 	oldestTimestamp := r.timestamps[0]
 	waitUntil := oldestTimestamp.Add(r.window)
 	waitDuration := waitUntil.Sub(now)
 
 	if waitDuration > 0 {
-		// Release lock while waiting
 		r.mu.Unlock()
 		time.Sleep(waitDuration)
 		r.mu.Lock()
 
-		// Clean again after waiting
 		r.cleanOldTimestamps(time.Now())
 	}
 
-	// Record this request
 	r.timestamps = append(r.timestamps, time.Now())
 }
 

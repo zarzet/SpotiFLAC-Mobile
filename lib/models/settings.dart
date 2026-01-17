@@ -28,8 +28,9 @@ class AppSettings {
   final bool useExtensionProviders; // Use extension providers for downloads when available
   final String? searchProvider; // null/empty = default (Deezer/Spotify), otherwise extension ID
   final bool separateSingles; // Separate singles/EPs into their own folder
-  final String albumFolderStructure; // artist_album or album_only
+  final String albumFolderStructure; // artist_album, album_only, artist_year_album, year_album
   final bool showExtensionStore; // Show Extension Store tab in navigation
+  final String locale; // App language: 'system', 'en', 'id', etc.
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -58,6 +59,7 @@ class AppSettings {
     this.separateSingles = false, // Default: disabled
     this.albumFolderStructure = 'artist_album', // Default: Albums/Artist/Album
     this.showExtensionStore = true, // Default: show store
+    this.locale = 'system', // Default: follow system language
   });
 
   AppSettings copyWith({
@@ -88,6 +90,7 @@ class AppSettings {
     bool? separateSingles,
     String? albumFolderStructure,
     bool? showExtensionStore,
+    String? locale,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -116,6 +119,7 @@ class AppSettings {
       separateSingles: separateSingles ?? this.separateSingles,
       albumFolderStructure: albumFolderStructure ?? this.albumFolderStructure,
       showExtensionStore: showExtensionStore ?? this.showExtensionStore,
+      locale: locale ?? this.locale,
     );
   }
 

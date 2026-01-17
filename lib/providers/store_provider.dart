@@ -1,9 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
 final _log = AppLogger('StoreProvider');
+
+/// Compare two semantic version strings
+/// Returns: -1 if v1 < v2, 0 if equal, 1 if v1 > v2
+int compareVersions(String v1, String v2) {
+  final parts1 = v1.replaceAll(RegExp(r'^v'), '').split('.');
+  final parts2 = v2.replaceAll(RegExp(r'^v'), '').split('.');
+  
+  final maxLen = parts1.length > parts2.length ? parts1.length : parts2.length;
+  
+  for (var i = 0; i < maxLen; i++) {
+    final n1 = i < parts1.length ? (int.tryParse(parts1[i]) ?? 0) : 0;
+    final n2 = i < parts2.length ? (int.tryParse(parts2[i]) ?? 0) : 0;
+    
+    if (n1 < n2) return -1;
+    if (n1 > n2) return 1;
+  }
+  return 0;
+}
 
 /// Extension categories
 class StoreCategory {
@@ -91,6 +110,12 @@ class StoreExtension {
       hasUpdate: json['has_update'] as bool? ?? false,
     );
   }
+
+  /// Check if this extension requires a higher app version than current
+  bool get requiresNewerApp {
+    if (minAppVersion == null || minAppVersion!.isEmpty) return false;
+    return compareVersions(minAppVersion!, AppInfo.version) > 0;
+  }
 }
 
 /// State for extension store
@@ -160,6 +185,11 @@ class StoreState {
     }
 
     return result;
+  }
+
+  /// Count of extensions with updates available
+  int get updatesAvailableCount {
+    return extensions.where((e) => e.hasUpdate).length;
   }
 }
 

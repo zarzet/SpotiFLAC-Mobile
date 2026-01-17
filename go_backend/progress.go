@@ -44,16 +44,14 @@ var (
 )
 
 // getProgress returns current download progress from multi-progress system
-// Returns first active item's progress for backward compatibility
 func getProgress() DownloadProgress {
 	multiMu.RLock()
 	defer multiMu.RUnlock()
 
-	// Find first active item
 	for _, item := range multiProgress.Items {
 		return DownloadProgress{
 			CurrentFile:   item.ItemID,
-			Progress:      item.Progress * 100, // Convert to percentage
+			Progress:      item.Progress * 100,
 			BytesTotal:    item.BytesTotal,
 			BytesReceived: item.BytesReceived,
 			IsDownloading: item.IsDownloading,
@@ -240,16 +238,16 @@ func NewItemProgressWriter(w interface{ Write([]byte) (int, error) }, itemID str
 
 // Write implements io.Writer with threshold-based progress updates and speed tracking
 func (pw *ItemProgressWriter) Write(p []byte) (int, error) {
+	if pw.itemID != "" && isDownloadCancelled(pw.itemID) {
+		return 0, ErrDownloadCancelled
+	}
 	n, err := pw.writer.Write(p)
 	if err != nil {
 		return n, err
 	}
 	pw.current += int64(n)
 
-	// Update progress when we've received at least 64KB since last update
-	// Also update on first write to show download has started
 	if pw.lastReported == 0 || pw.current-pw.lastReported >= progressUpdateThreshold {
-		// Calculate speed (MB/s) based on bytes received since last update
 		now := time.Now()
 		elapsed := now.Sub(pw.lastTime).Seconds()
 		var speedMBps float64

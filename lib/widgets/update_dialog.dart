@@ -4,6 +4,7 @@ import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/update_checker.dart';
 import 'package:spotiflac_android/services/apk_downloader.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 
 class UpdateDialog extends StatefulWidget {
   final UpdateInfo updateInfo;
@@ -29,7 +30,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
   Future<void> _downloadAndInstall() async {
     final apkUrl = widget.updateInfo.apkDownloadUrl;
     
-    // If no direct APK URL, open release page
     if (apkUrl == null) {
       final uri = Uri.parse(widget.updateInfo.downloadUrl);
       if (await canLaunchUrl(uri)) {
@@ -42,7 +42,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
     setState(() {
       _isDownloading = true;
       _progress = 0;
-      _statusText = 'Starting download...';
+      _statusText = context.l10n.updateStartingDownload;
     });
 
     final notificationService = NotificationService();
@@ -59,7 +59,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
             _statusText = '$receivedMB / $totalMB MB';
           });
         }
-        // Update notification
         notificationService.showUpdateDownloadProgress(
           version: widget.updateInfo.version,
           received: received,
@@ -69,7 +68,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
     );
 
     if (filePath != null) {
-      // Cancel progress notification first
       await notificationService.cancelUpdateNotification();
       
       await notificationService.showUpdateDownloadComplete(
@@ -80,10 +78,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
         Navigator.pop(context);
       }
       
-      // Open APK for installation
       await ApkDownloader.installApk(filePath);
     } else {
-      // Cancel progress notification first
       await notificationService.cancelUpdateNotification();
       
       await notificationService.showUpdateDownloadFailed();
@@ -91,11 +87,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Download failed';
+          _statusText = context.l10n.updateDownloadFailed;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to download update')),
+          SnackBar(content: Text(context.l10n.updateFailedMessage)),
         );
       }
     }
@@ -115,7 +111,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with icon
             Row(
               children: [
                 Container(
@@ -131,9 +126,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Update Available', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(context.l10n.updateAvailable, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text('A new version is ready', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+                      Text(context.l10n.updateNewVersionReady, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -141,7 +136,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ),
             const SizedBox(height: 20),
             
-            // Version badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -154,17 +148,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _VersionChip(version: AppInfo.version, label: 'Current', colorScheme: colorScheme),
+                  _VersionChip(version: AppInfo.version, label: context.l10n.updateCurrent, colorScheme: colorScheme),
                   const SizedBox(width: 12),
                   Icon(Icons.arrow_forward_rounded, size: 20, color: colorScheme.primary),
                   const SizedBox(width: 12),
-                  _VersionChip(version: widget.updateInfo.version, label: 'New', colorScheme: colorScheme, isNew: true),
+                  _VersionChip(version: widget.updateInfo.version, label: context.l10n.updateNew, colorScheme: colorScheme, isNew: true),
                 ],
               ),
             ),
             const SizedBox(height: 20),
             
-            // Download progress (when downloading)
             if (_isDownloading) ...[
               Container(
                 padding: const EdgeInsets.all(16),
@@ -184,7 +177,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
                         ),
                         const SizedBox(width: 12),
-                        Text('Downloading...', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                        Text(context.l10n.updateDownloading, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -208,8 +201,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                 ),
               ),
             ] else ...[
-              // Changelog section
-              Text("What's New", style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(context.l10n.updateWhatsNew, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Container(
                 constraints: const BoxConstraints(maxHeight: 180),
@@ -230,7 +222,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ],
             const SizedBox(height: 24),
             
-            // Action buttons
             if (_isDownloading)
               SizedBox(
                 width: double.infinity,
@@ -240,7 +231,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.dialogCancel),
                 ),
               )
             else
@@ -251,7 +242,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     child: FilledButton.icon(
                       onPressed: _downloadAndInstall,
                       icon: const Icon(Icons.download_rounded, size: 20),
-                      label: const Text('Download & Install'),
+                      label: Text(context.l10n.updateDownloadInstall),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -271,7 +262,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: Text("Don't remind", style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                          child: Text(context.l10n.updateDontRemind, style: TextStyle(color: colorScheme.onSurfaceVariant)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -285,7 +276,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Later'),
+                          child: Text(context.l10n.updateLater),
                         ),
                       ),
                     ],
@@ -302,19 +293,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
   String _formatChangelog(String changelog) {
     var content = changelog;
     
-    // Find content after "What's New" header
     final whatsNewMatch = RegExp(r"###?\s*What'?s\s*New\s*\n", caseSensitive: false).firstMatch(content);
     if (whatsNewMatch != null) {
       content = content.substring(whatsNewMatch.end);
     }
     
-    // Cut off at "Downloads" section or horizontal rule
     final cutoffMatch = RegExp(r'\n---|\n###?\s*Downloads', caseSensitive: false).firstMatch(content);
     if (cutoffMatch != null) {
       content = content.substring(0, cutoffMatch.start);
     }
     
-    // Process line by line for better formatting
     final lines = content.split('\n');
     final formattedLines = <String>[];
     
@@ -322,7 +310,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
       line = line.trim();
       if (line.isEmpty) continue;
       
-      // Check if it's a section header
       final sectionMatch = RegExp(r'^#{1,3}\s*(.+)$').firstMatch(line);
       if (sectionMatch != null) {
         final section = sectionMatch.group(1)?.trim();
@@ -333,7 +320,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
         continue;
       }
       
-      // Check if it's a list item
       final listMatch = RegExp(r'^[-*]\s+(.+)$').firstMatch(line);
       if (listMatch != null) {
         var itemText = listMatch.group(1) ?? '';
@@ -343,7 +329,6 @@ class _UpdateDialogState extends State<UpdateDialog> {
         continue;
       }
       
-      // Check if it's a sub-item
       final subListMatch = RegExp(r'^\s+[-*]\s+(.+)$').firstMatch(line);
       if (subListMatch != null) {
         var itemText = subListMatch.group(1) ?? '';
@@ -400,7 +385,6 @@ class _VersionChip extends StatelessWidget {
   }
 }
 
-/// Show update dialog
 Future<void> showUpdateDialog(
   BuildContext context, {
   required UpdateInfo updateInfo,

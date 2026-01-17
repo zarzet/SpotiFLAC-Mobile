@@ -30,31 +30,26 @@ class ShareIntentService {
     if (_initialized) return;
     _initialized = true;
 
-    // Listen to media sharing coming from outside the app while the app is in memory
     _mediaSubscription = ReceiveSharingIntent.instance.getMediaStream().listen(
       _handleSharedMedia,
       onError: (err) => _log.e('Error: $err'),
     );
 
-    // Get the media sharing coming from outside the app while the app is closed
     final initialMedia = await ReceiveSharingIntent.instance.getInitialMedia();
     if (initialMedia.isNotEmpty) {
       _handleSharedMedia(initialMedia, isInitial: true);
-      // Tell the library that we are done processing the intent
       ReceiveSharingIntent.instance.reset();
     }
   }
 
   void _handleSharedMedia(List<SharedMediaFile> files, {bool isInitial = false}) {
     for (final file in files) {
-      // Check the path - for text shares, the path contains the shared text
       final textToCheck = file.path;
       
       final url = _extractSpotifyUrl(textToCheck);
       if (url != null) {
         _log.i('Received Spotify URL: $url (initial: $isInitial)');
         if (isInitial) {
-          // Store for later - listener might not be ready yet
           _pendingUrl = url;
         }
         _sharedUrlController.add(url);
@@ -71,18 +66,15 @@ class ShareIntentService {
   String? _extractSpotifyUrl(String text) {
     if (text.isEmpty) return null;
 
-    // Check for spotify: URI format
     final uriMatch = RegExp(r'spotify:(track|album|playlist|artist):[a-zA-Z0-9]+').firstMatch(text);
     if (uriMatch != null) {
       return uriMatch.group(0);
     }
 
-    // Check for open.spotify.com URL
     final urlMatch = RegExp(
       r'https?://open\.spotify\.com/(track|album|playlist|artist)/[a-zA-Z0-9]+(\?[^\s]*)?',
     ).firstMatch(text);
     if (urlMatch != null) {
-      // Return URL without query params for cleaner handling
       final fullUrl = urlMatch.group(0)!;
       final queryIndex = fullUrl.indexOf('?');
       return queryIndex > 0 ? fullUrl.substring(0, queryIndex) : fullUrl;

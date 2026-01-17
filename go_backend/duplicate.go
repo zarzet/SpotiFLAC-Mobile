@@ -18,11 +18,10 @@ type ISRCIndex struct {
 	mu        sync.RWMutex
 }
 
-// Global ISRC index cache (per output directory)
 var (
 	isrcIndexCache   = make(map[string]*ISRCIndex)
 	isrcIndexCacheMu sync.RWMutex
-	isrcIndexTTL     = 5 * time.Minute // Cache TTL - rebuild after 5 minutes
+	isrcIndexTTL     = 5 * time.Minute
 )
 
 // GetISRCIndex returns or builds an ISRC index for the given directory
@@ -31,17 +30,14 @@ func GetISRCIndex(outputDir string) *ISRCIndex {
 	idx, exists := isrcIndexCache[outputDir]
 	isrcIndexCacheMu.RUnlock()
 
-	// Return cached index if still valid
 	if exists && time.Since(idx.buildTime) < isrcIndexTTL {
 		return idx
 	}
 
-	// Build new index
 	return buildISRCIndex(outputDir)
 }
 
 // buildISRCIndex scans a directory and builds a map of ISRC -> file path
-// Same implementation as PC version for consistency
 func buildISRCIndex(outputDir string) *ISRCIndex {
 	idx := &ISRCIndex{
 		index:     make(map[string]string),
@@ -56,7 +52,6 @@ func buildISRCIndex(outputDir string) *ISRCIndex {
 	startTime := time.Now()
 	fileCount := 0
 
-	// Walk directory - only check .flac files
 	filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
@@ -67,13 +62,11 @@ func buildISRCIndex(outputDir string) *ISRCIndex {
 			return nil
 		}
 
-		// Read ISRC from file
 		metadata, err := ReadMetadata(path)
 		if err != nil || metadata.ISRC == "" {
 			return nil
 		}
 
-		// Store in index (uppercase for case-insensitive matching)
 		idx.index[strings.ToUpper(metadata.ISRC)] = path
 		fileCount++
 		return nil
@@ -82,7 +75,6 @@ func buildISRCIndex(outputDir string) *ISRCIndex {
 	fmt.Printf("[ISRCIndex] Built index for %s: %d files in %v\n", 
 		outputDir, fileCount, time.Since(startTime).Round(time.Millisecond))
 
-	// Cache the index
 	isrcIndexCacheMu.Lock()
 	isrcIndexCache[outputDir] = idx
 	isrcIndexCacheMu.Unlock()
@@ -90,7 +82,6 @@ func buildISRCIndex(outputDir string) *ISRCIndex {
 	return idx
 }
 
-// lookup checks if an ISRC exists in the index (internal, returns bool)
 func (idx *ISRCIndex) lookup(isrc string) (string, bool) {
 	if isrc == "" {
 		return "", false
@@ -101,6 +92,18 @@ func (idx *ISRCIndex) lookup(isrc string) (string, bool) {
 
 	path, exists := idx.index[strings.ToUpper(isrc)]
 	return path, exists
+}
+
+// remove deletes an ISRC entry from the index (internal use)
+func (idx *ISRCIndex) remove(isrc string) {
+	if isrc == "" {
+		return
+	}
+
+	idx.mu.Lock()
+	defer idx.mu.Unlock()
+
+	delete(idx.index, strings.ToUpper(isrc))
 }
 
 // Lookup checks if an ISRC exists in the index (gomobile compatible)
@@ -138,7 +141,18 @@ func checkISRCExistsInternal(outputDir, isrc string) (string, bool) {
 
 	// Use index for fast lookup
 	idx := GetISRCIndex(outputDir)
-	return idx.lookup(isrc)
+	filePath, exists := idx.lookup(isrc)
+	if !exists {
+		return "", false
+	}
+
+	if !CheckFileExists(filePath) {
+		// Stale index entry; remove it and return not found.
+		idx.remove(isrc)
+		return "", false
+	}
+
+	return filePath, true
 }
 
 // CheckISRCExists is the exported version for gomobile (returns string, error)
@@ -170,7 +184,6 @@ type FileExistenceResult struct {
 // It builds an ISRC index from the output directory once, then checks all tracks against it
 // Same implementation as PC version for consistency
 func CheckFilesExistParallel(outputDir string, tracksJSON string) (string, error) {
-	// Parse input JSON
 	var tracks []struct {
 		ISRC       string `json:"isrc"`
 		TrackName  string `json:"track_name"`
@@ -182,10 +195,8 @@ func CheckFilesExistParallel(outputDir string, tracksJSON string) (string, error
 
 	results := make([]FileExistenceResult, len(tracks))
 
-	// Build ISRC index from output directory (scan once)
 	isrcIdx := GetISRCIndex(outputDir)
 
-	// Check each track against the index (parallel)
 	var wg sync.WaitGroup
 	for i, track := range tracks {
 		wg.Add(1)
@@ -216,7 +227,6 @@ func CheckFilesExistParallel(outputDir string, tracksJSON string) (string, error
 
 	wg.Wait()
 
-	// Return results as JSON
 	resultJSON, err := json.Marshal(results)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal results: %w", err)

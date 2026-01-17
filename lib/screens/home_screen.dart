@@ -6,6 +6,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -73,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _currentIndex = index);
     switch (index) {
       case 0:
-        // Already on home
         break;
       case 1:
         context.push('/queue');
@@ -110,7 +111,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // URL Input
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
@@ -130,7 +130,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // Error message
           if (trackState.error != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -140,15 +139,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-          // Loading indicator
           if (trackState.isLoading)
             LinearProgressIndicator(color: colorScheme.primary),
 
-          // Album/Playlist header
           if (trackState.albumName != null || trackState.playlistName != null)
             _buildHeader(trackState, colorScheme),
 
-          // Download All button
           if (trackState.tracks.length > 1)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -162,7 +158,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-          // Track list
           Expanded(
             child: trackState.tracks.isEmpty
                 ? _buildEmptyState(colorScheme)
@@ -250,7 +245,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-            // Play all button
             FilledButton.tonal(
               onPressed: _downloadAll,
               style: FilledButton.styleFrom(
@@ -267,6 +261,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildTrackTile(int index, ColorScheme colorScheme) {
     final track = ref.watch(trackProvider).tracks[index];
+    final isCollection = track.isCollection;
+    
+    String subtitleText;
+    if (isCollection) {
+      final typeLabel = track.albumType ?? (track.isPlaylistItem ? 'Playlist' : 'Album');
+      final capitalizedType = typeLabel.isNotEmpty 
+          ? '${typeLabel[0].toUpperCase()}${typeLabel.substring(1)}' 
+          : 'Album';
+      final year = track.releaseDate != null && track.releaseDate!.length >= 4
+          ? track.releaseDate!.substring(0, 4) 
+          : '';
+      subtitleText = '$capitalizedType • ${track.artistName}${year.isNotEmpty ? ' • $year' : ''}';
+    } else {
+      subtitleText = track.artistName;
+    }
+    
     return ListTile(
       leading: track.coverUrl != null
           ? ClipRRect(
@@ -285,22 +295,85 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant),
+              child: Icon(
+                isCollection ? Icons.album : Icons.music_note, 
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
       title: Text(track.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        track.artistName, 
+        subtitleText, 
         maxLines: 1, 
         overflow: TextOverflow.ellipsis,
         style: TextStyle(color: colorScheme.onSurfaceVariant),
       ),
-      trailing: Text(
-        _formatDuration(track.duration),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-      onTap: () => _downloadTrack(index),
+      trailing: isCollection 
+          ? Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant)
+          : Text(
+              _formatDuration(track.duration),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+      onTap: () => isCollection ? _openCollection(track) : _downloadTrack(index),
+    );
+  }
+  
+  Future<void> _openCollection(Track track) async {
+    final extensionId = track.source;
+    if (extensionId == null) return;
+    
+    try {
+      if (track.isAlbumItem) {
+        final albumData = await PlatformBridge.getAlbumWithExtension(extensionId, track.id);
+        if (albumData != null && mounted) {
+          final trackList = albumData['tracks'] as List<dynamic>? ?? [];
+          final tracks = trackList.map((t) => _parseExtensionTrack(t as Map<String, dynamic>, extensionId)).toList();
+          ref.read(trackProvider.notifier).setTracksFromCollection(
+            tracks: tracks,
+            albumName: albumData['name'] as String? ?? track.name,
+            coverUrl: albumData['cover_url'] as String? ?? track.coverUrl,
+          );
+        }
+      } else if (track.isPlaylistItem) {
+        final playlistData = await PlatformBridge.getPlaylistWithExtension(extensionId, track.id);
+        if (playlistData != null && mounted) {
+          final trackList = playlistData['tracks'] as List<dynamic>? ?? [];
+          final tracks = trackList.map((t) => _parseExtensionTrack(t as Map<String, dynamic>, extensionId)).toList();
+          ref.read(trackProvider.notifier).setTracksFromCollection(
+            tracks: tracks,
+            playlistName: playlistData['name'] as String? ?? track.name,
+            coverUrl: playlistData['cover_url'] as String? ?? track.coverUrl,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load: $e')),
+        );
+      }
+    }
+  }
+  
+  Track _parseExtensionTrack(Map<String, dynamic> data, String source) {
+    int durationMs = 0;
+    final durationValue = data['duration_ms'];
+    if (durationValue is int) {
+      durationMs = durationValue;
+    } else if (durationValue is double) {
+      durationMs = durationValue.toInt();
+    }
+    
+    return Track(
+      id: (data['id'] ?? '').toString(),
+      name: (data['name'] ?? '').toString(),
+      artistName: (data['artists'] ?? '').toString(),
+      albumName: (data['album_name'] ?? '').toString(),
+      coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
+      duration: (durationMs / 1000).round(),
+      releaseDate: data['release_date']?.toString(),
+      source: source,
     );
   }
 

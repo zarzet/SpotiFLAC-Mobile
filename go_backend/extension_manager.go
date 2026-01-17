@@ -18,11 +18,9 @@ import (
 // compareVersions compares two semantic version strings
 // Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
 func compareVersions(v1, v2 string) int {
-	// Parse version parts
 	parts1 := strings.Split(strings.TrimPrefix(v1, "v"), ".")
 	parts2 := strings.Split(strings.TrimPrefix(v2, "v"), ".")
 
-	// Pad shorter version with zeros
 	maxLen := len(parts1)
 	if len(parts2) > maxLen {
 		maxLen = len(parts2)
@@ -52,12 +50,12 @@ func compareVersions(v1, v2 string) int {
 type LoadedExtension struct {
 	ID        string             `json:"id"`
 	Manifest  *ExtensionManifest `json:"manifest"`
-	VM        *goja.Runtime      `json:"-"` // Goja VM instance (not serialized)
+	VM        *goja.Runtime      `json:"-"`
 	Enabled   bool               `json:"enabled"`
 	Error     string             `json:"error,omitempty"`
-	DataDir   string             `json:"data_dir"`   // Extension's data directory
-	SourceDir string             `json:"source_dir"` // Where extension files are extracted
-	IconPath  string             `json:"icon_path"`  // Full path to icon file (if exists)
+	DataDir   string             `json:"data_dir"`
+	SourceDir string             `json:"source_dir"`
+	IconPath  string             `json:"icon_path"`
 }
 
 // ExtensionManager manages all loaded extensions
@@ -68,7 +66,6 @@ type ExtensionManager struct {
 	dataDir       string // Base directory for extension data
 }
 
-// Global extension manager instance
 var (
 	globalExtManager     *ExtensionManager
 	globalExtManagerOnce sync.Once
@@ -92,7 +89,6 @@ func (m *ExtensionManager) SetDirectories(extensionsDir, dataDir string) error {
 	m.extensionsDir = extensionsDir
 	m.dataDir = dataDir
 
-	// Create directories if they don't exist
 	if err := os.MkdirAll(extensionsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create extensions directory: %w", err)
 	}
@@ -117,7 +113,6 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 	}
 	defer zipReader.Close()
 
-	// Find and read manifest.json
 	var manifestData []byte
 	var hasIndexJS bool
 	for _, file := range zipReader.File {
@@ -146,13 +141,11 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 		return nil, fmt.Errorf("Invalid extension package: index.js not found")
 	}
 
-	// Parse and validate manifest
 	manifest, err := ParseManifest(manifestData)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid extension manifest: %w", err)
 	}
 
-	// Check if extension already loaded - if so, try upgrade (check without holding lock for long)
 	m.mu.RLock()
 	existing, exists := m.extensions[manifest.Name]
 	var existingVersion string
@@ -164,7 +157,6 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 	m.mu.RUnlock()
 
 	if exists {
-		// Check if this is an upgrade
 		versionCompare := compareVersions(manifest.Version, existingVersion)
 		if versionCompare > 0 {
 			// This is an upgrade - call UpgradeExtension
@@ -176,16 +168,13 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 		}
 	}
 
-	// Now acquire write lock for the rest of the operation
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Double-check extension wasn't added while we were waiting for lock
 	if _, exists := m.extensions[manifest.Name]; exists {
 		return nil, fmt.Errorf("Extension '%s' was installed by another process", manifest.DisplayName)
 	}
 
-	// Create extension directory
 	extDir := filepath.Join(m.extensionsDir, manifest.Name)
 	if err := os.MkdirAll(extDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create extension directory: %w", err)
@@ -206,19 +195,16 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 		}
 		destPath := filepath.Join(extDir, relPath)
 
-		// Create parent directories if needed
 		destDir := filepath.Dir(destPath)
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", destDir, err)
 		}
 
-		// Create destination file
 		destFile, err := os.Create(destPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create file %s: %w", destPath, err)
 		}
 
-		// Copy content
 		srcFile, err := file.Open()
 		if err != nil {
 			destFile.Close()
@@ -233,13 +219,11 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 		}
 	}
 
-	// Create data directory for extension
 	extDataDir := filepath.Join(m.dataDir, manifest.Name)
 	if err := os.MkdirAll(extDataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create extension data directory: %w", err)
 	}
 
-	// Create loaded extension
 	ext := &LoadedExtension{
 		ID:        manifest.Name,
 		Manifest:  manifest,
@@ -263,23 +247,19 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 
 // initializeVM creates and initializes the Goja VM for an extension
 func (m *ExtensionManager) initializeVM(ext *LoadedExtension) error {
-	// Create new Goja runtime
 	vm := goja.New()
 	ext.VM = vm
 
-	// Read index.js
 	indexPath := filepath.Join(ext.SourceDir, "index.js")
 	jsCode, err := os.ReadFile(indexPath)
 	if err != nil {
 		return fmt.Errorf("failed to read index.js: %w", err)
 	}
 
-	// Create extension runtime and register sandboxed APIs
 	runtime := NewExtensionRuntime(ext)
 	runtime.RegisterAPIs(vm)
 	runtime.RegisterGoBackendAPIs(vm)
 
-	// Set up console.log for debugging
 	console := vm.NewObject()
 	console.Set("log", func(call goja.FunctionCall) goja.Value {
 		args := make([]interface{}, len(call.Arguments))
@@ -291,12 +271,10 @@ func (m *ExtensionManager) initializeVM(ext *LoadedExtension) error {
 	})
 	vm.Set("console", console)
 
-	// Set up registerExtension function
 	var registeredExtension goja.Value
 	vm.Set("registerExtension", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) > 0 {
 			registeredExtension = call.Arguments[0]
-			// Also set it as global 'extension' variable for later access
 			vm.Set("extension", call.Arguments[0])
 		}
 		return goja.Undefined()
@@ -406,7 +384,6 @@ func (m *ExtensionManager) LoadExtensionsFromDirectory(dirPath string) ([]string
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			// Check if it's an extracted extension directory
 			manifestPath := filepath.Join(dirPath, entry.Name(), "manifest.json")
 			if _, err := os.Stat(manifestPath); err == nil {
 				ext, err := m.loadExtensionFromDirectory(filepath.Join(dirPath, entry.Name()))
@@ -418,7 +395,6 @@ func (m *ExtensionManager) LoadExtensionsFromDirectory(dirPath string) ([]string
 				}
 			}
 		} else if strings.HasSuffix(strings.ToLower(entry.Name()), ".spotiflac-ext") {
-			// Load from package file
 			ext, err := m.LoadExtensionFromFile(filepath.Join(dirPath, entry.Name()))
 			if err != nil {
 				GoLog("[Extension] Failed to load %s: %v\n", entry.Name(), err)
@@ -437,7 +413,6 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Read manifest
 	manifestPath := filepath.Join(dirPath, "manifest.json")
 	manifestData, err := os.ReadFile(manifestPath)
 	if err != nil {
@@ -450,25 +425,21 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 		return nil, fmt.Errorf("Invalid extension manifest: %w", err)
 	}
 
-	// Check if index.js exists
 	indexPath := filepath.Join(dirPath, "index.js")
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("Extension is missing index.js file")
 	}
 
-	// Check if extension already loaded - skip silently (for directory loading on startup)
 	if existing, exists := m.extensions[manifest.Name]; exists {
 		GoLog("[Extension] Extension '%s' already loaded, skipping\n", manifest.DisplayName)
 		return existing, nil
 	}
 
-	// Create data directory for extension
 	extDataDir := filepath.Join(m.dataDir, manifest.Name)
 	if err := os.MkdirAll(extDataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create extension data directory: %w", err)
 	}
 
-	// Create loaded extension
 	ext := &LoadedExtension{
 		ID:        manifest.Name,
 		Manifest:  manifest,
@@ -541,7 +512,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 	}
 	defer zipReader.Close()
 
-	// Find and read manifest.json
 	var manifestData []byte
 	var hasIndexJS bool
 	for _, file := range zipReader.File {
@@ -570,13 +540,11 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		return nil, fmt.Errorf("Invalid extension package: index.js not found")
 	}
 
-	// Parse and validate manifest
 	newManifest, err := ParseManifest(manifestData)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid extension manifest: %w", err)
 	}
 
-	// Check if extension exists
 	m.mu.RLock()
 	existing, exists := m.extensions[newManifest.Name]
 	m.mu.RUnlock()
@@ -612,19 +580,15 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		}
 	}
 
-	// Recreate extension directory
 	if err := os.MkdirAll(extDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create extension directory: %w", err)
 	}
 
-	// Extract all files from new package (preserving directory structure)
 	for _, file := range zipReader.File {
 		if file.FileInfo().IsDir() {
 			continue
 		}
 
-		// Preserve relative path within the zip (support subdirectories)
-		// Clean the path to prevent path traversal attacks
 		relPath := filepath.Clean(file.Name)
 		if strings.HasPrefix(relPath, "..") || filepath.IsAbs(relPath) {
 			GoLog("[Extension] Skipping unsafe path in archive: %s\n", file.Name)
@@ -632,19 +596,16 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		}
 		destPath := filepath.Join(extDir, relPath)
 
-		// Create parent directories if needed
 		destDir := filepath.Dir(destPath)
 		if err := os.MkdirAll(destDir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", destDir, err)
 		}
 
-		// Create destination file
 		destFile, err := os.Create(destPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create file %s: %w", destPath, err)
 		}
 
-		// Copy content
 		srcFile, err := file.Open()
 		if err != nil {
 			destFile.Close()
@@ -659,7 +620,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		}
 	}
 
-	// Create new loaded extension (reusing data directory, preserving enabled state)
 	ext := &LoadedExtension{
 		ID:        newManifest.Name,
 		Manifest:  newManifest,
@@ -708,7 +668,6 @@ func (m *ExtensionManager) checkExtensionUpgradeInternal(filePath string) (*Exte
 	}
 	defer zipReader.Close()
 
-	// Find and read manifest.json
 	var manifestData []byte
 	for _, file := range zipReader.File {
 		name := filepath.Base(file.Name)
@@ -730,13 +689,11 @@ func (m *ExtensionManager) checkExtensionUpgradeInternal(filePath string) (*Exte
 		return nil, fmt.Errorf("manifest.json not found")
 	}
 
-	// Parse manifest
 	newManifest, err := ParseManifest(manifestData)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid manifest: %w", err)
 	}
 
-	// Check if extension exists
 	m.mu.RLock()
 	existing, exists := m.extensions[newManifest.Name]
 	m.mu.RUnlock()
@@ -752,7 +709,6 @@ func (m *ExtensionManager) checkExtensionUpgradeInternal(filePath string) (*Exte
 		info.CurrentVersion = ""
 		info.CanUpgrade = false
 	} else {
-		// Compare versions
 		info.CurrentVersion = existing.Manifest.Version
 		info.CanUpgrade = compareVersions(newManifest.Version, existing.Manifest.Version) > 0
 	}
@@ -805,7 +761,6 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 
 	infos := make([]ExtensionInfo, len(extensions))
 	for i, ext := range extensions {
-		// Build permissions list
 		permissions := []string{}
 		for _, domain := range ext.Manifest.Permissions.Network {
 			permissions = append(permissions, "network:"+domain)
@@ -822,7 +777,6 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 			status = "disabled"
 		}
 
-		// Check for icon file
 		iconPath := ""
 		if ext.Manifest.Icon != "" && ext.SourceDir != "" {
 			possibleIcon := filepath.Join(ext.SourceDir, ext.Manifest.Icon)
@@ -830,7 +784,6 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 				iconPath = possibleIcon
 			}
 		}
-		// Fallback: check for icon.png if not specified in manifest
 		if iconPath == "" && ext.SourceDir != "" {
 			possibleIcon := filepath.Join(ext.SourceDir, "icon.png")
 			if _, err := os.Stat(possibleIcon); err == nil {
@@ -887,13 +840,11 @@ func (m *ExtensionManager) InitializeExtension(extensionID string, settings map[
 		return fmt.Errorf("Extension failed to load. Please reinstall the extension")
 	}
 
-	// Convert settings to JSON for passing to JS
 	settingsJSON, err := json.Marshal(settings)
 	if err != nil {
 		return fmt.Errorf("Failed to save settings")
 	}
 
-	// Call initialize function
 	script := fmt.Sprintf(`
 		(function() {
 			var settings = %s;
@@ -917,7 +868,6 @@ func (m *ExtensionManager) InitializeExtension(extensionID string, settings map[
 		return err
 	}
 
-	// Check result
 	if result != nil && !goja.IsUndefined(result) {
 		exported := result.Export()
 		if resultMap, ok := exported.(map[string]interface{}); ok {
@@ -973,7 +923,6 @@ func (m *ExtensionManager) CleanupExtension(extensionID string) error {
 		return err
 	}
 
-	// Check result
 	if result != nil && !goja.IsUndefined(result) {
 		exported := result.Export()
 		if resultMap, ok := exported.(map[string]interface{}); ok {

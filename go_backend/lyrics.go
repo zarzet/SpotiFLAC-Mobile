@@ -128,14 +128,12 @@ func (c *LyricsClient) FetchLyricsFromLRCLibSearch(query string) (*LyricsRespons
 }
 
 func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName string) (*LyricsResponse, error) {
-	// Strategy 1: Direct match with artist and track name
 	lyrics, err := c.FetchLyricsWithMetadata(artistName, trackName)
 	if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
 		lyrics.Source = "LRCLIB"
 		return lyrics, nil
 	}
 
-	// Strategy 2: Try with simplified track name
 	simplifiedTrack := simplifyTrackName(trackName)
 	if simplifiedTrack != trackName {
 		lyrics, err = c.FetchLyricsWithMetadata(artistName, simplifiedTrack)
@@ -145,7 +143,6 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 		}
 	}
 
-	// Strategy 3: Search with full query
 	query := artistName + " " + trackName
 	lyrics, err = c.FetchLyricsFromLRCLibSearch(query)
 	if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
@@ -153,7 +150,6 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 		return lyrics, nil
 	}
 
-	// Strategy 4: Search with simplified query
 	if simplifiedTrack != trackName {
 		query = artistName + " " + simplifiedTrack
 		lyrics, err = c.FetchLyricsFromLRCLibSearch(query)

@@ -23,7 +23,6 @@ class CsvImportService {
         final content = await file.readAsString();
         final tracks = _parseCsv(content);
         
-        // Enrich tracks with metadata from Deezer (cover URL, duration, etc.)
         if (tracks.isNotEmpty) {
           return await _enrichTracksMetadata(tracks, onProgress: onProgress);
         }
@@ -48,11 +47,9 @@ class CsvImportService {
       final track = tracks[i];
       onProgress?.call(i + 1, tracks.length);
       
-      // Only enrich if missing cover/duration
       if (track.coverUrl == null || track.duration == 0) {
         Map<String, dynamic>? trackData;
         
-        // Try ISRC first if available
         if (track.isrc != null && track.isrc!.isNotEmpty) {
           try {
             trackData = await PlatformBridge.searchDeezerByISRC(track.isrc!);
@@ -62,7 +59,6 @@ class CsvImportService {
           }
         }
         
-        // Fallback to text search if ISRC failed or not available
         if (trackData == null) {
           try {
             final query = '${track.artistName} ${track.name}';
@@ -71,13 +67,11 @@ class CsvImportService {
             if (searchResult.containsKey('tracks')) {
               final tracksList = searchResult['tracks'] as List<dynamic>?;
               if (tracksList != null && tracksList.isNotEmpty) {
-                // Find best match by comparing names
                 for (final result in tracksList) {
                   final resultMap = result as Map<String, dynamic>;
                   final resultName = (resultMap['name'] as String?)?.toLowerCase() ?? '';
                   final trackNameLower = track.name.toLowerCase();
                   
-                  // Check if track name matches (contains or equals)
                   if (resultName.contains(trackNameLower) || trackNameLower.contains(resultName)) {
                     trackData = resultMap;
                     _log.d('Text search match for ${track.name}: $resultName');
@@ -85,7 +79,6 @@ class CsvImportService {
                   }
                 }
                 
-                // If no exact match, use first result
                 if (trackData == null && tracksList.isNotEmpty) {
                   trackData = tracksList.first as Map<String, dynamic>;
                   _log.d('Using first search result for ${track.name}');
@@ -97,7 +90,6 @@ class CsvImportService {
           }
         }
         
-        // Apply enriched data if found
         if (trackData != null) {
           final coverUrl = trackData['images'] as String?;
           final durationMs = trackData['duration_ms'] as int? ?? 0;
@@ -119,7 +111,6 @@ class CsvImportService {
           
           _log.d('Enriched: ${track.name} - cover: ${coverUrl != null}, duration: ${durationMs ~/ 1000}s');
           
-          // Small delay to avoid rate limiting
           if (i < tracks.length - 1) {
             await Future.delayed(const Duration(milliseconds: 100));
           }
@@ -127,7 +118,6 @@ class CsvImportService {
         }
       }
       
-      // Keep original track if enrichment failed or not needed
       enrichedTracks.add(track);
     }
     
@@ -137,10 +127,9 @@ class CsvImportService {
 
   static List<Track> _parseCsv(String content) {
     final List<Track> tracks = [];
-    final lines = content.split(RegExp(r'\r\n|\r|\n')); // Handle various newline formats
+    final lines = content.split(RegExp(r'\r\n|\r|\n'));
     if (lines.isEmpty) return tracks;
 
-    // Detect headers line (assume first non-empty line)
     int startIdx = 0;
     while (startIdx < lines.length && lines[startIdx].trim().isEmpty) {
       startIdx++;
@@ -150,21 +139,18 @@ class CsvImportService {
     final headers = _parseLine(lines[startIdx]);
     final colMap = <String, int>{};
     for (int i = 0; i < headers.length; i++) {
-        // Normalize header: lowercase, trim, remove quotes
         String h = _cleanValue(headers[i]).toLowerCase();
         colMap[h] = i;
     }
 
     _log.d('CSV Headers: ${colMap.keys.toList()}');
 
-    // Parse rows
     for (int i = startIdx + 1; i < lines.length; i++) {
       final line = lines[i].trim();
       if (line.isEmpty) continue;
 
       final values = _parseLine(line);
       
-      // Helper to get value securely
       String? getVal(List<String> keys) {
         return _getValue(values, colMap, keys);
       }
@@ -172,15 +158,13 @@ class CsvImportService {
       String? trackName = getVal(['track name', 'track', 'name', 'title']);
       String? artistName = getVal(['artist name', 'artist']);
       String? albumName = getVal(['album name', 'album']);
-      String? isrc = getVal(['isrc']); // Often formatted with leading/trailing quotes
-      String? spotifyId = getVal(['spotify - id', 'spotify id', 'id', 'uri']); // Uri might need parsing
+      String? isrc = getVal(['isrc']);
+      String? spotifyId = getVal(['spotify - id', 'spotify id', 'id', 'uri']);
 
-      // If 'spotify uri' contains the id: 'spotify:track:ID'
       if (spotifyId != null && spotifyId.startsWith('spotify:track:')) {
         spotifyId = spotifyId.replaceAll('spotify:track:', '');
       }
 
-      // Basic validation: Need at least name and artist, OR a spotify ID
       if ((trackName != null && trackName.isNotEmpty && artistName != null) || (spotifyId != null && spotifyId.isNotEmpty)) {
           tracks.add(Track(
               id: spotifyId ?? 'csv_${DateTime.now().millisecondsSinceEpoch}_$i', 
@@ -215,28 +199,21 @@ class CsvImportService {
     if (val.startsWith('"') && val.endsWith('"') && val.length >= 2) {
       val = val.substring(1, val.length - 1);
     }
-    // Handle double quotes escape in CSV ("" -> ")
     val = val.replaceAll('""', '"');
     return val;
   }
 
-  // Robust CSV Line Parser
   static List<String> _parseLine(String line) {
      final List<String> result = [];
      bool inQuote = false;
      StringBuffer buffer = StringBuffer();
      
      for (int i=0; i<line.length; i++) {
-         String char = line[i];
-         if (char == '"') {
-             // Look ahead to check for escaped quote
-             if (i + 1 < line.length && line[i+1] == '"') {
-                buffer.write('"'); // Keep format for now, _cleanValue handles unescaping logic differently... 
-                // Wait, standard CSV: "Thumb ""Up""" -> Thumb "Up"
-                // My _cleanValue handles it, so I should just preserve raw content here mostly, 
-                // BUT I need to know if " toggles inQuote.
-                // Escaped "" does NOT toggle inQuote mode effectively (it counts as literal char inside quote).
-                buffer.write('"'); // Write 1st quote
+        String char = line[i];
+        if (char == '"') {
+            if (i + 1 < line.length && line[i+1] == '"') {
+               buffer.write('"');
+               buffer.write('"');
                 i++; // Skip next quote char loop
                 buffer.write('"'); // Write 2nd quote
              } else {

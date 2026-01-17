@@ -84,12 +84,10 @@ func HasSpotifyCredentials() bool {
 	credentialsMu.RLock()
 	defer credentialsMu.RUnlock()
 
-	// Check custom credentials first
 	if customClientID != "" && customClientSecret != "" {
 		return true
 	}
 
-	// Check environment variables
 	if os.Getenv("SPOTIFY_CLIENT_ID") != "" && os.Getenv("SPOTIFY_CLIENT_SECRET") != "" {
 		return true
 	}
@@ -102,12 +100,10 @@ func getCredentials() (string, string, error) {
 	credentialsMu.RLock()
 	defer credentialsMu.RUnlock()
 
-	// Check custom credentials first
 	if customClientID != "" && customClientSecret != "" {
 		return customClientID, customClientSecret, nil
 	}
 
-	// Check environment variables
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 
@@ -115,14 +111,12 @@ func getCredentials() (string, string, error) {
 		return clientID, clientSecret, nil
 	}
 
-	// No credentials available
 	return "", "", ErrNoSpotifyCredentials
 }
 
 // NewSpotifyMetadataClient creates a new Spotify client
 // Returns error if credentials are not configured
 func NewSpotifyMetadataClient() (*SpotifyMetadataClient, error) {
-	// Get credentials - will error if not configured
 	clientID, clientSecret, err := getCredentials()
 	if err != nil {
 		return nil, err
@@ -131,7 +125,7 @@ func NewSpotifyMetadataClient() (*SpotifyMetadataClient, error) {
 	src := rand.NewSource(time.Now().UnixNano())
 
 	c := &SpotifyMetadataClient{
-		httpClient:   NewHTTPClientWithTimeout(15 * time.Second), // Use shared transport for connection pooling
+		httpClient:   NewHTTPClientWithTimeout(15 * time.Second),
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		rng:          rand.New(src),
@@ -393,10 +387,8 @@ func (c *SpotifyMetadataClient) SearchTracks(ctx context.Context, query string, 
 
 // SearchAll searches for tracks and artists on Spotify
 func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, trackLimit, artistLimit int) (*SearchAllResult, error) {
-	// Create cache key
 	cacheKey := fmt.Sprintf("all:%s:%d:%d", query, trackLimit, artistLimit)
 
-	// Check cache first
 	c.cacheMu.RLock()
 	if entry, ok := c.searchCache[cacheKey]; ok && !entry.isExpired() {
 		c.cacheMu.RUnlock()
@@ -456,7 +448,6 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 		})
 	}
 
-	// Limit artists to artistLimit
 	artistCount := len(response.Artists.Items)
 	if artistCount > artistLimit {
 		artistCount = artistLimit
@@ -473,7 +464,6 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 		})
 	}
 
-	// Store in cache
 	c.cacheMu.Lock()
 	c.searchCache[cacheKey] = &cacheEntry{
 		data:      result,
@@ -510,7 +500,6 @@ func (c *SpotifyMetadataClient) fetchTrack(ctx context.Context, trackID, token s
 }
 
 func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token string) (*AlbumResponsePayload, error) {
-	// Check cache first
 	c.cacheMu.RLock()
 	if entry, ok := c.albumCache[albumID]; ok && !entry.isExpired() {
 		c.cacheMu.RUnlock()
@@ -610,7 +599,6 @@ func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token s
 		TrackList: tracks,
 	}
 
-	// Store in cache
 	c.cacheMu.Lock()
 	c.albumCache[albumID] = &cacheEntry{
 		data:      result,
@@ -768,7 +756,6 @@ func (c *SpotifyMetadataClient) fetchPlaylist(ctx context.Context, playlistID, t
 }
 
 func (c *SpotifyMetadataClient) fetchArtist(ctx context.Context, artistID, token string) (*ArtistResponsePayload, error) {
-	// Check cache first
 	c.cacheMu.RLock()
 	if entry, ok := c.artistCache[artistID]; ok && !entry.isExpired() {
 		c.cacheMu.RUnlock()
@@ -856,7 +843,6 @@ func (c *SpotifyMetadataClient) fetchArtist(ctx context.Context, artistID, token
 		Albums:     albums,
 	}
 
-	// Store in cache
 	c.cacheMu.Lock()
 	c.artistCache[artistID] = &cacheEntry{
 		data:      result,

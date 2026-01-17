@@ -64,7 +64,6 @@ class CollapsingHeader extends StatelessWidget {
           ),
         ),
 
-        // Info card if provided
         if (infoCard != null)
           SliverToBoxAdapter(
             child: Padding(
@@ -73,7 +72,6 @@ class CollapsingHeader extends StatelessWidget {
             ),
           ),
 
-        // Content slivers
         ...slivers,
       ],
     );

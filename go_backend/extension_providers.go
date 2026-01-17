@@ -3,6 +3,7 @@ package gobackend
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,14 @@ type ExtTrackMetadata struct {
 	DiscNumber  int    `json:"disc_number,omitempty"`
 	ISRC        string `json:"isrc,omitempty"`
 	ProviderID  string `json:"provider_id"`
+	ItemType    string `json:"item_type,omitempty"`  // track, album, or playlist - for extension search results
+	AlbumType   string `json:"album_type,omitempty"` // album, single, ep, compilation
+	// Enrichment fields from Odesli/song.link
+	TidalID       string            `json:"tidal_id,omitempty"`
+	QobuzID       string            `json:"qobuz_id,omitempty"`
+	DeezerID      string            `json:"deezer_id,omitempty"`
+	SpotifyID     string            `json:"spotify_id,omitempty"`
+	ExternalLinks map[string]string `json:"external_links,omitempty"` // service -> URL mapping
 }
 
 // ResolvedCoverURL returns the cover URL, checking both CoverURL and Images fields
@@ -54,11 +63,14 @@ type ExtAlbumMetadata struct {
 
 // ExtArtistMetadata represents artist metadata from an extension
 type ExtArtistMetadata struct {
-	ID         string             `json:"id"`
-	Name       string             `json:"name"`
-	ImageURL   string             `json:"image_url,omitempty"`
-	Albums     []ExtAlbumMetadata `json:"albums,omitempty"`
-	ProviderID string             `json:"provider_id"`
+	ID          string             `json:"id"`
+	Name        string             `json:"name"`
+	ImageURL    string             `json:"image_url,omitempty"`
+	HeaderImage string             `json:"header_image,omitempty"` // Header image for artist page background
+	Listeners   int                `json:"listeners,omitempty"`    // Monthly listeners
+	Albums      []ExtAlbumMetadata `json:"albums,omitempty"`
+	TopTracks   []ExtTrackMetadata `json:"top_tracks,omitempty"` // Popular tracks
+	ProviderID  string             `json:"provider_id"`
 }
 
 // ExtSearchResult represents search results from an extension
@@ -177,7 +189,6 @@ func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSe
 		}
 	}
 
-	// Set provider ID on all tracks
 	for i := range searchResult.Tracks {
 		searchResult.Tracks[i].ProviderID = p.extension.ID
 	}
@@ -725,12 +736,22 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			enrichedTrack, err := provider.EnrichTrack(trackMeta)
 			if err == nil && enrichedTrack != nil {
-				// Update request with enriched data
 				if enrichedTrack.ISRC != "" && enrichedTrack.ISRC != req.ISRC {
 					GoLog("[DownloadWithExtensionFallback] ISRC enriched: %s -> %s\n", req.ISRC, enrichedTrack.ISRC)
 					req.ISRC = enrichedTrack.ISRC
 				}
-				// Can also update other fields if needed
+				if enrichedTrack.TidalID != "" {
+					GoLog("[DownloadWithExtensionFallback] Tidal ID from Odesli: %s\n", enrichedTrack.TidalID)
+					req.TidalID = enrichedTrack.TidalID
+				}
+				if enrichedTrack.QobuzID != "" {
+					GoLog("[DownloadWithExtensionFallback] Qobuz ID from Odesli: %s\n", enrichedTrack.QobuzID)
+					req.QobuzID = enrichedTrack.QobuzID
+				}
+				if enrichedTrack.DeezerID != "" {
+					GoLog("[DownloadWithExtensionFallback] Deezer ID from Odesli: %s\n", enrichedTrack.DeezerID)
+					req.DeezerID = enrichedTrack.DeezerID
+				}
 				if enrichedTrack.Name != "" {
 					req.TrackName = enrichedTrack.Name
 				}
@@ -747,7 +768,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 		ext, err := extManager.GetExtension(req.Source)
 		if err == nil && ext.Enabled && ext.Error == "" && ext.Manifest.IsDownloadProvider() {
-			// Check if this extension wants to skip built-in fallback
 			skipBuiltIn = ext.Manifest.SkipBuiltInFallback
 
 			provider := NewExtensionProviderWrapper(ext)
@@ -758,7 +778,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			GoLog("[DownloadWithExtensionFallback] Downloading from source extension with trackID: %s (skipBuiltInFallback: %v)\n", trackID, skipBuiltIn)
 
-			// Build output path
 			outputPath := buildOutputPath(req)
 
 			// Download directly using the track ID from the extension
@@ -814,6 +833,14 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 
 			if err != nil {
+				if errors.Is(err, ErrDownloadCancelled) {
+					return &DownloadResponse{
+						Success:   false,
+						Error:     "Download cancelled",
+						ErrorType: "cancelled",
+						Service:   req.Source,
+					}, nil
+				}
 				lastErr = err
 			} else if result.ErrorMessage != "" {
 				lastErr = fmt.Errorf("%s", result.ErrorMessage)
@@ -858,6 +885,14 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				return result, nil
 			}
 			if err != nil {
+				if errors.Is(err, ErrDownloadCancelled) {
+					return &DownloadResponse{
+						Success:   false,
+						Error:     "Download cancelled",
+						ErrorType: "cancelled",
+						Service:   providerID,
+					}, nil
+				}
 				lastErr = err
 				GoLog("[DownloadWithExtensionFallback] %s failed: %v\n", providerID, err)
 			}
@@ -875,7 +910,6 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			provider := NewExtensionProviderWrapper(ext)
 
-			// Check availability first
 			availability, err := provider.CheckAvailability(req.ISRC, req.TrackName, req.ArtistName)
 			if err != nil || !availability.Available {
 				GoLog("[DownloadWithExtensionFallback] %s: not available\n", providerID)
@@ -885,12 +919,9 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				continue
 			}
 
-			// Build output path
 			outputPath := buildOutputPath(req)
 
-			// Download
 			result, err := provider.Download(availability.TrackID, req.Quality, outputPath, func(percent int) {
-				// Update progress
 				if req.ItemID != "" {
 					SetItemProgress(req.ItemID, float64(percent), 0, 0)
 				}
@@ -943,6 +974,14 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 
 			if err != nil {
+				if errors.Is(err, ErrDownloadCancelled) {
+					return &DownloadResponse{
+						Success:   false,
+						Error:     "Download cancelled",
+						ErrorType: "cancelled",
+						Service:   providerID,
+					}, nil
+				}
 				lastErr = err
 			} else if result.ErrorMessage != "" {
 				lastErr = fmt.Errorf("%s", result.ErrorMessage)
@@ -1122,7 +1161,6 @@ func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string
 		tracks = []ExtTrackMetadata{}
 	}
 
-	// Set provider ID on all tracks
 	for i := range tracks {
 		tracks[i].ProviderID = p.extension.ID
 	}
@@ -1191,6 +1229,24 @@ func (p *ExtensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, e
 	}
 	for i := range handleResult.Tracks {
 		handleResult.Tracks[i].ProviderID = p.extension.ID
+	}
+	if handleResult.Album != nil {
+		handleResult.Album.ProviderID = p.extension.ID
+		for i := range handleResult.Album.Tracks {
+			handleResult.Album.Tracks[i].ProviderID = p.extension.ID
+		}
+	}
+	if handleResult.Artist != nil {
+		handleResult.Artist.ProviderID = p.extension.ID
+		for i := range handleResult.Artist.Albums {
+			handleResult.Artist.Albums[i].ProviderID = p.extension.ID
+			for j := range handleResult.Artist.Albums[i].Tracks {
+				handleResult.Artist.Albums[i].Tracks[j].ProviderID = p.extension.ID
+			}
+		}
+		for i := range handleResult.Artist.TopTracks {
+			handleResult.Artist.TopTracks[i].ProviderID = p.extension.ID
+		}
 	}
 
 	return &handleResult, nil
@@ -1425,12 +1481,10 @@ func (m *ExtensionManager) RunPostProcessing(filePath string, metadata map[strin
 	for _, provider := range providers {
 		hooks := provider.extension.Manifest.GetPostProcessingHooks()
 		for _, hook := range hooks {
-			// Check if hook is enabled (TODO: check user settings)
 			if !hook.DefaultEnabled {
 				continue
 			}
 
-			// Check if format is supported
 			ext := strings.ToLower(filepath.Ext(currentPath))
 			if len(hook.SupportedFormats) > 0 {
 				supported := false

@@ -20,6 +20,7 @@ class Track {
   final ServiceAvailability? availability;
   final String? source; // Extension ID that provided this track (null for built-in sources)
   final String? albumType; // album, single, ep, compilation (from metadata API)
+  final String? itemType; // track, album, playlist - for extension search results
 
   const Track({
     required this.id,
@@ -37,10 +38,23 @@ class Track {
     this.availability,
     this.source,
     this.albumType,
+    this.itemType,
   });
 
   /// Check if this track is a single (based on album_type metadata)
   bool get isSingle => albumType == 'single' || albumType == 'ep';
+  
+  /// Check if this is an album item (not a track)
+  bool get isAlbumItem => itemType == 'album';
+  
+  /// Check if this is a playlist item (not a track)
+  bool get isPlaylistItem => itemType == 'playlist';
+  
+  /// Check if this is an artist item (not a track)
+  bool get isArtistItem => itemType == 'artist';
+  
+  /// Check if this is a collection (album, playlist, or artist)
+  bool get isCollection => isAlbumItem || isPlaylistItem || isArtistItem;
 
   factory Track.fromJson(Map<String, dynamic> json) => _$TrackFromJson(json);
   Map<String, dynamic> toJson() => _$TrackToJson(this);

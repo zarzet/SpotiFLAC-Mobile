@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/screens/home_tab.dart';
 import 'package:spotiflac_android/screens/store_tab.dart';
@@ -28,13 +30,12 @@ class _MainShellState extends ConsumerState<MainShell> {
   late PageController _pageController;
   bool _hasCheckedUpdate = false;
   StreamSubscription<String>? _shareSubscription;
-  DateTime? _lastBackPress; // For double-tap to exit
+  DateTime? _lastBackPress;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
-    // Check for updates after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdates();
       _setupShareListener();
@@ -42,14 +43,12 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _setupShareListener() {
-    // Check for pending URL that was received before listener was ready
     final pendingUrl = ShareIntentService().consumePendingUrl();
     if (pendingUrl != null) {
       _log.d('Processing pending shared URL: $pendingUrl');
       _handleSharedUrl(pendingUrl);
     }
 
-    // Listen for future shared URLs with error handling
     _shareSubscription = ShareIntentService().sharedUrlStream.listen(
       (url) {
         _log.d('Received shared URL from stream: $url');
@@ -63,21 +62,16 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _handleSharedUrl(String url) {
-    // Pop any existing screens (Album, Artist, Settings sub-pages) to return to root
     Navigator.of(context).popUntil((route) => route.isFirst);
     
-    // Navigate to Home tab
     if (_currentIndex != 0) {
       _onNavTap(0);
     }
-    // Fetch metadata for shared URL
     ref.read(trackProvider.notifier).fetchFromUrl(url);
-    // Mark that user has searched (hide helper text)
     ref.read(settingsProvider.notifier).setHasSearchedBefore();
-    // Show snackbar
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Loading shared link...')),
+        SnackBar(content: Text(context.l10n.loadingSharedLink)),
       );
     }
   }
@@ -122,8 +116,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _onPageChanged(int index) {
     if (_currentIndex != index) {
       setState(() => _currentIndex = index);
-      // Unfocus any text field when switching tabs to prevent keyboard from appearing
-      FocusScope.of(context).unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
@@ -131,40 +124,41 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _handleBackPress() {
     final trackState = ref.read(trackProvider);
     
-    // Check if keyboard is visible - if so, just dismiss keyboard, don't clear search
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     if (isKeyboardVisible) {
-      FocusScope.of(context).unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
       return;
     }
     
-    // If on Home tab and has text in search bar or has content (but not loading), clear it
+    if (_currentIndex == 0 && trackState.isShowingRecentAccess) {
+      ref.read(trackProvider.notifier).setShowingRecentAccess(false);
+      FocusManager.instance.primaryFocus?.unfocus();
+      return;
+    }
+    
     if (_currentIndex == 0 && !trackState.isLoading && (trackState.hasSearchText || trackState.hasContent)) {
       ref.read(trackProvider.notifier).clear();
       return;
     }
     
-    // If not on Home tab, go to Home tab first
     if (_currentIndex != 0) {
       _onNavTap(0);
       return;
     }
     
-    // If loading, ignore back press
     if (trackState.isLoading) {
       return;
     }
     
-    // Double-tap to exit
     final now = DateTime.now();
     if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
       SystemNavigator.pop();
     } else {
       _lastBackPress = now;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Press back again to exit'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(context.l10n.pressBackAgainToExit),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -176,8 +170,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     final queueState = ref.watch(downloadQueueProvider.select((s) => s.queuedCount));
     final trackState = ref.watch(trackProvider);
     final showStore = ref.watch(settingsProvider.select((s) => s.showExtensionStore));
+    final storeUpdatesCount = ref.watch(storeProvider.select((s) => s.updatesAvailableCount));
     
-    // Check if keyboard is visible (bottom inset > 0 means keyboard is showing)
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     
     // Determine if we can pop (for predictive back animation)
@@ -187,9 +181,9 @@ class _MainShellState extends ConsumerState<MainShell> {
                    !trackState.hasSearchText && 
                    !trackState.hasContent && 
                    !trackState.isLoading &&
+                   !trackState.isShowingRecentAccess &&
                    !isKeyboardVisible;
 
-    // Build tabs and destinations based on settings
     final tabs = <Widget>[
       const HomeTab(),
       QueueTab(
@@ -201,11 +195,12 @@ class _MainShellState extends ConsumerState<MainShell> {
       const SettingsTab(),
     ];
 
+    final l10n = context.l10n;
     final destinations = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.home_outlined),
-        selectedIcon: Icon(Icons.home),
-        label: 'Home',
+      NavigationDestination(
+        icon: const Icon(Icons.home_outlined),
+        selectedIcon: const Icon(Icons.home),
+        label: l10n.navHome,
       ),
       NavigationDestination(
         icon: Badge(
@@ -218,22 +213,29 @@ class _MainShellState extends ConsumerState<MainShell> {
           label: Text('$queueState'),
           child: const Icon(Icons.history),
         ),
-        label: 'History',
+        label: l10n.navHistory,
       ),
       if (showStore)
-        const NavigationDestination(
-          icon: Icon(Icons.store_outlined),
-          selectedIcon: Icon(Icons.store),
-          label: 'Store',
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: storeUpdatesCount > 0,
+            label: Text('$storeUpdatesCount'),
+            child: const Icon(Icons.store_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: storeUpdatesCount > 0,
+            label: Text('$storeUpdatesCount'),
+            child: const Icon(Icons.store),
+          ),
+          label: l10n.navStore,
         ),
-      const NavigationDestination(
-        icon: Icon(Icons.settings_outlined),
-        selectedIcon: Icon(Icons.settings),
-        label: 'Settings',
+      NavigationDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: l10n.navSettings,
       ),
     ];
 
-    // Clamp current index if tabs changed
     final maxIndex = tabs.length - 1;
     if (_currentIndex > maxIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,7 +255,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           return;
         }
         
-        // Handle back press manually when canPop is false
         _handleBackPress();
       },
       child: Scaffold(

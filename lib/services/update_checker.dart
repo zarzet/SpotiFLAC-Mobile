@@ -65,7 +65,6 @@ class UpdateChecker {
       Map<String, dynamic>? releaseData;
       
       if (channel == 'preview') {
-        // For preview channel, get all releases and find the latest (including prereleases)
         final response = await http.get(
           Uri.parse('$_allReleasesApiUrl?per_page=10'),
           headers: {'Accept': 'application/vnd.github.v3+json'},
@@ -82,10 +81,8 @@ class UpdateChecker {
           return null;
         }
         
-        // First release is the latest (including prereleases)
         releaseData = releases.first as Map<String, dynamic>;
       } else {
-        // For stable channel, use /latest endpoint (excludes prereleases)
         final response = await http.get(
           Uri.parse(_latestApiUrl),
           headers: {'Accept': 'application/vnd.github.v3+json'},
@@ -124,7 +121,6 @@ class UpdateChecker {
         final name = (asset['name'] as String? ?? '').toLowerCase();
         if (name.endsWith('.apk')) {
           final downloadUrl = asset['browser_download_url'] as String?;
-          // Only accept HTTPS URLs for security
           final uri = downloadUrl != null ? Uri.tryParse(downloadUrl) : null;
           if (uri == null || uri.scheme != 'https') {
             _log.w('Skipping non-HTTPS APK URL: $downloadUrl');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
@@ -19,11 +20,8 @@ class _ExtensionDetailsScreenState
 
   @override
   Widget build(BuildContext context) {
-    // Watch store provider to get latest state of this extension (e.g. if updated/installed)
     final storeState = ref.watch(storeProvider);
 
-    // Find our extension in the store state to get the latest status
-    // If not found in current store state (rare), fallback to widget.extension
     final liveExtension =
         storeState.extensions
             .where((e) => e.id == widget.extension.id)
@@ -40,7 +38,7 @@ class _ExtensionDetailsScreenState
           _buildInfoCard(context, liveExtension, colorScheme, isDownloading),
           _buildSectionHeader(
             context,
-            'About',
+            context.l10n.aboutTitle,
             Icons.info_outline,
             colorScheme,
           ),
@@ -61,7 +59,7 @@ class _ExtensionDetailsScreenState
 
           _buildSectionHeader(
             context,
-            'Capabilities',
+            context.l10n.extensionCapabilities,
             Icons.extension_outlined,
             colorScheme,
           ),
@@ -173,9 +171,9 @@ class _ExtensionDetailsScreenState
                                   color: colorScheme.onSurface,
                                 ),
                           ),
-                          const SizedBox(height: 4),
+                        const SizedBox(height: 4),
                           Text(
-                            'by ${ext.author}',
+                            context.l10n.extensionsAuthor(ext.author),
                             style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(color: colorScheme.onSurfaceVariant),
                           ),
@@ -187,7 +185,6 @@ class _ExtensionDetailsScreenState
 
                 const SizedBox(height: 16),
 
-                // Badges row
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -204,7 +201,7 @@ class _ExtensionDetailsScreenState
                     ),
                     if (ext.isInstalled)
                       _Badge(
-                        label: 'Installed',
+                        label: context.l10n.storeInstalled,
                         color: colorScheme.primaryContainer,
                         textColor: colorScheme.onPrimaryContainer,
                         icon: Icons.check,
@@ -214,7 +211,6 @@ class _ExtensionDetailsScreenState
 
                 const SizedBox(height: 24),
 
-                // Action Buttons
                 if (isDownloading)
                   Center(
                     child: CircularProgressIndicator(
@@ -226,7 +222,7 @@ class _ExtensionDetailsScreenState
                     FilledButton.icon(
                       onPressed: () => _updateExtension(ext),
                       icon: const Icon(Icons.update),
-                      label: Text('Update to v${ext.version}'),
+                      label: Text('${context.l10n.storeUpdate} v${ext.version}'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
@@ -241,7 +237,7 @@ class _ExtensionDetailsScreenState
                           child: OutlinedButton.icon(
                             onPressed: null,
                             icon: const Icon(Icons.check),
-                            label: const Text('Installed'),
+                            label: Text(context.l10n.storeInstalled),
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size(0, 52),
                               shape: RoundedRectangleBorder(
@@ -262,7 +258,7 @@ class _ExtensionDetailsScreenState
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          tooltip: 'Uninstall',
+                          tooltip: context.l10n.extensionsUninstall,
                         ),
                       ],
                     )
@@ -270,7 +266,7 @@ class _ExtensionDetailsScreenState
                     FilledButton.icon(
                       onPressed: () => _installExtension(ext),
                       icon: const Icon(Icons.download),
-                      label: const Text('Install Extension'),
+                      label: Text(context.l10n.storeInstall),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
@@ -380,19 +376,19 @@ class _ExtensionDetailsScreenState
           child: Column(
             children: [
               _MetadataRow(
-                label: 'Updated',
+                label: context.l10n.extensionUpdated,
                 value: ext.updatedAt.isNotEmpty
-                    ? _formatDate(ext.updatedAt)
+                    ? _formatDate(context, ext.updatedAt)
                     : '-',
                 colorScheme: colorScheme,
               ),
               _MetadataRow(
-                label: 'ID',
+                label: context.l10n.extensionId,
                 value: ext.id,
                 colorScheme: colorScheme,
               ),
               _MetadataRow(
-                label: 'Min App Version',
+                label: context.l10n.extensionMinAppVersion,
                 value: ext.minAppVersion ?? 'Any',
                 colorScheme: colorScheme,
                 isLast: true,
@@ -409,7 +405,6 @@ class _ExtensionDetailsScreenState
     StoreExtension ext,
     ColorScheme colorScheme,
   ) {
-    // Determine capabilities based on category
     final isMetadataProvider = ext.category == 'metadata' || ext.category == 'integration';
     final isDownloadProvider = ext.category == 'download';
     final isLyricsProvider = ext.category == 'lyrics';
@@ -428,19 +423,19 @@ class _ExtensionDetailsScreenState
             children: [
               _CapabilityRow(
                 icon: Icons.search,
-                label: 'Metadata Provider',
+                label: context.l10n.extensionMetadataProvider,
                 enabled: isMetadataProvider,
                 colorScheme: colorScheme,
               ),
               _CapabilityRow(
                 icon: Icons.download,
-                label: 'Download Provider',
+                label: context.l10n.extensionDownloadProvider,
                 enabled: isDownloadProvider,
                 colorScheme: colorScheme,
               ),
               _CapabilityRow(
                 icon: Icons.lyrics,
-                label: 'Lyrics Provider',
+                label: context.l10n.extensionLyricsProvider,
                 enabled: isLyricsProvider,
                 colorScheme: colorScheme,
               ),
@@ -458,22 +453,22 @@ class _ExtensionDetailsScreenState
     );
   }
 
-  String _formatDate(String dateStr) {
+  String _formatDate(BuildContext context, String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();
       final diff = now.difference(date);
       
       if (diff.inDays == 0) {
-        return 'Today';
+        return context.l10n.dateToday;
       } else if (diff.inDays == 1) {
-        return 'Yesterday';
+        return context.l10n.dateYesterday;
       } else if (diff.inDays < 7) {
-        return '${diff.inDays} days ago';
+        return context.l10n.dateDaysAgo(diff.inDays);
       } else if (diff.inDays < 30) {
-        return '${(diff.inDays / 7).floor()} weeks ago';
+        return context.l10n.dateWeeksAgo((diff.inDays / 7).floor());
       } else if (diff.inDays < 365) {
-        return '${(diff.inDays / 30).floor()} months ago';
+        return context.l10n.dateMonthsAgo((diff.inDays / 30).floor());
       } else {
         return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       }
@@ -530,8 +525,8 @@ class _ExtensionDetailsScreenState
         SnackBar(
           content: Text(
             success
-                ? '${ext.displayName} installed.'
-                : 'Failed to install ${ext.displayName}',
+                ? context.l10n.snackbarExtensionInstalled(ext.displayName)
+                : context.l10n.snackbarFailedToInstall,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -551,8 +546,8 @@ class _ExtensionDetailsScreenState
         SnackBar(
           content: Text(
             success
-                ? '${ext.displayName} updated.'
-                : 'Failed to update ${ext.displayName}',
+                ? context.l10n.snackbarExtensionUpdated(ext.displayName)
+                : context.l10n.snackbarFailedToUpdate,
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -564,17 +559,17 @@ class _ExtensionDetailsScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Uninstall Extension?'),
-        content: Text('Are you sure you want to remove ${ext.displayName}?'),
+        title: Text(context.l10n.dialogUninstallExtension),
+        content: Text(context.l10n.dialogUninstallExtensionMessage(ext.displayName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Uninstall',
+              context.l10n.dialogUninstall,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
