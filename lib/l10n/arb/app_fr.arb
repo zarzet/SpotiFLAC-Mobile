@@ -642,6 +642,20 @@
       }
     }
   },
+  "artistPopular": "Popular",
+  "@artistPopular": {
+    "description": "Section header for popular/top tracks"
+  },
+  "artistMonthlyListeners": "{count} monthly listeners",
+  "@artistMonthlyListeners": {
+    "description": "Monthly listener count display",
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "description": "Formatted listener count"
+      }
+    }
+  },
   "trackMetadataTitle": "Track Info",
   "@trackMetadataTitle": {
     "description": "Track metadata screen title"
@@ -1851,27 +1865,15 @@
   },
   "sectionLanguage": "Language",
   "@sectionLanguage": {
-    "description": "Settings section header for language selection"
+    "description": "Settings section header for language"
   },
   "appearanceLanguage": "App Language",
   "@appearanceLanguage": {
-    "description": "Setting title for language selection"
+    "description": "Language setting title"
   },
   "appearanceLanguageSubtitle": "Choose your preferred language",
   "@appearanceLanguageSubtitle": {
-    "description": "Subtitle for language setting"
-  },
-  "languageSystem": "System Default",
-  "@languageSystem": {
-    "description": "Use device system language"
-  },
-  "languageEnglish": "English",
-  "@languageEnglish": {
-    "description": "English language option"
-  },
-  "languageIndonesian": "Bahasa Indonesia",
-  "@languageIndonesian": {
-    "description": "Indonesian language option"
+    "description": "Language setting subtitle"
   },
   "settingsAppearanceSubtitle": "Theme, colors, display",
   "@settingsAppearanceSubtitle": {
@@ -2573,5 +2575,41 @@
   "utilityFunctions": "Utility Functions",
   "@utilityFunctions": {
     "description": "Extension capability - utility functions"
+  },
+  "recentTypeArtist": "Artist",
+  "@recentTypeArtist": {
+    "description": "Recent access item type - artist"
+  },
+  "recentTypeAlbum": "Album",
+  "@recentTypeAlbum": {
+    "description": "Recent access item type - album"
+  },
+  "recentTypeSong": "Song",
+  "@recentTypeSong": {
+    "description": "Recent access item type - song/track"
+  },
+  "recentTypePlaylist": "Playlist",
+  "@recentTypePlaylist": {
+    "description": "Recent access item type - playlist"
+  },
+  "recentPlaylistInfo": "Playlist: {name}",
+  "@recentPlaylistInfo": {
+    "description": "Snackbar message when tapping playlist in recent access",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "Playlist name"
+      }
+    }
+  },
+  "errorGeneric": "Error: {message}",
+  "@errorGeneric": {
+    "description": "Generic error message format",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "description": "Error message"
+      }
+    }
   }
 }
