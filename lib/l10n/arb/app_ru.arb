@@ -1945,7 +1945,7 @@
   "@trackFileInfo": {
     "description": "Tab title - file information"
   },
-  "trackLyrics": "Тексты песен",
+  "trackLyrics": "Текст песни",
   "@trackLyrics": {
     "description": "Tab title - lyrics"
   },
@@ -1961,7 +1961,7 @@
   "@trackOpenInSpotify": {
     "description": "Action - open track in Spotify app"
   },
-  "trackTrackName": "Название трека",
+  "trackTrackName": "Название",
   "@trackTrackName": {
     "description": "Metadata label - track title"
   },
