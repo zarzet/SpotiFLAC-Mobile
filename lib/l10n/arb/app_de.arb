@@ -512,6 +512,10 @@
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
+  "aboutTranslators": "Übersetzer",
+  "@aboutTranslators": {
+    "description": "Section for translators"
+  },
   "aboutSpecialThanks": "Besonderer Dank",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
@@ -588,7 +592,7 @@
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
-  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "aboutAppDescription": "Lade Spotify-Titel in verlustfreier Qualität von Tidal, Qobuz und Amazon Music herunter.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -596,7 +600,7 @@
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "albumTracks": "{count, plural,=1{1 Song} other{{count} Songs}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -605,11 +609,11 @@
       }
     }
   },
-  "albumDownloadAll": "Download All",
+  "albumDownloadAll": "Alle Herunterladen",
   "@albumDownloadAll": {
     "description": "Button to download all tracks"
   },
-  "albumDownloadRemaining": "Download Remaining",
+  "albumDownloadRemaining": "Downloads verbleibend",
   "@albumDownloadRemaining": {
     "description": "Button to download remaining tracks"
   },
@@ -617,11 +621,11 @@
   "@playlistTitle": {
     "description": "Playlist screen title"
   },
-  "artistTitle": "Artist",
+  "artistTitle": "Künstler",
   "@artistTitle": {
     "description": "Artist screen title"
   },
-  "artistAlbums": "Albums",
+  "artistAlbums": "Alben",
   "@artistAlbums": {
     "description": "Section header for artist albums"
   },
@@ -629,11 +633,11 @@
   "@artistSingles": {
     "description": "Section header for singles/EPs"
   },
-  "artistCompilations": "Compilations",
+  "artistCompilations": "Zusammenstellungen",
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, =1{1 release} other{{count} releases}}",
+  "artistReleases": "{count, plural,=1{1 Veröffentlichung} other{{count} Veröffentlichungen}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -642,11 +646,11 @@
       }
     }
   },
-  "artistPopular": "Popular",
+  "artistPopular": "Beliebt",
   "@artistPopular": {
     "description": "Section header for popular/top tracks"
   },
-  "artistMonthlyListeners": "{count} monthly listeners",
+  "artistMonthlyListeners": "{count} monatliche Hörer",
   "@artistMonthlyListeners": {
     "description": "Monthly listener count display",
     "placeholders": {
@@ -656,11 +660,11 @@
       }
     }
   },
-  "trackMetadataTitle": "Track Info",
+  "trackMetadataTitle": "Titel Info",
   "@trackMetadataTitle": {
     "description": "Track metadata screen title"
   },
-  "trackMetadataArtist": "Artist",
+  "trackMetadataArtist": "Künstler",
   "@trackMetadataArtist": {
     "description": "Metadata field - artist name"
   },
@@ -668,111 +672,111 @@
   "@trackMetadataAlbum": {
     "description": "Metadata field - album name"
   },
-  "trackMetadataDuration": "Duration",
+  "trackMetadataDuration": "Länge",
   "@trackMetadataDuration": {
     "description": "Metadata field - track length"
   },
-  "trackMetadataQuality": "Quality",
+  "trackMetadataQuality": "Qualität",
   "@trackMetadataQuality": {
     "description": "Metadata field - audio quality"
   },
-  "trackMetadataPath": "File Path",
+  "trackMetadataPath": "Dateipfad",
   "@trackMetadataPath": {
     "description": "Metadata field - file location"
   },
-  "trackMetadataDownloadedAt": "Downloaded",
+  "trackMetadataDownloadedAt": "Heruntergeladen",
   "@trackMetadataDownloadedAt": {
     "description": "Metadata field - download date"
   },
-  "trackMetadataService": "Service",
+  "trackMetadataService": "Anbieter",
   "@trackMetadataService": {
     "description": "Metadata field - download service used"
   },
-  "trackMetadataPlay": "Play",
+  "trackMetadataPlay": "Abspielen",
   "@trackMetadataPlay": {
     "description": "Action button - play track"
   },
-  "trackMetadataShare": "Share",
+  "trackMetadataShare": "Teilen",
   "@trackMetadataShare": {
     "description": "Action button - share track"
   },
-  "trackMetadataDelete": "Delete",
+  "trackMetadataDelete": "Löschen",
   "@trackMetadataDelete": {
     "description": "Action button - delete track"
   },
-  "trackMetadataRedownload": "Re-download",
+  "trackMetadataRedownload": "Erneut herunterladen",
   "@trackMetadataRedownload": {
     "description": "Action button - download again"
   },
-  "trackMetadataOpenFolder": "Open Folder",
+  "trackMetadataOpenFolder": "Ordner öffnen",
   "@trackMetadataOpenFolder": {
     "description": "Action button - open containing folder"
   },
-  "setupTitle": "Welcome to SpotiFLAC",
+  "setupTitle": "Willkommen bei SpotiFLAC",
   "@setupTitle": {
     "description": "Setup wizard title"
   },
-  "setupSubtitle": "Let's get you started",
+  "setupSubtitle": "Los geht's",
   "@setupSubtitle": {
     "description": "Setup wizard subtitle"
   },
-  "setupStoragePermission": "Storage Permission",
+  "setupStoragePermission": "Speicherberechtigung",
   "@setupStoragePermission": {
     "description": "Storage permission step title"
   },
-  "setupStoragePermissionSubtitle": "Required to save downloaded files",
+  "setupStoragePermissionSubtitle": "Benötigt um heruntergeladene Dateien zu Speichern",
   "@setupStoragePermissionSubtitle": {
     "description": "Explanation for storage permission"
   },
-  "setupStoragePermissionGranted": "Permission granted",
+  "setupStoragePermissionGranted": "Berechtigung erteilt",
   "@setupStoragePermissionGranted": {
     "description": "Status when permission granted"
   },
-  "setupStoragePermissionDenied": "Permission denied",
+  "setupStoragePermissionDenied": "Berechtigung verweigert",
   "@setupStoragePermissionDenied": {
     "description": "Status when permission denied"
   },
-  "setupGrantPermission": "Grant Permission",
+  "setupGrantPermission": "Berechtigung erlauben",
   "@setupGrantPermission": {
     "description": "Button to request permission"
   },
-  "setupDownloadLocation": "Download Location",
+  "setupDownloadLocation": "Speicherort",
   "@setupDownloadLocation": {
     "description": "Download folder step title"
   },
-  "setupChooseFolder": "Choose Folder",
+  "setupChooseFolder": "Ordner wählen",
   "@setupChooseFolder": {
     "description": "Button to pick folder"
   },
-  "setupContinue": "Continue",
+  "setupContinue": "Fortfahren",
   "@setupContinue": {
     "description": "Continue to next step button"
   },
-  "setupSkip": "Skip for now",
+  "setupSkip": "Vorerst überspringen",
   "@setupSkip": {
     "description": "Skip current step button"
   },
-  "setupStorageAccessRequired": "Storage Access Required",
+  "setupStorageAccessRequired": "Speicherzugriff erforderlich",
   "@setupStorageAccessRequired": {
     "description": "Title when storage access needed"
   },
-  "setupStorageAccessMessage": "SpotiFLAC needs \"All files access\" permission to save music files to your chosen folder.",
+  "setupStorageAccessMessage": "SpotiFLAC benötigt die Berechtigung \"Auf alle Dateien zugreifen\", um Musikdateien in deinen gewählten Ordner zu speichern.",
   "@setupStorageAccessMessage": {
     "description": "Explanation for storage access"
   },
-  "setupStorageAccessMessageAndroid11": "Android 11+ requires \"All files access\" permission to save files to your chosen download folder.",
+  "setupStorageAccessMessageAndroid11": "Android 11+ benötigt die Berechtigung „Auf alle Dateien“, um Dateien im ausgewählten Download-Ordner zu speichern.",
   "@setupStorageAccessMessageAndroid11": {
     "description": "Android 11+ specific explanation"
   },
-  "setupOpenSettings": "Open Settings",
+  "setupOpenSettings": "Einstellungen öffnen",
   "@setupOpenSettings": {
     "description": "Button to open system settings"
   },
-  "setupPermissionDeniedMessage": "Permission denied. Please grant all permissions to continue.",
+  "setupPermissionDeniedMessage": "Berechtigung verweigert. Bitte erteilen Sie alle Berechtigungen um fortzufahren.",
   "@setupPermissionDeniedMessage": {
     "description": "Error when permission denied"
   },
-  "setupPermissionRequired": "{permissionType} Permission Required",
+  "setupPermissionRequired": "{permissionType} Zugriff verweigert",
   "@setupPermissionRequired": {
     "description": "Generic permission required title",
     "placeholders": {
@@ -782,7 +786,7 @@
       }
     }
   },
-  "setupPermissionRequiredMessage": "{permissionType} permission is required for the best experience. You can change this later in Settings.",
+  "setupPermissionRequiredMessage": "{permissionType} Berechtigung ist erforderlich für\ndie beste Benutzererfahrung. Für kannst dies später in den Einstellungen ändern.",
   "@setupPermissionRequiredMessage": {
     "description": "Generic permission required message",
     "placeholders": {
@@ -791,15 +795,15 @@
       }
     }
   },
-  "setupSelectDownloadFolder": "Select Download Folder",
+  "setupSelectDownloadFolder": "Wähle Download-Ordner aus",
   "@setupSelectDownloadFolder": {
     "description": "Folder selection step title"
   },
-  "setupUseDefaultFolder": "Use Default Folder?",
+  "setupUseDefaultFolder": "Als Standardordner verwenden?",
   "@setupUseDefaultFolder": {
     "description": "Dialog title for default folder"
   },
-  "setupNoFolderSelected": "No folder selected. Would you like to use the default Music folder?",
+  "setupNoFolderSelected": "Kein Ordner ausgewählt. Soll der Standard-Musikordner verwendet werden?",
   "@setupNoFolderSelected": {
     "description": "Prompt when no folder selected"
   },
@@ -2328,6 +2332,26 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
+  "qualityMp3": "MP3",
+  "@qualityMp3": {
+    "description": "Quality option - MP3 lossy format"
+  },
+  "qualityMp3Subtitle": "320kbps (converted from FLAC)",
+  "@qualityMp3Subtitle": {
+    "description": "Technical spec for MP3"
+  },
+  "enableMp3Option": "Enable MP3 Option",
+  "@enableMp3Option": {
+    "description": "Setting - enable MP3 quality option"
+  },
+  "enableMp3OptionSubtitleOn": "MP3 quality option is available",
+  "@enableMp3OptionSubtitleOn": {
+    "description": "Subtitle when MP3 is enabled"
+  },
+  "enableMp3OptionSubtitleOff": "Downloads FLAC then converts to 320kbps MP3",
+  "@enableMp3OptionSubtitleOff": {
+    "description": "Subtitle when MP3 is disabled"
+  },
   "qualityNote": "Actual quality depends on track availability from the service",
   "@qualityNote": {
     "description": "Note about quality availability"
@@ -2571,6 +2595,16 @@
   "downloadedAlbumSelectToDelete": "Select tracks to delete",
   "@downloadedAlbumSelectToDelete": {
     "description": "Placeholder when nothing selected"
+  },
+  "downloadedAlbumDiscHeader": "Disc {discNumber}",
+  "@downloadedAlbumDiscHeader": {
+    "description": "Header for disc separator in multi-disc albums",
+    "placeholders": {
+      "discNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
   },
   "utilityFunctions": "Utility Functions",
   "@utilityFunctions": {
