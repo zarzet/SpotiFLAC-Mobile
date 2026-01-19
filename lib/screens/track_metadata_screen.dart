@@ -119,6 +119,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   int? get discNumber => item.discNumber;
   String? get releaseDate => item.releaseDate;
   String? get isrc => item.isrc;
+  String? get genre => item.genre;
+  String? get label => item.label;
+  String? get copyright => item.copyright;
   
   String get cleanFilePath {
     final path = item.filePath;
@@ -519,6 +522,12 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         _MetadataItem(context.l10n.trackAudioQuality, audioQualityStr),
       if (releaseDate != null && releaseDate!.isNotEmpty)
         _MetadataItem(context.l10n.trackReleaseDate, releaseDate!),
+      if (genre != null && genre!.isNotEmpty)
+        _MetadataItem(context.l10n.trackGenre, genre!),
+      if (label != null && label!.isNotEmpty)
+        _MetadataItem(context.l10n.trackLabel, label!),
+      if (copyright != null && copyright!.isNotEmpty)
+        _MetadataItem(context.l10n.trackCopyright, copyright!),
       if (isrc != null && isrc!.isNotEmpty)
         _MetadataItem('ISRC', isrc!),
     ];

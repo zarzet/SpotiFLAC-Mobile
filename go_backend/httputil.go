@@ -18,17 +18,16 @@ import (
 // HTTP utility functions for consistent request handling across all downloaders
 
 // getRandomUserAgent generates a random Windows Chrome User-Agent string
-// Uses same format as PC version (referensi/backend/spotify_metadata.go) for better API compatibility
+// Uses modern Chrome format with build and patch numbers
+// Windows 11 still reports as "Windows NT 10.0" for compatibility
 func getRandomUserAgent() string {
-	winMajor := rand.Intn(2) + 10
-
-	chromeVersion := rand.Intn(25) + 100
-	chromeBuild := rand.Intn(1500) + 3000
-	chromePatch := rand.Intn(65) + 60
+	// Chrome version 120-145 (modern range)
+	chromeVersion := rand.Intn(26) + 120
+	chromeBuild := rand.Intn(1500) + 6000
+	chromePatch := rand.Intn(200) + 100
 
 	return fmt.Sprintf(
-		"Mozilla/5.0 (Windows NT %d.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/537.36",
-		winMajor,
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%d.0.%d.%d Safari/537.36",
 		chromeVersion,
 		chromeBuild,
 		chromePatch,

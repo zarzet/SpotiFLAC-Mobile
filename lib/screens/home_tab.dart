@@ -355,37 +355,64 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       // ignore: use_build_context_synchronously
       final l10n = context.l10n;
       
-      final confirmed = await showDialog<bool>(
-        context: this.context,
-        builder: (dialogCtx) => AlertDialog(
-          title: Text(l10n.dialogImportPlaylistTitle),
-          content: Text(l10n.dialogImportPlaylistMessage(tracks.length)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: Text(l10n.dialogCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: Text(l10n.dialogImport),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed == true) {
-        ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
-        if (mounted) {
-           ScaffoldMessenger.of(this.context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.snackbarAddedTracksToQueue(tracks.length)),
-              action: SnackBarAction(
-                label: l10n.snackbarViewQueue,
-                onPressed: () {
-                },
+      // Show quality picker if enabled in settings
+      if (settings.askQualityBeforeDownload) {
+        DownloadServicePicker.show(
+          this.context,
+          trackName: l10n.csvImportTracks(tracks.length),
+          artistName: l10n.dialogImportPlaylistTitle,
+          onSelect: (quality, service) {
+            ref.read(downloadQueueProvider.notifier).addMultipleToQueue(
+              tracks, 
+              service, 
+              qualityOverride: quality,
+            );
+            if (mounted) {
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.snackbarAddedTracksToQueue(tracks.length)),
+                  action: SnackBarAction(
+                    label: l10n.snackbarViewQueue,
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            }
+          },
+        );
+      } else {
+        // Use default settings without quality picker
+        final confirmed = await showDialog<bool>(
+          context: this.context,
+          builder: (dialogCtx) => AlertDialog(
+            title: Text(l10n.dialogImportPlaylistTitle),
+            content: Text(l10n.dialogImportPlaylistMessage(tracks.length)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, false),
+                child: Text(l10n.dialogCancel),
               ),
-            ),
-          );
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogCtx, true),
+                child: Text(l10n.dialogImport),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true) {
+          ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
+          if (mounted) {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.snackbarAddedTracksToQueue(tracks.length)),
+                action: SnackBarAction(
+                  label: l10n.snackbarViewQueue,
+                  onPressed: () {},
+                ),
+              ),
+            );
+          }
         }
       }
     }

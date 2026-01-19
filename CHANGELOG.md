@@ -14,6 +14,80 @@
   - LRC files include metadata headers (title, artist, by:SpotiFLAC-Mobile)
   - Works with all download services (Tidal, Qobuz, Amazon)
 
+- **CSV Import Quality Selection**: Choose audio quality when importing CSV playlists
+  - Quality picker now appears before adding CSV tracks to download queue
+  - Select between FLAC qualities (Lossless, Hi-Res, Hi-Res Max) or MP3
+  - Respects "Ask quality before download" setting - uses default quality if disabled
+
+- **Extended Metadata from Deezer Enrichment**: Track downloads now include label, copyright, and genre metadata from Deezer
+  - New fields in `ExtTrackMetadata`: `label`, `copyright`, `genre`
+  - Metadata fetched during `enrichTrack()` via Deezer album API
+  - Embedded as FLAC Vorbis comments: `GENRE`, `ORGANIZATION` (label), `COPYRIGHT`
+  - Works for both extension downloads and built-in provider downloads (Tidal, Qobuz, Amazon)
+
+- **Track Metadata Screen Extended Info**: Genre, label, and copyright now displayed in track metadata screen
+  - Added `genre`, `label`, `copyright` fields to `DownloadHistoryItem` model
+  - Metadata is stored in download history and persists across app restarts
+  - New localization strings: `trackGenre`, `trackLabel`, `trackCopyright`
+
+- **`utils.randomUserAgent()` for Extensions**: New utility function for extensions to get random browser User-Agent strings
+  - Returns modern Chrome User-Agent format: `Chrome/{120-145}.0.{6000-7499}.{100-299}` with `Windows NT 10.0`
+  - Useful for extensions that need to rotate User-Agents to avoid detection
+
+### Fixed
+
+- **Portuguese Language Bug**: Fixed locale parsing for languages with country codes (e.g., pt_PT, es_ES)
+  - App now correctly loads Portuguese and Spanish translations
+  - Updated Portuguese label to "Português (Brasil)"
+
+- **VM Race Condition Panic**: Fixed `panic during execution: runtime error: index out of range [-2]` crash when switching search providers
+  - Root cause: Goja VM was being accessed concurrently by multiple goroutines without synchronization
+  - Added `VMMu sync.Mutex` to `LoadedExtension` struct
+  - Added mutex lock/unlock to ALL `ExtensionProviderWrapper` methods:
+    - `SearchTracks`, `GetTrack`, `GetAlbum`, `GetArtist`
+    - `EnrichTrack`, `CheckAvailability`, `GetDownloadURL`, `Download`
+    - `CustomSearch`, `HandleURL`, `MatchTrack`, `PostProcess`
+  - Prevents race conditions when rapidly switching between extension search providers
+
+- **Tidal Release Date Fallback**: Fixed missing release date in FLAC metadata when downloading from Tidal
+  - Now uses Tidal API's release date when `req.ReleaseDate` is empty
+  - Ensures release date is always embedded in downloaded files
+
+- **Extended Metadata for M4A→FLAC Conversion**: Fixed genre, label, and copyright not being embedded when converting Amazon M4A to FLAC
+  - Flutter now extracts extended metadata from Go backend response
+  - Passes `genre`, `label`, `copyright` parameters to `_embedMetadataAndCover()`
+  - Tags correctly embedded during FFmpeg conversion
+
+### Extensions
+
+- **spotify-web Extension**: Updated to v1.7.0
+  - Added `getMetadataFromDeezer()` function to fetch extended metadata:
+    - ISRC from track
+    - Label from album
+    - Copyright (generated as "YEAR LABEL")
+    - Genre from album genres
+    - Release date
+  - `enrichTrack()` now returns all extended metadata to Go backend
+  - Replaced all hardcoded User-Agent strings with `utils.randomUserAgent()`
+
+### Technical
+
+- **Go Backend Changes**:
+  - `go_backend/extension_providers.go`: Added `Label`, `Copyright`, `Genre` fields to `ExtTrackMetadata`; added mutex locks to all provider methods
+  - `go_backend/extension_manager.go`: Added `VMMu sync.Mutex` to `LoadedExtension` struct
+  - `go_backend/extension_runtime.go`: Added `utils.randomUserAgent` function
+  - `go_backend/extension_runtime_utils.go`: Added `randomUserAgent()` implementation
+  - `go_backend/httputil.go`: Updated `getRandomUserAgent()` to use modern Chrome versions
+  - `go_backend/tidal.go`: Added release date fallback logic
+  - `go_backend/exports.go`: Added `Genre`, `Label`, `Copyright` fields to `DownloadResponse`
+
+- **Flutter Changes**:
+  - `lib/providers/download_queue_provider.dart`: Updated `_embedMetadataAndCover()` to accept and embed genre, label, copyright; added `genre`, `label`, `copyright` fields to `DownloadHistoryItem`
+  - `lib/screens/track_metadata_screen.dart`: Display genre, label, copyright in metadata grid
+  - `lib/l10n/arb/app_en.arb`: Added `trackGenre`, `trackLabel`, `trackCopyright` localization strings
+
+---
+
 ## [3.1.2] - 2026-01-19
 
 ### Added

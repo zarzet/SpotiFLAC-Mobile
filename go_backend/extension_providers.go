@@ -38,6 +38,10 @@ type ExtTrackMetadata struct {
 	DeezerID      string            `json:"deezer_id,omitempty"`
 	SpotifyID     string            `json:"spotify_id,omitempty"`
 	ExternalLinks map[string]string `json:"external_links,omitempty"` // service -> URL mapping
+	// Extended metadata from enrichment (can come from Deezer, Spotify, etc.)
+	Label     string `json:"label,omitempty"`     // Record label
+	Copyright string `json:"copyright,omitempty"` // Copyright information
+	Genre     string `json:"genre,omitempty"`     // Music genre(s)
 }
 
 // ResolvedCoverURL returns the cover URL, checking both CoverURL and Images fields
@@ -144,6 +148,10 @@ func (p *ExtensionProviderWrapper) SearchTracks(query string, limit int) (*ExtSe
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	// Call extension's searchTracks function
 	script := fmt.Sprintf(`
 		(function() {
@@ -206,6 +214,10 @@ func (p *ExtensionProviderWrapper) GetTrack(trackID string) (*ExtTrackMetadata, 
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.getTrack === 'function') {
@@ -251,6 +263,10 @@ func (p *ExtensionProviderWrapper) GetAlbum(albumID string) (*ExtAlbumMetadata, 
 	if !p.extension.Enabled {
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	script := fmt.Sprintf(`
 		(function() {
@@ -301,6 +317,10 @@ func (p *ExtensionProviderWrapper) GetArtist(artistID string) (*ExtArtistMetadat
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.getArtist === 'function') {
@@ -348,6 +368,10 @@ func (p *ExtensionProviderWrapper) EnrichTrack(track *ExtTrackMetadata) (*ExtTra
 	if !p.extension.Enabled {
 		return track, nil // Extension disabled, return as-is
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	// Convert track to JSON for passing to JS
 	trackJSON, err := json.Marshal(track)
@@ -415,6 +439,10 @@ func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.checkAvailability === 'function') {
@@ -459,6 +487,10 @@ func (p *ExtensionProviderWrapper) GetDownloadURL(trackID, quality string) (*Ext
 	if !p.extension.Enabled {
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	script := fmt.Sprintf(`
 		(function() {
@@ -507,6 +539,10 @@ func (p *ExtensionProviderWrapper) Download(trackID, quality, outputPath string,
 	if !p.extension.Enabled {
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	// Set up progress callback in VM
 	p.vm.Set("__onProgress", func(call goja.FunctionCall) goja.Value {
@@ -758,6 +794,23 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				if enrichedTrack.Artists != "" {
 					req.ArtistName = enrichedTrack.Artists
 				}
+				// Copy extended metadata from enrichment (label, copyright, genre, release_date)
+				if enrichedTrack.Label != "" && req.Label == "" {
+					GoLog("[DownloadWithExtensionFallback] Label from enrichment: %s\n", enrichedTrack.Label)
+					req.Label = enrichedTrack.Label
+				}
+				if enrichedTrack.Copyright != "" && req.Copyright == "" {
+					GoLog("[DownloadWithExtensionFallback] Copyright from enrichment: %s\n", enrichedTrack.Copyright)
+					req.Copyright = enrichedTrack.Copyright
+				}
+				if enrichedTrack.Genre != "" && req.Genre == "" {
+					GoLog("[DownloadWithExtensionFallback] Genre from enrichment: %s\n", enrichedTrack.Genre)
+					req.Genre = enrichedTrack.Genre
+				}
+				if enrichedTrack.ReleaseDate != "" && req.ReleaseDate == "" {
+					GoLog("[DownloadWithExtensionFallback] ReleaseDate from enrichment: %s\n", enrichedTrack.ReleaseDate)
+					req.ReleaseDate = enrichedTrack.ReleaseDate
+				}
 			}
 		}
 	}
@@ -891,6 +944,19 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			result, err := tryBuiltInProvider(providerID, req)
 			if err == nil && result.Success {
 				result.Service = providerID
+				// Copy enriched metadata to response for Flutter (needed for M4A->FLAC conversion)
+				if req.Label != "" {
+					result.Label = req.Label
+				}
+				if req.Copyright != "" {
+					result.Copyright = req.Copyright
+				}
+				if req.Genre != "" {
+					result.Genre = req.Genre
+				}
+				if req.ReleaseDate != "" && result.ReleaseDate == "" {
+					result.ReleaseDate = req.ReleaseDate
+				}
 				return result, nil
 			}
 			if err != nil {
@@ -1138,6 +1204,10 @@ func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	// Convert options to JSON
 	optionsJSON, _ := json.Marshal(options)
 
@@ -1208,6 +1278,10 @@ func (p *ExtensionProviderWrapper) HandleURL(url string) (*ExtURLHandleResult, e
 	if !p.extension.Enabled {
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	script := fmt.Sprintf(`
 		(function() {
@@ -1290,6 +1364,10 @@ func (p *ExtensionProviderWrapper) MatchTrack(sourceTrack map[string]interface{}
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
 
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
 	sourceJSON, _ := json.Marshal(sourceTrack)
 	candidatesJSON, _ := json.Marshal(candidates)
 
@@ -1352,6 +1430,10 @@ func (p *ExtensionProviderWrapper) PostProcess(filePath string, metadata map[str
 	if !p.extension.Enabled {
 		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
 	}
+
+	// Lock VM to prevent concurrent access
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
 
 	metadataJSON, _ := json.Marshal(metadata)
 

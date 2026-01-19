@@ -898,6 +898,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String csvImportTracks(int count) {
+    return '$count tracks from CSV';
+  }
+
+  @override
   String snackbarAddedToQueue(String trackName) {
     return 'Added \"$trackName\" to queue';
   }
@@ -1570,6 +1575,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get trackReleaseDate => 'Release date';
+
+  @override
+  String get trackGenre => 'Genre';
+
+  @override
+  String get trackLabel => 'Label';
+
+  @override
+  String get trackCopyright => 'Copyright';
 
   @override
   String get trackDownloaded => 'Downloaded';

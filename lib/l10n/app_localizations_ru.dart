@@ -920,6 +920,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String csvImportTracks(int count) {
+    return '$count tracks from CSV';
+  }
+
+  @override
   String snackbarAddedToQueue(String trackName) {
     return '\"$trackName\" добавлен в очередь';
   }
@@ -1602,6 +1607,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trackReleaseDate => 'Дата выхода';
+
+  @override
+  String get trackGenre => 'Genre';
+
+  @override
+  String get trackLabel => 'Label';
+
+  @override
+  String get trackCopyright => 'Copyright';
 
   @override
   String get trackDownloaded => 'Скачано';

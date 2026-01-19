@@ -45,6 +45,9 @@ class DownloadHistoryItem {
   final String? quality;
   final int? bitDepth;
   final int? sampleRate;
+  final String? genre;
+  final String? label;
+  final String? copyright;
 
   const DownloadHistoryItem({
     required this.id,
@@ -65,6 +68,9 @@ class DownloadHistoryItem {
     this.quality,
     this.bitDepth,
     this.sampleRate,
+    this.genre,
+    this.label,
+    this.copyright,
   });
 
   Map<String, dynamic> toJson() => {
@@ -86,6 +92,9 @@ class DownloadHistoryItem {
     'quality': quality,
     'bitDepth': bitDepth,
     'sampleRate': sampleRate,
+    'genre': genre,
+    'label': label,
+    'copyright': copyright,
   };
 
   factory DownloadHistoryItem.fromJson(Map<String, dynamic> json) =>
@@ -108,6 +117,9 @@ class DownloadHistoryItem {
         quality: json['quality'] as String?,
         bitDepth: json['bitDepth'] as int?,
         sampleRate: json['sampleRate'] as int?,
+        genre: json['genre'] as String?,
+        label: json['label'] as String?,
+        copyright: json['copyright'] as String?,
       );
 }
 
@@ -1016,7 +1028,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   /// Embed metadata and cover to a FLAC file after M4A conversion
-  Future<void> _embedMetadataAndCover(String flacPath, Track track) async {
+  Future<void> _embedMetadataAndCover(
+    String flacPath, 
+    Track track, {
+    String? genre,
+    String? label,
+    String? copyright,
+  }) async {
     final settings = ref.read(settingsProvider);
     
     String? coverPath;
@@ -1081,6 +1099,20 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       if (track.isrc != null) {
         metadata['ISRC'] = track.isrc!;
+      }
+
+      // Extended metadata from enrichment (genre, label, copyright)
+      if (genre != null && genre.isNotEmpty) {
+        metadata['GENRE'] = genre;
+        _log.d('Adding GENRE: $genre');
+      }
+      if (label != null && label.isNotEmpty) {
+        metadata['ORGANIZATION'] = label;
+        _log.d('Adding ORGANIZATION (label): $label');
+      }
+      if (copyright != null && copyright.isNotEmpty) {
+        metadata['COPYRIGHT'] = copyright;
+        _log.d('Adding COPYRIGHT: $copyright');
       }
 
       _log.d('Metadata map content: $metadata');
@@ -1809,7 +1841,22 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       );
                     }
 
-                    await _embedMetadataAndCover(flacPath, finalTrack);
+                    // Get extended metadata from backend response
+                    final backendGenre = result['genre'] as String?;
+                    final backendLabel = result['label'] as String?;
+                    final backendCopyright = result['copyright'] as String?;
+                    
+                    if (backendGenre != null || backendLabel != null || backendCopyright != null) {
+                      _log.d('Extended metadata from backend - Genre: $backendGenre, Label: $backendLabel, Copyright: $backendCopyright');
+                    }
+
+                    await _embedMetadataAndCover(
+                      flacPath, 
+                      finalTrack,
+                      genre: backendGenre ?? genre,
+                      label: backendLabel ?? label,
+                      copyright: backendCopyright,
+                    );
                     _log.d('Metadata and cover embedded successfully');
                   } catch (e) {
                     _log.w('Warning: Failed to embed metadata/cover: $e');
@@ -1920,6 +1967,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final backendBitDepth = result['actual_bit_depth'] as int?;
           final backendSampleRate = result['actual_sample_rate'] as int?;
           final backendISRC = result['isrc'] as String?;
+          final backendGenre = result['genre'] as String?;
+          final backendLabel = result['label'] as String?;
+          final backendCopyright = result['copyright'] as String?;
 
           _log.d('Saving to history - coverUrl: ${trackToDownload.coverUrl}');
 
@@ -1970,6 +2020,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   quality: actualQuality,
                   bitDepth: historyBitDepth,
                   sampleRate: historySampleRate,
+                  genre: backendGenre,
+                  label: backendLabel,
+                  copyright: backendCopyright,
                 ),
               );
 

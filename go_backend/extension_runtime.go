@@ -299,6 +299,7 @@ func (r *ExtensionRuntime) RegisterAPIs(vm *goja.Runtime) {
 	utilsObj.Set("encrypt", r.cryptoEncrypt)
 	utilsObj.Set("decrypt", r.cryptoDecrypt)
 	utilsObj.Set("generateKey", r.cryptoGenerateKey)
+	utilsObj.Set("randomUserAgent", r.randomUserAgent)
 	vm.Set("utils", utilsObj)
 
 	// Log object (already set in extension_manager.go, but we can enhance it)

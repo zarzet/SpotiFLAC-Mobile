@@ -1706,12 +1706,19 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	}
 
 	// Embed metadata using parallel-fetched cover data
+	// Use release date from Tidal API if not provided in request
+	releaseDate := req.ReleaseDate
+	if releaseDate == "" && track.Album.ReleaseDate != "" {
+		releaseDate = track.Album.ReleaseDate
+		GoLog("[Tidal] Using release date from Tidal API: %s\n", releaseDate)
+	}
+
 	metadata := Metadata{
 		Title:       req.TrackName,
 		Artist:      req.ArtistName,
 		Album:       req.AlbumName,
 		AlbumArtist: req.AlbumArtist,
-		Date:        req.ReleaseDate,
+		Date:        releaseDate,
 		TrackNumber: track.TrackNumber, // Use actual track number from Tidal
 		TotalTracks: req.TotalTracks,
 		DiscNumber:  track.VolumeNumber, // Use actual disc number from Tidal

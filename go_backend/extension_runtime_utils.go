@@ -268,6 +268,11 @@ func (r *ExtensionRuntime) cryptoGenerateKey(call goja.FunctionCall) goja.Value 
 	})
 }
 
+// randomUserAgent returns a random Chrome User-Agent string
+func (r *ExtensionRuntime) randomUserAgent(call goja.FunctionCall) goja.Value {
+	return r.vm.ToValue(getRandomUserAgent())
+}
+
 // ==================== Logging Functions ====================
 
 func (r *ExtensionRuntime) logDebug(call goja.FunctionCall) goja.Value {

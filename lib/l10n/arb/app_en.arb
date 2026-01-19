@@ -619,6 +619,13 @@
   "dialogImportPlaylistTitle": "Import Playlist",
   "@dialogImportPlaylistTitle": {"description": "Dialog title - import CSV playlist"},
   "dialogImportPlaylistMessage": "Found {count} tracks in CSV. Add them to download queue?",
+  "csvImportTracks": "{count} tracks from CSV",
+  "@csvImportTracks": {
+    "description": "Label shown in quality picker for CSV import",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "@dialogImportPlaylistMessage": {
     "description": "Dialog message - import playlist confirmation",
     "placeholders": {
@@ -1153,6 +1160,12 @@
   "@trackAudioQuality": {"description": "Metadata label - audio quality"},
   "trackReleaseDate": "Release date",
   "@trackReleaseDate": {"description": "Metadata label - release date"},
+  "trackGenre": "Genre",
+  "@trackGenre": {"description": "Metadata label - music genre"},
+  "trackLabel": "Label",
+  "@trackLabel": {"description": "Metadata label - record label"},
+  "trackCopyright": "Copyright",
+  "@trackCopyright": {"description": "Metadata label - copyright information"},
   "trackDownloaded": "Downloaded",
   "@trackDownloaded": {"description": "Metadata label - download date"},
   "trackCopyLyrics": "Copy lyrics",

@@ -904,6 +904,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String csvImportTracks(int count) {
+    return '$count tracks from CSV';
+  }
+
+  @override
   String snackbarAddedToQueue(String trackName) {
     return 'Menambahkan \"$trackName\" ke antrian';
   }
@@ -1580,6 +1585,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get trackReleaseDate => 'Tanggal rilis';
+
+  @override
+  String get trackGenre => 'Genre';
+
+  @override
+  String get trackLabel => 'Label';
+
+  @override
+  String get trackCopyright => 'Copyright';
 
   @override
   String get trackDownloaded => 'Diunduh';

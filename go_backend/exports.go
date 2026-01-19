@@ -186,6 +186,10 @@ type DownloadResponse struct {
 	DiscNumber       int    `json:"disc_number,omitempty"`
 	ISRC             string `json:"isrc,omitempty"`
 	CoverURL         string `json:"cover_url,omitempty"`
+	// Extended metadata for FLAC tagging (passed to Flutter for M4A->FLAC conversion)
+	Genre     string `json:"genre,omitempty"`     // Music genre(s)
+	Label     string `json:"label,omitempty"`     // Record label
+	Copyright string `json:"copyright,omitempty"` // Copyright info
 	// If true, skip metadata enrichment from Deezer/Spotify (extension already provides metadata)
 	SkipMetadataEnrichment bool `json:"skip_metadata_enrichment,omitempty"`
 }

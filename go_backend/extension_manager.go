@@ -51,6 +51,7 @@ type LoadedExtension struct {
 	ID        string             `json:"id"`
 	Manifest  *ExtensionManifest `json:"manifest"`
 	VM        *goja.Runtime      `json:"-"`
+	VMMu      sync.Mutex         `json:"-"` // Mutex to prevent concurrent VM access
 	Enabled   bool               `json:"enabled"`
 	Error     string             `json:"error,omitempty"`
 	DataDir   string             `json:"data_dir"`

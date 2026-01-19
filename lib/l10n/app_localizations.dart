@@ -1688,6 +1688,12 @@ abstract class AppLocalizations {
   /// **'Found {count} tracks in CSV. Add them to download queue?'**
   String dialogImportPlaylistMessage(int count);
 
+  /// Label shown in quality picker for CSV import
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tracks from CSV'**
+  String csvImportTracks(int count);
+
   /// Snackbar - track added to download queue
   ///
   /// In en, this message translates to:
@@ -2869,6 +2875,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Release date'**
   String get trackReleaseDate;
+
+  /// Metadata label - music genre
+  ///
+  /// In en, this message translates to:
+  /// **'Genre'**
+  String get trackGenre;
+
+  /// Metadata label - record label
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get trackLabel;
+
+  /// Metadata label - copyright information
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright'**
+  String get trackCopyright;
 
   /// Metadata label - download date
   ///
