@@ -85,7 +85,7 @@
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historyTracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "historyTracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
     "placeholders": {
@@ -94,7 +94,7 @@
       }
     }
   },
-  "historyAlbumsCount": "{count, plural, one {{count} альбом} few {{count} альбома} many {{count} альбомов} other {{count} альбомов}}",
+  "historyAlbumsCount": "{count, plural, one {{count} альбом} few {{count} альбома} many {{count} альбомов} =1 {1 альбом} other {{count} альбомов}}",
   "@historyAlbumsCount": {
     "description": "Album count with plural form",
     "placeholders": {
@@ -126,6 +126,10 @@
   "historyNoSinglesSubtitle": "Здесь будут отображаться загрузки синглов",
   "@historyNoSinglesSubtitle": {
     "description": "Empty state subtitle for singles filter"
+  },
+  "historySearchHint": "Search history...",
+  "@historySearchHint": {
+    "description": "Search bar placeholder in history"
   },
   "settingsTitle": "Настройки",
   "@settingsTitle": {
@@ -512,6 +516,10 @@
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
+  "aboutTranslators": "Переводчики",
+  "@aboutTranslators": {
+    "description": "Section for translators"
+  },
   "aboutSpecialThanks": "Особая благодарность",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
@@ -543,6 +551,26 @@
   "aboutFeatureRequestSubtitle": "Предложить новые функции для приложения",
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
+  },
+  "aboutTelegramChannel": "Telegram Channel",
+  "@aboutTelegramChannel": {
+    "description": "Link to Telegram channel"
+  },
+  "aboutTelegramChannelSubtitle": "Announcements and updates",
+  "@aboutTelegramChannelSubtitle": {
+    "description": "Subtitle for Telegram channel"
+  },
+  "aboutTelegramChat": "Telegram Community",
+  "@aboutTelegramChat": {
+    "description": "Link to Telegram chat group"
+  },
+  "aboutTelegramChatSubtitle": "Chat with other users",
+  "@aboutTelegramChatSubtitle": {
+    "description": "Subtitle for Telegram chat"
+  },
+  "aboutSocial": "Social",
+  "@aboutSocial": {
+    "description": "Section for social links"
   },
   "aboutSupport": "Поддержка",
   "@aboutSupport": {
@@ -596,7 +624,7 @@
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "albumTracks": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -633,7 +661,7 @@
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, one {{count} релиз} few {{count} релиза} many {{count} релизов} other {{count} релизов}}",
+  "artistReleases": "{count, plural, one {{count} релиз} few {{count} релиза} many {{count} релизов} =1 {1 релиз} other {{count} релизов}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -1108,7 +1136,7 @@
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
-  "dialogDeleteSelectedMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other{треков}} из истории?\n\nЭто также удалит файлы из хранилища.",
+  "dialogDeleteSelectedMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из истории?\n\nЭто также удалит файлы из хранилища.",
   "@dialogDeleteSelectedMessage": {
     "description": "Dialog message - delete selected tracks",
     "placeholders": {
@@ -1122,6 +1150,15 @@
     "description": "Dialog title - import CSV playlist"
   },
   "dialogImportPlaylistMessage": "Найдено {count} треков в CSV. Добавить их в очередь загрузки?",
+  "csvImportTracks": "{count} tracks from CSV",
+  "@csvImportTracks": {
+    "description": "Label shown in quality picker for CSV import",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@dialogImportPlaylistMessage": {
     "description": "Dialog message - import playlist confirmation",
     "placeholders": {
@@ -1169,7 +1206,7 @@
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "Удалено {count} {count, plural, one {трек} few {трека} many {треков} other{треков}}",
+  "snackbarDeletedTracks": "Удалено {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -1376,7 +1413,7 @@
   "@selectionTapToSelect": {
     "description": "Hint - how to select items"
   },
-  "selectionDeleteTracks": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other{треков}}",
+  "selectionDeleteTracks": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@selectionDeleteTracks": {
     "description": "Delete button with count",
     "placeholders": {
@@ -1851,6 +1888,42 @@
   "@sectionFileSettings": {
     "description": "Settings section header"
   },
+  "sectionLyrics": "Lyrics",
+  "@sectionLyrics": {
+    "description": "Settings section header"
+  },
+  "lyricsMode": "Lyrics Mode",
+  "@lyricsMode": {
+    "description": "Setting - how to save lyrics"
+  },
+  "lyricsModeDescription": "Choose how lyrics are saved with your downloads",
+  "@lyricsModeDescription": {
+    "description": "Lyrics mode picker description"
+  },
+  "lyricsModeEmbed": "Embed in file",
+  "@lyricsModeEmbed": {
+    "description": "Lyrics mode option - embed in audio file"
+  },
+  "lyricsModeEmbedSubtitle": "Lyrics stored inside FLAC metadata",
+  "@lyricsModeEmbedSubtitle": {
+    "description": "Subtitle for embed option"
+  },
+  "lyricsModeExternal": "External .lrc file",
+  "@lyricsModeExternal": {
+    "description": "Lyrics mode option - separate LRC file"
+  },
+  "lyricsModeExternalSubtitle": "Separate .lrc file for players like Samsung Music",
+  "@lyricsModeExternalSubtitle": {
+    "description": "Subtitle for external option"
+  },
+  "lyricsModeBoth": "Both",
+  "@lyricsModeBoth": {
+    "description": "Lyrics mode option - embed and external"
+  },
+  "lyricsModeBothSubtitle": "Embed and save .lrc file",
+  "@lyricsModeBothSubtitle": {
+    "description": "Subtitle for both option"
+  },
   "sectionColor": "Цвет",
   "@sectionColor": {
     "description": "Settings section header"
@@ -1916,7 +1989,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "tracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {
@@ -1996,6 +2069,18 @@
   "trackReleaseDate": "Дата выхода",
   "@trackReleaseDate": {
     "description": "Metadata label - release date"
+  },
+  "trackGenre": "Genre",
+  "@trackGenre": {
+    "description": "Metadata label - music genre"
+  },
+  "trackLabel": "Label",
+  "@trackLabel": {
+    "description": "Metadata label - record label"
+  },
+  "trackCopyright": "Copyright",
+  "@trackCopyright": {
+    "description": "Metadata label - copyright information"
   },
   "trackDownloaded": "Скачано",
   "@trackDownloaded": {
@@ -2328,6 +2413,26 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
+  "qualityMp3": "MP3",
+  "@qualityMp3": {
+    "description": "Quality option - MP3 lossy format"
+  },
+  "qualityMp3Subtitle": "320 кбит/с (Конвертировано из FLAC)",
+  "@qualityMp3Subtitle": {
+    "description": "Technical spec for MP3"
+  },
+  "enableMp3Option": "Скачивать в MP3",
+  "@enableMp3Option": {
+    "description": "Setting - enable MP3 quality option"
+  },
+  "enableMp3OptionSubtitleOn": "Доступно MP3 качество",
+  "@enableMp3OptionSubtitleOn": {
+    "description": "Subtitle when MP3 is enabled"
+  },
+  "enableMp3OptionSubtitleOff": "Скачивает FLAC и конвертирует в MP3 320 кбит/с",
+  "@enableMp3OptionSubtitleOff": {
+    "description": "Subtitle when MP3 is disabled"
+  },
   "qualityNote": "Фактическое качество зависит от доступности треков в сервисе",
   "@qualityNote": {
     "description": "Note about quality availability"
@@ -2520,7 +2625,7 @@
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
-  "downloadedAlbumDeleteMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other{треков}} из этого альбома?\n\nЭто также удалит файлы из хранилища.",
+  "downloadedAlbumDeleteMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из этого альбома?\n\nЭто также удалит файлы из хранилища.",
   "@downloadedAlbumDeleteMessage": {
     "description": "Delete confirmation with count",
     "placeholders": {
@@ -2559,7 +2664,7 @@
   "@downloadedAlbumTapToSelect": {
     "description": "Selection hint"
   },
-  "downloadedAlbumDeleteCount": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other{треков}}",
+  "downloadedAlbumDeleteCount": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@downloadedAlbumDeleteCount": {
     "description": "Delete button text with count",
     "placeholders": {
@@ -2571,6 +2676,16 @@
   "downloadedAlbumSelectToDelete": "Выберите треки для удаления",
   "@downloadedAlbumSelectToDelete": {
     "description": "Placeholder when nothing selected"
+  },
+  "downloadedAlbumDiscHeader": "Диск {discNumber}",
+  "@downloadedAlbumDiscHeader": {
+    "description": "Header for disc separator in multi-disc albums",
+    "placeholders": {
+      "discNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
   },
   "utilityFunctions": "Функции утилиты",
   "@utilityFunctions": {

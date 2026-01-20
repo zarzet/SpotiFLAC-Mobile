@@ -5,7 +5,7 @@
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
-  "appDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "appDescription": "Tidal、Qobuz、Amazon Music から Spotify のトラックをロスレス品質でダウンロードします。",
   "@appDescription": {
     "description": "App description shown in about page"
   },
@@ -29,11 +29,11 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSearchHint": "Paste Spotify URL or search...",
+  "homeSearchHint": "Spotify の URL を貼り付けまたは検索...",
   "@homeSearchHint": {
     "description": "Placeholder text in search box"
   },
-  "homeSearchHintExtension": "Search with {extensionName}...",
+  "homeSearchHintExtension": "{extensionName} で検索...",
   "@homeSearchHintExtension": {
     "description": "Placeholder when extension search is active",
     "placeholders": {
@@ -43,19 +43,19 @@
       }
     }
   },
-  "homeSubtitle": "Paste a Spotify link or search by name",
+  "homeSubtitle": "Spotify のリンクを貼り付けるか、名前で検索します",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "Supports: Track, Album, Playlist, Artist URLs",
+  "homeSupports": "サポート: トラック、アルバム、プレイリスト、アーティスト、URL",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
-  "homeRecent": "Recent",
+  "homeRecent": "最近",
   "@homeRecent": {
     "description": "Section header for recent searches"
   },
-  "historyTitle": "History",
+  "historyTitle": "履歴",
   "@historyTitle": {
     "description": "History screen title"
   },
@@ -85,7 +85,7 @@
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historyTracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "historyTracksCount": "{count, plural, =1{1 個のトラック} other{{count} 個のトラック}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
     "placeholders": {
@@ -94,7 +94,7 @@
       }
     }
   },
-  "historyAlbumsCount": "{count, plural, =1{1 album} other{{count} albums}}",
+  "historyAlbumsCount": "{count, plural, =1{1 個のアルバム} other{{count} 個のアルバム}}",
   "@historyAlbumsCount": {
     "description": "Album count with plural form",
     "placeholders": {
@@ -103,15 +103,15 @@
       }
     }
   },
-  "historyNoDownloads": "No download history",
+  "historyNoDownloads": "ダウンロード履歴はありません",
   "@historyNoDownloads": {
     "description": "Empty state title"
   },
-  "historyNoDownloadsSubtitle": "Downloaded tracks will appear here",
+  "historyNoDownloadsSubtitle": "ダウンロードしたトラックはここに表示されます",
   "@historyNoDownloadsSubtitle": {
     "description": "Empty state subtitle"
   },
-  "historyNoAlbums": "No album downloads",
+  "historyNoAlbums": "アルバムのダウンロードはありません",
   "@historyNoAlbums": {
     "description": "Empty state when filtering albums"
   },
@@ -119,13 +119,17 @@
   "@historyNoAlbumsSubtitle": {
     "description": "Empty state subtitle for albums filter"
   },
-  "historyNoSingles": "No single downloads",
+  "historyNoSingles": "シングルのダウンロードはありません",
   "@historyNoSingles": {
     "description": "Empty state when filtering singles"
   },
   "historyNoSinglesSubtitle": "Single track downloads will appear here",
   "@historyNoSinglesSubtitle": {
     "description": "Empty state subtitle for singles filter"
+  },
+  "historySearchHint": "Search history...",
+  "@historySearchHint": {
+    "description": "Search bar placeholder in history"
   },
   "settingsTitle": "設定",
   "@settingsTitle": {
@@ -155,11 +159,11 @@
   "@downloadTitle": {
     "description": "Download settings page title"
   },
-  "downloadLocation": "Download Location",
+  "downloadLocation": "ダウンロード先",
   "@downloadLocation": {
     "description": "Setting for download folder"
   },
-  "downloadLocationSubtitle": "Choose where to save files",
+  "downloadLocationSubtitle": "ファイルの保存先を選択",
   "@downloadLocationSubtitle": {
     "description": "Subtitle for download location"
   },
@@ -179,7 +183,7 @@
   "@downloadDefaultQuality": {
     "description": "Setting for audio quality"
   },
-  "downloadAskQuality": "Ask Quality Before Download",
+  "downloadAskQuality": "ダウンロード前に品質を確認する",
   "@downloadAskQuality": {
     "description": "Toggle to show quality picker"
   },
@@ -195,7 +199,7 @@
   "@downloadFolderOrganization": {
     "description": "Setting for folder structure"
   },
-  "downloadSeparateSingles": "Separate Singles",
+  "downloadSeparateSingles": "シングルを分割",
   "@downloadSeparateSingles": {
     "description": "Toggle to separate single tracks"
   },
@@ -203,7 +207,7 @@
   "@downloadSeparateSinglesSubtitle": {
     "description": "Subtitle for separate singles toggle"
   },
-  "qualityBest": "Best Available",
+  "qualityBest": "おすすめ",
   "@qualityBest": {
     "description": "Audio quality option - highest available"
   },
@@ -243,7 +247,7 @@
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "Use colors from your wallpaper",
+  "appearanceDynamicColorSubtitle": "壁紙の色を使用する",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
@@ -316,7 +320,7 @@
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Embed synced lyrics into FLAC files",
+  "optionsEmbedLyricsSubtitle": "同期する歌詞を FLAC ファイルに埋め込む",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
@@ -324,7 +328,7 @@
   "@optionsMaxQualityCover": {
     "description": "Download highest quality album art"
   },
-  "optionsMaxQualityCoverSubtitle": "Download highest resolution cover art",
+  "optionsMaxQualityCoverSubtitle": "最高解像度のカバーアートをダウンロード",
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
@@ -381,7 +385,7 @@
   "@optionsUpdateChannelWarning": {
     "description": "Warning about preview channel"
   },
-  "optionsClearHistory": "Clear Download History",
+  "optionsClearHistory": "ダウンロード履歴を消去",
   "@optionsClearHistory": {
     "description": "Delete all download history"
   },
@@ -414,7 +418,7 @@
       }
     }
   },
-  "optionsSpotifyCredentialsRequired": "Required - tap to configure",
+  "optionsSpotifyCredentialsRequired": "必須 - タップで設定",
   "@optionsSpotifyCredentialsRequired": {
     "description": "Prompt to set up credentials"
   },
@@ -442,7 +446,7 @@
   "@extensionsEnabled": {
     "description": "Extension status - active"
   },
-  "extensionsDisabled": "Disabled",
+  "extensionsDisabled": "無効",
   "@extensionsDisabled": {
     "description": "Extension status - inactive"
   },
@@ -468,7 +472,7 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "extensionsSetAsSearch": "検索プロバイダーを設定",
+  "extensionsSetAsSearch": "検索のプロバイダーを設定",
   "@extensionsSetAsSearch": {
     "description": "Use extension for search"
   },
@@ -504,13 +508,17 @@
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
-  "aboutOriginalCreator": "Creator of the original SpotiFLAC",
+  "aboutOriginalCreator": "オリジナルの SpotiFLAC の作者",
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
+  "aboutLogoArtist": "美しいアプリロゴを作成した才能あるアーティストです！",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
+  },
+  "aboutTranslators": "翻訳者",
+  "@aboutTranslators": {
+    "description": "Section for translators"
   },
   "aboutSpecialThanks": "スペシャルサンクス",
   "@aboutSpecialThanks": {
@@ -528,11 +536,11 @@
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
-  "aboutReportIssue": "Issue で報告する",
+  "aboutReportIssue": "問題を報告する",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Report any problems you encounter",
+  "aboutReportIssueSubtitle": "問題が発生した場合に報告してください",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
@@ -540,11 +548,31 @@
   "@aboutFeatureRequest": {
     "description": "Link to suggest features"
   },
-  "aboutFeatureRequestSubtitle": "Suggest new features for the app",
+  "aboutFeatureRequestSubtitle": "アプリの新機能を提案する",
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
-  "aboutSupport": "Support",
+  "aboutTelegramChannel": "Telegram Channel",
+  "@aboutTelegramChannel": {
+    "description": "Link to Telegram channel"
+  },
+  "aboutTelegramChannelSubtitle": "Announcements and updates",
+  "@aboutTelegramChannelSubtitle": {
+    "description": "Subtitle for Telegram channel"
+  },
+  "aboutTelegramChat": "Telegram Community",
+  "@aboutTelegramChat": {
+    "description": "Link to Telegram chat group"
+  },
+  "aboutTelegramChatSubtitle": "Chat with other users",
+  "@aboutTelegramChatSubtitle": {
+    "description": "Subtitle for Telegram chat"
+  },
+  "aboutSocial": "Social",
+  "@aboutSocial": {
+    "description": "Section for social links"
+  },
+  "aboutSupport": "サポート",
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
@@ -588,15 +616,15 @@
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
-  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "aboutAppDescription": "Tidal、Qobuz、Amazon Music から Spotify のトラックをロスレス品質でダウンロードします。",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
-  "albumTitle": "Album",
+  "albumTitle": "アルバム",
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "albumTracks": "{count, plural, =1{1 個のトラック} other{{count} 個のトラック}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -605,7 +633,7 @@
       }
     }
   },
-  "albumDownloadAll": "Download All",
+  "albumDownloadAll": "すべてダウンロード",
   "@albumDownloadAll": {
     "description": "Button to download all tracks"
   },
@@ -613,15 +641,15 @@
   "@albumDownloadRemaining": {
     "description": "Button to download remaining tracks"
   },
-  "playlistTitle": "Playlist",
+  "playlistTitle": "プレイリスト",
   "@playlistTitle": {
     "description": "Playlist screen title"
   },
-  "artistTitle": "Artist",
+  "artistTitle": "アーティスト",
   "@artistTitle": {
     "description": "Artist screen title"
   },
-  "artistAlbums": "Albums",
+  "artistAlbums": "アルバム",
   "@artistAlbums": {
     "description": "Section header for artist albums"
   },
@@ -633,7 +661,7 @@
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, =1{1 release} other{{count} releases}}",
+  "artistReleases": "{count, plural, =1{1 個のリリース} other{{count} 個のリリース}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -642,11 +670,11 @@
       }
     }
   },
-  "artistPopular": "Popular",
+  "artistPopular": "人気",
   "@artistPopular": {
     "description": "Section header for popular/top tracks"
   },
-  "artistMonthlyListeners": "{count} monthly listeners",
+  "artistMonthlyListeners": "{count} 人の月間リスナー",
   "@artistMonthlyListeners": {
     "description": "Monthly listener count display",
     "placeholders": {
@@ -656,59 +684,59 @@
       }
     }
   },
-  "trackMetadataTitle": "Track Info",
+  "trackMetadataTitle": "トラック情報",
   "@trackMetadataTitle": {
     "description": "Track metadata screen title"
   },
-  "trackMetadataArtist": "Artist",
+  "trackMetadataArtist": "アーティスト",
   "@trackMetadataArtist": {
     "description": "Metadata field - artist name"
   },
-  "trackMetadataAlbum": "Album",
+  "trackMetadataAlbum": "アルバム",
   "@trackMetadataAlbum": {
     "description": "Metadata field - album name"
   },
-  "trackMetadataDuration": "Duration",
+  "trackMetadataDuration": "再生時間",
   "@trackMetadataDuration": {
     "description": "Metadata field - track length"
   },
-  "trackMetadataQuality": "Quality",
+  "trackMetadataQuality": "品質",
   "@trackMetadataQuality": {
     "description": "Metadata field - audio quality"
   },
-  "trackMetadataPath": "File Path",
+  "trackMetadataPath": "ファイルパス",
   "@trackMetadataPath": {
     "description": "Metadata field - file location"
   },
-  "trackMetadataDownloadedAt": "Downloaded",
+  "trackMetadataDownloadedAt": "ダウンロード済み",
   "@trackMetadataDownloadedAt": {
     "description": "Metadata field - download date"
   },
-  "trackMetadataService": "Service",
+  "trackMetadataService": "サービス",
   "@trackMetadataService": {
     "description": "Metadata field - download service used"
   },
-  "trackMetadataPlay": "Play",
+  "trackMetadataPlay": "再生",
   "@trackMetadataPlay": {
     "description": "Action button - play track"
   },
-  "trackMetadataShare": "Share",
+  "trackMetadataShare": "共有",
   "@trackMetadataShare": {
     "description": "Action button - share track"
   },
-  "trackMetadataDelete": "Delete",
+  "trackMetadataDelete": "削除",
   "@trackMetadataDelete": {
     "description": "Action button - delete track"
   },
-  "trackMetadataRedownload": "Re-download",
+  "trackMetadataRedownload": "再ダウンロード",
   "@trackMetadataRedownload": {
     "description": "Action button - download again"
   },
-  "trackMetadataOpenFolder": "Open Folder",
+  "trackMetadataOpenFolder": "フォルダを開く",
   "@trackMetadataOpenFolder": {
     "description": "Action button - open containing folder"
   },
-  "setupTitle": "Welcome to SpotiFLAC",
+  "setupTitle": "SpotiFLAC へようこそ",
   "@setupTitle": {
     "description": "Setup wizard title"
   },
@@ -716,31 +744,31 @@
   "@setupSubtitle": {
     "description": "Setup wizard subtitle"
   },
-  "setupStoragePermission": "Storage Permission",
+  "setupStoragePermission": "ストレージの権限",
   "@setupStoragePermission": {
     "description": "Storage permission step title"
   },
-  "setupStoragePermissionSubtitle": "Required to save downloaded files",
+  "setupStoragePermissionSubtitle": "ダウンロードしたファイルを保存するために必要です",
   "@setupStoragePermissionSubtitle": {
     "description": "Explanation for storage permission"
   },
-  "setupStoragePermissionGranted": "Permission granted",
+  "setupStoragePermissionGranted": "権限を許可しました",
   "@setupStoragePermissionGranted": {
     "description": "Status when permission granted"
   },
-  "setupStoragePermissionDenied": "Permission denied",
+  "setupStoragePermissionDenied": "権限が拒否されました",
   "@setupStoragePermissionDenied": {
     "description": "Status when permission denied"
   },
-  "setupGrantPermission": "Grant Permission",
+  "setupGrantPermission": "権限を許可",
   "@setupGrantPermission": {
     "description": "Button to request permission"
   },
-  "setupDownloadLocation": "Download Location",
+  "setupDownloadLocation": "ダウンロード先",
   "@setupDownloadLocation": {
     "description": "Download folder step title"
   },
-  "setupChooseFolder": "Choose Folder",
+  "setupChooseFolder": "フォルダを選択",
   "@setupChooseFolder": {
     "description": "Button to pick folder"
   },
@@ -764,7 +792,7 @@
   "@setupStorageAccessMessageAndroid11": {
     "description": "Android 11+ specific explanation"
   },
-  "setupOpenSettings": "Open Settings",
+  "setupOpenSettings": "設定を開く",
   "@setupOpenSettings": {
     "description": "Button to open system settings"
   },
@@ -772,7 +800,7 @@
   "@setupPermissionDeniedMessage": {
     "description": "Error when permission denied"
   },
-  "setupPermissionRequired": "{permissionType} Permission Required",
+  "setupPermissionRequired": "{permissionType} の権限が必要です",
   "@setupPermissionRequired": {
     "description": "Generic permission required title",
     "placeholders": {
@@ -782,7 +810,7 @@
       }
     }
   },
-  "setupPermissionRequiredMessage": "{permissionType} permission is required for the best experience. You can change this later in Settings.",
+  "setupPermissionRequiredMessage": "最適な体験を得るには {permissionType} の権限が必要です。この権限は設定で後から変更できます。",
   "@setupPermissionRequiredMessage": {
     "description": "Generic permission required message",
     "placeholders": {
@@ -791,11 +819,11 @@
       }
     }
   },
-  "setupSelectDownloadFolder": "Select Download Folder",
+  "setupSelectDownloadFolder": "ダウンロードフォルダを選択",
   "@setupSelectDownloadFolder": {
     "description": "Folder selection step title"
   },
-  "setupUseDefaultFolder": "Use Default Folder?",
+  "setupUseDefaultFolder": "デフォルトのフォルダを使用しますか？",
   "@setupUseDefaultFolder": {
     "description": "Dialog title for default folder"
   },
@@ -803,11 +831,11 @@
   "@setupNoFolderSelected": {
     "description": "Prompt when no folder selected"
   },
-  "setupUseDefault": "Use Default",
+  "setupUseDefault": "デフォルトを使用する",
   "@setupUseDefault": {
     "description": "Button to use default folder"
   },
-  "setupDownloadLocationTitle": "Download Location",
+  "setupDownloadLocationTitle": "ダウンロード先",
   "@setupDownloadLocationTitle": {
     "description": "Download location dialog title"
   },
@@ -815,7 +843,7 @@
   "@setupDownloadLocationIosMessage": {
     "description": "iOS-specific folder info"
   },
-  "setupAppDocumentsFolder": "App Documents Folder",
+  "setupAppDocumentsFolder": "アプリのドキュメントフォルダ",
   "@setupAppDocumentsFolder": {
     "description": "iOS documents folder option"
   },
@@ -823,11 +851,11 @@
   "@setupAppDocumentsFolderSubtitle": {
     "description": "Subtitle for documents folder"
   },
-  "setupChooseFromFiles": "Choose from Files",
+  "setupChooseFromFiles": "ファイルから選択",
   "@setupChooseFromFiles": {
     "description": "iOS file picker option"
   },
-  "setupChooseFromFilesSubtitle": "Select iCloud or other location",
+  "setupChooseFromFilesSubtitle": "iCloud またはその他の場所を選択",
   "@setupChooseFromFilesSubtitle": {
     "description": "Subtitle for file picker"
   },
@@ -835,19 +863,19 @@
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
-  "setupDownloadInFlac": "Download Spotify tracks in FLAC",
+  "setupDownloadInFlac": "Spotify のトラックを FLAC でダウンロード",
   "@setupDownloadInFlac": {
     "description": "App tagline in setup"
   },
-  "setupStepStorage": "Storage",
+  "setupStepStorage": "ストレージ",
   "@setupStepStorage": {
     "description": "Setup step indicator - storage"
   },
-  "setupStepNotification": "Notification",
+  "setupStepNotification": "通知",
   "@setupStepNotification": {
     "description": "Setup step indicator - notification"
   },
-  "setupStepFolder": "Folder",
+  "setupStepFolder": "フォルダ",
   "@setupStepFolder": {
     "description": "Setup step indicator - folder"
   },
@@ -859,19 +887,19 @@
   "@setupStepPermission": {
     "description": "Setup step indicator - permission"
   },
-  "setupStorageGranted": "Storage Permission Granted!",
+  "setupStorageGranted": "ストレージの権限が許可されました！",
   "@setupStorageGranted": {
     "description": "Success message for storage permission"
   },
-  "setupStorageRequired": "Storage Permission Required",
+  "setupStorageRequired": "ストレージの権限が必要です",
   "@setupStorageRequired": {
     "description": "Title when storage permission needed"
   },
-  "setupStorageDescription": "SpotiFLAC needs storage permission to save your downloaded music files.",
+  "setupStorageDescription": "SpotiFLAC はダウンロードした音楽ファイルを保存するためにストレージの権限が必要です。",
   "@setupStorageDescription": {
     "description": "Explanation for storage permission"
   },
-  "setupNotificationGranted": "Notification Permission Granted!",
+  "setupNotificationGranted": "通知の権限が許可されました！",
   "@setupNotificationGranted": {
     "description": "Success message for notification permission"
   },
@@ -887,7 +915,7 @@
   "@setupFolderSelected": {
     "description": "Success message for folder selection"
   },
-  "setupFolderChoose": "Choose Download Folder",
+  "setupFolderChoose": "ダウンロードフォルダを選択",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
@@ -895,11 +923,11 @@
   "@setupFolderDescription": {
     "description": "Explanation for folder selection"
   },
-  "setupChangeFolder": "Change Folder",
+  "setupChangeFolder": "フォルダを変更",
   "@setupChangeFolder": {
     "description": "Button to change selected folder"
   },
-  "setupSelectFolder": "Select Folder",
+  "setupSelectFolder": "フォルダを選択",
   "@setupSelectFolder": {
     "description": "Button to select folder"
   },
@@ -935,7 +963,7 @@
   "@setupGetFreeCredentials": {
     "description": "Info about getting Spotify credentials"
   },
-  "setupEnableNotifications": "Enable Notifications",
+  "setupEnableNotifications": "通知を有効化する",
   "@setupEnableNotifications": {
     "description": "Button to enable notifications"
   },
@@ -975,11 +1003,11 @@
   "@setupAllowAccessToManageFiles": {
     "description": "Instruction for file access permission"
   },
-  "setupGetCredentialsFromSpotify": "Get credentials from developer.spotify.com",
+  "setupGetCredentialsFromSpotify": "developer.spotify.com から認証情報を取得します",
   "@setupGetCredentialsFromSpotify": {
     "description": "Link text for Spotify developer portal"
   },
-  "dialogCancel": "Cancel",
+  "dialogCancel": "キャンセル",
   "@dialogCancel": {
     "description": "Dialog button - cancel action"
   },
@@ -987,59 +1015,59 @@
   "@dialogOk": {
     "description": "Dialog button - confirm/acknowledge"
   },
-  "dialogSave": "Save",
+  "dialogSave": "保存",
   "@dialogSave": {
     "description": "Dialog button - save changes"
   },
-  "dialogDelete": "Delete",
+  "dialogDelete": "削除",
   "@dialogDelete": {
     "description": "Dialog button - delete item"
   },
-  "dialogRetry": "Retry",
+  "dialogRetry": "再試行",
   "@dialogRetry": {
     "description": "Dialog button - retry action"
   },
-  "dialogClose": "Close",
+  "dialogClose": "閉じる",
   "@dialogClose": {
     "description": "Dialog button - close dialog"
   },
-  "dialogYes": "Yes",
+  "dialogYes": "はい",
   "@dialogYes": {
     "description": "Dialog button - confirm yes"
   },
-  "dialogNo": "No",
+  "dialogNo": "いいえ",
   "@dialogNo": {
     "description": "Dialog button - confirm no"
   },
-  "dialogClear": "Clear",
+  "dialogClear": "消去",
   "@dialogClear": {
     "description": "Dialog button - clear items"
   },
-  "dialogConfirm": "Confirm",
+  "dialogConfirm": "続行",
   "@dialogConfirm": {
     "description": "Dialog button - confirm action"
   },
-  "dialogDone": "Done",
+  "dialogDone": "完了",
   "@dialogDone": {
     "description": "Dialog button - action completed"
   },
-  "dialogImport": "Import",
+  "dialogImport": "インポート",
   "@dialogImport": {
     "description": "Dialog button - import data"
   },
-  "dialogDiscard": "Discard",
+  "dialogDiscard": "破棄",
   "@dialogDiscard": {
     "description": "Dialog button - discard changes"
   },
-  "dialogRemove": "Remove",
+  "dialogRemove": "削除",
   "@dialogRemove": {
     "description": "Dialog button - remove item"
   },
-  "dialogUninstall": "Uninstall",
+  "dialogUninstall": "アンインストール",
   "@dialogUninstall": {
     "description": "Dialog button - uninstall extension"
   },
-  "dialogDiscardChanges": "Discard Changes?",
+  "dialogDiscardChanges": "変更を破棄しますか？",
   "@dialogDiscardChanges": {
     "description": "Dialog title - unsaved changes warning"
   },
@@ -1047,23 +1075,23 @@
   "@dialogUnsavedChanges": {
     "description": "Dialog message - unsaved changes"
   },
-  "dialogDownloadFailed": "Download Failed",
+  "dialogDownloadFailed": "ダウンロードに失敗しました",
   "@dialogDownloadFailed": {
     "description": "Dialog title - download error"
   },
-  "dialogTrackLabel": "Track:",
+  "dialogTrackLabel": "トラック:",
   "@dialogTrackLabel": {
     "description": "Label for track name in error dialog"
   },
-  "dialogArtistLabel": "Artist:",
+  "dialogArtistLabel": "アーティスト:",
   "@dialogArtistLabel": {
     "description": "Label for artist name in error dialog"
   },
-  "dialogErrorLabel": "Error:",
+  "dialogErrorLabel": "エラー:",
   "@dialogErrorLabel": {
     "description": "Label for error message"
   },
-  "dialogClearAll": "Clear All",
+  "dialogClearAll": "すべて消去",
   "@dialogClearAll": {
     "description": "Dialog title - clear all items"
   },
@@ -1071,11 +1099,11 @@
   "@dialogClearAllDownloads": {
     "description": "Dialog message - clear downloads confirmation"
   },
-  "dialogRemoveFromDevice": "Remove from device?",
+  "dialogRemoveFromDevice": "デバイスから削除しますか？",
   "@dialogRemoveFromDevice": {
     "description": "Dialog title - delete file confirmation"
   },
-  "dialogRemoveExtension": "Remove Extension",
+  "dialogRemoveExtension": "拡張を削除",
   "@dialogRemoveExtension": {
     "description": "Dialog title - uninstall extension"
   },
@@ -1096,7 +1124,7 @@
       }
     }
   },
-  "dialogClearHistoryTitle": "Clear History",
+  "dialogClearHistoryTitle": "履歴を消去",
   "@dialogClearHistoryTitle": {
     "description": "Dialog title - clear download history"
   },
@@ -1104,7 +1132,7 @@
   "@dialogClearHistoryMessage": {
     "description": "Dialog message - clear history confirmation"
   },
-  "dialogDeleteSelectedTitle": "Delete Selected",
+  "dialogDeleteSelectedTitle": "選択済みを削除",
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
@@ -1122,6 +1150,15 @@
     "description": "Dialog title - import CSV playlist"
   },
   "dialogImportPlaylistMessage": "Found {count} tracks in CSV. Add them to download queue?",
+  "csvImportTracks": "{count} tracks from CSV",
+  "@csvImportTracks": {
+    "description": "Label shown in quality picker for CSV import",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@dialogImportPlaylistMessage": {
     "description": "Dialog message - import playlist confirmation",
     "placeholders": {
@@ -1130,7 +1167,7 @@
       }
     }
   },
-  "snackbarAddedToQueue": "Added \"{trackName}\" to queue",
+  "snackbarAddedToQueue": "「{trackName}」をキューに追加しました",
   "@snackbarAddedToQueue": {
     "description": "Snackbar - track added to download queue",
     "placeholders": {
@@ -1139,7 +1176,7 @@
       }
     }
   },
-  "snackbarAddedTracksToQueue": "Added {count} tracks to queue",
+  "snackbarAddedTracksToQueue": "{count} 個のトラックをキューに追加しました",
   "@snackbarAddedTracksToQueue": {
     "description": "Snackbar - multiple tracks added to queue",
     "placeholders": {
@@ -1148,7 +1185,7 @@
       }
     }
   },
-  "snackbarAlreadyDownloaded": "\"{trackName}\" already downloaded",
+  "snackbarAlreadyDownloaded": "「{trackName}」は既にダウンロードされています",
   "@snackbarAlreadyDownloaded": {
     "description": "Snackbar - track already exists",
     "placeholders": {
@@ -1157,19 +1194,19 @@
       }
     }
   },
-  "snackbarHistoryCleared": "History cleared",
+  "snackbarHistoryCleared": "履歴を消去しました",
   "@snackbarHistoryCleared": {
     "description": "Snackbar - history deleted"
   },
-  "snackbarCredentialsSaved": "Credentials saved",
+  "snackbarCredentialsSaved": "認証情報を保存しました",
   "@snackbarCredentialsSaved": {
     "description": "Snackbar - Spotify credentials saved"
   },
-  "snackbarCredentialsCleared": "Credentials cleared",
+  "snackbarCredentialsCleared": "認証情報を消去しました",
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "Deleted {count} {count, plural, =1{track} other{tracks}}",
+  "snackbarDeletedTracks": "{count} {count, plural, =1{個のトラック} other{個のトラック}}を削除",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -1178,7 +1215,7 @@
       }
     }
   },
-  "snackbarCannotOpenFile": "Cannot open file: {error}",
+  "snackbarCannotOpenFile": "ファイルが開けません: {error}",
   "@snackbarCannotOpenFile": {
     "description": "Snackbar - file open error",
     "placeholders": {
@@ -1187,15 +1224,15 @@
       }
     }
   },
-  "snackbarFillAllFields": "Please fill all fields",
+  "snackbarFillAllFields": "すべての項目を入力してください",
   "@snackbarFillAllFields": {
     "description": "Snackbar - validation error"
   },
-  "snackbarViewQueue": "View Queue",
+  "snackbarViewQueue": "キューを表示",
   "@snackbarViewQueue": {
     "description": "Snackbar action - view download queue"
   },
-  "snackbarFailedToLoad": "Failed to load: {error}",
+  "snackbarFailedToLoad": "読み込みに失敗: {error}",
   "@snackbarFailedToLoad": {
     "description": "Snackbar - loading error",
     "placeholders": {
@@ -1204,7 +1241,7 @@
       }
     }
   },
-  "snackbarUrlCopied": "{platform} URL copied to clipboard",
+  "snackbarUrlCopied": "{platform} の URL をクリップボードにコピーしました",
   "@snackbarUrlCopied": {
     "description": "Snackbar - URL copied",
     "placeholders": {
@@ -1214,23 +1251,23 @@
       }
     }
   },
-  "snackbarFileNotFound": "File not found",
+  "snackbarFileNotFound": "ファイルがありません",
   "@snackbarFileNotFound": {
     "description": "Snackbar - file doesn't exist"
   },
-  "snackbarSelectExtFile": "Please select a .spotiflac-ext file",
+  "snackbarSelectExtFile": ".spotiflac-ext ファイルを選択してください",
   "@snackbarSelectExtFile": {
     "description": "Snackbar - wrong file type selected"
   },
-  "snackbarProviderPrioritySaved": "Provider priority saved",
+  "snackbarProviderPrioritySaved": "プロバイダーの優先度を保存しました",
   "@snackbarProviderPrioritySaved": {
     "description": "Snackbar - provider order saved"
   },
-  "snackbarMetadataProviderSaved": "Metadata provider priority saved",
+  "snackbarMetadataProviderSaved": "メタデータプロバイダーの優先度を保存しました",
   "@snackbarMetadataProviderSaved": {
     "description": "Snackbar - metadata provider order saved"
   },
-  "snackbarExtensionInstalled": "{extensionName} installed.",
+  "snackbarExtensionInstalled": "{extensionName} をインストールしました。",
   "@snackbarExtensionInstalled": {
     "description": "Snackbar - extension installed successfully",
     "placeholders": {
@@ -1239,7 +1276,7 @@
       }
     }
   },
-  "snackbarExtensionUpdated": "{extensionName} updated.",
+  "snackbarExtensionUpdated": "{extensionName} を更新しました。",
   "@snackbarExtensionUpdated": {
     "description": "Snackbar - extension updated successfully",
     "placeholders": {
@@ -1248,11 +1285,11 @@
       }
     }
   },
-  "snackbarFailedToInstall": "Failed to install extension",
+  "snackbarFailedToInstall": "拡張のインストールに失敗しました",
   "@snackbarFailedToInstall": {
     "description": "Snackbar - extension install error"
   },
-  "snackbarFailedToUpdate": "Failed to update extension",
+  "snackbarFailedToUpdate": "拡張の更新に失敗しました",
   "@snackbarFailedToUpdate": {
     "description": "Snackbar - extension update error"
   },
@@ -1274,7 +1311,7 @@
       }
     }
   },
-  "errorNoTracksFound": "No tracks found",
+  "errorNoTracksFound": "トラックがありません",
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
@@ -1287,11 +1324,11 @@
       }
     }
   },
-  "statusQueued": "Queued",
+  "statusQueued": "キュー済み",
   "@statusQueued": {
     "description": "Download status - waiting in queue"
   },
-  "statusDownloading": "Downloading",
+  "statusDownloading": "ダウンロード中",
   "@statusDownloading": {
     "description": "Download status - in progress"
   },
@@ -1299,67 +1336,67 @@
   "@statusFinalizing": {
     "description": "Download status - writing metadata"
   },
-  "statusCompleted": "Completed",
+  "statusCompleted": "完了しました",
   "@statusCompleted": {
     "description": "Download status - finished"
   },
-  "statusFailed": "Failed",
+  "statusFailed": "失敗しました",
   "@statusFailed": {
     "description": "Download status - error occurred"
   },
-  "statusSkipped": "Skipped",
+  "statusSkipped": "スキップしました",
   "@statusSkipped": {
     "description": "Download status - already exists"
   },
-  "statusPaused": "Paused",
+  "statusPaused": "一時停止中",
   "@statusPaused": {
     "description": "Download status - paused"
   },
-  "actionPause": "Pause",
+  "actionPause": "一時停止",
   "@actionPause": {
     "description": "Action button - pause download"
   },
-  "actionResume": "Resume",
+  "actionResume": "再開",
   "@actionResume": {
     "description": "Action button - resume download"
   },
-  "actionCancel": "Cancel",
+  "actionCancel": "キャンセル",
   "@actionCancel": {
     "description": "Action button - cancel operation"
   },
-  "actionStop": "Stop",
+  "actionStop": "停止",
   "@actionStop": {
     "description": "Action button - stop operation"
   },
-  "actionSelect": "Select",
+  "actionSelect": "選択",
   "@actionSelect": {
     "description": "Action button - enter selection mode"
   },
-  "actionSelectAll": "Select All",
+  "actionSelectAll": "すべて選択",
   "@actionSelectAll": {
     "description": "Action button - select all items"
   },
-  "actionDeselect": "Deselect",
+  "actionDeselect": "選択を解除",
   "@actionDeselect": {
     "description": "Action button - deselect all"
   },
-  "actionPaste": "Paste",
+  "actionPaste": "貼り付け",
   "@actionPaste": {
     "description": "Action button - paste from clipboard"
   },
-  "actionImportCsv": "Import CSV",
+  "actionImportCsv": "CSV をインポート",
   "@actionImportCsv": {
     "description": "Action button - import CSV file"
   },
-  "actionRemoveCredentials": "Remove Credentials",
+  "actionRemoveCredentials": "認証情報を削除",
   "@actionRemoveCredentials": {
     "description": "Action button - delete Spotify credentials"
   },
-  "actionSaveCredentials": "Save Credentials",
+  "actionSaveCredentials": "認証情報を保存",
   "@actionSaveCredentials": {
     "description": "Action button - save Spotify credentials"
   },
-  "selectionSelected": "{count} selected",
+  "selectionSelected": "{count} 個を選択済み",
   "@selectionSelected": {
     "description": "Selection count indicator",
     "placeholders": {
@@ -1368,15 +1405,15 @@
       }
     }
   },
-  "selectionAllSelected": "All tracks selected",
+  "selectionAllSelected": "すべてのトラックを選択済み",
   "@selectionAllSelected": {
     "description": "Status - all items selected"
   },
-  "selectionTapToSelect": "Tap tracks to select",
+  "selectionTapToSelect": "トラックをタップで選択",
   "@selectionTapToSelect": {
     "description": "Hint - how to select items"
   },
-  "selectionDeleteTracks": "Delete {count} {count, plural, =1{track} other{tracks}}",
+  "selectionDeleteTracks": "{count} {count, plural, =1{個のトラック} other{個のトラック}}を削除",
   "@selectionDeleteTracks": {
     "description": "Delete button with count",
     "placeholders": {
@@ -1385,11 +1422,11 @@
       }
     }
   },
-  "selectionSelectToDelete": "Select tracks to delete",
+  "selectionSelectToDelete": "トラックを選択で削除",
   "@selectionSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
-  "progressFetchingMetadata": "Fetching metadata... {current}/{total}",
+  "progressFetchingMetadata": "メタデータを取得中... {current}/{total}",
   "@progressFetchingMetadata": {
     "description": "Progress indicator - loading track info",
     "placeholders": {
@@ -1401,59 +1438,59 @@
       }
     }
   },
-  "progressReadingCsv": "Reading CSV...",
+  "progressReadingCsv": "CSV を読み取り中...",
   "@progressReadingCsv": {
     "description": "Progress indicator - parsing CSV file"
   },
-  "searchSongs": "Songs",
+  "searchSongs": "曲",
   "@searchSongs": {
     "description": "Search result category - songs"
   },
-  "searchArtists": "Artists",
+  "searchArtists": "アーティスト",
   "@searchArtists": {
     "description": "Search result category - artists"
   },
-  "searchAlbums": "Albums",
+  "searchAlbums": "アルバム",
   "@searchAlbums": {
     "description": "Search result category - albums"
   },
-  "searchPlaylists": "Playlists",
+  "searchPlaylists": "プレイリスト",
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
-  "tooltipPlay": "Play",
+  "tooltipPlay": "再生",
   "@tooltipPlay": {
     "description": "Tooltip - play button"
   },
-  "tooltipCancel": "Cancel",
+  "tooltipCancel": "キャンセル",
   "@tooltipCancel": {
     "description": "Tooltip - cancel button"
   },
-  "tooltipStop": "Stop",
+  "tooltipStop": "停止",
   "@tooltipStop": {
     "description": "Tooltip - stop button"
   },
-  "tooltipRetry": "Retry",
+  "tooltipRetry": "再試行",
   "@tooltipRetry": {
     "description": "Tooltip - retry button"
   },
-  "tooltipRemove": "Remove",
+  "tooltipRemove": "削除",
   "@tooltipRemove": {
     "description": "Tooltip - remove button"
   },
-  "tooltipClear": "Clear",
+  "tooltipClear": "消去",
   "@tooltipClear": {
     "description": "Tooltip - clear button"
   },
-  "tooltipPaste": "Paste",
+  "tooltipPaste": "貼り付け",
   "@tooltipPaste": {
     "description": "Tooltip - paste button"
   },
-  "filenameFormat": "Filename Format",
+  "filenameFormat": "ファイル名の形式",
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },
-  "filenameFormatPreview": "Preview: {preview}",
+  "filenameFormatPreview": "プレビュー: {preview}",
   "@filenameFormatPreview": {
     "description": "Preview of filename pattern",
     "placeholders": {
@@ -1462,7 +1499,7 @@
       }
     }
   },
-  "filenameAvailablePlaceholders": "Available placeholders:",
+  "filenameAvailablePlaceholders": "利用可能なプレースホルダー:",
   "@filenameAvailablePlaceholders": {
     "description": "Label for placeholder list"
   },
@@ -1486,7 +1523,7 @@
   "@folderOrganizationByAlbum": {
     "description": "Folder option - album folders"
   },
-  "folderOrganizationByArtistAlbum": "Artist/Album",
+  "folderOrganizationByArtistAlbum": "アーティスト/アルバム",
   "@folderOrganizationByArtistAlbum": {
     "description": "Folder option - nested folders"
   },
@@ -1510,11 +1547,11 @@
   "@folderOrganizationByArtistAlbumSubtitle": {
     "description": "Subtitle for nested folder option"
   },
-  "updateAvailable": "Update Available",
+  "updateAvailable": "更新が利用可能です",
   "@updateAvailable": {
     "description": "Update dialog title"
   },
-  "updateNewVersion": "Version {version} is available",
+  "updateNewVersion": "バージョン {version} が利用可能です",
   "@updateNewVersion": {
     "description": "Update available message",
     "placeholders": {
@@ -1531,23 +1568,23 @@
   "@updateLater": {
     "description": "Update button - dismiss"
   },
-  "updateChangelog": "Changelog",
+  "updateChangelog": "更新履歴",
   "@updateChangelog": {
     "description": "Link to changelog"
   },
-  "updateStartingDownload": "Starting download...",
+  "updateStartingDownload": "ダウンロードを開始中...",
   "@updateStartingDownload": {
     "description": "Update status - initializing"
   },
-  "updateDownloadFailed": "Download failed",
+  "updateDownloadFailed": "ダウンロードに失敗しました",
   "@updateDownloadFailed": {
     "description": "Update error title"
   },
-  "updateFailedMessage": "Failed to download update",
+  "updateFailedMessage": "更新のダウンロードに失敗しました",
   "@updateFailedMessage": {
     "description": "Update error message"
   },
-  "updateNewVersionReady": "A new version is ready",
+  "updateNewVersionReady": "新しいバージョンの準備ができています",
   "@updateNewVersionReady": {
     "description": "Update subtitle"
   },
@@ -1555,19 +1592,19 @@
   "@updateCurrent": {
     "description": "Label for current version"
   },
-  "updateNew": "New",
+  "updateNew": "新着",
   "@updateNew": {
     "description": "Label for new version"
   },
-  "updateDownloading": "Downloading...",
+  "updateDownloading": "ダウンロード中...",
   "@updateDownloading": {
     "description": "Update status - downloading"
   },
-  "updateWhatsNew": "What's New",
+  "updateWhatsNew": "新着情報",
   "@updateWhatsNew": {
     "description": "Changelog section title"
   },
-  "updateDownloadInstall": "Download & Install",
+  "updateDownloadInstall": "ダウンロードとインストール",
   "@updateDownloadInstall": {
     "description": "Update button - download and install"
   },
@@ -1575,7 +1612,7 @@
   "@updateDontRemind": {
     "description": "Update button - skip this version"
   },
-  "providerPriority": "Provider Priority",
+  "providerPriority": "プロバイダーの優先度",
   "@providerPriority": {
     "description": "Setting title - download provider order"
   },
@@ -1583,7 +1620,7 @@
   "@providerPrioritySubtitle": {
     "description": "Subtitle for provider priority"
   },
-  "providerPriorityTitle": "Provider Priority",
+  "providerPriorityTitle": "プロバイダーの優先度",
   "@providerPriorityTitle": {
     "description": "Provider priority page title"
   },
@@ -1595,15 +1632,15 @@
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
-  "providerBuiltIn": "Built-in",
+  "providerBuiltIn": "内蔵",
   "@providerBuiltIn": {
     "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
   },
-  "providerExtension": "Extension",
+  "providerExtension": "拡張",
   "@providerExtension": {
     "description": "Label for extension-provided providers"
   },
-  "metadataProviderPriority": "Metadata Provider Priority",
+  "metadataProviderPriority": "メタデータプロバイダーの優先度",
   "@metadataProviderPriority": {
     "description": "Setting title - metadata provider order"
   },
@@ -1611,7 +1648,7 @@
   "@metadataProviderPrioritySubtitle": {
     "description": "Subtitle for metadata priority"
   },
-  "metadataProviderPriorityTitle": "Metadata Priority",
+  "metadataProviderPriorityTitle": "メタデータの優先度",
   "@metadataProviderPriorityTitle": {
     "description": "Metadata priority page title"
   },
@@ -1623,7 +1660,7 @@
   "@metadataProviderPriorityInfo": {
     "description": "Info tip about rate limits"
   },
-  "metadataNoRateLimits": "No rate limits",
+  "metadataNoRateLimits": "レート制限はありません",
   "@metadataNoRateLimits": {
     "description": "Deezer provider description"
   },
@@ -1631,51 +1668,51 @@
   "@metadataMayRateLimit": {
     "description": "Spotify provider description"
   },
-  "logTitle": "Logs",
+  "logTitle": "ログ",
   "@logTitle": {
     "description": "Logs screen title"
   },
-  "logCopy": "Copy Logs",
+  "logCopy": "ログをコピー",
   "@logCopy": {
     "description": "Action - copy logs to clipboard"
   },
-  "logClear": "Clear Logs",
+  "logClear": "ログを消去",
   "@logClear": {
     "description": "Action - delete all logs"
   },
-  "logShare": "Share Logs",
+  "logShare": "ログを共有",
   "@logShare": {
     "description": "Action - share logs file"
   },
-  "logEmpty": "No logs yet",
+  "logEmpty": "まだログはありません",
   "@logEmpty": {
     "description": "Empty state title"
   },
-  "logCopied": "Logs copied to clipboard",
+  "logCopied": "ログをクリップボードにコピーしました",
   "@logCopied": {
     "description": "Snackbar - logs copied"
   },
-  "logSearchHint": "Search logs...",
+  "logSearchHint": "ログを検索...",
   "@logSearchHint": {
     "description": "Log search placeholder"
   },
-  "logFilterLevel": "Level",
+  "logFilterLevel": "レベル",
   "@logFilterLevel": {
     "description": "Filter by log level"
   },
-  "logFilterSection": "Filter",
+  "logFilterSection": "フィルター",
   "@logFilterSection": {
     "description": "Filter section title"
   },
-  "logShareLogs": "Share logs",
+  "logShareLogs": "ログを共有",
   "@logShareLogs": {
     "description": "Share button tooltip"
   },
-  "logClearLogs": "Clear logs",
+  "logClearLogs": "ログを消去",
   "@logClearLogs": {
     "description": "Clear button tooltip"
   },
-  "logClearLogsTitle": "Clear Logs",
+  "logClearLogsTitle": "ログを消去",
   "@logClearLogsTitle": {
     "description": "Clear logs dialog title"
   },
@@ -1695,7 +1732,7 @@
   "@logNetworkError": {
     "description": "Error category - network issues"
   },
-  "logTrackNotFound": "TRACK NOT FOUND",
+  "logTrackNotFound": "トラックがありません",
   "@logTrackNotFound": {
     "description": "Error category - missing tracks"
   },
@@ -1703,7 +1740,7 @@
   "@logFilterBySeverity": {
     "description": "Filter dialog title"
   },
-  "logNoLogsYet": "No logs yet",
+  "logNoLogsYet": "まだログはありません",
   "@logNoLogsYet": {
     "description": "Empty state title"
   },
@@ -1711,19 +1748,19 @@
   "@logNoLogsYetSubtitle": {
     "description": "Empty state subtitle"
   },
-  "logIssueSummary": "Issue Summary",
+  "logIssueSummary": "問題の概要",
   "@logIssueSummary": {
     "description": "Section header for error summary"
   },
-  "logIspBlockingDescription": "Your ISP may be blocking access to download services",
+  "logIspBlockingDescription": "ISP がダウンロードサービスのアクセスをブロックしている可能性があります",
   "@logIspBlockingDescription": {
     "description": "ISP blocking explanation"
   },
-  "logIspBlockingSuggestion": "Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8",
+  "logIspBlockingSuggestion": "VPN を使用するか DNS を 1.1.1.1 または 8.8.8.8 に変更をお試しください",
   "@logIspBlockingSuggestion": {
     "description": "ISP blocking fix suggestion"
   },
-  "logRateLimitedDescription": "Too many requests to the service",
+  "logRateLimitedDescription": "サービスへのリクエストが多すぎます",
   "@logRateLimitedDescription": {
     "description": "Rate limit explanation"
   },
@@ -1731,11 +1768,11 @@
   "@logRateLimitedSuggestion": {
     "description": "Rate limit fix suggestion"
   },
-  "logNetworkErrorDescription": "Connection issues detected",
+  "logNetworkErrorDescription": "接続の問題が検出されました",
   "@logNetworkErrorDescription": {
     "description": "Network error explanation"
   },
-  "logNetworkErrorSuggestion": "Check your internet connection",
+  "logNetworkErrorSuggestion": "インターネット接続を確認してください",
   "@logNetworkErrorSuggestion": {
     "description": "Network error fix suggestion"
   },
@@ -1747,7 +1784,7 @@
   "@logTrackNotFoundSuggestion": {
     "description": "Track not found explanation"
   },
-  "logTotalErrors": "Total errors: {count}",
+  "logTotalErrors": "エラーの合計: {count}",
   "@logTotalErrors": {
     "description": "Error count display",
     "placeholders": {
@@ -1783,7 +1820,7 @@
       }
     }
   },
-  "credentialsTitle": "Spotify Credentials",
+  "credentialsTitle": "Spotify の認証情報",
   "@credentialsTitle": {
     "description": "Credentials dialog title"
   },
@@ -1791,95 +1828,131 @@
   "@credentialsDescription": {
     "description": "Credentials dialog explanation"
   },
-  "credentialsClientId": "Client ID",
+  "credentialsClientId": "クライアント ID",
   "@credentialsClientId": {
     "description": "Client ID field label - DO NOT TRANSLATE"
   },
-  "credentialsClientIdHint": "Paste Client ID",
+  "credentialsClientIdHint": "クライアント ID を貼り付け",
   "@credentialsClientIdHint": {
     "description": "Client ID placeholder"
   },
-  "credentialsClientSecret": "Client Secret",
+  "credentialsClientSecret": "クライアントシークレット",
   "@credentialsClientSecret": {
     "description": "Client Secret field label - DO NOT TRANSLATE"
   },
-  "credentialsClientSecretHint": "Paste Client Secret",
+  "credentialsClientSecretHint": "クライアントシークレットを貼り付け",
   "@credentialsClientSecretHint": {
     "description": "Client Secret placeholder"
   },
-  "channelStable": "Stable",
+  "channelStable": "安定版",
   "@channelStable": {
     "description": "Update channel - stable releases"
   },
-  "channelPreview": "Preview",
+  "channelPreview": "プレビュー",
   "@channelPreview": {
     "description": "Update channel - beta/preview releases"
   },
-  "sectionSearchSource": "Search Source",
+  "sectionSearchSource": "検索ソース",
   "@sectionSearchSource": {
     "description": "Settings section header"
   },
-  "sectionDownload": "Download",
+  "sectionDownload": "ダウンロード",
   "@sectionDownload": {
     "description": "Settings section header"
   },
-  "sectionPerformance": "Performance",
+  "sectionPerformance": "パフォーマンス",
   "@sectionPerformance": {
     "description": "Settings section header"
   },
-  "sectionApp": "App",
+  "sectionApp": "アプリ",
   "@sectionApp": {
     "description": "Settings section header"
   },
-  "sectionData": "Data",
+  "sectionData": "データ",
   "@sectionData": {
     "description": "Settings section header"
   },
-  "sectionDebug": "Debug",
+  "sectionDebug": "デバッグ",
   "@sectionDebug": {
     "description": "Settings section header"
   },
-  "sectionService": "Service",
+  "sectionService": "サービス",
   "@sectionService": {
     "description": "Settings section header"
   },
-  "sectionAudioQuality": "Audio Quality",
+  "sectionAudioQuality": "オーディオ品質",
   "@sectionAudioQuality": {
     "description": "Settings section header"
   },
-  "sectionFileSettings": "File Settings",
+  "sectionFileSettings": "ファイル設定",
   "@sectionFileSettings": {
     "description": "Settings section header"
   },
-  "sectionColor": "Color",
+  "sectionLyrics": "Lyrics",
+  "@sectionLyrics": {
+    "description": "Settings section header"
+  },
+  "lyricsMode": "Lyrics Mode",
+  "@lyricsMode": {
+    "description": "Setting - how to save lyrics"
+  },
+  "lyricsModeDescription": "Choose how lyrics are saved with your downloads",
+  "@lyricsModeDescription": {
+    "description": "Lyrics mode picker description"
+  },
+  "lyricsModeEmbed": "Embed in file",
+  "@lyricsModeEmbed": {
+    "description": "Lyrics mode option - embed in audio file"
+  },
+  "lyricsModeEmbedSubtitle": "Lyrics stored inside FLAC metadata",
+  "@lyricsModeEmbedSubtitle": {
+    "description": "Subtitle for embed option"
+  },
+  "lyricsModeExternal": "External .lrc file",
+  "@lyricsModeExternal": {
+    "description": "Lyrics mode option - separate LRC file"
+  },
+  "lyricsModeExternalSubtitle": "Separate .lrc file for players like Samsung Music",
+  "@lyricsModeExternalSubtitle": {
+    "description": "Subtitle for external option"
+  },
+  "lyricsModeBoth": "Both",
+  "@lyricsModeBoth": {
+    "description": "Lyrics mode option - embed and external"
+  },
+  "lyricsModeBothSubtitle": "Embed and save .lrc file",
+  "@lyricsModeBothSubtitle": {
+    "description": "Subtitle for both option"
+  },
+  "sectionColor": "カラー",
   "@sectionColor": {
     "description": "Settings section header"
   },
-  "sectionTheme": "Theme",
+  "sectionTheme": "テーマ",
   "@sectionTheme": {
     "description": "Settings section header"
   },
-  "sectionLayout": "Layout",
+  "sectionLayout": "レイアウト",
   "@sectionLayout": {
     "description": "Settings section header"
   },
-  "sectionLanguage": "Language",
+  "sectionLanguage": "言語",
   "@sectionLanguage": {
     "description": "Settings section header for language"
   },
-  "appearanceLanguage": "App Language",
+  "appearanceLanguage": "アプリの言語",
   "@appearanceLanguage": {
     "description": "Language setting title"
   },
-  "appearanceLanguageSubtitle": "Choose your preferred language",
+  "appearanceLanguageSubtitle": "お好みの言語を選択してください",
   "@appearanceLanguageSubtitle": {
     "description": "Language setting subtitle"
   },
-  "settingsAppearanceSubtitle": "Theme, colors, display",
+  "settingsAppearanceSubtitle": "テーマ、カラー、画面",
   "@settingsAppearanceSubtitle": {
     "description": "Appearance settings description"
   },
-  "settingsDownloadSubtitle": "Service, quality, filename format",
+  "settingsDownloadSubtitle": "サービス、品質、ファイル名、形式",
   "@settingsDownloadSubtitle": {
     "description": "Download settings description"
   },
@@ -1887,15 +1960,15 @@
   "@settingsOptionsSubtitle": {
     "description": "Options settings description"
   },
-  "settingsExtensionsSubtitle": "Manage download providers",
+  "settingsExtensionsSubtitle": "ダウンロードプロバイダーを管理",
   "@settingsExtensionsSubtitle": {
     "description": "Extensions settings description"
   },
-  "settingsLogsSubtitle": "View app logs for debugging",
+  "settingsLogsSubtitle": "デバッグのためのアプリログを表示",
   "@settingsLogsSubtitle": {
     "description": "Logs settings description"
   },
-  "loadingSharedLink": "Loading shared link...",
+  "loadingSharedLink": "共有リンクを読み込み中...",
   "@loadingSharedLink": {
     "description": "Status when opening shared URL"
   },
@@ -1903,11 +1976,11 @@
   "@pressBackAgainToExit": {
     "description": "Exit confirmation message"
   },
-  "tracksHeader": "Tracks",
+  "tracksHeader": "トラック",
   "@tracksHeader": {
     "description": "Section header for track list"
   },
-  "downloadAllCount": "Download All ({count})",
+  "downloadAllCount": "すべてダウンロード ({count})",
   "@downloadAllCount": {
     "description": "Download all button with count",
     "placeholders": {
@@ -1916,7 +1989,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "tracksCount": "{count, plural, =1{1 個のトラック} other{{count} 個のトラック}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {
@@ -1925,19 +1998,19 @@
       }
     }
   },
-  "trackCopyFilePath": "Copy file path",
+  "trackCopyFilePath": "ファイルパスをコピー",
   "@trackCopyFilePath": {
     "description": "Action - copy file path"
   },
-  "trackRemoveFromDevice": "Remove from device",
+  "trackRemoveFromDevice": "デバイスから削除",
   "@trackRemoveFromDevice": {
     "description": "Action - delete downloaded file"
   },
-  "trackLoadLyrics": "Load Lyrics",
+  "trackLoadLyrics": "歌詞を読み込み",
   "@trackLoadLyrics": {
     "description": "Action - fetch lyrics"
   },
-  "trackMetadata": "Metadata",
+  "trackMetadata": "メタデータ",
   "@trackMetadata": {
     "description": "Tab title - track metadata"
   },
@@ -1965,63 +2038,75 @@
   "@trackTrackName": {
     "description": "Metadata label - track title"
   },
-  "trackArtist": "Artist",
+  "trackArtist": "アーティスト",
   "@trackArtist": {
     "description": "Metadata label - artist name"
   },
-  "trackAlbumArtist": "Album artist",
+  "trackAlbumArtist": "アルバムアーティスト",
   "@trackAlbumArtist": {
     "description": "Metadata label - album artist"
   },
-  "trackAlbum": "Album",
+  "trackAlbum": "アルバム",
   "@trackAlbum": {
     "description": "Metadata label - album name"
   },
-  "trackTrackNumber": "Track number",
+  "trackTrackNumber": "トラック番号",
   "@trackTrackNumber": {
     "description": "Metadata label - track number"
   },
-  "trackDiscNumber": "Disc number",
+  "trackDiscNumber": "ディスク番号",
   "@trackDiscNumber": {
     "description": "Metadata label - disc number"
   },
-  "trackDuration": "Duration",
+  "trackDuration": "再生時間",
   "@trackDuration": {
     "description": "Metadata label - track length"
   },
-  "trackAudioQuality": "Audio quality",
+  "trackAudioQuality": "オーディオ品質",
   "@trackAudioQuality": {
     "description": "Metadata label - audio quality"
   },
-  "trackReleaseDate": "Release date",
+  "trackReleaseDate": "リリース日",
   "@trackReleaseDate": {
     "description": "Metadata label - release date"
   },
-  "trackDownloaded": "Downloaded",
+  "trackGenre": "Genre",
+  "@trackGenre": {
+    "description": "Metadata label - music genre"
+  },
+  "trackLabel": "Label",
+  "@trackLabel": {
+    "description": "Metadata label - record label"
+  },
+  "trackCopyright": "Copyright",
+  "@trackCopyright": {
+    "description": "Metadata label - copyright information"
+  },
+  "trackDownloaded": "ダウンロード済み",
   "@trackDownloaded": {
     "description": "Metadata label - download date"
   },
-  "trackCopyLyrics": "Copy lyrics",
+  "trackCopyLyrics": "歌詞をコピー",
   "@trackCopyLyrics": {
     "description": "Action - copy lyrics to clipboard"
   },
-  "trackLyricsNotAvailable": "Lyrics not available for this track",
+  "trackLyricsNotAvailable": "このトラックの歌詞は利用できません",
   "@trackLyricsNotAvailable": {
     "description": "Message when lyrics not found"
   },
-  "trackLyricsTimeout": "Request timed out. Try again later.",
+  "trackLyricsTimeout": "リクエストがタイムアウトしました。後ほどお試しください。",
   "@trackLyricsTimeout": {
     "description": "Message when lyrics request times out"
   },
-  "trackLyricsLoadFailed": "Failed to load lyrics",
+  "trackLyricsLoadFailed": "歌詞の読み込みに失敗しました",
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
-  "trackCopiedToClipboard": "Copied to clipboard",
+  "trackCopiedToClipboard": "クリップボードにコピーしました",
   "@trackCopiedToClipboard": {
     "description": "Snackbar - content copied"
   },
-  "trackDeleteConfirmTitle": "Remove from device?",
+  "trackDeleteConfirmTitle": "デバイスから削除しますか？",
   "@trackDeleteConfirmTitle": {
     "description": "Delete confirmation title"
   },
@@ -2029,7 +2114,7 @@
   "@trackDeleteConfirmMessage": {
     "description": "Delete confirmation message"
   },
-  "trackCannotOpen": "Cannot open: {message}",
+  "trackCannotOpen": "開けません: {message}",
   "@trackCannotOpen": {
     "description": "Error opening file",
     "placeholders": {
@@ -2038,15 +2123,15 @@
       }
     }
   },
-  "dateToday": "Today",
+  "dateToday": "今日",
   "@dateToday": {
     "description": "Relative date - today"
   },
-  "dateYesterday": "Yesterday",
+  "dateYesterday": "昨日",
   "@dateYesterday": {
     "description": "Relative date - yesterday"
   },
-  "dateDaysAgo": "{count} days ago",
+  "dateDaysAgo": "{count} 日前",
   "@dateDaysAgo": {
     "description": "Relative date - days ago",
     "placeholders": {
@@ -2055,7 +2140,7 @@
       }
     }
   },
-  "dateWeeksAgo": "{count} weeks ago",
+  "dateWeeksAgo": "{count} 週間前",
   "@dateWeeksAgo": {
     "description": "Relative date - weeks ago",
     "placeholders": {
@@ -2064,7 +2149,7 @@
       }
     }
   },
-  "dateMonthsAgo": "{count} months ago",
+  "dateMonthsAgo": "{count} ヶ月前",
   "@dateMonthsAgo": {
     "description": "Relative date - months ago",
     "placeholders": {
@@ -2085,51 +2170,51 @@
   "@concurrentParallel3": {
     "description": "Download mode - 3 simultaneous"
   },
-  "tapToSeeError": "Tap to see error details",
+  "tapToSeeError": "タップでエラーの詳細を表示",
   "@tapToSeeError": {
     "description": "Tooltip for failed download"
   },
-  "storeFilterAll": "All",
+  "storeFilterAll": "すべて",
   "@storeFilterAll": {
     "description": "Store filter - all extensions"
   },
-  "storeFilterMetadata": "Metadata",
+  "storeFilterMetadata": "メタデータ",
   "@storeFilterMetadata": {
     "description": "Store filter - metadata providers"
   },
-  "storeFilterDownload": "Download",
+  "storeFilterDownload": "ダウンロード",
   "@storeFilterDownload": {
     "description": "Store filter - download providers"
   },
-  "storeFilterUtility": "Utility",
+  "storeFilterUtility": "ユーティリティ",
   "@storeFilterUtility": {
     "description": "Store filter - utility extensions"
   },
-  "storeFilterLyrics": "Lyrics",
+  "storeFilterLyrics": "歌詞",
   "@storeFilterLyrics": {
     "description": "Store filter - lyrics providers"
   },
-  "storeFilterIntegration": "Integration",
+  "storeFilterIntegration": "統合",
   "@storeFilterIntegration": {
     "description": "Store filter - integrations"
   },
-  "storeClearFilters": "Clear filters",
+  "storeClearFilters": "フィルターを消去",
   "@storeClearFilters": {
     "description": "Button to clear all filters"
   },
-  "storeNoResults": "No extensions found",
+  "storeNoResults": "拡張がありません",
   "@storeNoResults": {
     "description": "Empty state when no extensions match filters"
   },
-  "extensionProviderPriority": "Provider Priority",
+  "extensionProviderPriority": "プロバイダーの優先度",
   "@extensionProviderPriority": {
     "description": "Extension capability - provider priority"
   },
-  "extensionInstallButton": "Install Extension",
+  "extensionInstallButton": "拡張をインストール",
   "@extensionInstallButton": {
     "description": "Button to install extension"
   },
-  "extensionDefaultProvider": "Default (Deezer/Spotify)",
+  "extensionDefaultProvider": "デフォルト (Deezer/Spotify)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -2153,35 +2238,35 @@
   "@extensionCapabilities": {
     "description": "Section header - extension features"
   },
-  "extensionMetadataProvider": "Metadata Provider",
+  "extensionMetadataProvider": "メタデータのプロバイダー",
   "@extensionMetadataProvider": {
     "description": "Capability - provides metadata"
   },
-  "extensionDownloadProvider": "Download Provider",
+  "extensionDownloadProvider": "ダウンロードのプロバイダー",
   "@extensionDownloadProvider": {
     "description": "Capability - provides downloads"
   },
-  "extensionLyricsProvider": "Lyrics Provider",
+  "extensionLyricsProvider": "歌詞のプロバイダー",
   "@extensionLyricsProvider": {
     "description": "Capability - provides lyrics"
   },
-  "extensionUrlHandler": "URL Handler",
+  "extensionUrlHandler": "URL ハンドラ",
   "@extensionUrlHandler": {
     "description": "Capability - handles URLs"
   },
-  "extensionQualityOptions": "Quality Options",
+  "extensionQualityOptions": "品質のオプション",
   "@extensionQualityOptions": {
     "description": "Capability - quality selection"
   },
-  "extensionPostProcessingHooks": "Post-Processing Hooks",
+  "extensionPostProcessingHooks": "ポストプロセスフック",
   "@extensionPostProcessingHooks": {
     "description": "Capability - post-processing"
   },
-  "extensionPermissions": "Permissions",
+  "extensionPermissions": "権限",
   "@extensionPermissions": {
     "description": "Section header - required permissions"
   },
-  "extensionSettings": "Settings",
+  "extensionSettings": "設定",
   "@extensionSettings": {
     "description": "Section header - extension settings"
   },
@@ -2201,11 +2286,11 @@
   "@extensionCustomTrackMatching": {
     "description": "Capability - custom track matching algorithm"
   },
-  "extensionPostProcessing": "Post-Processing",
+  "extensionPostProcessing": "ポストプロセス",
   "@extensionPostProcessing": {
     "description": "Capability - post-download processing"
   },
-  "extensionHooksAvailable": "{count} hook(s) available",
+  "extensionHooksAvailable": "{count} 個のフックが利用可能です",
   "@extensionHooksAvailable": {
     "description": "Post-processing hooks count",
     "placeholders": {
@@ -2214,7 +2299,7 @@
       }
     }
   },
-  "extensionPatternsCount": "{count} pattern(s)",
+  "extensionPatternsCount": "{count} 個のパターン",
   "@extensionPatternsCount": {
     "description": "URL patterns count",
     "placeholders": {
@@ -2223,7 +2308,7 @@
       }
     }
   },
-  "extensionStrategy": "Strategy: {strategy}",
+  "extensionStrategy": "ストラテジー: {strategy}",
   "@extensionStrategy": {
     "description": "Track matching strategy name",
     "placeholders": {
@@ -2232,7 +2317,7 @@
       }
     }
   },
-  "extensionsProviderPrioritySection": "Provider Priority",
+  "extensionsProviderPrioritySection": "プロバイダーの優先度",
   "@extensionsProviderPrioritySection": {
     "description": "Section header - provider priority"
   },
@@ -2244,7 +2329,7 @@
   "@extensionsNoExtensions": {
     "description": "Empty state - no extensions"
   },
-  "extensionsNoExtensionsSubtitle": "Install .spotiflac-ext files to add new providers",
+  "extensionsNoExtensionsSubtitle": "新しいプロバイダーを追加するには .spotiflac-ext ファイルをインストールします",
   "@extensionsNoExtensionsSubtitle": {
     "description": "Empty state subtitle"
   },
@@ -2252,55 +2337,55 @@
   "@extensionsInstallButton": {
     "description": "Button to install extension from file"
   },
-  "extensionsInfoTip": "Extensions can add new metadata and download providers. Only install extensions from trusted sources.",
+  "extensionsInfoTip": "拡張は新しいメタデータとダウンロードプロバイダーを追加することがあります。信頼できるソースからの拡張のみをインストールしてください。",
   "@extensionsInfoTip": {
     "description": "Security warning about extensions"
   },
-  "extensionsInstalledSuccess": "Extension installed successfully",
+  "extensionsInstalledSuccess": "拡張のインストールが成功しました",
   "@extensionsInstalledSuccess": {
     "description": "Success message after install"
   },
-  "extensionsDownloadPriority": "Download Priority",
+  "extensionsDownloadPriority": "ダウンロードの優先度",
   "@extensionsDownloadPriority": {
     "description": "Setting - download provider order"
   },
-  "extensionsDownloadPrioritySubtitle": "Set download service order",
+  "extensionsDownloadPrioritySubtitle": "ダウンロードサービスの順序を設定",
   "@extensionsDownloadPrioritySubtitle": {
     "description": "Subtitle for download priority"
   },
-  "extensionsNoDownloadProvider": "No extensions with download provider",
+  "extensionsNoDownloadProvider": "ダウンロードプロバイダーの拡張はありません",
   "@extensionsNoDownloadProvider": {
     "description": "Empty state - no download providers"
   },
-  "extensionsMetadataPriority": "Metadata Priority",
+  "extensionsMetadataPriority": "メタデータの優先度",
   "@extensionsMetadataPriority": {
     "description": "Setting - metadata provider order"
   },
-  "extensionsMetadataPrioritySubtitle": "Set search & metadata source order",
+  "extensionsMetadataPrioritySubtitle": "検索とメタデータソースの順序を設定",
   "@extensionsMetadataPrioritySubtitle": {
     "description": "Subtitle for metadata priority"
   },
-  "extensionsNoMetadataProvider": "No extensions with metadata provider",
+  "extensionsNoMetadataProvider": "メタデータプロバイダーの拡張はありません",
   "@extensionsNoMetadataProvider": {
     "description": "Empty state - no metadata providers"
   },
-  "extensionsSearchProvider": "Search Provider",
+  "extensionsSearchProvider": "検索のプロバイダー",
   "@extensionsSearchProvider": {
     "description": "Setting - search provider selection"
   },
-  "extensionsNoCustomSearch": "No extensions with custom search",
+  "extensionsNoCustomSearch": "カスタム検索の拡張はありません",
   "@extensionsNoCustomSearch": {
     "description": "Empty state - no search providers"
   },
-  "extensionsSearchProviderDescription": "Choose which service to use for searching tracks",
+  "extensionsSearchProviderDescription": "トラックの検索に使用するサービスを選択してください",
   "@extensionsSearchProviderDescription": {
     "description": "Search provider setting description"
   },
-  "extensionsCustomSearch": "Custom search",
+  "extensionsCustomSearch": "カスタム検索",
   "@extensionsCustomSearch": {
     "description": "Label for custom search provider"
   },
-  "extensionsErrorLoading": "Error loading extension",
+  "extensionsErrorLoading": "拡張の読み込みエラー",
   "@extensionsErrorLoading": {
     "description": "Error message when extension fails to load"
   },
@@ -2328,11 +2413,31 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "qualityNote": "Actual quality depends on track availability from the service",
+  "qualityMp3": "MP3",
+  "@qualityMp3": {
+    "description": "Quality option - MP3 lossy format"
+  },
+  "qualityMp3Subtitle": "320kbps (FLAC から変換)",
+  "@qualityMp3Subtitle": {
+    "description": "Technical spec for MP3"
+  },
+  "enableMp3Option": "MP3 オプションを有効",
+  "@enableMp3Option": {
+    "description": "Setting - enable MP3 quality option"
+  },
+  "enableMp3OptionSubtitleOn": "MP3 品質オプションが利用可能です",
+  "@enableMp3OptionSubtitleOn": {
+    "description": "Subtitle when MP3 is enabled"
+  },
+  "enableMp3OptionSubtitleOff": "FLAC をダウンロードして 320kbps の MP3 に変換します",
+  "@enableMp3OptionSubtitleOff": {
+    "description": "Subtitle when MP3 is disabled"
+  },
+  "qualityNote": "実際の品質はサービスからのトラックの可用性に依存します",
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "downloadAskBeforeDownload": "Ask Before Download",
+  "downloadAskBeforeDownload": "ダウンロード前に確認する",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
   },
@@ -2344,63 +2449,63 @@
   "@downloadSeparateSinglesFolder": {
     "description": "Setting - separate folder for singles"
   },
-  "downloadAlbumFolderStructure": "Album Folder Structure",
+  "downloadAlbumFolderStructure": "アルバムフォルダの構造",
   "@downloadAlbumFolderStructure": {
     "description": "Setting - album folder organization"
   },
-  "downloadSaveFormat": "Save Format",
+  "downloadSaveFormat": "形式を保存",
   "@downloadSaveFormat": {
     "description": "Setting - output file format"
   },
-  "downloadSelectService": "Select Service",
+  "downloadSelectService": "サービスを選択",
   "@downloadSelectService": {
     "description": "Dialog title - choose download service"
   },
-  "downloadSelectQuality": "Select Quality",
+  "downloadSelectQuality": "品質を選択",
   "@downloadSelectQuality": {
     "description": "Dialog title - choose audio quality"
   },
-  "downloadFrom": "Download From",
+  "downloadFrom": "ダウンロード元",
   "@downloadFrom": {
     "description": "Label - download source"
   },
-  "downloadDefaultQualityLabel": "Default Quality",
+  "downloadDefaultQualityLabel": "デフォルトの品質",
   "@downloadDefaultQualityLabel": {
     "description": "Label - default quality setting"
   },
-  "downloadBestAvailable": "Best available",
+  "downloadBestAvailable": "おすすめ",
   "@downloadBestAvailable": {
     "description": "Quality option - highest available"
   },
-  "folderNone": "None",
+  "folderNone": "なし",
   "@folderNone": {
     "description": "Folder option - no organization"
   },
-  "folderNoneSubtitle": "Save all files directly to download folder",
+  "folderNoneSubtitle": "すべてのファイルをダウンロードフォルダに保存します",
   "@folderNoneSubtitle": {
     "description": "Subtitle for no folder organization"
   },
-  "folderArtist": "Artist",
+  "folderArtist": "アーティスト",
   "@folderArtist": {
     "description": "Folder option - by artist"
   },
-  "folderArtistSubtitle": "Artist Name/filename",
+  "folderArtistSubtitle": "アーティスト名/ファイル名",
   "@folderArtistSubtitle": {
     "description": "Folder structure example"
   },
-  "folderAlbum": "Album",
+  "folderAlbum": "アルバム",
   "@folderAlbum": {
     "description": "Folder option - by album"
   },
-  "folderAlbumSubtitle": "Album Name/filename",
+  "folderAlbumSubtitle": "アルバム名/ファイル名",
   "@folderAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "folderArtistAlbum": "Artist/Album",
+  "folderArtistAlbum": "アーティスト/アルバム",
   "@folderArtistAlbum": {
     "description": "Folder option - nested"
   },
-  "folderArtistAlbumSubtitle": "Artist Name/Album Name/filename",
+  "folderArtistAlbumSubtitle": "アーティスト名/アルバム名/ファイル名",
   "@folderArtistAlbumSubtitle": {
     "description": "Folder structure example"
   },
@@ -2432,7 +2537,7 @@
   "@appearanceAmoledDarkSubtitle": {
     "description": "Subtitle for AMOLED dark"
   },
-  "appearanceChooseAccentColor": "Choose Accent Color",
+  "appearanceChooseAccentColor": "アクセントカラーを選択",
   "@appearanceChooseAccentColor": {
     "description": "Color picker dialog title"
   },
@@ -2448,75 +2553,75 @@
   "@queueClearAll": {
     "description": "Button - clear all queue items"
   },
-  "queueClearAllMessage": "Are you sure you want to clear all downloads?",
+  "queueClearAllMessage": "すべてのダウンロードを消去してもよろしいですか？",
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "queueEmpty": "No downloads in queue",
+  "queueEmpty": "キューにダウンロードがありません",
   "@queueEmpty": {
     "description": "Empty queue state title"
   },
-  "queueEmptySubtitle": "Add tracks from the home screen",
+  "queueEmptySubtitle": "ホーム画面からトラックを追加",
   "@queueEmptySubtitle": {
     "description": "Empty queue state subtitle"
   },
-  "queueClearCompleted": "Clear completed",
+  "queueClearCompleted": "完了済みを消去",
   "@queueClearCompleted": {
     "description": "Button - clear finished downloads"
   },
-  "queueDownloadFailed": "Download Failed",
+  "queueDownloadFailed": "ダウンロードに失敗しました",
   "@queueDownloadFailed": {
     "description": "Error dialog title"
   },
-  "queueTrackLabel": "Track:",
+  "queueTrackLabel": "トラック:",
   "@queueTrackLabel": {
     "description": "Label in error dialog"
   },
-  "queueArtistLabel": "Artist:",
+  "queueArtistLabel": "アーティスト:",
   "@queueArtistLabel": {
     "description": "Label in error dialog"
   },
-  "queueErrorLabel": "Error:",
+  "queueErrorLabel": "エラー:",
   "@queueErrorLabel": {
     "description": "Label in error dialog"
   },
-  "queueUnknownError": "Unknown error",
+  "queueUnknownError": "不明なエラー",
   "@queueUnknownError": {
     "description": "Fallback error message"
   },
-  "albumFolderArtistAlbum": "Artist / Album",
+  "albumFolderArtistAlbum": "アーティスト / アルバム",
   "@albumFolderArtistAlbum": {
     "description": "Album folder option"
   },
-  "albumFolderArtistAlbumSubtitle": "Albums/Artist Name/Album Name/",
+  "albumFolderArtistAlbumSubtitle": "アルバム/アーティスト名/アルバム名/",
   "@albumFolderArtistAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistYearAlbum": "Artist / [Year] Album",
+  "albumFolderArtistYearAlbum": "アーティスト / [年] アルバム",
   "@albumFolderArtistYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderArtistYearAlbumSubtitle": "Albums/Artist Name/[2005] Album Name/",
+  "albumFolderArtistYearAlbumSubtitle": "アルバム/アーティスト名/[2005] アルバム名/",
   "@albumFolderArtistYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderAlbumOnly": "Album Only",
+  "albumFolderAlbumOnly": "アルバムのみ",
   "@albumFolderAlbumOnly": {
     "description": "Album folder option"
   },
-  "albumFolderAlbumOnlySubtitle": "Albums/Album Name/",
+  "albumFolderAlbumOnlySubtitle": "アルバム/アルバム名/",
   "@albumFolderAlbumOnlySubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderYearAlbum": "[Year] Album",
+  "albumFolderYearAlbum": "[年] アルバム",
   "@albumFolderYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderYearAlbumSubtitle": "Albums/[2005] Album Name/",
+  "albumFolderYearAlbumSubtitle": "アルバム/[2005] アルバム名/",
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "downloadedAlbumDeleteSelected": "Delete Selected",
+  "downloadedAlbumDeleteSelected": "選択済みを削除",
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
@@ -2529,11 +2634,11 @@
       }
     }
   },
-  "downloadedAlbumTracksHeader": "Tracks",
+  "downloadedAlbumTracksHeader": "トラック",
   "@downloadedAlbumTracksHeader": {
     "description": "Section header for tracks"
   },
-  "downloadedAlbumDownloadedCount": "{count} downloaded",
+  "downloadedAlbumDownloadedCount": "{count} 個をダウンロード済み",
   "@downloadedAlbumDownloadedCount": {
     "description": "Downloaded tracks count badge",
     "placeholders": {
@@ -2542,7 +2647,7 @@
       }
     }
   },
-  "downloadedAlbumSelectedCount": "{count} selected",
+  "downloadedAlbumSelectedCount": "{count} 個を選択済み",
   "@downloadedAlbumSelectedCount": {
     "description": "Selection count indicator",
     "placeholders": {
@@ -2551,15 +2656,15 @@
       }
     }
   },
-  "downloadedAlbumAllSelected": "All tracks selected",
+  "downloadedAlbumAllSelected": "すべてのトラックを選択済み",
   "@downloadedAlbumAllSelected": {
     "description": "Status - all items selected"
   },
-  "downloadedAlbumTapToSelect": "Tap tracks to select",
+  "downloadedAlbumTapToSelect": "トラックをタップで選択",
   "@downloadedAlbumTapToSelect": {
     "description": "Selection hint"
   },
-  "downloadedAlbumDeleteCount": "Delete {count} {count, plural, =1{track} other{tracks}}",
+  "downloadedAlbumDeleteCount": "{count} {count, plural, =1{個のトラック} other{個のトラック}}を削除",
   "@downloadedAlbumDeleteCount": {
     "description": "Delete button text with count",
     "placeholders": {
@@ -2568,31 +2673,41 @@
       }
     }
   },
-  "downloadedAlbumSelectToDelete": "Select tracks to delete",
+  "downloadedAlbumSelectToDelete": "トラックを選択で削除",
   "@downloadedAlbumSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
-  "utilityFunctions": "Utility Functions",
+  "downloadedAlbumDiscHeader": "ディスク {discNumber}",
+  "@downloadedAlbumDiscHeader": {
+    "description": "Header for disc separator in multi-disc albums",
+    "placeholders": {
+      "discNumber": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "utilityFunctions": "ユーティリティ機能",
   "@utilityFunctions": {
     "description": "Extension capability - utility functions"
   },
-  "recentTypeArtist": "Artist",
+  "recentTypeArtist": "アーティスト",
   "@recentTypeArtist": {
     "description": "Recent access item type - artist"
   },
-  "recentTypeAlbum": "Album",
+  "recentTypeAlbum": "アルバム",
   "@recentTypeAlbum": {
     "description": "Recent access item type - album"
   },
-  "recentTypeSong": "Song",
+  "recentTypeSong": "曲",
   "@recentTypeSong": {
     "description": "Recent access item type - song/track"
   },
-  "recentTypePlaylist": "Playlist",
+  "recentTypePlaylist": "プレイリスト",
   "@recentTypePlaylist": {
     "description": "Recent access item type - playlist"
   },
-  "recentPlaylistInfo": "Playlist: {name}",
+  "recentPlaylistInfo": "プレイリスト: {name}",
   "@recentPlaylistInfo": {
     "description": "Snackbar message when tapping playlist in recent access",
     "placeholders": {
@@ -2602,7 +2717,7 @@
       }
     }
   },
-  "errorGeneric": "Error: {message}",
+  "errorGeneric": "エラー: {message}",
   "@errorGeneric": {
     "description": "Generic error message format",
     "placeholders": {
