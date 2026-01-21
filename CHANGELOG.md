@@ -44,6 +44,17 @@
   - Parsed from spotify-web and ytmusic home feed responses
   - Fixes track duration showing "0:00" in metadata screen after download from home feed
 
+- **Discography Download** (Highly Requested): Download entire artist discography with album selection
+  - New "Download Discography" button in artist header
+  - Bottom sheet options: Download All, Albums Only, Singles & EPs Only, or Select Albums
+  - Album selection mode with multi-select checkboxes on album cards
+  - Long press on album card to enter selection mode
+  - Selection bar with Select All/Deselect All and Download Selected actions
+  - Progress dialog showing current/total albums while fetching tracks
+  - Automatically skips already downloaded tracks (checks history database)
+  - Works with Spotify, Deezer, and Extension-based artists
+  - Back button exits selection mode instead of navigating away
+
 ### Fixed
 
 - **YT Music Greeting Time**: Fixed "Good night" showing in the morning
@@ -74,6 +85,18 @@
   - `getTimeBasedGreeting()` now uses `gobackend.getLocalTime().hour` directly
   - Added `duration_ms` parsing from subtitle runs in home feed items
   - Simplified greeting logic - no more manual UTC offset calculations
+
+### Localization
+
+- Added 18 new strings for discography download feature:
+  - `discographyDownload`, `discographyDownloadAll`, `discographyDownloadAllSubtitle`
+  - `discographyAlbumsOnly`, `discographyAlbumsOnlySubtitle`
+  - `discographySinglesOnly`, `discographySinglesOnlySubtitle`
+  - `discographySelectAlbums`, `discographySelectAlbumsSubtitle`
+  - `discographyFetchingTracks`, `discographyFetchingAlbum`
+  - `discographySelectedCount`, `discographyDownloadSelected`
+  - `discographyAddedToQueue`, `discographySkippedDownloaded`
+  - `discographyNoAlbums`, `discographyFailedToFetch`
 
 ### Technical
 
