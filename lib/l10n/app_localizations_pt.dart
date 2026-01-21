@@ -1619,6 +1619,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackLyricsLoadFailed => 'Failed to load lyrics';
 
   @override
+  String get trackEmbedLyrics => 'Embed Lyrics';
+
+  @override
+  String get trackLyricsEmbedded => 'Lyrics embedded successfully';
+
+  @override
+  String get trackInstrumental => 'Instrumental track';
+
+  @override
   String get trackCopiedToClipboard => 'Copied to clipboard';
 
   @override
@@ -2005,6 +2014,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get albumFolderYearAlbumSubtitle => 'Albums/[2005] Album Name/';
+
+  @override
+  String get albumFolderArtistAlbumSingles => 'Artist / Album + Singles';
+
+  @override
+  String get albumFolderArtistAlbumSinglesSubtitle =>
+      'Artist/Album/ and Artist/Singles/';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Delete Selected';

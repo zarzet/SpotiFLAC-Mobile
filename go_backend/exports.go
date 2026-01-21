@@ -615,10 +615,11 @@ func FetchLyrics(spotifyID, trackName, artistName string, durationMs int64) (str
 	}
 
 	result := map[string]interface{}{
-		"success":   true,
-		"source":    lyrics.Source,
-		"sync_type": lyrics.SyncType,
-		"lines":     lyrics.Lines,
+		"success":      true,
+		"source":       lyrics.Source,
+		"sync_type":    lyrics.SyncType,
+		"lines":        lyrics.Lines,
+		"instrumental": lyrics.Instrumental,
 	}
 
 	jsonBytes, err := json.Marshal(result)
@@ -630,11 +631,15 @@ func FetchLyrics(spotifyID, trackName, artistName string, durationMs int64) (str
 }
 
 func GetLyricsLRC(spotifyID, trackName, artistName string, filePath string, durationMs int64) (string, error) {
+	// If filePath is provided, ONLY check file - don't fallback to online
+	// This allows Flutter to distinguish between "from file" vs "from online"
 	if filePath != "" {
 		lyrics, err := ExtractLyrics(filePath)
 		if err == nil && lyrics != "" {
 			return lyrics, nil
 		}
+		// File has no lyrics - return empty, let Flutter call again without filePath
+		return "", nil
 	}
 
 	client := NewLyricsClient()
@@ -642,6 +647,11 @@ func GetLyricsLRC(spotifyID, trackName, artistName string, filePath string, dura
 	lyricsData, err := client.FetchLyricsAllSources(spotifyID, trackName, artistName, durationSec)
 	if err != nil {
 		return "", err
+	}
+
+	// Return special marker for instrumental tracks
+	if lyricsData.Instrumental {
+		return "[instrumental:true]", nil
 	}
 
 	lrcContent := convertToLRCWithMetadata(lyricsData, trackName, artistName)
@@ -1698,6 +1708,11 @@ func GetAlbumWithExtensionJSON(extensionID, albumID string) (string, error) {
 		if trackCover == "" {
 			trackCover = album.CoverURL
 		}
+		// Use track number from extension, fallback to index+1 if not provided
+		trackNum := track.TrackNumber
+		if trackNum == 0 {
+			trackNum = i + 1
+		}
 		tracks[i] = map[string]interface{}{
 			"id":           track.ID,
 			"name":         track.Name,
@@ -1707,7 +1722,7 @@ func GetAlbumWithExtensionJSON(extensionID, albumID string) (string, error) {
 			"duration_ms":  track.DurationMS,
 			"cover_url":    trackCover,
 			"release_date": track.ReleaseDate,
-			"track_number": track.TrackNumber,
+			"track_number": trackNum,
 			"disc_number":  track.DiscNumber,
 			"isrc":         track.ISRC,
 			"provider_id":  track.ProviderID,

@@ -712,14 +712,29 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     if (separateSingles) {
       final isSingle = track.isSingle;
+      final artistName = _sanitizeFolderName(albumArtist);
       
+      // New option: Singles folder inside Artist folder
+      if (albumFolderStructure == 'artist_album_singles') {
+        if (isSingle) {
+          final singlesPath = '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}Singles';
+          await _ensureDirExists(singlesPath, label: 'Artist Singles folder');
+          return singlesPath;
+        } else {
+          final albumName = _sanitizeFolderName(track.albumName);
+          final albumPath = '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}$albumName';
+          await _ensureDirExists(albumPath, label: 'Artist Album folder');
+          return albumPath;
+        }
+      }
+      
+      // Existing behavior: Separate Albums/ and Singles/ at root
       if (isSingle) {
         final singlesPath = '$baseDir${Platform.pathSeparator}Singles';
         await _ensureDirExists(singlesPath, label: 'Singles folder');
         return singlesPath;
       } else {
         final albumName = _sanitizeFolderName(track.albumName);
-        final artistName = _sanitizeFolderName(albumArtist);
         final year = _extractYear(track.releaseDate);
         String albumPath;
         
@@ -1169,10 +1184,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           durationMs: durationMs,
         );
 
-        if (lrcContent.isNotEmpty) {
+        // Skip instrumental tracks (no lyrics to embed)
+        if (lrcContent.isNotEmpty && lrcContent != '[instrumental:true]') {
           metadata['LYRICS'] = lrcContent;
           metadata['UNSYNCEDLYRICS'] = lrcContent;
           _log.d('Lyrics fetched for embedding (${lrcContent.length} chars)');
+        } else if (lrcContent == '[instrumental:true]') {
+          _log.d('Track is instrumental, skipping lyrics embedding');
         }
       } catch (e) {
         _log.w('Failed to fetch lyrics for embedding: $e');

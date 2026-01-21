@@ -1653,6 +1653,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trackLyricsLoadFailed => 'Не удалось загрузить текст песни';
 
   @override
+  String get trackEmbedLyrics => 'Embed Lyrics';
+
+  @override
+  String get trackLyricsEmbedded => 'Lyrics embedded successfully';
+
+  @override
+  String get trackInstrumental => 'Instrumental track';
+
+  @override
   String get trackCopiedToClipboard => 'Скопировано в буфер обмена';
 
   @override
@@ -2046,6 +2055,13 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get albumFolderYearAlbumSubtitle =>
       'Альбомы/[2005] Название Альбома /';
+
+  @override
+  String get albumFolderArtistAlbumSingles => 'Artist / Album + Singles';
+
+  @override
+  String get albumFolderArtistAlbumSinglesSubtitle =>
+      'Artist/Album/ and Artist/Singles/';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Удалить выбранные';

@@ -276,6 +276,8 @@ class DownloadSettingsPage extends ConsumerWidget {
         return 'Albums/Artist/[Year] Album/';
       case 'year_album':
         return 'Albums/[Year] Album/';
+      case 'artist_album_singles':
+        return 'Artist/Album/ + Artist/Singles/';
       default:
         return 'Albums/Artist/Album Name/';
     }
@@ -325,6 +327,16 @@ class DownloadSettingsPage extends ConsumerWidget {
               trailing: current == 'year_album' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setAlbumFolderStructure('year_album');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_outlined),
+              title: Text(context.l10n.albumFolderArtistAlbumSingles),
+              subtitle: Text(context.l10n.albumFolderArtistAlbumSinglesSubtitle),
+              trailing: current == 'artist_album_singles' ? const Icon(Icons.check) : null,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setAlbumFolderStructure('artist_album_singles');
                 Navigator.pop(context);
               },
             ),

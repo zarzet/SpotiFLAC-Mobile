@@ -1629,6 +1629,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get trackLyricsLoadFailed => 'Gagal memuat lirik';
 
   @override
+  String get trackEmbedLyrics => 'Embed Lyrics';
+
+  @override
+  String get trackLyricsEmbedded => 'Lyrics embedded successfully';
+
+  @override
+  String get trackInstrumental => 'Instrumental track';
+
+  @override
   String get trackCopiedToClipboard => 'Disalin ke clipboard';
 
   @override
@@ -2018,6 +2027,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get albumFolderYearAlbumSubtitle => 'Albums/[2005] Nama Album/';
+
+  @override
+  String get albumFolderArtistAlbumSingles => 'Artist / Album + Singles';
+
+  @override
+  String get albumFolderArtistAlbumSinglesSubtitle =>
+      'Artist/Album/ and Artist/Singles/';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Hapus yang Dipilih';

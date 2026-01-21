@@ -2962,6 +2962,24 @@ abstract class AppLocalizations {
   /// **'Failed to load lyrics'**
   String get trackLyricsLoadFailed;
 
+  /// Action - embed lyrics into audio file
+  ///
+  /// In en, this message translates to:
+  /// **'Embed Lyrics'**
+  String get trackEmbedLyrics;
+
+  /// Snackbar - lyrics saved to file
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics embedded successfully'**
+  String get trackLyricsEmbedded;
+
+  /// Message when track is instrumental (no lyrics)
+  ///
+  /// In en, this message translates to:
+  /// **'Instrumental track'**
+  String get trackInstrumental;
+
   /// Snackbar - content copied
   ///
   /// In en, this message translates to:
@@ -3687,6 +3705,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Albums/[2005] Album Name/'**
   String get albumFolderYearAlbumSubtitle;
+
+  /// Album folder option with singles inside artist
+  ///
+  /// In en, this message translates to:
+  /// **'Artist / Album + Singles'**
+  String get albumFolderArtistAlbumSingles;
+
+  /// Folder structure example
+  ///
+  /// In en, this message translates to:
+  /// **'Artist/Album/ and Artist/Singles/'**
+  String get albumFolderArtistAlbumSinglesSubtitle;
 
   /// Button - delete selected tracks
   ///

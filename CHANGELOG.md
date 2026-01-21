@@ -2,14 +2,25 @@
 
 ## [3.2.1] - 2026-01-22
 
-> **Note:** Starting from the next release, version format will change from `major.minor.patch` to `year.month.day` (e.g., 26.1.23).
+> **Note:** Next release will use `year.month.day` format (e.g., 26.2.1) and is scheduled for early February. Developer is taking a short break!
+
+### Added
+
+- **Artist/Album + Singles Folder Structure**: Singles go inside artist folder (`Artist/Album/`, `Artist/Singles/`)
+- **Embed Lyrics Button**: Manually embed online lyrics into tracks from Track Info screen (preserves synced timestamps)
+- **Pause/Resume Button**: Added pause and resume controls next to "Downloading" header in History screen
+- **Instrumental Detection**: Tracks marked as instrumental on lrclib.net now show "Instrumental track" instead of "Lyrics not available"
 
 ### Fixed
 
-- **iOS History Migration**: Fixed "File not found" after updating from 3.1.x to 3.2.0 (container UUID change)
-- **Home Feed Greeting**: Fixed wrong timezone - now uses device local time instead of extension
-- **Deezer Track Position**: Fallback to index+1 when API returns 0 for track position
-- **Spanish & Portuguese Plurals**: Fixed 16 ICU syntax warnings in localization files
+- **Lyrics**: Multi-artist tracks now search by primary artist first, then full string
+- **Lyrics**: Metadata tags (`[ti:...]`, `[ar:...]`, `[by:...]`) no longer shown in display
+- **Lyrics**: Embed button now correctly appears for tracks with online lyrics
+- **Lyrics**: Manual embed preserves original timestamps instead of plain text
+- **iOS**: Fixed "File not found" after 3.1.x → 3.2.0 update (container UUID migration)
+- **Home Feed**: Greeting now uses device local time
+- **Deezer**: Track position fallback to index+1 when API returns 0
+- **Localization**: Fixed 16 ICU plural syntax warnings in Spanish & Portuguese
 
 ---
 

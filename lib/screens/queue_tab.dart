@@ -783,11 +783,17 @@ final queueItems = ref.watch(downloadQueueProvider.select((s) => s.items));
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    child: Text(
-                      'Downloading (${queueItems.length})',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Downloading (${queueItems.length})',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        _buildPauseResumeButton(context, ref, colorScheme),
+                      ],
                     ),
                   ),
                 ),
@@ -1143,6 +1149,31 @@ if (queueItems.isEmpty &&
             child: SizedBox(height: _isSelectionMode ? 100 : 16),
           ),
       ],
+    );
+  }
+
+  Widget _buildPauseResumeButton(
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+  ) {
+    final isPaused = ref.watch(downloadQueueProvider.select((s) => s.isPaused));
+    
+    return TextButton.icon(
+      onPressed: () {
+        ref.read(downloadQueueProvider.notifier).togglePause();
+      },
+      icon: Icon(
+        isPaused ? Icons.play_arrow : Icons.pause,
+        size: 18,
+      ),
+      label: Text(
+        isPaused ? context.l10n.actionResume : context.l10n.actionPause,
+      ),
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        foregroundColor: isPaused ? colorScheme.primary : colorScheme.onSurfaceVariant,
+      ),
     );
   }
 

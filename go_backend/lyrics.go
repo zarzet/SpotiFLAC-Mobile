@@ -240,7 +240,10 @@ func (c *LyricsClient) durationMatches(lrcDuration, targetDuration float64) bool
 
 // durationSec: track duration in seconds for matching, use 0 to skip duration matching
 func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName string, durationSec float64) (*LyricsResponse, error) {
-	// Check cache first
+	// Normalize artist name - take first artist before comma/semicolon for better matching
+	primaryArtist := normalizeArtistName(artistName)
+
+	// Check cache first (use original artist name for cache key)
 	if cached, found := globalLyricsCache.Get(artistName, trackName, durationSec); found {
 		fmt.Printf("[Lyrics] Cache hit for: %s - %s\n", artistName, trackName)
 		cachedCopy := *cached
@@ -251,29 +254,44 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 	var lyrics *LyricsResponse
 	var err error
 
-	// Try exact match first
-	lyrics, err = c.FetchLyricsWithMetadata(artistName, trackName)
-	if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
+	// Helper to check if lyrics result is valid (has lines OR is instrumental)
+	isValidResult := func(l *LyricsResponse) bool {
+		return l != nil && (len(l.Lines) > 0 || l.Instrumental)
+	}
+
+	// Try exact match first with primary artist
+	lyrics, err = c.FetchLyricsWithMetadata(primaryArtist, trackName)
+	if err == nil && isValidResult(lyrics) {
 		lyrics.Source = "LRCLIB"
 		globalLyricsCache.Set(artistName, trackName, durationSec, lyrics)
 		return lyrics, nil
 	}
 
+	// Try with full artist name if different from primary
+	if primaryArtist != artistName {
+		lyrics, err = c.FetchLyricsWithMetadata(artistName, trackName)
+		if err == nil && isValidResult(lyrics) {
+			lyrics.Source = "LRCLIB"
+			globalLyricsCache.Set(artistName, trackName, durationSec, lyrics)
+			return lyrics, nil
+		}
+	}
+
 	// Try with simplified track name
 	simplifiedTrack := simplifyTrackName(trackName)
 	if simplifiedTrack != trackName {
-		lyrics, err = c.FetchLyricsWithMetadata(artistName, simplifiedTrack)
-		if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
+		lyrics, err = c.FetchLyricsWithMetadata(primaryArtist, simplifiedTrack)
+		if err == nil && isValidResult(lyrics) {
 			lyrics.Source = "LRCLIB (simplified)"
 			globalLyricsCache.Set(artistName, trackName, durationSec, lyrics)
 			return lyrics, nil
 		}
 	}
 
-	// Search with duration matching
-	query := artistName + " " + trackName
+	// Search with duration matching (use primary artist for search)
+	query := primaryArtist + " " + trackName
 	lyrics, err = c.FetchLyricsFromLRCLibSearch(query, durationSec)
-	if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
+	if err == nil && isValidResult(lyrics) {
 		lyrics.Source = "LRCLIB Search"
 		globalLyricsCache.Set(artistName, trackName, durationSec, lyrics)
 		return lyrics, nil
@@ -281,9 +299,9 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 
 	// Search with simplified name and duration matching
 	if simplifiedTrack != trackName {
-		query = artistName + " " + simplifiedTrack
+		query = primaryArtist + " " + simplifiedTrack
 		lyrics, err = c.FetchLyricsFromLRCLibSearch(query, durationSec)
-		if err == nil && lyrics != nil && len(lyrics.Lines) > 0 {
+		if err == nil && isValidResult(lyrics) {
 			lyrics.Source = "LRCLIB Search (simplified)"
 			globalLyricsCache.Set(artistName, trackName, durationSec, lyrics)
 			return lyrics, nil
@@ -457,6 +475,24 @@ func simplifyTrackName(name string) string {
 	for _, pattern := range patterns {
 		re := regexp.MustCompile("(?i)" + pattern)
 		result = re.ReplaceAllString(result, "")
+	}
+
+	return strings.TrimSpace(result)
+}
+
+// normalizeArtistName extracts the primary artist from multi-artist strings
+// e.g., "HOYO-MiX, AURORA" -> "HOYO-MiX"
+// e.g., "Artist1; Artist2" -> "Artist1"
+func normalizeArtistName(name string) string {
+	// Split by common separators: ", " or "; " or " & " or " feat. " or " ft. "
+	separators := []string{", ", "; ", " & ", " feat. ", " ft. ", " featuring ", " with "}
+
+	result := name
+	for _, sep := range separators {
+		if idx := strings.Index(strings.ToLower(result), strings.ToLower(sep)); idx > 0 {
+			result = result[:idx]
+			break
+		}
 	}
 
 	return strings.TrimSpace(result)
