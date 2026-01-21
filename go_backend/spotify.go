@@ -170,6 +170,7 @@ type AlbumInfoMetadata struct {
 	Name        string `json:"name"`
 	ReleaseDate string `json:"release_date"`
 	Artists     string `json:"artists"`
+	ArtistId    string `json:"artist_id,omitempty"`
 	Images      string `json:"images"`
 	Genre       string `json:"genre,omitempty"`
 	Label       string `json:"label,omitempty"`
@@ -512,11 +513,19 @@ func (c *SpotifyMetadataClient) fetchAlbum(ctx context.Context, albumID, token s
 	}
 
 	albumImage := firstImageURL(data.Images)
+
+	// Get first artist ID
+	var firstArtistId string
+	if len(data.Artists) > 0 {
+		firstArtistId = data.Artists[0].ID
+	}
+
 	info := AlbumInfoMetadata{
 		TotalTracks: data.TotalTracks,
 		Name:        data.Name,
 		ReleaseDate: data.ReleaseDate,
 		Artists:     joinArtists(data.Artists),
+		ArtistId:    firstArtistId,
 		Images:      albumImage,
 	}
 

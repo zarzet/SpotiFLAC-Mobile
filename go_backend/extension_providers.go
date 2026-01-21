@@ -58,6 +58,7 @@ type ExtAlbumMetadata struct {
 	ID          string             `json:"id"`
 	Name        string             `json:"name"`
 	Artists     string             `json:"artists"`
+	ArtistID    string             `json:"artist_id,omitempty"`
 	CoverURL    string             `json:"cover_url,omitempty"`
 	ReleaseDate string             `json:"release_date,omitempty"`
 	TotalTracks int                `json:"total_tracks"`

@@ -85,7 +85,7 @@
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historyTracksCount": "{count, plural, one {}=1{1 faixa} other{{count} faixas}}",
+  "historyTracksCount": "{count, plural, =1{1 faixa} other{{count} faixas}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
     "placeholders": {
@@ -94,7 +94,7 @@
       }
     }
   },
-  "historyAlbumsCount": "{count, plural, one {}=1{1 álbum} other{{count} álbuns}}",
+  "historyAlbumsCount": "{count, plural, =1{1 álbum} other{{count} álbuns}}",
   "@historyAlbumsCount": {
     "description": "Album count with plural form",
     "placeholders": {
@@ -596,7 +596,7 @@
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, one {}=1{1 faixa} other{{count} faixas}}",
+  "albumTracks": "{count, plural, =1{1 faixa} other{{count} faixas}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -633,7 +633,7 @@
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, one {}=1{1 lançamento} other{{count} lançamentos}}",
+  "artistReleases": "{count, plural, =1{1 lançamento} other{{count} lançamentos}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -1376,7 +1376,7 @@
   "@selectionTapToSelect": {
     "description": "Hint - how to select items"
   },
-  "selectionDeleteTracks": "Apagar {count} {count, plural, one {}=1{faixa} other{faixas}}",
+  "selectionDeleteTracks": "Apagar {count} {count, plural, =1{faixa} other{faixas}}",
   "@selectionDeleteTracks": {
     "description": "Delete button with count",
     "placeholders": {
@@ -1916,7 +1916,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, one {}=1{1 faixa} other{{count} faixas}}",
+  "tracksCount": "{count, plural, =1{1 faixa} other{{count} faixas}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {

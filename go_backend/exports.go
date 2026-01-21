@@ -1720,6 +1720,7 @@ func GetAlbumWithExtensionJSON(extensionID, albumID string) (string, error) {
 		"id":           album.ID,
 		"name":         album.Name,
 		"artists":      album.Artists,
+		"artist_id":    album.ArtistID,
 		"cover_url":    album.CoverURL,
 		"release_date": album.ReleaseDate,
 		"total_tracks": album.TotalTracks,

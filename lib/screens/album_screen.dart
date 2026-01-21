@@ -12,6 +12,8 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
+import 'package:spotiflac_android/screens/artist_screen.dart';
+import 'package:spotiflac_android/screens/home_tab.dart' show ExtensionArtistScreen;
 
 class _AlbumCache {
   static final Map<String, _CacheEntry> _cache = {};
@@ -43,6 +45,9 @@ class AlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
   final String? coverUrl;
   final List<Track>? tracks; // Optional - will fetch if null
+  final String? extensionId; // If from extension
+  final String? artistId; // Artist ID for navigation
+  final String? artistName; // Artist name for navigation
 
   const AlbumScreen({
     super.key,
@@ -50,6 +55,9 @@ class AlbumScreen extends ConsumerStatefulWidget {
     required this.albumName,
     this.coverUrl,
     this.tracks,
+    this.extensionId,
+    this.artistId,
+    this.artistName,
   });
 
   @override
@@ -62,6 +70,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   String? _error;
   Color? _dominantColor;
   bool _showTitleInAppBar = false;
+  String? _artistId;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -78,10 +87,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         artistName: widget.tracks?.firstOrNull?.artistName,
         imageUrl: widget.coverUrl,
         providerId: providerId,
-      );
+);
     });
     
     _tracks = widget.tracks ?? _AlbumCache.get(widget.albumId);
+    _artistId = widget.artistId; // Use provided artist ID if available
+    
     if (_tracks == null) {
       _fetchTracks();
     }
@@ -103,7 +114,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  Future<void> _extractDominantColor() async {
+Future<void> _extractDominantColor() async {
     if (widget.coverUrl == null) return;
     final color = await PaletteService.instance.extractDominantColor(widget.coverUrl);
     if (mounted && color != null) {
@@ -111,7 +122,25 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  Future<void> _fetchTracks() async {
+  String _formatReleaseDate(String date) {
+    // Handle formats: "2024-01-15", "2024-01", "2024"
+    if (date.length >= 10) {
+      // Full date: 2024-01-15
+      final parts = date.substring(0, 10).split('-');
+      if (parts.length == 3) {
+        return '${parts[2]}/${parts[1]}/${parts[0]}'; // DD/MM/YYYY
+      }
+    } else if (date.length >= 7) {
+      // Month: 2024-01
+      final parts = date.split('-');
+      if (parts.length >= 2) {
+        return '${parts[1]}/${parts[0]}'; // MM/YYYY
+      }
+    }
+    return date; // Year only or unknown format
+  }
+
+Future<void> _fetchTracks() async {
     setState(() => _isLoading = true);
     try {
       Map<String, dynamic> metadata;
@@ -127,11 +156,16 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       final trackList = metadata['track_list'] as List<dynamic>;
       final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
       
+      // Extract artist ID from album_info if available
+      final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
+      final artistId = albumInfo?['artist_id'] as String?;
+      
       _AlbumCache.set(widget.albumId, tracks);
       
       if (mounted) {
         setState(() {
           _tracks = tracks;
+          _artistId = artistId;
           _isLoading = false;
         });
       }
@@ -300,9 +334,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
+Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
     final tracks = _tracks ?? [];
     final artistName = tracks.isNotEmpty ? tracks.first.artistName : null;
+    final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
     
     return SliverToBoxAdapter(
       child: Padding(
@@ -322,32 +357,59 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                 ),
                 if (artistName != null && artistName.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    artistName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  GestureDetector(
+                    onTap: () => _navigateToArtist(context, artistName),
+                    child: Text(
+                      artistName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 12),
                 if (tracks.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(20)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.music_note, size: 14, color: colorScheme.onSecondaryContainer),
-                        const SizedBox(width: 4),
-                        Text(context.l10n.tracksCount(tracks.length), style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
-                      ],
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(20)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.music_note, size: 14, color: colorScheme.onSecondaryContainer),
+                            const SizedBox(width: 4),
+                            Text(context.l10n.tracksCount(tracks.length), style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      if (releaseDate != null && releaseDate.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: colorScheme.tertiaryContainer, borderRadius: BorderRadius.circular(20)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.calendar_today, size: 14, color: colorScheme.onTertiaryContainer),
+                              const SizedBox(width: 4),
+                              Text(_formatReleaseDate(releaseDate), style: TextStyle(color: colorScheme.onTertiaryContainer, fontWeight: FontWeight.w600, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 if (tracks.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () => _downloadAll(context),
-                    icon: const Icon(Icons.download),
+                    icon: const Icon(Icons.download, size: 18),
                     label: Text(context.l10n.downloadAllCount(tracks.length)),
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
                   ),
                 ],
               ],
@@ -426,8 +488,49 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       );
     } else {
       ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
+ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
     }
+  }
+
+  void _navigateToArtist(BuildContext context, String artistName) {
+    // Use stored artist ID if available, otherwise use a placeholder
+    final artistId = _artistId ?? 
+        (widget.albumId.startsWith('deezer:') ? 'deezer:unknown' : 'unknown');
+    
+    // Don't navigate if artist ID is unknown
+    if (artistId == 'unknown' || artistId == 'deezer:unknown' || artistId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Artist information not available')),
+      );
+      return;
+    }
+    
+    // If from extension, use ExtensionArtistScreen
+    if (widget.extensionId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExtensionArtistScreen(
+            extensionId: widget.extensionId!,
+            artistId: artistId,
+            artistName: artistName,
+            coverUrl: widget.coverUrl,
+          ),
+        ),
+      );
+      return;
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ArtistScreen(
+          artistId: artistId,
+          artistName: artistName,
+          coverUrl: widget.coverUrl,
+        ),
+      ),
+    );
   }
 
   Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
@@ -524,11 +627,20 @@ class _AlbumTrackItem extends ConsumerWidget {
         elevation: 0,
         color: Colors.transparent,
         margin: const EdgeInsets.symmetric(vertical: 2),
-        child: ListTile(
+child: ListTile(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-leading: track.coverUrl != null
-              ? ClipRRect(borderRadius: BorderRadius.circular(8), child: CachedNetworkImage(imageUrl: track.coverUrl!, width: 48, height: 48, fit: BoxFit.cover, memCacheWidth: 96, cacheManager: CoverCacheManager.instance))
-              : Container(width: 48, height: 48, decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.music_note, color: colorScheme.onSurfaceVariant)),
+          leading: SizedBox(
+            width: 32,
+            child: Center(
+              child: Text(
+                '${track.trackNumber ?? 0}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
           title: Text(track.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
           subtitle: Text(track.artistName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurfaceVariant)),
           trailing: _buildDownloadButton(context, ref, colorScheme, isQueued: isQueued, isDownloading: isDownloading, isFinalizing: isFinalizing, showAsDownloaded: showAsDownloaded, isInHistory: isInHistory, progress: progress),

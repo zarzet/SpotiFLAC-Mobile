@@ -325,6 +325,7 @@ func (c *DeezerClient) GetAlbum(ctx context.Context, albumID string) (*AlbumResp
 		Name:        album.Title,
 		ReleaseDate: album.ReleaseDate,
 		Artists:     artistName,
+		ArtistId:    fmt.Sprintf("deezer:%d", album.Artist.ID),
 		Images:      albumImage,
 		Genre:       genreStr,    // From Deezer album
 		Label:       album.Label, // From Deezer album

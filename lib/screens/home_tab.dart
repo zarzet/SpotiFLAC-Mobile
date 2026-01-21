@@ -726,7 +726,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
               return Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Text(
-                  greeting!,
+                  greeting,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -1230,6 +1230,8 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
   Widget _buildRecentAccessItem(RecentAccessItem item, ColorScheme colorScheme) {
     IconData typeIcon;
     String typeLabel;
+    final isDownloaded = item.providerId == 'download';
+    
     switch (item.type) {
       case RecentAccessType.artist:
         typeIcon = Icons.person;
@@ -1293,11 +1295,13 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.subtitle != null ? '$typeLabel • ${item.subtitle}' : typeLabel,
+                      isDownloaded 
+                          ? (item.subtitle != null ? '${context.l10n.recentTypeSong} • ${item.subtitle}' : context.l10n.recentTypeSong)
+                          : (item.subtitle != null ? '$typeLabel • ${item.subtitle}' : typeLabel),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: isDownloaded ? colorScheme.primary : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -2441,6 +2445,8 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
   List<Track>? _tracks;
   bool _isLoading = true;
   String? _error;
+  String? _artistId;
+  String? _artistName;
 
   @override
   void initState() {
@@ -2480,8 +2486,14 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       
       final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
       
+      // Extract artist info from album response
+      final artistId = result['artist_id'] as String?;
+      final artistName = result['artists'] as String?;
+      
       setState(() {
         _tracks = tracks;
+        _artistId = artistId;
+        _artistName = artistName;
         _isLoading = false;
       });
     } catch (e) {
@@ -2550,6 +2562,9 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       albumName: widget.albumName,
       coverUrl: widget.coverUrl,
       tracks: _tracks,
+      extensionId: widget.extensionId,
+      artistId: _artistId,
+      artistName: _artistName,
     );
   }
 }
@@ -2933,7 +2948,7 @@ class _QuickPicksPageViewState extends State<_QuickPicksPageView> {
                     shape: BoxShape.circle,
                     color: isActive 
                         ? widget.colorScheme.primary 
-                        : widget.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        : widget.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                   ),
                 );
               }),

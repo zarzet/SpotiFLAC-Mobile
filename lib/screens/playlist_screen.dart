@@ -215,12 +215,15 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () => _downloadAll(context),
-                  icon: const Icon(Icons.download),
+                  icon: const Icon(Icons.download, size: 18),
                   label: Text(context.l10n.downloadAllCount(widget.tracks.length)),
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  ),
                 ),
               ],
             ),
