@@ -2102,6 +2102,18 @@
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
+  "trackEmbedLyrics": "Embed Lyrics",
+  "@trackEmbedLyrics": {
+    "description": "Action - embed lyrics into audio file"
+  },
+  "trackLyricsEmbedded": "Lyrics embedded successfully",
+  "@trackLyricsEmbedded": {
+    "description": "Snackbar - lyrics saved to file"
+  },
+  "trackInstrumental": "Instrumental track",
+  "@trackInstrumental": {
+    "description": "Message when track is instrumental (no lyrics)"
+  },
   "trackCopiedToClipboard": "Copied to clipboard",
   "@trackCopiedToClipboard": {
     "description": "Snackbar - content copied"
@@ -2619,6 +2631,14 @@
   },
   "albumFolderYearAlbumSubtitle": "Albums/[2005] Album Name/",
   "@albumFolderYearAlbumSubtitle": {
+    "description": "Folder structure example"
+  },
+  "albumFolderArtistAlbumSingles": "Artist / Album + Singles",
+  "@albumFolderArtistAlbumSingles": {
+    "description": "Album folder option with singles inside artist"
+  },
+  "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
+  "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
   },
   "downloadedAlbumDeleteSelected": "Delete Selected",
