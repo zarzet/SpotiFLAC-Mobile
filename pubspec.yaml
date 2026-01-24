@@ -66,6 +66,9 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^19.0.0
 
+  # WebDAV
+  webdav_client: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

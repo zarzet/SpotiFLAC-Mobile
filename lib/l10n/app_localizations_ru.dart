@@ -2209,4 +2209,107 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get discographyFailedToFetch => 'Failed to fetch some albums';
+
+  @override
+  String get webdavTitle => 'WebDAV Storage';
+
+  @override
+  String get webdavSubtitle => 'Upload files to WebDAV server';
+
+  @override
+  String get webdavSectionConfig => 'Configuration';
+
+  @override
+  String get webdavSectionServer => 'Server';
+
+  @override
+  String get webdavSectionOptions => 'Options';
+
+  @override
+  String get webdavSectionQueue => 'Upload Queue';
+
+  @override
+  String get webdavEnable => 'Enable WebDAV Upload';
+
+  @override
+  String get webdavEnableSubtitleConfigured =>
+      'Upload downloaded files to WebDAV server';
+
+  @override
+  String get webdavEnableSubtitleNotConfigured =>
+      'Configure server settings first';
+
+  @override
+  String get webdavServerUrl => 'Server URL';
+
+  @override
+  String get webdavUsername => 'Username';
+
+  @override
+  String get webdavUsernamePlaceholder => 'Enter username';
+
+  @override
+  String get webdavPassword => 'Password';
+
+  @override
+  String get webdavPasswordPlaceholder => 'Enter password';
+
+  @override
+  String get webdavRemotePath => 'Remote Path';
+
+  @override
+  String get webdavTestConnection => 'Test Connection';
+
+  @override
+  String get webdavTesting => 'Testing...';
+
+  @override
+  String get webdavConnectionSuccess => 'Connection successful!';
+
+  @override
+  String webdavConnectionFailed(String error) {
+    return 'Connection failed: $error';
+  }
+
+  @override
+  String get webdavDeleteLocal => 'Delete Local After Upload';
+
+  @override
+  String get webdavDeleteLocalSubtitle =>
+      'Remove local file after successful WebDAV upload';
+
+  @override
+  String get webdavRetryOnFailure => 'Retry on Failure';
+
+  @override
+  String webdavRetrySubtitle(int count) {
+    return 'Automatically retry up to $count times';
+  }
+
+  @override
+  String get webdavActiveUploads => 'Active Uploads';
+
+  @override
+  String get webdavPending => 'Pending';
+
+  @override
+  String get webdavUploading => 'Uploading';
+
+  @override
+  String get webdavCompleted => 'Completed';
+
+  @override
+  String get webdavFailed => 'Failed';
+
+  @override
+  String get webdavRetry => 'Retry';
+
+  @override
+  String get webdavRetryAll => 'Retry All';
+
+  @override
+  String get webdavRemove => 'Remove';
+
+  @override
+  String get webdavClearCompleted => 'Clear Completed';
 }
