@@ -6,6 +6,7 @@ import 'package:spotiflac_android/screens/settings/appearance_settings_page.dart
 import 'package:spotiflac_android/screens/settings/download_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/extensions_page.dart';
 import 'package:spotiflac_android/screens/settings/options_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/webdav_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/about_page.dart';
 import 'package:spotiflac_android/screens/settings/log_screen.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -84,6 +85,12 @@ class SettingsTab extends ConsumerWidget {
                     title: l10n.settingsExtensions,
                     subtitle: l10n.settingsExtensionsSubtitle,
                     onTap: () => _navigateTo(context, const ExtensionsPage()),
+                  ),
+                  SettingsItem(
+                    icon: Icons.cloud_upload_outlined,
+                    title: l10n.webdavTitle,
+                    subtitle: l10n.webdavSubtitle,
+                    onTap: () => _navigateTo(context, const WebDavSettingsPage()),
                     showDivider: false,
                   ),
                 ],

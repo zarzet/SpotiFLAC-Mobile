@@ -3921,6 +3921,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to fetch some albums'**
   String get discographyFailedToFetch;
+
+  /// WebDAV settings page title
+  ///
+  /// In en, this message translates to:
+  /// **'WebDAV Storage'**
+  String get webdavTitle;
+
+  /// WebDAV settings subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Upload files to WebDAV server'**
+  String get webdavSubtitle;
+
+  /// Section header for WebDAV config
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration'**
+  String get webdavSectionConfig;
+
+  /// Section header for server settings
+  ///
+  /// In en, this message translates to:
+  /// **'Server'**
+  String get webdavSectionServer;
+
+  /// Section header for WebDAV options
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get webdavSectionOptions;
+
+  /// Section header for upload queue
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Queue'**
+  String get webdavSectionQueue;
+
+  /// Toggle to enable WebDAV uploads
+  ///
+  /// In en, this message translates to:
+  /// **'Enable WebDAV Upload'**
+  String get webdavEnable;
+
+  /// Subtitle when WebDAV is configured
+  ///
+  /// In en, this message translates to:
+  /// **'Upload downloaded files to WebDAV server'**
+  String get webdavEnableSubtitleConfigured;
+
+  /// Subtitle when WebDAV is not configured
+  ///
+  /// In en, this message translates to:
+  /// **'Configure server settings first'**
+  String get webdavEnableSubtitleNotConfigured;
+
+  /// WebDAV server URL field
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get webdavServerUrl;
+
+  /// WebDAV username field
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get webdavUsername;
+
+  /// Username field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Enter username'**
+  String get webdavUsernamePlaceholder;
+
+  /// WebDAV password field
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get webdavPassword;
+
+  /// Password field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get webdavPasswordPlaceholder;
+
+  /// Remote folder path on WebDAV server
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Path'**
+  String get webdavRemotePath;
+
+  /// Button to test WebDAV connection
+  ///
+  /// In en, this message translates to:
+  /// **'Test Connection'**
+  String get webdavTestConnection;
+
+  /// Testing connection in progress
+  ///
+  /// In en, this message translates to:
+  /// **'Testing...'**
+  String get webdavTesting;
+
+  /// Connection test passed
+  ///
+  /// In en, this message translates to:
+  /// **'Connection successful!'**
+  String get webdavConnectionSuccess;
+
+  /// Connection test failed
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed: {error}'**
+  String webdavConnectionFailed(String error);
+
+  /// Option to delete local files after upload
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Local After Upload'**
+  String get webdavDeleteLocal;
+
+  /// Subtitle for delete local option
+  ///
+  /// In en, this message translates to:
+  /// **'Remove local file after successful WebDAV upload'**
+  String get webdavDeleteLocalSubtitle;
+
+  /// Option to retry failed uploads
+  ///
+  /// In en, this message translates to:
+  /// **'Retry on Failure'**
+  String get webdavRetryOnFailure;
+
+  /// Subtitle for retry option
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically retry up to {count} times'**
+  String webdavRetrySubtitle(int count);
+
+  /// Section header for active uploads
+  ///
+  /// In en, this message translates to:
+  /// **'Active Uploads'**
+  String get webdavActiveUploads;
+
+  /// Upload status - pending
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get webdavPending;
+
+  /// Upload status - uploading
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading'**
+  String get webdavUploading;
+
+  /// Upload status - completed
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get webdavCompleted;
+
+  /// Upload status - failed
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get webdavFailed;
+
+  /// Button to retry single upload
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get webdavRetry;
+
+  /// Button to retry all failed uploads
+  ///
+  /// In en, this message translates to:
+  /// **'Retry All'**
+  String get webdavRetryAll;
+
+  /// Button to remove from queue
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get webdavRemove;
+
+  /// Button to clear completed uploads
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Completed'**
+  String get webdavClearCompleted;
 }
 
 class _AppLocalizationsDelegate

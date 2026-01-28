@@ -10,6 +10,7 @@ import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
+import 'package:spotiflac_android/providers/webdav_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
@@ -2102,6 +2103,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   copyright: backendCopyright,
                 ),
               );
+
+          // Add to WebDAV upload queue if configured
+          final webDavState = ref.read(webDavProvider);
+          if (webDavState.config.enabled && webDavState.config.isConfigured) {
+            ref.read(webDavProvider.notifier).addToQueue(
+              localPath: filePath,
+              trackName: trackToDownload.name,
+              artistName: trackToDownload.artistName,
+              albumName: trackToDownload.albumName,
+            );
+          }
 
           removeItem(item.id);
         }
