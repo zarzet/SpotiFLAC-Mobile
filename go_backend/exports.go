@@ -716,12 +716,12 @@ func ClearTrackIDCache() {
 	ClearTrackCache()
 }
 
-func SearchDeezerAll(query string, trackLimit, artistLimit int) (string, error) {
+func SearchDeezerAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	client := GetDeezerClient()
-	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit)
+	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit, filter)
 	if err != nil {
 		return "", err
 	}

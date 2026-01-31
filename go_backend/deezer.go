@@ -183,12 +183,40 @@ type deezerPlaylistFull struct {
 }
 
 // NOTE: ISRC is NOT fetched during search for performance - use GetTrackISRC when needed for download
-func (c *DeezerClient) SearchAll(ctx context.Context, query string, trackLimit, artistLimit int) (*SearchAllResult, error) {
-	GoLog("[Deezer] SearchAll: query=%q, trackLimit=%d, artistLimit=%d\n", query, trackLimit, artistLimit)
+// filter can be: "" (all), "track", "artist", "album", "playlist"
+func (c *DeezerClient) SearchAll(ctx context.Context, query string, trackLimit, artistLimit int, filter string) (*SearchAllResult, error) {
+	GoLog("[Deezer] SearchAll: query=%q, trackLimit=%d, artistLimit=%d, filter=%q\n", query, trackLimit, artistLimit, filter)
 
 	albumLimit := 5 // Same as artistLimit for consistency
 	playlistLimit := 5
-	cacheKey := fmt.Sprintf("deezer:all:%s:%d:%d:%d:%d", query, trackLimit, artistLimit, albumLimit, playlistLimit)
+
+	// When filter is specified, increase limits for that type only
+	if filter != "" {
+		switch filter {
+		case "track":
+			trackLimit = 50
+			artistLimit = 0
+			albumLimit = 0
+			playlistLimit = 0
+		case "artist":
+			trackLimit = 0
+			artistLimit = 20
+			albumLimit = 0
+			playlistLimit = 0
+		case "album":
+			trackLimit = 0
+			artistLimit = 0
+			albumLimit = 20
+			playlistLimit = 0
+		case "playlist":
+			trackLimit = 0
+			artistLimit = 0
+			albumLimit = 0
+			playlistLimit = 20
+		}
+	}
+
+	cacheKey := fmt.Sprintf("deezer:all:%s:%d:%d:%d:%d:%s", query, trackLimit, artistLimit, albumLimit, playlistLimit, filter)
 
 	c.cacheMu.RLock()
 	if entry, ok := c.searchCache[cacheKey]; ok && !entry.isExpired() {
@@ -206,175 +234,183 @@ func (c *DeezerClient) SearchAll(ctx context.Context, query string, trackLimit, 
 	}
 
 	// Search tracks - NO ISRC fetch for performance
-	trackURL := fmt.Sprintf("%s/track?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), trackLimit)
-	GoLog("[Deezer] Fetching tracks from: %s\n", trackURL)
+	if trackLimit > 0 {
+		trackURL := fmt.Sprintf("%s/track?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), trackLimit)
+		GoLog("[Deezer] Fetching tracks from: %s\n", trackURL)
 
-	var trackResp struct {
-		Data  []deezerTrack `json:"data"`
-		Error *struct {
-			Type    string `json:"type"`
-			Message string `json:"message"`
-			Code    int    `json:"code"`
-		} `json:"error"`
-	}
-	if err := c.getJSON(ctx, trackURL, &trackResp); err != nil {
-		GoLog("[Deezer] Track search failed: %v\n", err)
-		return nil, fmt.Errorf("deezer track search failed: %w", err)
-	}
+		var trackResp struct {
+			Data  []deezerTrack `json:"data"`
+			Error *struct {
+				Type    string `json:"type"`
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+			} `json:"error"`
+		}
+		if err := c.getJSON(ctx, trackURL, &trackResp); err != nil {
+			GoLog("[Deezer] Track search failed: %v\n", err)
+			return nil, fmt.Errorf("deezer track search failed: %w", err)
+		}
 
-	if trackResp.Error != nil {
-		GoLog("[Deezer] API error: type=%s, code=%d, message=%s\n", trackResp.Error.Type, trackResp.Error.Code, trackResp.Error.Message)
-		return nil, fmt.Errorf("deezer API error: %s (code %d)", trackResp.Error.Message, trackResp.Error.Code)
-	}
+		if trackResp.Error != nil {
+			GoLog("[Deezer] API error: type=%s, code=%d, message=%s\n", trackResp.Error.Type, trackResp.Error.Code, trackResp.Error.Message)
+			return nil, fmt.Errorf("deezer API error: %s (code %d)", trackResp.Error.Message, trackResp.Error.Code)
+		}
 
-	GoLog("[Deezer] Got %d tracks from API\n", len(trackResp.Data))
+		GoLog("[Deezer] Got %d tracks from API\n", len(trackResp.Data))
 
-	for _, track := range trackResp.Data {
-		result.Tracks = append(result.Tracks, c.convertTrack(track))
+		for _, track := range trackResp.Data {
+			result.Tracks = append(result.Tracks, c.convertTrack(track))
+		}
 	}
 
 	// Search artists
-	artistURL := fmt.Sprintf("%s/artist?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), artistLimit)
-	GoLog("[Deezer] Fetching artists from: %s\n", artistURL)
+	if artistLimit > 0 {
+		artistURL := fmt.Sprintf("%s/artist?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), artistLimit)
+		GoLog("[Deezer] Fetching artists from: %s\n", artistURL)
 
-	var artistResp struct {
-		Data  []deezerArtist `json:"data"`
-		Error *struct {
-			Type    string `json:"type"`
-			Message string `json:"message"`
-			Code    int    `json:"code"`
-		} `json:"error"`
-	}
-	if err := c.getJSON(ctx, artistURL, &artistResp); err == nil {
-		if artistResp.Error != nil {
-			GoLog("[Deezer] Artist API error: type=%s, code=%d, message=%s\n", artistResp.Error.Type, artistResp.Error.Code, artistResp.Error.Message)
-		} else {
-			GoLog("[Deezer] Got %d artists from API\n", len(artistResp.Data))
-			for _, artist := range artistResp.Data {
-				result.Artists = append(result.Artists, SearchArtistResult{
-					ID:         fmt.Sprintf("deezer:%d", artist.ID),
-					Name:       artist.Name,
-					Images:     c.getBestArtistImage(artist),
-					Followers:  artist.NbFan,
-					Popularity: 0,
-				})
-			}
+		var artistResp struct {
+			Data  []deezerArtist `json:"data"`
+			Error *struct {
+				Type    string `json:"type"`
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+			} `json:"error"`
 		}
-	} else {
-		GoLog("[Deezer] Artist search failed: %v\n", err)
+		if err := c.getJSON(ctx, artistURL, &artistResp); err == nil {
+			if artistResp.Error != nil {
+				GoLog("[Deezer] Artist API error: type=%s, code=%d, message=%s\n", artistResp.Error.Type, artistResp.Error.Code, artistResp.Error.Message)
+			} else {
+				GoLog("[Deezer] Got %d artists from API\n", len(artistResp.Data))
+				for _, artist := range artistResp.Data {
+					result.Artists = append(result.Artists, SearchArtistResult{
+						ID:         fmt.Sprintf("deezer:%d", artist.ID),
+						Name:       artist.Name,
+						Images:     c.getBestArtistImage(artist),
+						Followers:  artist.NbFan,
+						Popularity: 0,
+					})
+				}
+			}
+		} else {
+			GoLog("[Deezer] Artist search failed: %v\n", err)
+		}
 	}
 
 	// Search albums
-	albumURL := fmt.Sprintf("%s/album?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), albumLimit)
-	GoLog("[Deezer] Fetching albums from: %s\n", albumURL)
+	if albumLimit > 0 {
+		albumURL := fmt.Sprintf("%s/album?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), albumLimit)
+		GoLog("[Deezer] Fetching albums from: %s\n", albumURL)
 
-	var albumResp struct {
-		Data []struct {
-			ID          int64        `json:"id"`
-			Title       string       `json:"title"`
-			Cover       string       `json:"cover"`
-			CoverMedium string       `json:"cover_medium"`
-			CoverBig    string       `json:"cover_big"`
-			CoverXL     string       `json:"cover_xl"`
-			NbTracks    int          `json:"nb_tracks"`
-			ReleaseDate string       `json:"release_date"`
-			RecordType  string       `json:"record_type"`
-			Artist      deezerArtist `json:"artist"`
-		} `json:"data"`
-		Error *struct {
-			Type    string `json:"type"`
-			Message string `json:"message"`
-			Code    int    `json:"code"`
-		} `json:"error"`
-	}
-	if err := c.getJSON(ctx, albumURL, &albumResp); err == nil {
-		if albumResp.Error != nil {
-			GoLog("[Deezer] Album API error: type=%s, code=%d, message=%s\n", albumResp.Error.Type, albumResp.Error.Code, albumResp.Error.Message)
-		} else {
-			GoLog("[Deezer] Got %d albums from API\n", len(albumResp.Data))
-			for _, album := range albumResp.Data {
-				coverURL := album.CoverXL
-				if coverURL == "" {
-					coverURL = album.CoverBig
-				}
-				if coverURL == "" {
-					coverURL = album.CoverMedium
-				}
-				if coverURL == "" {
-					coverURL = album.Cover
-				}
-
-				albumType := album.RecordType
-				if albumType == "compile" {
-					albumType = "compilation"
-				}
-
-				result.Albums = append(result.Albums, SearchAlbumResult{
-					ID:          fmt.Sprintf("deezer:%d", album.ID),
-					Name:        album.Title,
-					Artists:     album.Artist.Name,
-					Images:      coverURL,
-					ReleaseDate: album.ReleaseDate,
-					TotalTracks: album.NbTracks,
-					AlbumType:   albumType,
-				})
-			}
+		var albumResp struct {
+			Data []struct {
+				ID          int64        `json:"id"`
+				Title       string       `json:"title"`
+				Cover       string       `json:"cover"`
+				CoverMedium string       `json:"cover_medium"`
+				CoverBig    string       `json:"cover_big"`
+				CoverXL     string       `json:"cover_xl"`
+				NbTracks    int          `json:"nb_tracks"`
+				ReleaseDate string       `json:"release_date"`
+				RecordType  string       `json:"record_type"`
+				Artist      deezerArtist `json:"artist"`
+			} `json:"data"`
+			Error *struct {
+				Type    string `json:"type"`
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+			} `json:"error"`
 		}
-	} else {
-		GoLog("[Deezer] Album search failed: %v\n", err)
+		if err := c.getJSON(ctx, albumURL, &albumResp); err == nil {
+			if albumResp.Error != nil {
+				GoLog("[Deezer] Album API error: type=%s, code=%d, message=%s\n", albumResp.Error.Type, albumResp.Error.Code, albumResp.Error.Message)
+			} else {
+				GoLog("[Deezer] Got %d albums from API\n", len(albumResp.Data))
+				for _, album := range albumResp.Data {
+					coverURL := album.CoverXL
+					if coverURL == "" {
+						coverURL = album.CoverBig
+					}
+					if coverURL == "" {
+						coverURL = album.CoverMedium
+					}
+					if coverURL == "" {
+						coverURL = album.Cover
+					}
+
+					albumType := album.RecordType
+					if albumType == "compile" {
+						albumType = "compilation"
+					}
+
+					result.Albums = append(result.Albums, SearchAlbumResult{
+						ID:          fmt.Sprintf("deezer:%d", album.ID),
+						Name:        album.Title,
+						Artists:     album.Artist.Name,
+						Images:      coverURL,
+						ReleaseDate: album.ReleaseDate,
+						TotalTracks: album.NbTracks,
+						AlbumType:   albumType,
+					})
+				}
+			}
+		} else {
+			GoLog("[Deezer] Album search failed: %v\n", err)
+		}
 	}
 
 	// Search playlists
-	playlistURL := fmt.Sprintf("%s/playlist?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), playlistLimit)
-	GoLog("[Deezer] Fetching playlists from: %s\n", playlistURL)
+	if playlistLimit > 0 {
+		playlistURL := fmt.Sprintf("%s/playlist?q=%s&limit=%d", deezerSearchURL, url.QueryEscape(query), playlistLimit)
+		GoLog("[Deezer] Fetching playlists from: %s\n", playlistURL)
 
-	var playlistResp struct {
-		Data []struct {
-			ID            int64  `json:"id"`
-			Title         string `json:"title"`
-			Picture       string `json:"picture"`
-			PictureMedium string `json:"picture_medium"`
-			PictureBig    string `json:"picture_big"`
-			PictureXL     string `json:"picture_xl"`
-			NbTracks      int    `json:"nb_tracks"`
-			User          struct {
-				Name string `json:"name"`
-			} `json:"user"`
-		} `json:"data"`
-		Error *struct {
-			Type    string `json:"type"`
-			Message string `json:"message"`
-			Code    int    `json:"code"`
-		} `json:"error"`
-	}
-	if err := c.getJSON(ctx, playlistURL, &playlistResp); err == nil {
-		if playlistResp.Error != nil {
-			GoLog("[Deezer] Playlist API error: type=%s, code=%d, message=%s\n", playlistResp.Error.Type, playlistResp.Error.Code, playlistResp.Error.Message)
-		} else {
-			GoLog("[Deezer] Got %d playlists from API\n", len(playlistResp.Data))
-			for _, playlist := range playlistResp.Data {
-				pictureURL := playlist.PictureXL
-				if pictureURL == "" {
-					pictureURL = playlist.PictureBig
-				}
-				if pictureURL == "" {
-					pictureURL = playlist.PictureMedium
-				}
-				if pictureURL == "" {
-					pictureURL = playlist.Picture
-				}
-
-				result.Playlists = append(result.Playlists, SearchPlaylistResult{
-					ID:          fmt.Sprintf("deezer:%d", playlist.ID),
-					Name:        playlist.Title,
-					Owner:       playlist.User.Name,
-					Images:      pictureURL,
-					TotalTracks: playlist.NbTracks,
-				})
-			}
+		var playlistResp struct {
+			Data []struct {
+				ID            int64  `json:"id"`
+				Title         string `json:"title"`
+				Picture       string `json:"picture"`
+				PictureMedium string `json:"picture_medium"`
+				PictureBig    string `json:"picture_big"`
+				PictureXL     string `json:"picture_xl"`
+				NbTracks      int    `json:"nb_tracks"`
+				User          struct {
+					Name string `json:"name"`
+				} `json:"user"`
+			} `json:"data"`
+			Error *struct {
+				Type    string `json:"type"`
+				Message string `json:"message"`
+				Code    int    `json:"code"`
+			} `json:"error"`
 		}
-	} else {
-		GoLog("[Deezer] Playlist search failed: %v\n", err)
+		if err := c.getJSON(ctx, playlistURL, &playlistResp); err == nil {
+			if playlistResp.Error != nil {
+				GoLog("[Deezer] Playlist API error: type=%s, code=%d, message=%s\n", playlistResp.Error.Type, playlistResp.Error.Code, playlistResp.Error.Message)
+			} else {
+				GoLog("[Deezer] Got %d playlists from API\n", len(playlistResp.Data))
+				for _, playlist := range playlistResp.Data {
+					pictureURL := playlist.PictureXL
+					if pictureURL == "" {
+						pictureURL = playlist.PictureBig
+					}
+					if pictureURL == "" {
+						pictureURL = playlist.PictureMedium
+					}
+					if pictureURL == "" {
+						pictureURL = playlist.Picture
+					}
+
+					result.Playlists = append(result.Playlists, SearchPlaylistResult{
+						ID:          fmt.Sprintf("deezer:%d", playlist.ID),
+						Name:        playlist.Title,
+						Owner:       playlist.User.Name,
+						Images:      pictureURL,
+						TotalTracks: playlist.NbTracks,
+					})
+				}
+			}
+		} else {
+			GoLog("[Deezer] Playlist search failed: %v\n", err)
+		}
 	}
 
 	GoLog("[Deezer] SearchAll complete: %d tracks, %d artists, %d albums, %d playlists\n", len(result.Tracks), len(result.Artists), len(result.Albums), len(result.Playlists))

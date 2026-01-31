@@ -317,10 +317,13 @@ class TrackNotifier extends Notifier<TrackState> {
     }
   }
 
-  Future<void> search(String query, {String? metadataSource}) async {
+  Future<void> search(String query, {String? metadataSource, String? filterOverride}) async {
     final requestId = ++_currentRequestId;
+    
+    // Preserve selected filter during loading
+    final currentFilter = filterOverride ?? state.selectedSearchFilter;
 
-    state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
+    state = TrackState(isLoading: true, hasSearchText: state.hasSearchText, selectedSearchFilter: currentFilter);
 
     try {
       final settings = ref.read(settingsProvider);
@@ -338,7 +341,7 @@ class TrackNotifier extends Notifier<TrackState> {
       final source = metadataSource ?? 'deezer';
       
       _log.i(
-        'Search started: source=$source, query="$query", useExtensions=$useExtensions',
+        'Search started: source=$source, query="$query", useExtensions=$useExtensions, filter=$currentFilter',
       );
       
       Map<String, dynamic> results;
@@ -364,11 +367,11 @@ class TrackNotifier extends Notifier<TrackState> {
       
       if (source == 'deezer') {
         _log.d('Calling Deezer search API...');
-        results = await PlatformBridge.searchDeezerAll(query, trackLimit: 20, artistLimit: 5);
+        results = await PlatformBridge.searchDeezerAll(query, trackLimit: 20, artistLimit: 2, filter: currentFilter);
         _log.i('Deezer returned ${(results['tracks'] as List?)?.length ?? 0} tracks, ${(results['artists'] as List?)?.length ?? 0} artists, ${(results['albums'] as List?)?.length ?? 0} albums');
       } else {
         _log.d('Calling Spotify search API...');
-        results = await PlatformBridge.searchSpotifyAll(query, trackLimit: 20, artistLimit: 5);
+        results = await PlatformBridge.searchSpotifyAll(query, trackLimit: 20, artistLimit: 2);
         _log.i('Spotify returned ${(results['tracks'] as List?)?.length ?? 0} tracks, ${(results['artists'] as List?)?.length ?? 0} artists');
       }
       
@@ -461,11 +464,12 @@ class TrackNotifier extends Notifier<TrackState> {
         searchPlaylists: playlists,
         isLoading: false,
         hasSearchText: state.hasSearchText,
+        selectedSearchFilter: currentFilter, // Preserve filter in results
       );
     } catch (e, stackTrace) {
       if (!_isRequestValid(requestId)) return;
       _log.e('Search failed: $e', e, stackTrace);
-      state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText);
+      state = TrackState(isLoading: false, error: e.toString(), hasSearchText: state.hasSearchText, selectedSearchFilter: currentFilter);
     }
   }
 

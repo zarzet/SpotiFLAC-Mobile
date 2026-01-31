@@ -204,11 +204,12 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     }
   }
 
-  Future<void> _performSearch(String query) async {
+  Future<void> _performSearch(String query, {String? filterOverride}) async {
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
     final searchProvider = settings.searchProvider;
-    final selectedFilter = ref.read(trackProvider).selectedSearchFilter;
+    // Use filterOverride if provided, otherwise read from state
+    final selectedFilter = filterOverride ?? ref.read(trackProvider).selectedSearchFilter;
     
     final searchKey = '${searchProvider ?? 'default'}:$query:${selectedFilter ?? 'all'}';
     if (_lastSearchQuery == searchKey) return;
@@ -229,7 +230,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
       if (searchProvider != null && searchProvider.isNotEmpty && !isExtensionEnabled) {
         ref.read(settingsProvider.notifier).setSearchProvider(null);
       }
-      await ref.read(trackProvider.notifier).search(query, metadataSource: settings.metadataSource);
+      await ref.read(trackProvider.notifier).search(query, metadataSource: settings.metadataSource, filterOverride: selectedFilter);
     }
     ref.read(settingsProvider.notifier).setHasSearchedBefore();
   }
@@ -510,11 +511,25 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     final selectedSearchFilter = ref.watch(trackProvider.select((s) => s.selectedSearchFilter));
     Extension? currentSearchExtension;
     List<SearchFilter> searchFilters = [];
-    if (currentSearchProvider != null && currentSearchProvider.isNotEmpty) {
+    
+    // Check if using extension search provider
+    final isUsingExtensionSearch = currentSearchProvider != null && 
+        currentSearchProvider.isNotEmpty &&
+        extState.extensions.any((e) => e.id == currentSearchProvider && e.enabled);
+    
+    if (isUsingExtensionSearch) {
       currentSearchExtension = extState.extensions.where((e) => e.id == currentSearchProvider && e.enabled).firstOrNull;
       if (currentSearchExtension?.searchBehavior?.filters.isNotEmpty == true) {
         searchFilters = currentSearchExtension!.searchBehavior!.filters;
       }
+    } else {
+      // Default Deezer filters
+      searchFilters = const [
+        SearchFilter(id: 'track', label: 'Tracks', icon: 'music'),
+        SearchFilter(id: 'artist', label: 'Artists', icon: 'artist'),
+        SearchFilter(id: 'album', label: 'Albums', icon: 'album'),
+        SearchFilter(id: 'playlist', label: 'Playlists', icon: 'playlist'),
+      ];
     }
     
     if (hasActualResults && isShowingRecentAccess) {
@@ -2127,7 +2142,7 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
     
     // Reset last search query to force new search
     _lastSearchQuery = null;
-    _performSearch(text);
+    _performSearch(text, filterOverride: filter);
   }
 
   Widget _buildSearchBar(ColorScheme colorScheme) {
