@@ -231,12 +231,17 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
-  void setEnableMp3Option(bool enabled) {
-    state = state.copyWith(enableMp3Option: enabled);
-    // If MP3 is disabled and current quality is MP3, reset to LOSSLESS
-    if (!enabled && state.audioQuality == 'MP3') {
+  void setEnableLossyOption(bool enabled) {
+    state = state.copyWith(enableLossyOption: enabled);
+    // If Lossy is disabled and current quality is LOSSY, reset to LOSSLESS
+    if (!enabled && state.audioQuality == 'LOSSY') {
       state = state.copyWith(audioQuality: 'LOSSLESS');
     }
+    _saveSettings();
+  }
+
+  void setLossyFormat(String format) {
+    state = state.copyWith(lossyFormat: format);
     _saveSettings();
   }
 }

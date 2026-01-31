@@ -31,7 +31,8 @@ class AppSettings {
   final String albumFolderStructure;
   final bool showExtensionStore;
   final String locale;
-  final bool enableMp3Option;
+  final bool enableLossyOption;
+  final String lossyFormat;
   final String lyricsMode;
 
   const AppSettings({
@@ -62,7 +63,8 @@ class AppSettings {
     this.albumFolderStructure = 'artist_album',
     this.showExtensionStore = true,
     this.locale = 'system',
-    this.enableMp3Option = false,
+    this.enableLossyOption = false,
+    this.lossyFormat = 'mp3',
     this.lyricsMode = 'embed',
   });
 
@@ -95,7 +97,8 @@ class AppSettings {
     String? albumFolderStructure,
     bool? showExtensionStore,
     String? locale,
-    bool? enableMp3Option,
+    bool? enableLossyOption,
+    String? lossyFormat,
     String? lyricsMode,
   }) {
     return AppSettings(
@@ -126,7 +129,8 @@ class AppSettings {
       albumFolderStructure: albumFolderStructure ?? this.albumFolderStructure,
       showExtensionStore: showExtensionStore ?? this.showExtensionStore,
       locale: locale ?? this.locale,
-      enableMp3Option: enableMp3Option ?? this.enableMp3Option,
+      enableLossyOption: enableLossyOption ?? this.enableLossyOption,
+      lossyFormat: lossyFormat ?? this.lossyFormat,
       lyricsMode: lyricsMode ?? this.lyricsMode,
     );
   }

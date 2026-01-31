@@ -1868,20 +1868,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-bit / hingga 192kHz';
 
   @override
-  String get qualityMp3 => 'MP3';
+  String get qualityLossy => 'Lossy';
 
   @override
-  String get qualityMp3Subtitle => '320kbps (konversi dari FLAC)';
+  String get qualityLossyMp3Subtitle => 'MP3 320kbps (converted from FLAC)';
 
   @override
-  String get enableMp3Option => 'Aktifkan Opsi MP3';
+  String get qualityLossyOpusSubtitle => 'Opus 128kbps (converted from FLAC)';
 
   @override
-  String get enableMp3OptionSubtitleOn => 'Opsi kualitas MP3 tersedia';
+  String get enableLossyOption => 'Enable Lossy Option';
 
   @override
-  String get enableMp3OptionSubtitleOff =>
-      'Unduh FLAC lalu konversi ke MP3 320kbps';
+  String get enableLossyOptionSubtitleOn => 'Lossy quality option is available';
+
+  @override
+  String get enableLossyOptionSubtitleOff =>
+      'Downloads FLAC then converts to lossy format';
+
+  @override
+  String get lossyFormat => 'Lossy Format';
+
+  @override
+  String get lossyFormatDescription => 'Choose the lossy format for conversion';
+
+  @override
+  String get lossyFormatMp3Subtitle => '320kbps, best compatibility';
+
+  @override
+  String get lossyFormatOpusSubtitle =>
+      '128kbps, better quality at smaller size';
 
   @override
   String get qualityNote =>
