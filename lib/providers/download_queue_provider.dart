@@ -2111,7 +2111,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             _log.i('Lossy requested but existing FLAC found - skipping conversion to preserve original file');
           } else {
             final lossyFormat = settings.lossyFormat;
-            _log.i('Lossy quality selected, converting FLAC to $lossyFormat...');
+            final lossyBitrate = settings.lossyBitrate;
+            _log.i('Lossy quality selected, converting FLAC to $lossyFormat ($lossyBitrate)...');
             updateItemStatus(
               item.id,
               DownloadStatus.downloading,
@@ -2122,13 +2123,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               final convertedPath = await FFmpegService.convertFlacToLossy(
                 filePath,
                 format: lossyFormat,
+                bitrate: lossyBitrate,
                 deleteOriginal: true,
               );
               
               if (convertedPath != null) {
                 filePath = convertedPath;
-                actualQuality = lossyFormat == 'opus' ? 'Opus 128kbps' : 'MP3 320kbps';
-                _log.i('Successfully converted to $lossyFormat: $convertedPath');
+                // Extract bitrate for display (e.g., 'mp3_320' -> '320kbps')
+                final bitrateDisplay = lossyBitrate.contains('_') 
+                    ? '${lossyBitrate.split('_').last}kbps' 
+                    : (lossyFormat == 'opus' ? '128kbps' : '320kbps');
+                actualQuality = '${lossyFormat.toUpperCase()} $bitrateDisplay';
+                _log.i('Successfully converted to $lossyFormat ($bitrateDisplay): $convertedPath');
                 
                 // Embed metadata and cover for both MP3 and Opus
                 _log.i('Embedding metadata to $lossyFormat...');

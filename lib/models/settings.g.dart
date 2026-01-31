@@ -38,6 +38,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   locale: json['locale'] as String? ?? 'system',
   enableLossyOption: json['enableLossyOption'] as bool? ?? false,
   lossyFormat: json['lossyFormat'] as String? ?? 'mp3',
+  lossyBitrate: json['lossyBitrate'] as String? ?? 'mp3_320',
   lyricsMode: json['lyricsMode'] as String? ?? 'embed',
 );
 
@@ -72,5 +73,6 @@ Map<String, dynamic> _$AppSettingsToJson(AppSettings instance) =>
       'locale': instance.locale,
       'enableLossyOption': instance.enableLossyOption,
       'lossyFormat': instance.lossyFormat,
+      'lossyBitrate': instance.lossyBitrate,
       'lyricsMode': instance.lyricsMode,
     };

@@ -4,10 +4,14 @@
 
 ### Added
 
-- **Lossy Format Support**: Download in MP3 or Opus format with configurable quality
-  - New "Enable Lossy Option" toggle in Settings > Download > Audio Quality
-  - Choose between MP3 (320kbps) or Opus (128kbps) format
-  - Downloads FLAC first, then converts using FFmpeg
+- **IDHS Fallback**: Added I Don't Have Spotify (IDHS) as fallback link resolver when SongLink fails
+  - Automatically tries IDHS when SongLink returns errors or rate limits
+  - Supports both Spotify→other platforms and Deezer→other platforms lookups
+  - Rate limited to 8 requests/minute to respect API limits
+- **Lossy Bitrate Options**: More quality choices for lossy format downloads
+  - MP3: 320kbps (Best), 256kbps, 192kbps, 128kbps
+  - Opus: 128kbps (Best), 96kbps, 64kbps
+  - Replaces the simple MP3/Opus toggle with a unified quality picker
 - **Search Filters**: Filter search results by type (Tracks, Artists, Albums, Playlists)
   - Works with both default Deezer search and extension search providers
   - Filter chips appear below search bar when results are shown
@@ -18,19 +22,12 @@
 
 ### Changed
 
-- **FFmpeg Plugin Migration**: Replaced custom FFmpeg AAR with `ffmpeg_kit_flutter_new_audio` plugin
-  - Unified FFmpeg implementation for both Android and iOS
-  - Removed custom FFmpeg MethodChannel from MainActivity
-  - Simplified build process (no more custom AAR in android/app/libs/)
 - **Amazon Download API**: Switched to AfkarXYZ API for improved reliability
 - **Qobuz Download API**: Added Jumo API as fallback with quality fallback support
 - **Search Results**: Reduced artist limit from 5 to 2 for cleaner results
 
 ### Fixed
 
-- **MP3/Lossy Download 403 Error**: Fixed 403 Forbidden when selecting lossy quality
-  - Now downloads FLAC first, then converts to selected lossy format
-  - Tidal/Qobuz APIs don't support direct MP3 quality parameter
 - **Opus Cover Art**: Fixed cover art not being embedded in Opus files
 - **Deezer Pagination**: Fixed albums/playlists with >25 tracks only showing first 25
 

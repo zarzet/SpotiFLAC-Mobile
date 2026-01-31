@@ -114,10 +114,8 @@ class DownloadSettingsPage extends ConsumerWidget {
                     SettingsItem(
                       icon: Icons.tune,
                       title: context.l10n.lossyFormat,
-                      subtitle: settings.lossyFormat == 'opus' 
-                          ? 'Opus 128kbps' 
-                          : 'MP3 320kbps',
-                      onTap: () => _showLossyFormatPicker(context, ref, settings.lossyFormat),
+                      subtitle: _getLossyBitrateLabel(settings.lossyBitrate),
+                      onTap: () => _showLossyBitratePicker(context, ref, settings.lossyBitrate),
                     ),
                   if (!settings.askQualityBeforeDownload && isBuiltInService) ...[
                     _QualityOption(
@@ -733,7 +731,28 @@ class DownloadSettingsPage extends ConsumerWidget {
     );
   }
 
-  void _showLossyFormatPicker(
+  String _getLossyBitrateLabel(String bitrate) {
+    switch (bitrate) {
+      case 'mp3_320':
+        return 'MP3 320kbps (Best)';
+      case 'mp3_256':
+        return 'MP3 256kbps';
+      case 'mp3_192':
+        return 'MP3 192kbps';
+      case 'mp3_128':
+        return 'MP3 128kbps';
+      case 'opus_128':
+        return 'Opus 128kbps (Best)';
+      case 'opus_96':
+        return 'Opus 96kbps';
+      case 'opus_64':
+        return 'Opus 64kbps';
+      default:
+        return 'MP3 320kbps';
+    }
+  }
+
+  void _showLossyBitratePicker(
     BuildContext context,
     WidgetRef ref,
     String current,
@@ -742,54 +761,130 @@ class DownloadSettingsPage extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surfaceContainerHigh,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-              child: Text(
-                context.l10n.lossyFormat,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-              child: Text(
-                context.l10n.lossyFormatDescription,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                child: Text(
+                  context.l10n.lossyFormat,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.audiotrack),
-              title: const Text('MP3'),
-              subtitle: Text(context.l10n.lossyFormatMp3Subtitle),
-              trailing: current == 'mp3' ? const Icon(Icons.check) : null,
-              onTap: () {
-                ref.read(settingsProvider.notifier).setLossyFormat('mp3');
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.graphic_eq),
-              title: const Text('Opus'),
-              subtitle: Text(context.l10n.lossyFormatOpusSubtitle),
-              trailing: current == 'opus' ? const Icon(Icons.check) : null,
-              onTap: () {
-                ref.read(settingsProvider.notifier).setLossyFormat('opus');
-                Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: Text(
+                  context.l10n.lossyFormatDescription,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              // MP3 Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
+                child: Text(
+                  'MP3',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack),
+                title: const Text('320kbps'),
+                subtitle: const Text('Best quality, larger files'),
+                trailing: current == 'mp3_320' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('mp3_320');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack),
+                title: const Text('256kbps'),
+                subtitle: const Text('High quality'),
+                trailing: current == 'mp3_256' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('mp3_256');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack),
+                title: const Text('192kbps'),
+                subtitle: const Text('Good quality'),
+                trailing: current == 'mp3_192' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('mp3_192');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack),
+                title: const Text('128kbps'),
+                subtitle: const Text('Smaller files'),
+                trailing: current == 'mp3_128' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('mp3_128');
+                  Navigator.pop(context);
+                },
+              ),
+              const Divider(indent: 24, endIndent: 24),
+              // Opus Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
+                child: Text(
+                  'Opus',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.graphic_eq),
+                title: const Text('128kbps'),
+                subtitle: const Text('Best quality, efficient codec'),
+                trailing: current == 'opus_128' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('opus_128');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.graphic_eq),
+                title: const Text('96kbps'),
+                subtitle: const Text('Good quality'),
+                trailing: current == 'opus_96' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('opus_96');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.graphic_eq),
+                title: const Text('64kbps'),
+                subtitle: const Text('Smallest files'),
+                trailing: current == 'opus_64' ? Icon(Icons.check, color: colorScheme.primary) : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setLossyBitrate('opus_64');
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

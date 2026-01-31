@@ -244,6 +244,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(lossyFormat: format);
     _saveSettings();
   }
+
+  void setLossyBitrate(String bitrate) {
+    // Extract format from bitrate (e.g., 'mp3_320' -> 'mp3')
+    final format = bitrate.split('_').first;
+    state = state.copyWith(lossyBitrate: bitrate, lossyFormat: format);
+    _saveSettings();
+  }
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(

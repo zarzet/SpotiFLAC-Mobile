@@ -46,7 +46,30 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 	if spotifyTrackID == "" {
 		return nil, fmt.Errorf("spotify track ID is empty")
 	}
-	
+
+	// Try SongLink first
+	availability, err := s.checkTrackAvailabilitySongLink(spotifyTrackID)
+	if err != nil {
+		// Fallback to IDHS if SongLink fails
+		LogWarn("SongLink", "SongLink failed, trying IDHS fallback: %v", err)
+		idhsClient := NewIDHSClient()
+		availability, err = idhsClient.GetAvailabilityFromSpotify(spotifyTrackID)
+		if err != nil {
+			return nil, fmt.Errorf("both SongLink and IDHS failed: %w", err)
+		}
+		LogInfo("SongLink", "IDHS fallback successful for %s", spotifyTrackID)
+	}
+
+	// Check Qobuz availability separately via ISRC
+	if isrc != "" {
+		availability.Qobuz = checkQobuzAvailability(isrc)
+	}
+
+	return availability, nil
+}
+
+// checkTrackAvailabilitySongLink is the original SongLink implementation
+func (s *SongLinkClient) checkTrackAvailabilitySongLink(spotifyTrackID string) (*TrackAvailability, error) {
 	songLinkRateLimiter.WaitForSlot()
 
 	spotifyBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9vcGVuLnNwb3RpZnkuY29tL3RyYWNrLw==")
@@ -113,10 +136,6 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 		availability.Deezer = true
 		availability.DeezerURL = deezerLink.URL
 		availability.DeezerID = extractDeezerIDFromURL(deezerLink.URL)
-	}
-
-	if isrc != "" {
-		availability.Qobuz = checkQobuzAvailability(isrc)
 	}
 
 	return availability, nil
@@ -191,11 +210,11 @@ func (s *SongLinkClient) GetDeezerIDFromSpotify(spotifyTrackID string) (string, 
 	if err != nil {
 		return "", err
 	}
-	
+
 	if !availability.Deezer || availability.DeezerID == "" {
 		return "", fmt.Errorf("track not found on Deezer")
 	}
-	
+
 	return availability.DeezerID, nil
 }
 
@@ -268,11 +287,11 @@ func (s *SongLinkClient) GetDeezerAlbumIDFromSpotify(spotifyAlbumID string) (str
 	if err != nil {
 		return "", err
 	}
-	
+
 	if !availability.Deezer || availability.DeezerID == "" {
 		return "", fmt.Errorf("album not found on Deezer")
 	}
-	
+
 	return availability.DeezerID, nil
 }
 
@@ -281,7 +300,25 @@ func (s *SongLinkClient) CheckAvailabilityFromDeezer(deezerTrackID string) (*Tra
 	if deezerTrackID == "" {
 		return nil, fmt.Errorf("deezer track ID is empty")
 	}
-	
+
+	// Try SongLink first
+	availability, err := s.checkAvailabilityFromDeezerSongLink(deezerTrackID)
+	if err != nil {
+		// Fallback to IDHS if SongLink fails
+		LogWarn("SongLink", "SongLink failed for Deezer, trying IDHS fallback: %v", err)
+		idhsClient := NewIDHSClient()
+		availability, err = idhsClient.GetAvailabilityFromDeezer(deezerTrackID)
+		if err != nil {
+			return nil, fmt.Errorf("both SongLink and IDHS failed: %w", err)
+		}
+		LogInfo("SongLink", "IDHS fallback successful for Deezer %s", deezerTrackID)
+	}
+
+	return availability, nil
+}
+
+// checkAvailabilityFromDeezerSongLink is the original SongLink implementation for Deezer
+func (s *SongLinkClient) checkAvailabilityFromDeezerSongLink(deezerTrackID string) (*TrackAvailability, error) {
 	songLinkRateLimiter.WaitForSlot()
 
 	deezerURL := fmt.Sprintf("https://www.deezer.com/track/%s", deezerTrackID)
@@ -369,7 +406,7 @@ func (s *SongLinkClient) CheckAvailabilityByPlatform(platform, entityType, entit
 	if entityID == "" {
 		return nil, fmt.Errorf("%s ID is empty", platform)
 	}
-	
+
 	// Use global rate limiter
 	songLinkRateLimiter.WaitForSlot()
 
@@ -464,11 +501,11 @@ func (s *SongLinkClient) GetSpotifyIDFromDeezer(deezerTrackID string) (string, e
 	if err != nil {
 		return "", err
 	}
-	
+
 	if availability.SpotifyID == "" {
 		return "", fmt.Errorf("track not found on Spotify")
 	}
-	
+
 	return availability.SpotifyID, nil
 }
 
@@ -478,11 +515,11 @@ func (s *SongLinkClient) GetTidalURLFromDeezer(deezerTrackID string) (string, er
 	if err != nil {
 		return "", err
 	}
-	
+
 	if !availability.Tidal || availability.TidalURL == "" {
 		return "", fmt.Errorf("track not found on Tidal")
 	}
-	
+
 	return availability.TidalURL, nil
 }
 
@@ -491,10 +528,10 @@ func (s *SongLinkClient) GetAmazonURLFromDeezer(deezerTrackID string) (string, e
 	if err != nil {
 		return "", err
 	}
-	
+
 	if !availability.Amazon || availability.AmazonURL == "" {
 		return "", fmt.Errorf("track not found on Amazon Music")
 	}
-	
+
 	return availability.AmazonURL, nil
 }

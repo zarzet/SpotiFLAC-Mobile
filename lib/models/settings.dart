@@ -33,6 +33,7 @@ class AppSettings {
   final String locale;
   final bool enableLossyOption;
   final String lossyFormat;
+  final String lossyBitrate; // e.g., 'mp3_320', 'mp3_256', 'mp3_192', 'mp3_128', 'opus_128', 'opus_96', 'opus_64'
   final String lyricsMode;
 
   const AppSettings({
@@ -65,6 +66,7 @@ class AppSettings {
     this.locale = 'system',
     this.enableLossyOption = false,
     this.lossyFormat = 'mp3',
+    this.lossyBitrate = 'mp3_320',
     this.lyricsMode = 'embed',
   });
 
@@ -99,6 +101,7 @@ class AppSettings {
     String? locale,
     bool? enableLossyOption,
     String? lossyFormat,
+    String? lossyBitrate,
     String? lyricsMode,
   }) {
     return AppSettings(
@@ -131,6 +134,7 @@ class AppSettings {
       locale: locale ?? this.locale,
       enableLossyOption: enableLossyOption ?? this.enableLossyOption,
       lossyFormat: lossyFormat ?? this.lossyFormat,
+      lossyBitrate: lossyBitrate ?? this.lossyBitrate,
       lyricsMode: lyricsMode ?? this.lyricsMode,
     );
   }

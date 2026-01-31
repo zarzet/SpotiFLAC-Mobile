@@ -99,17 +99,30 @@ class FFmpegService {
 
   /// Convert FLAC to lossy format based on format parameter
   /// format: 'mp3' or 'opus'
+  /// bitrate: e.g., 'mp3_320', 'opus_128' - extracts the kbps value
   static Future<String?> convertFlacToLossy(
     String inputPath, {
     required String format,
+    String? bitrate,
     bool deleteOriginal = true,
   }) async {
+    // Extract bitrate value from format like 'mp3_320' -> '320k'
+    String bitrateValue = '320k'; // default for mp3
+    if (bitrate != null && bitrate.contains('_')) {
+      final parts = bitrate.split('_');
+      if (parts.length == 2) {
+        bitrateValue = '${parts[1]}k';
+      }
+    }
+    
     switch (format.toLowerCase()) {
       case 'opus':
-        return convertFlacToOpus(inputPath, deleteOriginal: deleteOriginal);
+        final opusBitrate = bitrate?.startsWith('opus_') == true ? bitrateValue : '128k';
+        return convertFlacToOpus(inputPath, bitrate: opusBitrate, deleteOriginal: deleteOriginal);
       case 'mp3':
       default:
-        return convertFlacToMp3(inputPath, deleteOriginal: deleteOriginal);
+        final mp3Bitrate = bitrate?.startsWith('mp3_') == true ? bitrateValue : '320k';
+        return convertFlacToMp3(inputPath, bitrate: mp3Bitrate, deleteOriginal: deleteOriginal);
     }
   }
 
