@@ -478,6 +478,18 @@ class _TranslatorsSection extends StatelessWidget {
       language: 'Japanese',
       flag: '🇯🇵',
     ),
+    _Translator(
+      name: 'Kaan',
+      crowdinUsername: 'glai',
+      language: 'Turkish',
+      flag: '🇹🇷',
+    ),
+    _Translator(
+      name: 'BedirhanGltkn',
+      crowdinUsername: 'bedirhangltkn',
+      language: 'Turkish',
+      flag: '🇹🇷',
+    ),
   ];
 
   @override

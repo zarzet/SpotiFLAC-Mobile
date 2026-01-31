@@ -10,6 +10,7 @@
   - Downloads FLAC first, then converts using FFmpeg
 - **New Languages**: Turkish and Japanese translations
 - **Japanese Translator**: Re*Index.(ot_inc)
+- **Turkish Translators**: Kaan, BedirhanGltkn
 
 ### Changed
 
