@@ -3,7 +3,6 @@ package gobackend
 import (
 	"bufio"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,39 +11,29 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 type AmazonDownloader struct {
-	client           *http.Client
-	regions          []string
-	lastAPICallTime  time.Time
-	apiCallCount     int
-	apiCallResetTime time.Time
+	client *http.Client
 }
 
 var (
 	globalAmazonDownloader *AmazonDownloader
 	amazonDownloaderOnce   sync.Once
-	amazonRateLimitMu      sync.Mutex
 )
 
-// DoubleDoubleSubmitResponse is the response from DoubleDouble submit endpoint
-type DoubleDoubleSubmitResponse struct {
-	Success bool   `json:"success"`
-	ID      string `json:"id"`
-}
-
-type DoubleDoubleStatusResponse struct {
-	Status         string `json:"status"`
-	FriendlyStatus string `json:"friendlyStatus"`
-	URL            string `json:"url"`
-	Current        struct {
-		Name   string `json:"name"`
-		Artist string `json:"artist"`
-	} `json:"current"`
+// AfkarXYZResponse is the response from AfkarXYZ API
+type AfkarXYZResponse struct {
+	Success bool `json:"success"`
+	Data    struct {
+		DirectLink string `json:"direct_link"`
+		FileName   string `json:"file_name"`
+		FileSize   int64  `json:"file_size"`
+	} `json:"data"`
 }
 
 func amazonArtistsMatch(expectedArtist, foundArtist string) bool {
@@ -99,228 +88,63 @@ func amazonIsASCIIString(s string) bool {
 func NewAmazonDownloader() *AmazonDownloader {
 	amazonDownloaderOnce.Do(func() {
 		globalAmazonDownloader = &AmazonDownloader{
-			client:           NewHTTPClientWithTimeout(120 * time.Second), // 120s timeout like PC
-			regions:          []string{"us", "eu"},                        // Same regions as PC
-			apiCallResetTime: time.Now(),
+			client: NewHTTPClientWithTimeout(120 * time.Second),
 		}
 	})
 	return globalAmazonDownloader
 }
 
-// waitForRateLimit implements rate limiting similar to PC version
-func (a *AmazonDownloader) waitForRateLimit() {
-	amazonRateLimitMu.Lock()
-	defer amazonRateLimitMu.Unlock()
+// downloadFromAfkarXYZ downloads a track using AfkarXYZ API
+// Returns: downloadURL, fileName, error
+func (a *AmazonDownloader) downloadFromAfkarXYZ(amazonURL string) (string, string, error) {
+	// AfkarXYZ API endpoint
+	apiURL := "https://amazon.afkarxyz.fun/convert?url=" + url.QueryEscape(amazonURL)
 
-	now := time.Now()
+	GoLog("[Amazon] Fetching from AfkarXYZ API...\n")
 
-	if now.Sub(a.apiCallResetTime) >= time.Minute {
-		a.apiCallCount = 0
-		a.apiCallResetTime = now
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if a.apiCallCount >= 9 {
-		waitTime := time.Minute - now.Sub(a.apiCallResetTime)
-		if waitTime > 0 {
-			GoLog("[Amazon] Rate limit reached, waiting %v...\n", waitTime.Round(time.Second))
-			time.Sleep(waitTime)
-			a.apiCallCount = 0
-			a.apiCallResetTime = time.Now()
-		}
+	req.Header.Set("User-Agent", getRandomUserAgent())
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to call AfkarXYZ API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", "", fmt.Errorf("AfkarXYZ API returned status %d", resp.StatusCode)
 	}
 
-	if !a.lastAPICallTime.IsZero() {
-		timeSinceLastCall := now.Sub(a.lastAPICallTime)
-		minDelay := 7 * time.Second
-		if timeSinceLastCall < minDelay {
-			waitTime := minDelay - timeSinceLastCall
-			GoLog("[Amazon] Rate limiting: waiting %v...\n", waitTime.Round(time.Second))
-			time.Sleep(waitTime)
-		}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read response: %w", err)
 	}
 
-	a.lastAPICallTime = time.Now()
-	a.apiCallCount++
-}
-
-// Uses same service as PC version (doubledouble.top)
-func (a *AmazonDownloader) GetAvailableAPIs() []string {
-	// DoubleDouble service regions (same as PC)
-	// Format: https://{region}.doubledouble.top
-	var apis []string
-	for _, region := range a.regions {
-		apis = append(apis, fmt.Sprintf("https://%s.doubledouble.top", region))
-	}
-	return apis
-}
-
-// downloadFromDoubleDoubleService downloads a track using DoubleDouble service (same as PC)
-// This uses submit → poll → download mechanism
-// Internal function - not exported to gomobile
-func (a *AmazonDownloader) downloadFromDoubleDoubleService(amazonURL, _ string) (string, string, string, error) {
-	var lastError error
-
-	for _, region := range a.regions {
-		GoLog("[Amazon] Trying region: %s...\n", region)
-
-		serviceBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly8=")               // https://
-		serviceDomain, _ := base64.StdEncoding.DecodeString("LmRvdWJsZWRvdWJsZS50b3A=") // .doubledouble.top
-		baseURL := fmt.Sprintf("%s%s%s", string(serviceBase), region, string(serviceDomain))
-
-		encodedURL := url.QueryEscape(amazonURL)
-		submitURL := fmt.Sprintf("%s/dl?url=%s", baseURL, encodedURL)
-
-		a.waitForRateLimit()
-
-		req, err := http.NewRequest("GET", submitURL, nil)
-		if err != nil {
-			lastError = fmt.Errorf("failed to create request: %w", err)
-			continue
-		}
-
-		req.Header.Set("User-Agent", getRandomUserAgent())
-
-		fmt.Println("[Amazon] Submitting download request...")
-
-		// Retry logic for 429 errors (like PC version: 3 retries with 15s wait)
-		var resp *http.Response
-		maxRetries := 3
-		for retry := 0; retry < maxRetries; retry++ {
-			resp, err = a.client.Do(req)
-			if err != nil {
-				lastError = fmt.Errorf("failed to submit request: %w", err)
-				break
-			}
-
-			if resp.StatusCode == 429 { // Too Many Requests
-				resp.Body.Close()
-				if retry < maxRetries-1 {
-					waitTime := 15 * time.Second
-					GoLog("[Amazon] Rate limited (429), waiting %v before retry %d/%d...\n", waitTime, retry+2, maxRetries)
-					time.Sleep(waitTime)
-					continue
-				}
-				lastError = fmt.Errorf("API rate limit exceeded after %d retries", maxRetries)
-				break
-			}
-
-			if resp.StatusCode != 200 {
-				resp.Body.Close()
-				lastError = fmt.Errorf("submit failed with status %d", resp.StatusCode)
-				break
-			}
-
-			// Success - break retry loop
-			break
-		}
-
-		if err != nil || lastError != nil {
-			if resp != nil {
-				resp.Body.Close()
-			}
-			continue
-		}
-
-		var submitResp DoubleDoubleSubmitResponse
-		if err := json.NewDecoder(resp.Body).Decode(&submitResp); err != nil {
-			resp.Body.Close()
-			lastError = fmt.Errorf("failed to decode submit response: %w", err)
-			continue
-		}
-		resp.Body.Close()
-
-		if !submitResp.Success || submitResp.ID == "" {
-			lastError = fmt.Errorf("submit request failed")
-			continue
-		}
-
-		downloadID := submitResp.ID
-		GoLog("[Amazon] Download ID: %s\n", downloadID)
-
-		// Step 2: Poll for completion
-		statusURL := fmt.Sprintf("%s/dl/%s", baseURL, downloadID)
-		fmt.Println("[Amazon] Waiting for download to complete...")
-
-		maxWait := 300 * time.Second // 5 minutes max wait
-		elapsed := time.Duration(0)
-		pollInterval := 3 * time.Second
-
-		for elapsed < maxWait {
-			time.Sleep(pollInterval)
-			elapsed += pollInterval
-
-			statusReq, err := http.NewRequest("GET", statusURL, nil)
-			if err != nil {
-				continue
-			}
-
-			statusReq.Header.Set("User-Agent", getRandomUserAgent())
-
-			statusResp, err := a.client.Do(statusReq)
-			if err != nil {
-				fmt.Printf("\r[Amazon] Status check failed, retrying...")
-				continue
-			}
-
-			if statusResp.StatusCode != 200 {
-				statusResp.Body.Close()
-				fmt.Printf("\r[Amazon] Status check failed (status %d), retrying...", statusResp.StatusCode)
-				continue
-			}
-
-			var status DoubleDoubleStatusResponse
-			if err := json.NewDecoder(statusResp.Body).Decode(&status); err != nil {
-				statusResp.Body.Close()
-				fmt.Printf("\r[Amazon] Invalid JSON response, retrying...")
-				continue
-			}
-			statusResp.Body.Close()
-
-			if status.Status == "done" {
-				fmt.Println("\n[Amazon] Download ready!")
-
-				fileURL := status.URL
-				if strings.HasPrefix(fileURL, "./") {
-					fileURL = fmt.Sprintf("%s/%s", baseURL, fileURL[2:])
-				} else if strings.HasPrefix(fileURL, "/") {
-					fileURL = fmt.Sprintf("%s%s", baseURL, fileURL)
-				}
-
-				trackName := status.Current.Name
-				artist := status.Current.Artist
-
-				GoLog("[Amazon] Downloading: %s - %s\n", artist, trackName)
-				return fileURL, trackName, artist, nil
-
-			} else if status.Status == "error" {
-				errorMsg := status.FriendlyStatus
-				if errorMsg == "" {
-					errorMsg = "Unknown error"
-				}
-				lastError = fmt.Errorf("processing failed: %s", errorMsg)
-				break
-			} else {
-				// Still processing
-				friendlyStatus := status.FriendlyStatus
-				if friendlyStatus == "" {
-					friendlyStatus = status.Status
-				}
-				fmt.Printf("\r[Amazon] %s...", friendlyStatus)
-			}
-		}
-
-		if elapsed >= maxWait {
-			lastError = fmt.Errorf("download timeout")
-			fmt.Printf("\n[Amazon] Error with %s region: %v\n", region, lastError)
-			continue
-		}
-
-		if lastError != nil {
-			fmt.Printf("\n[Amazon] Error with %s region: %v\n", region, lastError)
-		}
+	var apiResp AfkarXYZResponse
+	if err := json.Unmarshal(body, &apiResp); err != nil {
+		return "", "", fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return "", "", "", fmt.Errorf("all regions failed. Last error: %v", lastError)
+	if !apiResp.Success || apiResp.Data.DirectLink == "" {
+		return "", "", fmt.Errorf("AfkarXYZ API failed or no download link found")
+	}
+
+	fileName := apiResp.Data.FileName
+	if fileName == "" {
+		fileName = "track.flac"
+	}
+
+	// Sanitize filename
+	reg := regexp.MustCompile(`[<>:"/\\|?*]`)
+	fileName = reg.ReplaceAllString(fileName, "")
+
+	GoLog("[Amazon] AfkarXYZ returned: %s (%.2f MB)\n", fileName, float64(apiResp.Data.FileSize)/(1024*1024))
+
+	return apiResp.Data.DirectLink, fileName, nil
 }
 
 func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath, itemID string) error {
@@ -404,7 +228,7 @@ func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath, itemID string) 
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 
-	fmt.Printf("\r[Amazon] Downloaded: %.2f MB (Complete)\n", float64(written)/(1024*1024))
+	GoLog("[Amazon] Downloaded: %.2f MB (Complete)\n", float64(written)/(1024*1024))
 	return nil
 }
 
@@ -422,7 +246,7 @@ type AmazonDownloadResult struct {
 	ISRC        string
 }
 
-// Uses DoubleDouble service (same as PC version)
+// downloadFromAmazon uses AfkarXYZ API to download from Amazon Music
 func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	downloader := NewAmazonDownloader()
 
@@ -434,8 +258,7 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	var availability *TrackAvailability
 	var err error
 
-	if strings.HasPrefix(req.SpotifyID, "deezer:") {
-		deezerID := strings.TrimPrefix(req.SpotifyID, "deezer:")
+	if deezerID, found := strings.CutPrefix(req.SpotifyID, "deezer:"); found {
 		GoLog("[Amazon] Using Deezer ID for SongLink lookup: %s\n", deezerID)
 		availability, err = songlink.CheckAvailabilityFromDeezer(deezerID)
 	} else if req.SpotifyID != "" {
@@ -458,21 +281,15 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	// Download using DoubleDouble service (same as PC)
-	downloadURL, trackName, artistName, err := downloader.downloadFromDoubleDoubleService(availability.AmazonURL, req.OutputDir)
+	// Download using AfkarXYZ API
+	downloadURL, _, err := downloader.downloadFromAfkarXYZ(availability.AmazonURL)
 	if err != nil {
-		return AmazonDownloadResult{}, fmt.Errorf("failed to get download URL: %w", err)
+		return AmazonDownloadResult{}, fmt.Errorf("failed to get download URL from AfkarXYZ: %w", err)
 	}
 
-	// Verify artist matches
-	if artistName != "" && !amazonArtistsMatch(req.ArtistName, artistName) {
-		GoLog("[Amazon] Artist mismatch: expected '%s', got '%s'. Rejecting.\n", req.ArtistName, artistName)
-		return AmazonDownloadResult{}, fmt.Errorf("artist mismatch: expected '%s', got '%s'", req.ArtistName, artistName)
-	}
+	GoLog("[Amazon] Match found: '%s' by '%s'\n", req.TrackName, req.ArtistName)
 
-	GoLog("[Amazon] Match found: '%s' by '%s'\n", trackName, artistName)
-
-	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]interface{}{
+	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]any{
 		"title":  req.TrackName,
 		"artist": req.ArtistName,
 		"album":  req.AlbumName,
@@ -519,11 +336,6 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		SetItemFinalizing(req.ItemID)
 	}
 
-	// Log track info from DoubleDouble (for debugging)
-	if trackName != "" && artistName != "" {
-		GoLog("[Amazon] DoubleDouble returned: %s - %s\n", artistName, trackName)
-	}
-
 	existingMeta, metaErr := ReadMetadata(outputPath)
 	actualTrackNum := req.TrackNumber
 	actualDiscNum := req.DiscNumber
@@ -539,8 +351,7 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	// Embed metadata using Spotify data (more accurate than DoubleDouble)
-	// But preserve track/disc numbers from file if they were better
+	// Embed metadata using Spotify data
 	metadata := Metadata{
 		Title:       req.TrackName,
 		Artist:      req.ArtistName,
@@ -551,9 +362,9 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		TotalTracks: req.TotalTracks,
 		DiscNumber:  actualDiscNum,
 		ISRC:        req.ISRC,
-		Genre:       req.Genre,     // From Deezer album metadata
-		Label:       req.Label,     // From Deezer album metadata
-		Copyright:   req.Copyright, // From Deezer album metadata
+		Genre:       req.Genre,
+		Label:       req.Label,
+		Copyright:   req.Copyright,
 	}
 
 	// Use cover data from parallel fetch
@@ -564,7 +375,7 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	}
 
 	if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
-		fmt.Printf("Warning: failed to embed metadata: %v\n", err)
+		GoLog("[Amazon] Warning: failed to embed metadata: %v\n", err)
 	}
 
 	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
@@ -587,14 +398,14 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 			if embedErr := EmbedLyrics(outputPath, parallelResult.LyricsLRC); embedErr != nil {
 				GoLog("[Amazon] Warning: failed to embed lyrics: %v\n", embedErr)
 			} else {
-				fmt.Println("[Amazon] Lyrics embedded successfully")
+				GoLog("[Amazon] Lyrics embedded successfully\n")
 			}
 		}
 	} else if req.EmbedLyrics {
-		fmt.Println("[Amazon] No lyrics available from parallel fetch")
+		GoLog("[Amazon] No lyrics available from parallel fetch\n")
 	}
 
-	fmt.Println("[Amazon] ✓ Downloaded successfully from Amazon Music")
+	GoLog("[Amazon] ✓ Downloaded successfully from Amazon Music\n")
 
 	quality, err := GetAudioQuality(outputPath)
 	if err != nil {

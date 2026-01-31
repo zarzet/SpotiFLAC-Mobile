@@ -375,10 +375,11 @@ func (q *QobuzDownloader) GetTrackByID(trackID int64) (*QobuzTrack, error) {
 // Uses same APIs as PC version for compatibility
 func (q *QobuzDownloader) GetAvailableAPIs() []string {
 	// Same APIs as PC version (referensi/backend/qobuz.go)
-	// Primary: dab.yeet.su, Fallback: dabmusic.xyz
+	// Primary: dab.yeet.su, Fallback: dabmusic.xyz, qobuz.squid.wtf
 	encodedAPIs := []string{
-		"ZGFiLnllZXQuc3UvYXBpL3N0cmVhbT90cmFja0lkPQ==", // dab.yeet.su/api/stream?trackId= (PRIMARY - same as PC)
-		"ZGFibXVzaWMueHl6L2FwaS9zdHJlYW0/dHJhY2tJZD0=", // dabmusic.xyz/api/stream?trackId= (FALLBACK - same as PC)
+		"ZGFiLnllZXQuc3UvYXBpL3N0cmVhbT90cmFja0lkPQ==",                 // dab.yeet.su/api/stream?trackId=
+		"ZGFibXVzaWMueHl6L2FwaS9zdHJlYW0/dHJhY2tJZD0=",                 // dabmusic.xyz/api/stream?trackId=
+		"cW9idXouc3F1aWQud3RmL2FwaS9kb3dubG9hZC1tdXNpYz90cmFja19pZD0=", // qobuz.squid.wtf/api/download-music?track_id=
 	}
 
 	var apis []string
@@ -391,6 +392,95 @@ func (q *QobuzDownloader) GetAvailableAPIs() []string {
 	}
 
 	return apis
+}
+
+// mapJumoQuality maps Qobuz quality codes to Jumo format
+func mapJumoQuality(quality string) int {
+	switch quality {
+	case "6":
+		return 6 // 16-bit FLAC
+	case "7":
+		return 7 // 24-bit 96kHz
+	case "27":
+		return 27 // 24-bit 192kHz
+	default:
+		return 6
+	}
+}
+
+// decodeXOR decodes XOR-encoded response from Jumo API
+func decodeXOR(data []byte) string {
+	text := string(data)
+	runes := []rune(text)
+	result := make([]rune, len(runes))
+	for i, char := range runes {
+		key := rune((i * 17) % 128)
+		result[i] = char ^ 253 ^ key
+	}
+	return string(result)
+}
+
+// downloadFromJumo gets download URL from Jumo API (fallback)
+func (q *QobuzDownloader) downloadFromJumo(trackID int64, quality string) (string, error) {
+	formatID := mapJumoQuality(quality)
+	region := "US"
+
+	// Jumo API endpoint
+	jumoURL := fmt.Sprintf("https://jumo-dl.pages.dev/file?track_id=%d&format_id=%d&region=%s", trackID, formatID, region)
+
+	GoLog("[Qobuz] Trying Jumo API fallback...\n")
+
+	client := NewHTTPClientWithTimeout(30 * time.Second)
+	req, err := http.NewRequest("GET", jumoURL, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Jumo API returned HTTP %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var result map[string]any
+
+	// Try parsing as plain JSON first
+	if err := json.Unmarshal(body, &result); err != nil {
+		// Try XOR decoding
+		decoded := decodeXOR(body)
+		if err := json.Unmarshal([]byte(decoded), &result); err != nil {
+			return "", fmt.Errorf("failed to parse Jumo response (plain or XOR): %w", err)
+		}
+	}
+
+	// Check for URL in various response formats
+	if urlVal, ok := result["url"].(string); ok && urlVal != "" {
+		GoLog("[Qobuz] Jumo API returned URL successfully\n")
+		return urlVal, nil
+	}
+
+	if data, ok := result["data"].(map[string]any); ok {
+		if urlVal, ok := data["url"].(string); ok && urlVal != "" {
+			GoLog("[Qobuz] Jumo API returned URL successfully (from data)\n")
+			return urlVal, nil
+		}
+	}
+
+	if linkVal, ok := result["link"].(string); ok && linkVal != "" {
+		GoLog("[Qobuz] Jumo API returned URL successfully (from link)\n")
+		return linkVal, nil
+	}
+
+	return "", fmt.Errorf("URL not found in Jumo response")
 }
 
 func (q *QobuzDownloader) SearchTrackByISRC(isrc string) (*QobuzTrack, error) {
@@ -812,11 +902,35 @@ func (q *QobuzDownloader) GetDownloadURL(trackID int64, quality string) (string,
 	}
 
 	_, downloadURL, err := getQobuzDownloadURLParallel(apis, trackID, quality)
-	if err != nil {
-		return "", err
+	if err == nil {
+		return downloadURL, nil
 	}
 
-	return downloadURL, nil
+	// All standard APIs failed, try Jumo as fallback
+	GoLog("[Qobuz] Standard APIs failed, trying Jumo fallback...\n")
+	jumoURL, jumoErr := q.downloadFromJumo(trackID, quality)
+	if jumoErr == nil {
+		return jumoURL, nil
+	}
+
+	// If quality is 27 (hi-res), try fallback to lower quality
+	if quality == "27" {
+		GoLog("[Qobuz] Hi-res (27) failed, trying 24-bit (7)...\n")
+		jumoURL, jumoErr = q.downloadFromJumo(trackID, "7")
+		if jumoErr == nil {
+			return jumoURL, nil
+		}
+	}
+
+	if quality == "27" || quality == "7" {
+		GoLog("[Qobuz] 24-bit failed, trying 16-bit (6)...\n")
+		jumoURL, jumoErr = q.downloadFromJumo(trackID, "6")
+		if jumoErr == nil {
+			return jumoURL, nil
+		}
+	}
+
+	return "", fmt.Errorf("all Qobuz APIs and Jumo fallback failed: %w", err)
 }
 
 // DownloadFile downloads a file from URL with User-Agent and progress tracking
