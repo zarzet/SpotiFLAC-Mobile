@@ -2,8 +2,6 @@
 
 ## [3.2.1] - 2026-01-22
 
-> **Note:** Next release will use `year.month.day` format (e.g., 26.2.1) and is scheduled for early February. Developer is taking a short break!
-
 ### Added
 
 - **Artist/Album + Singles Folder Structure**: Singles go inside artist folder (`Artist/Album/`, `Artist/Singles/`)
