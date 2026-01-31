@@ -3394,35 +3394,65 @@ abstract class AppLocalizations {
   /// **'24-bit / up to 192kHz'**
   String get qualityHiResFlacMaxSubtitle;
 
-  /// Quality option - MP3 lossy format
+  /// Quality option - lossy format (MP3/Opus)
   ///
   /// In en, this message translates to:
-  /// **'MP3'**
-  String get qualityMp3;
+  /// **'Lossy'**
+  String get qualityLossy;
 
-  /// Technical spec for MP3
+  /// Technical spec for lossy MP3
   ///
   /// In en, this message translates to:
-  /// **'320kbps (converted from FLAC)'**
-  String get qualityMp3Subtitle;
+  /// **'MP3 320kbps (converted from FLAC)'**
+  String get qualityLossyMp3Subtitle;
 
-  /// Setting - enable MP3 quality option
+  /// Technical spec for lossy Opus
   ///
   /// In en, this message translates to:
-  /// **'Enable MP3 Option'**
-  String get enableMp3Option;
+  /// **'Opus 128kbps (converted from FLAC)'**
+  String get qualityLossyOpusSubtitle;
 
-  /// Subtitle when MP3 is enabled
+  /// Setting - enable lossy quality option
   ///
   /// In en, this message translates to:
-  /// **'MP3 quality option is available'**
-  String get enableMp3OptionSubtitleOn;
+  /// **'Enable Lossy Option'**
+  String get enableLossyOption;
 
-  /// Subtitle when MP3 is disabled
+  /// Subtitle when lossy is enabled
   ///
   /// In en, this message translates to:
-  /// **'Downloads FLAC then converts to 320kbps MP3'**
-  String get enableMp3OptionSubtitleOff;
+  /// **'Lossy quality option is available'**
+  String get enableLossyOptionSubtitleOn;
+
+  /// Subtitle when lossy is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads FLAC then converts to lossy format'**
+  String get enableLossyOptionSubtitleOff;
+
+  /// Setting - choose lossy format
+  ///
+  /// In en, this message translates to:
+  /// **'Lossy Format'**
+  String get lossyFormat;
+
+  /// Description for lossy format picker
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the lossy format for conversion'**
+  String get lossyFormatDescription;
+
+  /// MP3 format description
+  ///
+  /// In en, this message translates to:
+  /// **'320kbps, best compatibility'**
+  String get lossyFormatMp3Subtitle;
+
+  /// Opus format description
+  ///
+  /// In en, this message translates to:
+  /// **'128kbps, better quality at smaller size'**
+  String get lossyFormatOpusSubtitle;
 
   /// Note about quality availability
   ///

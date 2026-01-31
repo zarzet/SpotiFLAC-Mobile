@@ -101,15 +101,24 @@ class DownloadSettingsPage extends ConsumerWidget {
                   ),
                   SettingsSwitchItem(
                     icon: Icons.audiotrack,
-                    title: context.l10n.enableMp3Option,
-                    subtitle: settings.enableMp3Option
-                        ? context.l10n.enableMp3OptionSubtitleOn
-                        : context.l10n.enableMp3OptionSubtitleOff,
-                    value: settings.enableMp3Option,
+                    title: context.l10n.enableLossyOption,
+                    subtitle: settings.enableLossyOption
+                        ? context.l10n.enableLossyOptionSubtitleOn
+                        : context.l10n.enableLossyOptionSubtitleOff,
+                    value: settings.enableLossyOption,
                     onChanged: (value) => ref
                         .read(settingsProvider.notifier)
-                        .setEnableMp3Option(value),
+                        .setEnableLossyOption(value),
                   ),
+                  if (settings.enableLossyOption)
+                    SettingsItem(
+                      icon: Icons.tune,
+                      title: context.l10n.lossyFormat,
+                      subtitle: settings.lossyFormat == 'opus' 
+                          ? 'Opus 128kbps' 
+                          : 'MP3 320kbps',
+                      onTap: () => _showLossyFormatPicker(context, ref, settings.lossyFormat),
+                    ),
                   if (!settings.askQualityBeforeDownload && isBuiltInService) ...[
                     _QualityOption(
                       title: context.l10n.qualityFlacLossless,
@@ -134,16 +143,18 @@ class DownloadSettingsPage extends ConsumerWidget {
                       onTap: () => ref
                           .read(settingsProvider.notifier)
                           .setAudioQuality('HI_RES_LOSSLESS'),
-                      showDivider: settings.enableMp3Option,
+                      showDivider: settings.enableLossyOption,
                     ),
-                    if (settings.enableMp3Option)
+                    if (settings.enableLossyOption)
                       _QualityOption(
-                        title: context.l10n.qualityMp3,
-                        subtitle: context.l10n.qualityMp3Subtitle,
-                        isSelected: settings.audioQuality == 'MP3',
+                        title: context.l10n.qualityLossy,
+                        subtitle: settings.lossyFormat == 'opus' 
+                            ? context.l10n.qualityLossyOpusSubtitle
+                            : context.l10n.qualityLossyMp3Subtitle,
+                        isSelected: settings.audioQuality == 'LOSSY',
                         onTap: () => ref
                             .read(settingsProvider.notifier)
-                            .setAudioQuality('MP3'),
+                            .setAudioQuality('LOSSY'),
                         showDivider: false,
                       ),
                   ],
@@ -712,6 +723,68 @@ class DownloadSettingsPage extends ConsumerWidget {
               trailing: current == 'both' ? const Icon(Icons.check) : null,
               onTap: () {
                 ref.read(settingsProvider.notifier).setLyricsMode('both');
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLossyFormatPicker(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Text(
+                context.l10n.lossyFormat,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                context.l10n.lossyFormatDescription,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.audiotrack),
+              title: const Text('MP3'),
+              subtitle: Text(context.l10n.lossyFormatMp3Subtitle),
+              trailing: current == 'mp3' ? const Icon(Icons.check) : null,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLossyFormat('mp3');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.graphic_eq),
+              title: const Text('Opus'),
+              subtitle: Text(context.l10n.lossyFormatOpusSubtitle),
+              trailing: current == 'opus' ? const Icon(Icons.check) : null,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLossyFormat('opus');
                 Navigator.pop(context);
               },
             ),

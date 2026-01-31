@@ -1,23 +1,25 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
+import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('FFmpeg');
 
 /// FFmpeg service for audio conversion and remuxing
-/// Uses native MethodChannel to call FFmpegKit from local AAR
+/// Uses ffmpeg_kit_flutter_new_audio plugin
 class FFmpegService {
-  static const _channel = MethodChannel('com.zarz.spotiflac/ffmpeg');
-
   static Future<FFmpegResult> _execute(String command) async {
     try {
-      final result = await _channel.invokeMethod('execute', {'command': command});
-      final map = Map<String, dynamic>.from(result);
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+      final output = await session.getOutput() ?? '';
+      
       return FFmpegResult(
-        success: map['success'] as bool,
-        returnCode: map['returnCode'] as int,
-        output: map['output'] as String,
+        success: ReturnCode.isSuccess(returnCode),
+        returnCode: returnCode?.getValue() ?? -1,
+        output: output,
       );
     } catch (e) {
       _log.e('FFmpeg execute error: $e');
@@ -69,6 +71,48 @@ class FFmpegService {
     return null;
   }
 
+  static Future<String?> convertFlacToOpus(
+    String inputPath, {
+    String bitrate = '128k',
+    bool deleteOriginal = true,
+  }) async {
+    final outputPath = inputPath.replaceAll('.flac', '.opus');
+
+    // Opus in OGG container with VBR
+    final command =
+        '-i "$inputPath" -codec:a libopus -b:a $bitrate -vbr on -compression_level 10 -map 0:a -map_metadata 0 "$outputPath" -y';
+
+    final result = await _execute(command);
+
+    if (result.success) {
+      if (deleteOriginal) {
+        try {
+          await File(inputPath).delete();
+        } catch (_) {}
+      }
+      return outputPath;
+    }
+
+    _log.e('FLAC to Opus conversion failed: ${result.output}');
+    return null;
+  }
+
+  /// Convert FLAC to lossy format based on format parameter
+  /// format: 'mp3' or 'opus'
+  static Future<String?> convertFlacToLossy(
+    String inputPath, {
+    required String format,
+    bool deleteOriginal = true,
+  }) async {
+    switch (format.toLowerCase()) {
+      case 'opus':
+        return convertFlacToOpus(inputPath, deleteOriginal: deleteOriginal);
+      case 'mp3':
+      default:
+        return convertFlacToMp3(inputPath, deleteOriginal: deleteOriginal);
+    }
+  }
+
   static Future<String?> convertFlacToM4a(
     String inputPath, {
     String codec = 'aac',
@@ -104,8 +148,8 @@ class FFmpegService {
 
   static Future<bool> isAvailable() async {
     try {
-      final version = await _channel.invokeMethod('getVersion');
-      return version != null && version.toString().isNotEmpty;
+      final version = await FFmpegKitConfig.getFFmpegVersion();
+      return version?.isNotEmpty ?? false;
     } catch (e) {
       return false;
     }
@@ -113,8 +157,7 @@ class FFmpegService {
 
   static Future<String?> getVersion() async {
     try {
-      final version = await _channel.invokeMethod('getVersion');
-      return version as String?;
+      return await FFmpegKitConfig.getFFmpegVersion();
     } catch (e) {
       return null;
     }

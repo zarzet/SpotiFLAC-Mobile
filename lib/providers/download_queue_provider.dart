@@ -1668,9 +1668,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       final quality = item.qualityOverride ?? state.audioQuality;
       
-      // For MP3, we need to download FLAC first then convert
-      // Servers don't support MP3 quality directly
-      final downloadQuality = quality == 'MP3' ? 'LOSSLESS' : quality;
+      // For LOSSY, we need to download FLAC first then convert
+      // Servers don't support lossy quality directly
+      final downloadQuality = quality == 'LOSSY' ? 'LOSSLESS' : quality;
 
 // Fetch extended metadata (genre, label) from Deezer if available
       String? genre;
@@ -1721,7 +1721,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       if (useExtensions) {
         _log.d('Using extension providers for download');
         _log.d(
-          'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}${quality == 'MP3' ? ' (downloading as LOSSLESS for conversion)' : ''}',
+          'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}${quality == 'LOSSY' ? ' (downloading as LOSSLESS for conversion)' : ''}',
         );
         _log.d('Output dir: $outputDir');
         result = await PlatformBridge.downloadWithExtensions(
@@ -1748,7 +1748,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       } else if (state.autoFallback) {
         _log.d('Using auto-fallback mode');
         _log.d(
-          'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}${quality == 'MP3' ? ' (downloading as LOSSLESS for conversion)' : ''}',
+          'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}${quality == 'LOSSY' ? ' (downloading as LOSSLESS for conversion)' : ''}',
         );
         _log.d('Output dir: $outputDir');
         result = await PlatformBridge.downloadWithFallback(
@@ -1969,11 +1969,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           return;
         }
 
-        if (quality == 'MP3' && filePath != null && filePath.endsWith('.flac')) {
+        if (quality == 'LOSSY' && filePath != null && filePath.endsWith('.flac')) {
           if (wasExisting) {
-            _log.i('MP3 requested but existing FLAC found - skipping conversion to preserve original file');
+            _log.i('Lossy requested but existing FLAC found - skipping conversion to preserve original file');
           } else {
-            _log.i('MP3 quality selected, converting FLAC to MP3...');
+            final lossyFormat = settings.lossyFormat;
+            _log.i('Lossy quality selected, converting FLAC to $lossyFormat...');
             updateItemStatus(
               item.id,
               DownloadStatus.downloading,
@@ -1981,40 +1982,43 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             );
             
             try {
-              final mp3Path = await FFmpegService.convertFlacToMp3(
+              final convertedPath = await FFmpegService.convertFlacToLossy(
                 filePath,
-                bitrate: '320k',
+                format: lossyFormat,
                 deleteOriginal: true,
               );
               
-              if (mp3Path != null) {
-                filePath = mp3Path;
-                actualQuality = 'MP3 320kbps';
-                _log.i('Successfully converted to MP3: $mp3Path');
+              if (convertedPath != null) {
+                filePath = convertedPath;
+                actualQuality = lossyFormat == 'opus' ? 'Opus 128kbps' : 'MP3 320kbps';
+                _log.i('Successfully converted to $lossyFormat: $convertedPath');
                 
-                _log.i('Embedding metadata to MP3...');
-                updateItemStatus(
-                  item.id,
-                  DownloadStatus.downloading,
-                  progress: 0.99,
-                );
-                
-                final mp3BackendGenre = result['genre'] as String?;
-                final mp3BackendLabel = result['label'] as String?;
-                final mp3BackendCopyright = result['copyright'] as String?;
-                
-                await _embedMetadataToMp3(
-                  mp3Path, 
-                  trackToDownload,
-                  genre: mp3BackendGenre ?? genre,
-                  label: mp3BackendLabel ?? label,
-                  copyright: mp3BackendCopyright,
-                );
+                // Only embed metadata for MP3 (Opus uses Vorbis comments which are preserved)
+                if (lossyFormat == 'mp3') {
+                  _log.i('Embedding metadata to MP3...');
+                  updateItemStatus(
+                    item.id,
+                    DownloadStatus.downloading,
+                    progress: 0.99,
+                  );
+                  
+                  final mp3BackendGenre = result['genre'] as String?;
+                  final mp3BackendLabel = result['label'] as String?;
+                  final mp3BackendCopyright = result['copyright'] as String?;
+                  
+                  await _embedMetadataToMp3(
+                    convertedPath, 
+                    trackToDownload,
+                    genre: mp3BackendGenre ?? genre,
+                    label: mp3BackendLabel ?? label,
+                    copyright: mp3BackendCopyright,
+                  );
+                }
               } else {
-                _log.w('MP3 conversion failed, keeping FLAC file');
+                _log.w('$lossyFormat conversion failed, keeping FLAC file');
               }
             } catch (e) {
-              _log.e('MP3 conversion error: $e, keeping FLAC file');
+              _log.e('Lossy conversion error: $e, keeping FLAC file');
             }
           }
         }
