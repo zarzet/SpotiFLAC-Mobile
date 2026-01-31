@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.2.2] - 2026-01-31
+
+### Added
+
+- **Lossy Format Support**: Download in MP3 or Opus format with configurable quality
+  - New "Enable Lossy Option" toggle in Settings > Download > Audio Quality
+  - Choose between MP3 (320kbps) or Opus (256kbps) format
+  - Downloads FLAC first, then converts using FFmpeg
+- **New Languages**: Turkish and Portuguese Portugal translations
+
+### Changed
+
+- **FFmpeg Plugin Migration**: Replaced custom FFmpeg AAR with `ffmpeg_kit_flutter_new_audio` plugin
+  - Unified FFmpeg implementation for both Android and iOS
+  - Removed custom FFmpeg MethodChannel from MainActivity
+  - Simplified build process (no more custom AAR in android/app/libs/)
+
+### Fixed
+
+- **MP3/Lossy Download 403 Error**: Fixed 403 Forbidden when selecting lossy quality
+  - Now downloads FLAC first, then converts to selected lossy format
+  - Tidal/Qobuz APIs don't support direct MP3 quality parameter
+
+---
+
 ## [3.2.1] - 2026-01-22
 
 ### Added
