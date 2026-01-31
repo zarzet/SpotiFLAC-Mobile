@@ -154,14 +154,6 @@ class OptionsSettingsPage extends ConsumerWidget {
                           .setUseExtensionProviders(v),
                     ),
                   SettingsSwitchItem(
-                    icon: Icons.lyrics,
-                    title: context.l10n.optionsEmbedLyrics,
-                    subtitle: context.l10n.optionsEmbedLyricsSubtitle,
-                    value: settings.embedLyrics,
-                    onChanged: (v) =>
-                        ref.read(settingsProvider.notifier).setEmbedLyrics(v),
-                  ),
-                  SettingsSwitchItem(
                     icon: Icons.image,
                     title: context.l10n.optionsMaxQualityCover,
                     subtitle: context.l10n.optionsMaxQualityCoverSubtitle,

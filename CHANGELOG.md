@@ -30,6 +30,7 @@
 
 - **Opus Cover Art**: Fixed cover art not being embedded in Opus files
 - **Deezer Pagination**: Fixed albums/playlists with >25 tracks only showing first 25 ([#112](https://github.com/zarzet/SpotiFLAC-Mobile/issues/112))
+- **Duplicate Embed Lyrics Setting**: Removed duplicate "Embed Lyrics" toggle from Options page - use "Lyrics Mode" in Download settings instead ([#110](https://github.com/zarzet/SpotiFLAC-Mobile/issues/110))
 
 ---
 
