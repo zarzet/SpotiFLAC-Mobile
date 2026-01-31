@@ -251,6 +251,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(lossyBitrate: bitrate, lossyFormat: format);
     _saveSettings();
   }
+
+  void setUseAllFilesAccess(bool enabled) {
+    state = state.copyWith(useAllFilesAccess: enabled);
+    _saveSettings();
+  }
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(

@@ -67,10 +67,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       bool storageGranted = false;
       
       if (_androidSdkVersion >= 33) {
-        final manageStatus = await Permission.manageExternalStorage.status;
+        // Android 13+: Only require READ_MEDIA_AUDIO by default
+        // MANAGE_EXTERNAL_STORAGE is optional and can be enabled in settings
         final audioStatus = await Permission.audio.status;
-        debugPrint('[Permission] Android 13+ check: MANAGE_EXTERNAL_STORAGE=$manageStatus, READ_MEDIA_AUDIO=$audioStatus');
-        storageGranted = manageStatus.isGranted && audioStatus.isGranted;
+        debugPrint('[Permission] Android 13+ check: READ_MEDIA_AUDIO=$audioStatus');
+        storageGranted = audioStatus.isGranted;
       } else if (_androidSdkVersion >= 30) {
         final manageStatus = await Permission.manageExternalStorage.status;
         debugPrint('[Permission] Android 11-12 check: MANAGE_EXTERNAL_STORAGE=$manageStatus');
@@ -108,44 +109,20 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         bool allGranted = false;
         
         if (_androidSdkVersion >= 33) {
-          var manageStatus = await Permission.manageExternalStorage.status;
-          if (!manageStatus.isGranted) {
-            if (mounted) {
-              final shouldOpen = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(context.l10n.setupStorageAccessRequired),
-                  content: Text(
-                    '${context.l10n.setupStorageAccessMessage}\n\n'
-                    '${context.l10n.setupAllowAccessToManageFiles}',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(context.l10n.dialogCancel),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(context.l10n.setupOpenSettings),
-                    ),
-                  ],
-                ),
-              );
-              
-              if (shouldOpen == true) {
-                await Permission.manageExternalStorage.request();
-                await Future.delayed(const Duration(milliseconds: 500));
-                manageStatus = await Permission.manageExternalStorage.status;
-              }
-            }
-          }
-          
+          // Android 13+: Only request READ_MEDIA_AUDIO by default
+          // MANAGE_EXTERNAL_STORAGE is optional (can be enabled in Settings)
           var audioStatus = await Permission.audio.status;
-          if (!audioStatus.isGranted && manageStatus.isGranted) {
+          if (!audioStatus.isGranted) {
             audioStatus = await Permission.audio.request();
           }
           
-          allGranted = manageStatus.isGranted && audioStatus.isGranted;
+          allGranted = audioStatus.isGranted;
+          
+          if (audioStatus.isPermanentlyDenied) {
+            _showPermissionDeniedDialog('Audio');
+            setState(() => _isLoading = false);
+            return;
+          }
           
         } else if (_androidSdkVersion >= 30) {
           var manageStatus = await Permission.manageExternalStorage.status;

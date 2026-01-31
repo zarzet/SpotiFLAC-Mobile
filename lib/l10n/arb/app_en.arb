@@ -1646,5 +1646,20 @@
   "discographyNoAlbums": "No albums available",
   "@discographyNoAlbums": {"description": "Error - no albums found for artist"},
   "discographyFailedToFetch": "Failed to fetch some albums",
-  "@discographyFailedToFetch": {"description": "Error - some albums failed to load"}
+  "@discographyFailedToFetch": {"description": "Error - some albums failed to load"},
+
+  "sectionStorageAccess": "Storage Access",
+  "@sectionStorageAccess": {"description": "Section header for storage access settings"},
+  "allFilesAccess": "All Files Access",
+  "@allFilesAccess": {"description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"},
+  "allFilesAccessEnabledSubtitle": "Can write to any folder",
+  "@allFilesAccessEnabledSubtitle": {"description": "Subtitle when all files access is enabled"},
+  "allFilesAccessDisabledSubtitle": "Limited to media folders only",
+  "@allFilesAccessDisabledSubtitle": {"description": "Subtitle when all files access is disabled"},
+  "allFilesAccessDescription": "Enable this if you encounter write errors when saving to custom folders. Android 13+ restricts access to certain directories by default.",
+  "@allFilesAccessDescription": {"description": "Description explaining when to enable all files access"},
+  "allFilesAccessDeniedMessage": "Permission was denied. Please enable 'All files access' manually in system settings.",
+  "@allFilesAccessDeniedMessage": {"description": "Message when permission is permanently denied"},
+  "allFilesAccessDisabledMessage": "All Files Access disabled. The app will use limited storage access.",
+  "@allFilesAccessDisabledMessage": {"description": "Snackbar message when user disables all files access"}
 }

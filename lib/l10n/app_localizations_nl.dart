@@ -2184,4 +2184,28 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get discographyFailedToFetch => 'Failed to fetch some albums';
+
+  @override
+  String get sectionStorageAccess => 'Storage Access';
+
+  @override
+  String get allFilesAccess => 'All Files Access';
+
+  @override
+  String get allFilesAccessEnabledSubtitle => 'Can write to any folder';
+
+  @override
+  String get allFilesAccessDisabledSubtitle => 'Limited to media folders only';
+
+  @override
+  String get allFilesAccessDescription =>
+      'Enable this if you encounter write errors when saving to custom folders. Android 13+ restricts access to certain directories by default.';
+
+  @override
+  String get allFilesAccessDeniedMessage =>
+      'Permission was denied. Please enable \'All files access\' manually in system settings.';
+
+  @override
+  String get allFilesAccessDisabledMessage =>
+      'All Files Access disabled. The app will use limited storage access.';
 }

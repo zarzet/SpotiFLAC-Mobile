@@ -35,6 +35,7 @@ class AppSettings {
   final String lossyFormat;
   final String lossyBitrate; // e.g., 'mp3_320', 'mp3_256', 'mp3_192', 'mp3_128', 'opus_128', 'opus_96', 'opus_64'
   final String lyricsMode;
+  final bool useAllFilesAccess; // Android 13+ only: enable MANAGE_EXTERNAL_STORAGE
 
   const AppSettings({
     this.defaultService = 'tidal',
@@ -68,6 +69,7 @@ class AppSettings {
     this.lossyFormat = 'mp3',
     this.lossyBitrate = 'mp3_320',
     this.lyricsMode = 'embed',
+    this.useAllFilesAccess = false,
   });
 
   AppSettings copyWith({
@@ -103,6 +105,7 @@ class AppSettings {
     String? lossyFormat,
     String? lossyBitrate,
     String? lyricsMode,
+    bool? useAllFilesAccess,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -136,6 +139,7 @@ class AppSettings {
       lossyFormat: lossyFormat ?? this.lossyFormat,
       lossyBitrate: lossyBitrate ?? this.lossyBitrate,
       lyricsMode: lyricsMode ?? this.lyricsMode,
+      useAllFilesAccess: useAllFilesAccess ?? this.useAllFilesAccess,
     );
   }
 

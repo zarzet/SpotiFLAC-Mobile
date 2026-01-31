@@ -3957,6 +3957,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to fetch some albums'**
   String get discographyFailedToFetch;
+
+  /// Section header for storage access settings
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Access'**
+  String get sectionStorageAccess;
+
+  /// Toggle for MANAGE_EXTERNAL_STORAGE permission
+  ///
+  /// In en, this message translates to:
+  /// **'All Files Access'**
+  String get allFilesAccess;
+
+  /// Subtitle when all files access is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Can write to any folder'**
+  String get allFilesAccessEnabledSubtitle;
+
+  /// Subtitle when all files access is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Limited to media folders only'**
+  String get allFilesAccessDisabledSubtitle;
+
+  /// Description explaining when to enable all files access
+  ///
+  /// In en, this message translates to:
+  /// **'Enable this if you encounter write errors when saving to custom folders. Android 13+ restricts access to certain directories by default.'**
+  String get allFilesAccessDescription;
+
+  /// Message when permission is permanently denied
+  ///
+  /// In en, this message translates to:
+  /// **'Permission was denied. Please enable \'All files access\' manually in system settings.'**
+  String get allFilesAccessDeniedMessage;
+
+  /// Snackbar message when user disables all files access
+  ///
+  /// In en, this message translates to:
+  /// **'All Files Access disabled. The app will use limited storage access.'**
+  String get allFilesAccessDisabledMessage;
 }
 
 class _AppLocalizationsDelegate
