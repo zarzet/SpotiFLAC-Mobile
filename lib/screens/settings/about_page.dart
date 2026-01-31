@@ -467,7 +467,7 @@ class _TranslatorsSection extends StatelessWidget {
       flag: '🇷🇺',
     ),
     _Translator(
-      name: 'Max',
+      name: 'Amonoman',
       crowdinUsername: 'amonoman',
       language: 'German',
       flag: '🇩🇪',

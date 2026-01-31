@@ -331,16 +331,51 @@ func (c *DeezerClient) GetAlbum(ctx context.Context, albumID string) (*AlbumResp
 		Label:       album.Label, // From Deezer album
 	}
 
-	isrcMap := c.fetchISRCsParallel(ctx, album.Tracks.Data)
+	// Fetch all tracks with pagination (Deezer default limit is 25)
+	allTracks := album.Tracks.Data
 
-	tracks := make([]AlbumTrackMetadata, 0, len(album.Tracks.Data))
+	// If album has more tracks than returned, fetch remaining pages
+	if album.NbTracks > len(allTracks) {
+		GoLog("[Deezer] Album has %d tracks but only got %d, fetching remaining...", album.NbTracks, len(allTracks))
+
+		tracksURL := fmt.Sprintf("%s/tracks?limit=100&index=%d", fmt.Sprintf(deezerAlbumURL, albumID), len(allTracks))
+
+		for len(allTracks) < album.NbTracks {
+			var tracksResp struct {
+				Data []deezerTrack `json:"data"`
+				Next string        `json:"next"`
+			}
+
+			if err := c.getJSON(ctx, tracksURL, &tracksResp); err != nil {
+				GoLog("[Deezer] Warning: failed to fetch album tracks page: %v", err)
+				break
+			}
+
+			if len(tracksResp.Data) == 0 {
+				break
+			}
+
+			allTracks = append(allTracks, tracksResp.Data...)
+
+			if tracksResp.Next == "" {
+				break
+			}
+			tracksURL = tracksResp.Next
+		}
+
+		GoLog("[Deezer] Fetched total %d tracks for album", len(allTracks))
+	}
+
+	isrcMap := c.fetchISRCsParallel(ctx, allTracks)
+
+	tracks := make([]AlbumTrackMetadata, 0, len(allTracks))
 	// Normalize record_type (Deezer uses "compile" instead of "compilation")
 	albumType := album.RecordType
 	if albumType == "compile" {
 		albumType = "compilation"
 	}
 
-	for i, track := range album.Tracks.Data {
+	for i, track := range allTracks {
 		trackIDStr := fmt.Sprintf("%d", track.ID)
 		isrc := isrcMap[trackIDStr]
 
@@ -491,10 +526,45 @@ func (c *DeezerClient) GetPlaylist(ctx context.Context, playlistID string) (*Pla
 	info.Owner.Name = playlist.Title
 	info.Owner.Images = playlistImage
 
-	isrcMap := c.fetchISRCsParallel(ctx, playlist.Tracks.Data)
+	// Fetch all tracks with pagination (Deezer default limit is 25)
+	allTracks := playlist.Tracks.Data
 
-	tracks := make([]AlbumTrackMetadata, 0, len(playlist.Tracks.Data))
-	for _, track := range playlist.Tracks.Data {
+	// If playlist has more tracks than returned, fetch remaining pages
+	if playlist.NbTracks > len(allTracks) {
+		GoLog("[Deezer] Playlist has %d tracks but only got %d, fetching remaining...", playlist.NbTracks, len(allTracks))
+
+		tracksURL := fmt.Sprintf("%s/tracks?limit=100&index=%d", fmt.Sprintf(deezerPlaylistURL, playlistID), len(allTracks))
+
+		for len(allTracks) < playlist.NbTracks {
+			var tracksResp struct {
+				Data []deezerTrack `json:"data"`
+				Next string        `json:"next"`
+			}
+
+			if err := c.getJSON(ctx, tracksURL, &tracksResp); err != nil {
+				GoLog("[Deezer] Warning: failed to fetch playlist tracks page: %v", err)
+				break
+			}
+
+			if len(tracksResp.Data) == 0 {
+				break
+			}
+
+			allTracks = append(allTracks, tracksResp.Data...)
+
+			if tracksResp.Next == "" {
+				break
+			}
+			tracksURL = tracksResp.Next
+		}
+
+		GoLog("[Deezer] Fetched total %d tracks for playlist", len(allTracks))
+	}
+
+	isrcMap := c.fetchISRCsParallel(ctx, allTracks)
+
+	tracks := make([]AlbumTrackMetadata, 0, len(allTracks))
+	for _, track := range allTracks {
 		albumImage := track.Album.CoverXL
 		if albumImage == "" {
 			albumImage = track.Album.CoverBig
