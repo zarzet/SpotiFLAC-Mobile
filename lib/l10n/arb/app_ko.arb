@@ -600,6 +600,10 @@
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
+  "aboutSjdonadoDesc": "Creator of I Don't Have Spotify (IDHS). The fallback link resolver that saves the day!",
+  "@aboutSjdonadoDesc": {
+    "description": "Credit description for sjdonado"
+  },
   "aboutDoubleDouble": "DoubleDouble",
   "@aboutDoubleDouble": {
     "description": "Name of Amazon API service - DO NOT TRANSLATE"
@@ -2425,25 +2429,45 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "qualityMp3": "MP3",
-  "@qualityMp3": {
-    "description": "Quality option - MP3 lossy format"
+  "qualityLossy": "Lossy",
+  "@qualityLossy": {
+    "description": "Quality option - lossy format (MP3/Opus)"
   },
-  "qualityMp3Subtitle": "320kbps (converted from FLAC)",
-  "@qualityMp3Subtitle": {
-    "description": "Technical spec for MP3"
+  "qualityLossyMp3Subtitle": "MP3 320kbps (converted from FLAC)",
+  "@qualityLossyMp3Subtitle": {
+    "description": "Technical spec for lossy MP3"
   },
-  "enableMp3Option": "Enable MP3 Option",
-  "@enableMp3Option": {
-    "description": "Setting - enable MP3 quality option"
+  "qualityLossyOpusSubtitle": "Opus 128kbps (converted from FLAC)",
+  "@qualityLossyOpusSubtitle": {
+    "description": "Technical spec for lossy Opus"
   },
-  "enableMp3OptionSubtitleOn": "MP3 quality option is available",
-  "@enableMp3OptionSubtitleOn": {
-    "description": "Subtitle when MP3 is enabled"
+  "enableLossyOption": "Enable Lossy Option",
+  "@enableLossyOption": {
+    "description": "Setting - enable lossy quality option"
   },
-  "enableMp3OptionSubtitleOff": "Downloads FLAC then converts to 320kbps MP3",
-  "@enableMp3OptionSubtitleOff": {
-    "description": "Subtitle when MP3 is disabled"
+  "enableLossyOptionSubtitleOn": "Lossy quality option is available",
+  "@enableLossyOptionSubtitleOn": {
+    "description": "Subtitle when lossy is enabled"
+  },
+  "enableLossyOptionSubtitleOff": "Downloads FLAC then converts to lossy format",
+  "@enableLossyOptionSubtitleOff": {
+    "description": "Subtitle when lossy is disabled"
+  },
+  "lossyFormat": "Lossy Format",
+  "@lossyFormat": {
+    "description": "Setting - choose lossy format"
+  },
+  "lossyFormatDescription": "Choose the lossy format for conversion",
+  "@lossyFormatDescription": {
+    "description": "Description for lossy format picker"
+  },
+  "lossyFormatMp3Subtitle": "320kbps, best compatibility",
+  "@lossyFormatMp3Subtitle": {
+    "description": "MP3 format description"
+  },
+  "lossyFormatOpusSubtitle": "128kbps, better quality at smaller size",
+  "@lossyFormatOpusSubtitle": {
+    "description": "Opus format description"
   },
   "qualityNote": "Actual quality depends on track availability from the service",
   "@qualityNote": {
@@ -2864,5 +2888,33 @@
   "discographyFailedToFetch": "Failed to fetch some albums",
   "@discographyFailedToFetch": {
     "description": "Error - some albums failed to load"
+  },
+  "sectionStorageAccess": "Storage Access",
+  "@sectionStorageAccess": {
+    "description": "Section header for storage access settings"
+  },
+  "allFilesAccess": "All Files Access",
+  "@allFilesAccess": {
+    "description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"
+  },
+  "allFilesAccessEnabledSubtitle": "Can write to any folder",
+  "@allFilesAccessEnabledSubtitle": {
+    "description": "Subtitle when all files access is enabled"
+  },
+  "allFilesAccessDisabledSubtitle": "Limited to media folders only",
+  "@allFilesAccessDisabledSubtitle": {
+    "description": "Subtitle when all files access is disabled"
+  },
+  "allFilesAccessDescription": "Enable this if you encounter write errors when saving to custom folders. Android 13+ restricts access to certain directories by default.",
+  "@allFilesAccessDescription": {
+    "description": "Description explaining when to enable all files access"
+  },
+  "allFilesAccessDeniedMessage": "Permission was denied. Please enable 'All files access' manually in system settings.",
+  "@allFilesAccessDeniedMessage": {
+    "description": "Message when permission is permanently denied"
+  },
+  "allFilesAccessDisabledMessage": "All Files Access disabled. The app will use limited storage access.",
+  "@allFilesAccessDisabledMessage": {
+    "description": "Snackbar message when user disables all files access"
   }
 }
