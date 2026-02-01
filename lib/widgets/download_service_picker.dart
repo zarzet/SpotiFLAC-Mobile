@@ -27,6 +27,7 @@ const _builtInServices = [
       QualityOption(id: 'LOSSLESS', label: 'FLAC Lossless', description: '16-bit / 44.1kHz'),
       QualityOption(id: 'HI_RES', label: 'Hi-Res FLAC', description: '24-bit / up to 96kHz'),
       QualityOption(id: 'HI_RES_LOSSLESS', label: 'Hi-Res FLAC Max', description: '24-bit / up to 192kHz'),
+      QualityOption(id: 'HIGH', label: 'AAC 320kbps', description: 'Native AAC (no conversion)'),
     ],
   ),
   BuiltInService(
@@ -257,6 +258,8 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
         return Icons.high_quality;
       case 'LOSSLESS':
         return Icons.music_note;
+      case 'HIGH':
+        return Icons.aod;
       case 'MP3_320':
       case 'MP3':
       case 'LOSSY':

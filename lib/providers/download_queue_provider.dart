@@ -1980,9 +1980,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
 
         if (filePath != null && filePath.endsWith('.m4a')) {
-          _log.d(
-            'M4A file detected (Hi-Res DASH stream), attempting conversion to FLAC...',
-          );
+          // For HIGH quality (native AAC 320kbps), skip M4A to FLAC conversion
+          if (quality == 'HIGH') {
+            _log.i('Native AAC 320kbps download (HIGH quality), keeping M4A file');
+            actualQuality = 'AAC 320kbps';
+          } else {
+            _log.d(
+              'M4A file detected (Hi-Res DASH stream), attempting conversion to FLAC...',
+            );
 
           try {
             final file = File(filePath);
@@ -2084,6 +2089,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           } catch (e) {
             _log.w('FFmpeg conversion process failed: $e, keeping M4A file');
           }
+          } // end else (not HIGH quality)
         }
 
         final itemAfterDownload = state.items.firstWhere(

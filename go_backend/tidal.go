@@ -1502,6 +1502,11 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		GetTrackIDCache().SetTidal(req.ISRC, track.ID)
 	}
 
+	quality := req.Quality
+	if quality == "" {
+		quality = "LOSSLESS"
+	}
+
 	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]interface{}{
 		"title":  req.TrackName,
 		"artist": req.ArtistName,
@@ -1510,15 +1515,28 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		"year":   extractYear(req.ReleaseDate),
 		"disc":   req.DiscNumber,
 	})
-	filename = sanitizeFilename(filename) + ".flac"
-	outputPath := filepath.Join(req.OutputDir, filename)
+
+	// For HIGH quality (AAC 320kbps), use .m4a extension directly
+	var outputPath string
+	var m4aPath string
+	if quality == "HIGH" {
+		filename = sanitizeFilename(filename) + ".m4a"
+		outputPath = filepath.Join(req.OutputDir, filename)
+		m4aPath = outputPath // Same path for HIGH quality
+	} else {
+		filename = sanitizeFilename(filename) + ".flac"
+		outputPath = filepath.Join(req.OutputDir, filename)
+		m4aPath = strings.TrimSuffix(outputPath, ".flac") + ".m4a"
+	}
 
 	if fileInfo, statErr := os.Stat(outputPath); statErr == nil && fileInfo.Size() > 0 {
 		return TidalDownloadResult{FilePath: "EXISTS:" + outputPath}, nil
 	}
-	m4aPath := strings.TrimSuffix(outputPath, ".flac") + ".m4a"
-	if fileInfo, statErr := os.Stat(m4aPath); statErr == nil && fileInfo.Size() > 0 {
-		return TidalDownloadResult{FilePath: "EXISTS:" + m4aPath}, nil
+	// For non-HIGH quality, also check for existing M4A (DASH downloads)
+	if quality != "HIGH" {
+		if fileInfo, statErr := os.Stat(m4aPath); statErr == nil && fileInfo.Size() > 0 {
+			return TidalDownloadResult{FilePath: "EXISTS:" + m4aPath}, nil
+		}
 	}
 
 	tmpPath := outputPath + ".m4a.tmp"
@@ -1527,10 +1545,6 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		os.Remove(tmpPath)
 	}
 
-	quality := req.Quality
-	if quality == "" {
-		quality = "LOSSLESS"
-	}
 	GoLog("[Tidal] Using quality: %s\n", quality)
 
 	downloadInfo, err := downloader.GetDownloadURL(track.ID, quality)
@@ -1656,15 +1670,51 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 			fmt.Println("[Tidal] No lyrics available from parallel fetch")
 		}
 	} else if strings.HasSuffix(actualOutputPath, ".m4a") {
-		fmt.Println("[Tidal] Skipping metadata embedding for M4A file (will be handled after FFmpeg conversion)")
+		// For HIGH quality (AAC 320kbps), embed metadata directly to M4A
+		if quality == "HIGH" {
+			GoLog("[Tidal] Embedding metadata to M4A file for HIGH quality...\n")
+			if err := EmbedM4AMetadata(actualOutputPath, metadata, coverData); err != nil {
+				GoLog("[Tidal] Warning: failed to embed M4A metadata: %v\n", err)
+			} else {
+				GoLog("[Tidal] M4A metadata embedded successfully\n")
+			}
+
+			// Handle lyrics for M4A
+			if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+				lyricsMode := req.LyricsMode
+				if lyricsMode == "" {
+					lyricsMode = "external" // Default to external for M4A since embedding is complex
+				}
+
+				if lyricsMode == "external" || lyricsMode == "both" {
+					GoLog("[Tidal] Saving external LRC file for M4A...\n")
+					if lrcPath, lrcErr := SaveLRCFile(actualOutputPath, parallelResult.LyricsLRC); lrcErr != nil {
+						GoLog("[Tidal] Warning: failed to save LRC file: %v\n", lrcErr)
+					} else {
+						GoLog("[Tidal] LRC file saved: %s\n", lrcPath)
+					}
+				}
+			}
+		} else {
+			fmt.Println("[Tidal] Skipping metadata embedding for M4A file (will be handled after FFmpeg conversion)")
+		}
 	}
 
 	AddToISRCIndex(req.OutputDir, req.ISRC, actualOutputPath)
 
+	// For HIGH quality (AAC), set appropriate values
+	bitDepth := downloadInfo.BitDepth
+	sampleRate := downloadInfo.SampleRate
+	if quality == "HIGH" {
+		// AAC 320kbps doesn't have traditional bit depth
+		bitDepth = 0
+		sampleRate = 44100
+	}
+
 	return TidalDownloadResult{
 		FilePath:    actualOutputPath,
-		BitDepth:    downloadInfo.BitDepth,
-		SampleRate:  downloadInfo.SampleRate,
+		BitDepth:    bitDepth,
+		SampleRate:  sampleRate,
 		Title:       track.Title,
 		Artist:      track.Artist.Name,
 		Album:       track.Album.Title,

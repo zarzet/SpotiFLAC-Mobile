@@ -94,6 +94,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final topPadding = MediaQuery.of(context).padding.top;
     
     final isBuiltInService = _builtInServices.contains(settings.defaultService);
+    final isTidalService = settings.defaultService == 'tidal';
 
     return PopScope(
       canPop: true,
@@ -215,8 +216,19 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       onTap: () => ref
                           .read(settingsProvider.notifier)
                           .setAudioQuality('HI_RES_LOSSLESS'),
-                      showDivider: settings.enableLossyOption,
+                      showDivider: isTidalService || settings.enableLossyOption,
                     ),
+                    // Native AAC 320kbps option (Tidal only)
+                    if (isTidalService)
+                      _QualityOption(
+                        title: 'AAC 320kbps',
+                        subtitle: 'Native AAC (no conversion)',
+                        isSelected: settings.audioQuality == 'HIGH',
+                        onTap: () => ref
+                            .read(settingsProvider.notifier)
+                            .setAudioQuality('HIGH'),
+                        showDivider: settings.enableLossyOption,
+                      ),
                     if (settings.enableLossyOption)
                       _QualityOption(
                         title: context.l10n.qualityLossy,
