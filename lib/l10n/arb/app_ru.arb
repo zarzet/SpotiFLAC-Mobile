@@ -867,6 +867,10 @@
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
+  "setupIcloudNotSupported": "iCloud Drive is not supported. Please use the app Documents folder.",
+  "@setupIcloudNotSupported": {
+    "description": "Error when user selects iCloud Drive on iOS"
+  },
   "setupDownloadInFlac": "Скачать Spotify треки во FLAC",
   "@setupDownloadInFlac": {
     "description": "App tagline in setup"
@@ -2592,6 +2596,30 @@
   "queueClearAllMessage": "Вы уверены, что хотите очистить все загрузки?",
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
+  },
+  "queueExportFailed": "Export",
+  "@queueExportFailed": {
+    "description": "Button - export failed downloads to TXT"
+  },
+  "queueExportFailedSuccess": "Failed downloads exported to TXT file",
+  "@queueExportFailedSuccess": {
+    "description": "Success message after exporting failed downloads"
+  },
+  "queueExportFailedClear": "Clear Failed",
+  "@queueExportFailedClear": {
+    "description": "Action to clear failed downloads after export"
+  },
+  "queueExportFailedError": "Failed to export downloads",
+  "@queueExportFailedError": {
+    "description": "Error message when export fails"
+  },
+  "settingsAutoExportFailed": "Auto-export failed downloads",
+  "@settingsAutoExportFailed": {
+    "description": "Setting toggle for auto-export"
+  },
+  "settingsAutoExportFailedSubtitle": "Save failed downloads to TXT file automatically",
+  "@settingsAutoExportFailedSubtitle": {
+    "description": "Subtitle for auto-export setting"
   },
   "queueEmpty": "Нет загрузок в очереди",
   "@queueEmpty": {
