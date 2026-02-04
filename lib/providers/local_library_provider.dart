@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('LocalLibrary');
+
+const _lastScannedAtKey = 'local_library_last_scanned_at';
 
 /// State for local library
 class LocalLibraryState {
@@ -117,8 +120,20 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           .map((e) => LocalLibraryItem.fromJson(e))
           .toList();
       
-      state = state.copyWith(items: items);
-      _log.i('Loaded ${items.length} items from library database');
+      // Load lastScannedAt from SharedPreferences
+      DateTime? lastScannedAt;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final lastScannedAtStr = prefs.getString(_lastScannedAtKey);
+        if (lastScannedAtStr != null && lastScannedAtStr.isNotEmpty) {
+          lastScannedAt = DateTime.tryParse(lastScannedAtStr);
+        }
+      } catch (e) {
+        _log.w('Failed to load lastScannedAt: $e');
+      }
+      
+      state = state.copyWith(items: items, lastScannedAt: lastScannedAt);
+      _log.i('Loaded ${items.length} items from library database, lastScannedAt: $lastScannedAt');
     } catch (e, stack) {
       _log.e('Failed to load library from database: $e', e, stack);
     }
@@ -172,12 +187,22 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       // Batch insert into database
       await _db.upsertBatch(items.map((e) => e.toJson()).toList());
 
+      // Save lastScannedAt to SharedPreferences
+      final now = DateTime.now();
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_lastScannedAtKey, now.toIso8601String());
+        _log.d('Saved lastScannedAt: $now');
+      } catch (e) {
+        _log.w('Failed to save lastScannedAt: $e');
+      }
+
       // Update state
       state = state.copyWith(
         items: items,
         isScanning: false,
         scanProgress: 100,
-        lastScannedAt: DateTime.now(),
+        lastScannedAt: now,
       );
 
       _log.i('Scan complete: ${items.length} tracks found');
@@ -236,6 +261,15 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   /// Clear all library data
   Future<void> clearLibrary() async {
     await _db.clearAll();
+    
+    // Clear lastScannedAt from SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_lastScannedAtKey);
+    } catch (e) {
+      _log.w('Failed to clear lastScannedAt: $e');
+    }
+    
     state = LocalLibraryState();
     _log.i('Library cleared');
   }
