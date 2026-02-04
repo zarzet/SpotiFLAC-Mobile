@@ -2,85 +2,34 @@
 
 ## [3.4.0] - 2026-02-03
 
+### Highlights
+
+- **Local Library Scanning** ([#117](https://github.com/zarzet/SpotiFLAC-Mobile/issues/117)): Scan existing music collection to detect duplicates (FLAC, M4A, MP3, Opus, OGG)
+- **Duplicate Detection** ([#117](https://github.com/zarzet/SpotiFLAC-Mobile/issues/117)): "In Library" badge on tracks matching by ISRC or track name + artist
+- **Unified Library Tab**: History renamed to Library, shows Downloaded + Local Library tracks with source badges
+
 ### Added
 
-- **Local Library Scanning**: Scan your existing music collection to detect duplicates when downloading
-  - Recursive folder scanning for audio files (FLAC, M4A, MP3, Opus, OGG)
-  - Reads metadata from file tags (ISRC, track name, artist, album, bit depth, sample rate)
-  - Fallback to filename parsing when tags unavailable ("Artist - Title" pattern)
-  - SQLite database for fast O(1) duplicate lookups
-  - Progress tracking with cancel option during scan
-  - Cleanup missing files and clear library actions
-- **Duplicate Detection in Search Results**: "In Library" badge shows on tracks that exist in your local library
-  - Matches by ISRC (exact match) or track name + artist (fuzzy match)
-  - Toggle indicator visibility in Settings > Local Library
-- **Unified Library Tab**: History tab renamed to Library, now shows both Downloaded and Local Library tracks
-  - Source badge on each item (Downloaded/Local) to identify the source
-  - Local Library items shown in a separate section when enabled
-  - Play button to open local library tracks directly
-  - **Selection mode works for both downloaded and local files**
-  - **Select All now selects all visible items (downloaded + local)**
-  - **Delete selected works for local library files** (removes from database and deletes file)
-  - **"All" count now includes local library items**
-- **Local Library Albums in Albums Tab**: Local library albums now appear as clickable cards in the Albums filter
-  - Albums grid combines downloaded and local albums in a single unified grid
-  - Local albums display folder icon badge to distinguish from downloaded albums
-  - Tapping a local album opens the Local Album Screen with full track listing
-- **Local Album Screen**: Dedicated screen for viewing local library album details
-  - Cover art display with dominant color extraction for header gradient
-  - Album info card with "Local" badge, track count, and quality info
-  - Track list with disc grouping support (multi-disc albums)
-  - Selection mode with delete functionality (removes files from storage and database)
-  - UI consistent with DownloadedAlbumScreen (Card + ListTile layout, same bottom bar)
-- **Singles Filter with Local Library**: Singles filter now includes local library singles
-  - Shows tracks from albums with only 1 track (both downloaded and local)
-  - Search filter works across both sources
-  - Local items show "Local" badge
-- **Advanced Library Filters**: Filter library items by multiple criteria
-  - **Source filter**: Show all, downloaded only, or local library only
-  - **Quality filter**: Hi-Res (24bit), CD (16bit), or Lossy
-  - **Format filter**: FLAC, MP3, M4A, Opus, OGG, etc.
-  - **Date filter**: Today, This Week, This Month, This Year
-  - Filter button with badge showing active filter count
-  - Filters apply to both All and Singles tabs
-- **Cover Art Extraction for Local Library**: Embedded cover art is extracted and cached during scan
-  - Supports FLAC (PICTURE block), MP3 (APIC frames), Opus/Ogg (METADATA_BLOCK_PICTURE)
-  - Cover cached to app's cache directory with hash-based filenames
-  - Cache key includes file size + mtime to detect stale covers
-  - Cover art displayed in Library tab for local items
-  - **Dominant color extraction from local cover files** for album screen gradients
-- **"Already in Library" Notification**: When downloading a track that already exists
-  - Shows "Already in Library" instead of "Download complete"
-  - Skips adding duplicate entry if track already in download history
-  - Reads actual quality from existing file (bit depth, sample rate)
-
-### Dependencies
-
-- Added `flutter_secure_storage: ^9.2.2` for storing secrets securely
+- Local Album Screen with cover art, disc grouping, and selection mode
+- Albums tab shows local library albums with folder icon badge
+- Singles filter includes local library singles
+- Advanced library filters: Source, Quality, Format, Date
+- Cover art extraction from embedded tags (FLAC, MP3, Opus/Ogg)
+- "Already in Library" notification when downloading existing tracks
+- Spotify secrets now stored in secure storage (`flutter_secure_storage`)
 
 ### Changed
 
-- Spotify client secrets are now stored in secure storage instead of SharedPreferences
-- Extension HTTP sandbox now enforces HTTPS and blocks private IPs resolved via DNS
-- Extension file sandbox now validates paths using boundary-safe checks
-- **Albums grid now unified**: Downloaded and local albums render in a single grid (no layout gaps)
-- **LocalAlbumScreen UI consistency**: Track items, disc separators, and selection bottom bar now match DownloadedAlbumScreen
+- Extension HTTP sandbox enforces HTTPS and blocks private IPs
+- Extension file sandbox validates paths with boundary-safe checks
 
 ### Fixed
 
-- **MP3 Metadata Parsing**: Improved ID3v2 handling (extended headers, unsync, footer, frame flags) for more reliable tag reads
-- **Ogg/Opus Metadata Parsing**: Reassembled Ogg packets and detect stream type from headers for accurate tags/quality/cover extraction
-- **Library Scan Metadata**: MP3 scans now include ISRC and disc number; release date prefers full TDRC/TYER when available
-- **Cover Cache Robustness**: Cache key now includes file size + mtime to reduce stale cover art when files change in place
-- **Cover Extraction Overhead**: Skip cover extraction for M4A during library scan to avoid guaranteed errors
-- **Library Scan Thread Safety**: Cover cache directory reads/writes are now synchronized to avoid potential data races
-- **Go Mobile Bind Compatibility**: Cover art helper functions are now unexported to avoid gomobile "too many return values" errors
-- **Local Library Selection**: Selection checkbox now shows correctly for local library items in both list and grid views
-- **Local Library Delete**: Local library files can now be selected and deleted (removes from database and deletes file)
-- **Albums/Singles Count**: Filter chip counts now include local library items (albums with 2+ tracks, singles with 1 track)
-- **Duplicate Download Detection**: Uses `already_exists` field from Go backend instead of file path prefix detection
-- **Albums Tab Layout Gap**: Fixed issue where downloaded and local albums rendered in separate grids causing empty spaces
-- **Singles Filter Missing Local Items**: Singles filter now correctly includes local library singles (not just downloaded)
+- MP3/Ogg metadata parsing (ID3v2 extended headers, Ogg packet reassembly)
+- Library scan metadata (ISRC, disc number, release date)
+- Cover cache robustness (size + mtime cache key)
+- Local library selection and delete in list/grid views
+- Albums/Singles count includes local library items
 
 ---
 
@@ -88,14 +37,8 @@
 
 ### Added
 
-- **WiFi-Only Download Mode**: Option to pause downloads when not connected to WiFi
-  - New setting in Settings > Download > Download Network
-  - Choose between "WiFi + Mobile Data" or "WiFi Only"
-  - Downloads automatically pause on mobile data and resume on WiFi
-
-### Dependencies
-
-- Added `connectivity_plus: ^6.0.3` for network state detection
+- **WiFi-Only Download Mode**: Pause downloads on mobile data, auto-resume on WiFi (Settings > Download > Download Network)
+- Added `connectivity_plus: ^6.0.3` dependency
 
 ---
 
