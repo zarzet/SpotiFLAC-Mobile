@@ -631,8 +631,8 @@ class _HomeTabState extends ConsumerState<HomeTab> with AutomaticKeepAliveClient
             ),
           ),
           
-          // Search filter bar (only shown when has search results or loading search)
-          if (searchFilters.isNotEmpty && (hasActualResults || isLoading))
+          // Search filter bar (only shown when has search results)
+          if (searchFilters.isNotEmpty && hasActualResults)
             SliverToBoxAdapter(
               child: _buildSearchFilterBar(
                 searchFilters,

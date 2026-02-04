@@ -29,6 +29,7 @@
 
 ### Fixed
 
+- Search filter bar now only appears after results load, not during loading
 - MP3/Ogg metadata parsing (ID3v2 extended headers, Ogg packet reassembly)
 - Library scan metadata (ISRC, disc number, release date)
 - Cover cache robustness (size + mtime cache key)
