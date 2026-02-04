@@ -13,9 +13,13 @@
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
+  "navLibrary": "Library",
+  "@navLibrary": {
+    "description": "Bottom navigation - Library tab"
+  },
   "navHistory": "Geçmiş",
   "@navHistory": {
-    "description": "Bottom navigation - History tab"
+    "description": "Bottom navigation - History tab (legacy)"
   },
   "navSettings": "Ayarlar",
   "@navSettings": {
@@ -1196,6 +1200,15 @@
   "snackbarAlreadyDownloaded": "\"{trackName}\" zaten indirilmiş",
   "@snackbarAlreadyDownloaded": {
     "description": "Snackbar - track already exists",
+    "placeholders": {
+      "trackName": {
+        "type": "String"
+      }
+    }
+  },
+  "snackbarAlreadyInLibrary": "\"{trackName}\" already exists in your library",
+  "@snackbarAlreadyInLibrary": {
+    "description": "Snackbar - track already exists in local library",
     "placeholders": {
       "trackName": {
         "type": "String"
@@ -2621,6 +2634,22 @@
   "@settingsAutoExportFailedSubtitle": {
     "description": "Subtitle for auto-export setting"
   },
+  "settingsDownloadNetwork": "Download Network",
+  "@settingsDownloadNetwork": {
+    "description": "Setting for network type preference"
+  },
+  "settingsDownloadNetworkAny": "WiFi + Mobile Data",
+  "@settingsDownloadNetworkAny": {
+    "description": "Network option - use any connection"
+  },
+  "settingsDownloadNetworkWifiOnly": "WiFi Only",
+  "@settingsDownloadNetworkWifiOnly": {
+    "description": "Network option - only use WiFi"
+  },
+  "settingsDownloadNetworkSubtitle": "Choose which network to use for downloads. When set to WiFi Only, downloads will pause on mobile data.",
+  "@settingsDownloadNetworkSubtitle": {
+    "description": "Subtitle explaining network preference"
+  },
   "queueEmpty": "No downloads in queue",
   "@queueEmpty": {
     "description": "Empty queue state title"
@@ -2944,5 +2973,271 @@
   "allFilesAccessDisabledMessage": "All Files Access disabled. The app will use limited storage access.",
   "@allFilesAccessDisabledMessage": {
     "description": "Snackbar message when user disables all files access"
+  },
+  "settingsLocalLibrary": "Local Library",
+  "@settingsLocalLibrary": {
+    "description": "Settings menu item - local library"
+  },
+  "settingsLocalLibrarySubtitle": "Scan music & detect duplicates",
+  "@settingsLocalLibrarySubtitle": {
+    "description": "Subtitle for local library settings"
+  },
+  "libraryTitle": "Local Library",
+  "@libraryTitle": {
+    "description": "Library settings page title"
+  },
+  "libraryStatus": "Library Status",
+  "@libraryStatus": {
+    "description": "Section header for library status"
+  },
+  "libraryScanSettings": "Scan Settings",
+  "@libraryScanSettings": {
+    "description": "Section header for scan settings"
+  },
+  "libraryEnableLocalLibrary": "Enable Local Library",
+  "@libraryEnableLocalLibrary": {
+    "description": "Toggle to enable library scanning"
+  },
+  "libraryEnableLocalLibrarySubtitle": "Scan and track your existing music",
+  "@libraryEnableLocalLibrarySubtitle": {
+    "description": "Subtitle for enable toggle"
+  },
+  "libraryFolder": "Library Folder",
+  "@libraryFolder": {
+    "description": "Folder selection setting"
+  },
+  "libraryFolderHint": "Tap to select folder",
+  "@libraryFolderHint": {
+    "description": "Placeholder when no folder selected"
+  },
+  "libraryShowDuplicateIndicator": "Show Duplicate Indicator",
+  "@libraryShowDuplicateIndicator": {
+    "description": "Toggle for duplicate indicator in search"
+  },
+  "libraryShowDuplicateIndicatorSubtitle": "Show when searching for existing tracks",
+  "@libraryShowDuplicateIndicatorSubtitle": {
+    "description": "Subtitle for duplicate indicator toggle"
+  },
+  "libraryActions": "Actions",
+  "@libraryActions": {
+    "description": "Section header for library actions"
+  },
+  "libraryScan": "Scan Library",
+  "@libraryScan": {
+    "description": "Button to start library scan"
+  },
+  "libraryScanSubtitle": "Scan for audio files",
+  "@libraryScanSubtitle": {
+    "description": "Subtitle for scan button"
+  },
+  "libraryScanSelectFolderFirst": "Select a folder first",
+  "@libraryScanSelectFolderFirst": {
+    "description": "Message when trying to scan without folder"
+  },
+  "libraryCleanupMissingFiles": "Cleanup Missing Files",
+  "@libraryCleanupMissingFiles": {
+    "description": "Button to remove entries for missing files"
+  },
+  "libraryCleanupMissingFilesSubtitle": "Remove entries for files that no longer exist",
+  "@libraryCleanupMissingFilesSubtitle": {
+    "description": "Subtitle for cleanup button"
+  },
+  "libraryClear": "Clear Library",
+  "@libraryClear": {
+    "description": "Button to clear all library entries"
+  },
+  "libraryClearSubtitle": "Remove all scanned tracks",
+  "@libraryClearSubtitle": {
+    "description": "Subtitle for clear button"
+  },
+  "libraryClearConfirmTitle": "Clear Library",
+  "@libraryClearConfirmTitle": {
+    "description": "Dialog title for clear confirmation"
+  },
+  "libraryClearConfirmMessage": "This will remove all scanned tracks from your library. Your actual music files will not be deleted.",
+  "@libraryClearConfirmMessage": {
+    "description": "Dialog message for clear confirmation"
+  },
+  "libraryAbout": "About Local Library",
+  "@libraryAbout": {
+    "description": "Section header for about info"
+  },
+  "libraryAboutDescription": "Scans your existing music collection to detect duplicates when downloading. Supports FLAC, M4A, MP3, Opus, and OGG formats. Metadata is read from file tags when available.",
+  "@libraryAboutDescription": {
+    "description": "Description of local library feature"
+  },
+  "libraryTracksCount": "{count} tracks",
+  "@libraryTracksCount": {
+    "description": "Track count in library",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryLastScanned": "Last scanned: {time}",
+  "@libraryLastScanned": {
+    "description": "Last scan time display",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "libraryLastScannedNever": "Never",
+  "@libraryLastScannedNever": {
+    "description": "Shown when library has never been scanned"
+  },
+  "libraryScanning": "Scanning...",
+  "@libraryScanning": {
+    "description": "Status during scan"
+  },
+  "libraryScanProgress": "{progress}% of {total} files",
+  "@libraryScanProgress": {
+    "description": "Scan progress display",
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryInLibrary": "In Library",
+  "@libraryInLibrary": {
+    "description": "Badge shown on tracks that exist in local library"
+  },
+  "libraryRemovedMissingFiles": "Removed {count} missing files from library",
+  "@libraryRemovedMissingFiles": {
+    "description": "Snackbar after cleanup",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryCleared": "Library cleared",
+  "@libraryCleared": {
+    "description": "Snackbar after clearing library"
+  },
+  "libraryStorageAccessRequired": "Storage Access Required",
+  "@libraryStorageAccessRequired": {
+    "description": "Dialog title for storage permission"
+  },
+  "libraryStorageAccessMessage": "SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.",
+  "@libraryStorageAccessMessage": {
+    "description": "Dialog message for storage permission"
+  },
+  "libraryFolderNotExist": "Selected folder does not exist",
+  "@libraryFolderNotExist": {
+    "description": "Error when folder doesn't exist"
+  },
+  "librarySourceDownloaded": "Downloaded",
+  "@librarySourceDownloaded": {
+    "description": "Badge for tracks downloaded via SpotiFLAC"
+  },
+  "librarySourceLocal": "Local",
+  "@librarySourceLocal": {
+    "description": "Badge for tracks from local library scan"
+  },
+  "libraryFilterAll": "All",
+  "@libraryFilterAll": {
+    "description": "Filter chip - show all library items"
+  },
+  "libraryFilterDownloaded": "Downloaded",
+  "@libraryFilterDownloaded": {
+    "description": "Filter chip - show only downloaded items"
+  },
+  "libraryFilterLocal": "Local",
+  "@libraryFilterLocal": {
+    "description": "Filter chip - show only local library items"
+  },
+  "libraryFilterTitle": "Filters",
+  "@libraryFilterTitle": {
+    "description": "Filter bottom sheet title"
+  },
+  "libraryFilterReset": "Reset",
+  "@libraryFilterReset": {
+    "description": "Reset all filters button"
+  },
+  "libraryFilterApply": "Apply",
+  "@libraryFilterApply": {
+    "description": "Apply filters button"
+  },
+  "libraryFilterSource": "Source",
+  "@libraryFilterSource": {
+    "description": "Filter section - source type"
+  },
+  "libraryFilterQuality": "Quality",
+  "@libraryFilterQuality": {
+    "description": "Filter section - audio quality"
+  },
+  "libraryFilterQualityHiRes": "Hi-Res (24bit)",
+  "@libraryFilterQualityHiRes": {
+    "description": "Filter option - high resolution audio"
+  },
+  "libraryFilterQualityCD": "CD (16bit)",
+  "@libraryFilterQualityCD": {
+    "description": "Filter option - CD quality audio"
+  },
+  "libraryFilterQualityLossy": "Lossy",
+  "@libraryFilterQualityLossy": {
+    "description": "Filter option - lossy compressed audio"
+  },
+  "libraryFilterFormat": "Format",
+  "@libraryFilterFormat": {
+    "description": "Filter section - file format"
+  },
+  "libraryFilterDate": "Date Added",
+  "@libraryFilterDate": {
+    "description": "Filter section - date range"
+  },
+  "libraryFilterDateToday": "Today",
+  "@libraryFilterDateToday": {
+    "description": "Filter option - today only"
+  },
+  "libraryFilterDateWeek": "This Week",
+  "@libraryFilterDateWeek": {
+    "description": "Filter option - this week"
+  },
+  "libraryFilterDateMonth": "This Month",
+  "@libraryFilterDateMonth": {
+    "description": "Filter option - this month"
+  },
+  "libraryFilterDateYear": "This Year",
+  "@libraryFilterDateYear": {
+    "description": "Filter option - this year"
+  },
+  "libraryFilterActive": "{count} filter(s) active",
+  "@libraryFilterActive": {
+    "description": "Badge showing number of active filters",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeJustNow": "Just now",
+  "@timeJustNow": {
+    "description": "Relative time - less than a minute ago"
+  },
+  "timeMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@timeMinutesAgo": {
+    "description": "Relative time - minutes ago",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@timeHoursAgo": {
+    "description": "Relative time - hours ago",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
