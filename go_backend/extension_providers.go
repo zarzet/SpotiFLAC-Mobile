@@ -623,7 +623,9 @@ var metadataProviderPriority []string
 var metadataProviderPriorityMu sync.RWMutex
 func persist(key string, value any) {
 	if store := GetExtensionSettingsStore(); store != nil {
-		_ = store.Set("_system", key, value) // ignore errors for simplicity
+		if err := store.Set("_system", key, value); err != nil {
+			GoLog("[Extension] Failed to persist setting %s: %v\n", key, err)
+		}
 	}
 }
 
@@ -658,7 +660,8 @@ func GetProviderPriority() []string {
 		providerPriority = loaded
 		GoLog("[Extension] Loaded provider priority: %v\n", loaded)
 	} else {
-		return []string{"tidal", "qobuz", "amazon"}
+		providerPriority = []string{"tidal", "qobuz", "amazon"}
+		GoLog("[Extension] Using default provider priority: %v\n", providerPriority)
 	}
 
 	result := make([]string, len(providerPriority))
@@ -697,7 +700,8 @@ func GetMetadataProviderPriority() []string {
 		metadataProviderPriority = loaded
 		GoLog("[Extension] Loaded metadata provider priority: %v\n", loaded)
 	} else {
-		return []string{"deezer", "spotify"}
+		metadataProviderPriority = []string{"deezer", "spotify"}
+		GoLog("[Extension] Using default metadata provider priority: %v\n", metadataProviderPriority)
 	}
 
 	result := make([]string, len(metadataProviderPriority))
