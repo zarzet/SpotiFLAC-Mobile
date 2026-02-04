@@ -431,6 +431,20 @@ class MainActivity: FlutterActivity() {
                             }
                             result.success(response)
                         }
+                        "parseTidalUrl" -> {
+                            val url = call.argument<String>("url") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.parseTidalURLExport(url)
+                            }
+                            result.success(response)
+                        }
+                        "convertTidalToSpotifyDeezer" -> {
+                            val url = call.argument<String>("url") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.convertTidalToSpotifyDeezer(url)
+                            }
+                            result.success(response)
+                        }
                         "searchDeezerByISRC" -> {
                             val isrc = call.argument<String>("isrc") ?: ""
                             val response = withContext(Dispatchers.IO) {

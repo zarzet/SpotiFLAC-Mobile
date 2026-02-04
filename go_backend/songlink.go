@@ -499,3 +499,73 @@ func (s *SongLinkClient) GetAmazonURLFromDeezer(deezerTrackID string) (string, e
 
 	return availability.AmazonURL, nil
 }
+
+func (s *SongLinkClient) CheckAvailabilityFromURL(inputURL string) (*TrackAvailability, error) {
+	songLinkRateLimiter.WaitForSlot()
+
+	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkuc29uZy5saW5rL3YxLWFscGhhLjEvbGlua3M/dXJsPQ==")
+	apiURL := fmt.Sprintf("%s%s", string(apiBase), url.QueryEscape(inputURL))
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	retryConfig := DefaultRetryConfig()
+	resp, err := DoRequestWithRetry(s.client, req, retryConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check availability: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 400 || resp.StatusCode == 404 {
+		return nil, fmt.Errorf("track not found on SongLink")
+	}
+	if resp.StatusCode == 429 {
+		return nil, fmt.Errorf("SongLink rate limit exceeded")
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("SongLink API returned status %d", resp.StatusCode)
+	}
+
+	body, err := ReadResponseBody(resp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var songLinkResp struct {
+		LinksByPlatform map[string]struct {
+			URL      string `json:"url"`
+			EntityID string `json:"entityUniqueId"`
+		} `json:"linksByPlatform"`
+	}
+
+	if err := json.Unmarshal(body, &songLinkResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	availability := &TrackAvailability{}
+
+	if spotifyLink, ok := songLinkResp.LinksByPlatform["spotify"]; ok && spotifyLink.URL != "" {
+		availability.SpotifyID = extractSpotifyIDFromURL(spotifyLink.URL)
+	}
+	if tidalLink, ok := songLinkResp.LinksByPlatform["tidal"]; ok && tidalLink.URL != "" {
+		availability.Tidal = true
+		availability.TidalURL = tidalLink.URL
+	}
+	if amazonLink, ok := songLinkResp.LinksByPlatform["amazonMusic"]; ok && amazonLink.URL != "" {
+		availability.Amazon = true
+		availability.AmazonURL = amazonLink.URL
+	}
+	if qobuzLink, ok := songLinkResp.LinksByPlatform["qobuz"]; ok && qobuzLink.URL != "" {
+		availability.Qobuz = true
+		availability.QobuzURL = qobuzLink.URL
+	}
+	if deezerLink, ok := songLinkResp.LinksByPlatform["deezer"]; ok && deezerLink.URL != "" {
+		availability.Deezer = true
+		availability.DeezerURL = deezerLink.URL
+		availability.DeezerID = extractDeezerIDFromURL(deezerLink.URL)
+	}
+
+	return availability, nil
+}

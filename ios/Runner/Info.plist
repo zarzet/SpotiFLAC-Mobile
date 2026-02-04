@@ -81,5 +81,29 @@
 	<!-- Photo Library (for cover art if needed) -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>SpotiFLAC needs access to save album artwork</string>
+	
+	<!-- URL Schemes for deep linking -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.zarz.spotiflac</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>spotiflac</string>
+			</array>
+		</dict>
+	</array>
+	
+	<!-- Associated Domains for Universal Links -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>spotify</string>
+		<string>deezer</string>
+		<string>tidal</string>
+		<string>youtube-music</string>
+	</array>
 </dict>
 </plist>

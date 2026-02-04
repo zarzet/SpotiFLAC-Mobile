@@ -17,6 +17,10 @@
 - Cover art extraction from embedded tags (FLAC, MP3, Opus/Ogg)
 - "Already in Library" notification when downloading existing tracks
 - Spotify secrets now stored in secure storage (`flutter_secure_storage`)
+- **Multi-Service Link Support**: Share links from Deezer, Tidal, and YouTube Music (in addition to Spotify)
+  - Deezer: Full support for track, album, playlist, artist links
+  - Tidal: Track links converted via SongLink to Spotify/Deezer for metadata
+  - YouTube Music: Handled via ytmusic extension URL handler
 
 ### Changed
 

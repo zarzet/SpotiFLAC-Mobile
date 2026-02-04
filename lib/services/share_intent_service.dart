@@ -9,16 +9,35 @@ class ShareIntentService {
   factory ShareIntentService() => _instance;
   ShareIntentService._internal();
 
+  // Spotify patterns
   static final RegExp _spotifyUriPattern =
       RegExp(r'spotify:(track|album|playlist|artist):[a-zA-Z0-9]+');
   static final RegExp _spotifyUrlPattern = RegExp(
     r'https?://open\.spotify\.com/(track|album|playlist|artist)/[a-zA-Z0-9]+(\?[^\s]*)?',
   );
 
+  // Deezer patterns
+  static final RegExp _deezerUrlPattern = RegExp(
+    r'https?://(www\.)?deezer\.com/(track|album|playlist|artist)/\d+(\?[^\s]*)?',
+  );
+  static final RegExp _deezerShortLinkPattern = RegExp(
+    r'https?://deezer\.page\.link/[a-zA-Z0-9]+',
+  );
+
+  // Tidal patterns
+  static final RegExp _tidalUrlPattern = RegExp(
+    r'https?://(listen\.)?tidal\.com/(track|album|playlist|artist)/[a-zA-Z0-9-]+(\?[^\s]*)?',
+  );
+
+  // YouTube Music patterns
+  static final RegExp _ytMusicUrlPattern = RegExp(
+    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/)[a-zA-Z0-9_-]+(\&[^\s]*)?',
+  );
+
   final _sharedUrlController = StreamController<String>.broadcast();
   StreamSubscription<List<SharedMediaFile>>? _mediaSubscription;
   bool _initialized = false;
-  String? _pendingUrl; // Store URL received before listener is ready
+  String? _pendingUrl;
 
   Stream<String> get sharedUrlStream => _sharedUrlController.stream;
 
@@ -48,31 +67,47 @@ class ShareIntentService {
     for (final file in files) {
       final textToCheck = file.path;
       
-      final url = _extractSpotifyUrl(textToCheck);
+      final url = _extractMusicUrl(textToCheck);
       if (url != null) {
-        _log.i('Received Spotify URL: $url (initial: $isInitial)');
+        _log.i('Received music URL: $url (initial: $isInitial)');
         if (isInitial) {
           _pendingUrl = url;
         }
         _sharedUrlController.add(url);
-        return; // Only process first valid URL
+        return;
       }
     }
   }
 
-  String? _extractSpotifyUrl(String text) {
+  String? _extractMusicUrl(String text) {
     if (text.isEmpty) return null;
 
+    // Try Spotify URI first
     final uriMatch = _spotifyUriPattern.firstMatch(text);
     if (uriMatch != null) {
       return uriMatch.group(0);
     }
 
-    final urlMatch = _spotifyUrlPattern.firstMatch(text);
-    if (urlMatch != null) {
-      final fullUrl = urlMatch.group(0)!;
-      final queryIndex = fullUrl.indexOf('?');
-      return queryIndex > 0 ? fullUrl.substring(0, queryIndex) : fullUrl;
+    // Try all URL patterns
+    final patterns = [
+      _spotifyUrlPattern,
+      _deezerUrlPattern,
+      _deezerShortLinkPattern,
+      _tidalUrlPattern,
+      _ytMusicUrlPattern,
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match != null) {
+        final fullUrl = match.group(0)!;
+        // Remove query params for cleaner URL (except for YT Music which needs them)
+        if (pattern == _ytMusicUrlPattern) {
+          return fullUrl;
+        }
+        final queryIndex = fullUrl.indexOf('?');
+        return queryIndex > 0 ? fullUrl.substring(0, queryIndex) : fullUrl;
+      }
     }
 
     return null;

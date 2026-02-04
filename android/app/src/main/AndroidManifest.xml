@@ -42,7 +42,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Handle Spotify URL sharing -->
+            <!-- Handle music URL sharing (Spotify, Deezer, Tidal, YT Music) -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,6 +55,33 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="open.spotify.com" />
+            </intent-filter>
+
+            <!-- Handle Deezer deep links -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.deezer.com" />
+                <data android:scheme="https" android:host="deezer.com" />
+                <data android:scheme="https" android:host="deezer.page.link" />
+            </intent-filter>
+
+            <!-- Handle Tidal deep links -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="tidal.com" />
+                <data android:scheme="https" android:host="listen.tidal.com" />
+            </intent-filter>
+
+            <!-- Handle YouTube Music deep links -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="music.youtube.com" />
             </intent-filter>
         </activity>
 

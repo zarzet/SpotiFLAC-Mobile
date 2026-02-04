@@ -193,6 +193,7 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
+      // Step 1: Check for extension URL handlers first (handles YT Music, etc.)
       final extensionHandler = await PlatformBridge.findURLHandler(url);
       if (extensionHandler != null) {
         _log.i('Found extension URL handler: $extensionHandler for URL: $url');
@@ -251,8 +252,131 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
       
+      // Step 2: Try Deezer URL parsing
+      if (url.contains('deezer.com') || url.contains('deezer.page.link')) {
+        _log.i('Detected Deezer URL, parsing...');
+        final parsed = await PlatformBridge.parseDeezerUrl(url);
+        if (!_isRequestValid(requestId)) return;
+        
+        final type = parsed['type'] as String;
+        final id = parsed['id'] as String;
+        
+        final metadata = await PlatformBridge.getDeezerMetadata(type, id);
+        if (!_isRequestValid(requestId)) return;
+        
+        if (type == 'track') {
+          final trackData = metadata['track'] as Map<String, dynamic>;
+          final track = _parseTrack(trackData);
+          state = TrackState(
+            tracks: [track],
+            isLoading: false,
+            coverUrl: track.coverUrl,
+          );
+        } else if (type == 'album') {
+          final albumInfo = metadata['album_info'] as Map<String, dynamic>;
+          final trackList = metadata['track_list'] as List<dynamic>;
+          final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
+          state = TrackState(
+            tracks: tracks,
+            isLoading: false,
+            albumId: id,
+            albumName: albumInfo['name'] as String?,
+            coverUrl: albumInfo['images'] as String?,
+          );
+          _preWarmCacheForTracks(tracks);
+        } else if (type == 'playlist') {
+          final playlistInfo = metadata['playlist_info'] as Map<String, dynamic>;
+          final trackList = metadata['track_list'] as List<dynamic>;
+          final tracks = trackList.map((t) => _parseTrack(t as Map<String, dynamic>)).toList();
+          state = TrackState(
+            tracks: tracks,
+            isLoading: false,
+            playlistName: playlistInfo['name'] as String?,
+            coverUrl: playlistInfo['images'] as String?,
+          );
+          _preWarmCacheForTracks(tracks);
+        } else if (type == 'artist') {
+          final artistInfo = metadata['artist_info'] as Map<String, dynamic>;
+          final albumsList = metadata['albums'] as List<dynamic>;
+          final albums = albumsList.map((a) => _parseArtistAlbum(a as Map<String, dynamic>)).toList();
+          state = TrackState(
+            tracks: [],
+            isLoading: false,
+            artistId: artistInfo['id'] as String?,
+            artistName: artistInfo['name'] as String?,
+            coverUrl: artistInfo['images'] as String?,
+            artistAlbums: albums,
+          );
+        }
+        return;
+      }
+      
+      // Step 3: Try Tidal URL parsing
+      if (url.contains('tidal.com')) {
+        _log.i('Detected Tidal URL, parsing...');
+        final parsed = await PlatformBridge.parseTidalUrl(url);
+        if (!_isRequestValid(requestId)) return;
+        
+        final type = parsed['type'] as String;
+        final id = parsed['id'] as String;
+        
+        _log.i('Tidal URL parsed: type=$type, id=$id');
+        
+        // For track URLs, convert to Spotify/Deezer and fetch metadata from there
+        if (type == 'track') {
+          try {
+            _log.i('Converting Tidal track to Spotify/Deezer via SongLink...');
+            final conversion = await PlatformBridge.convertTidalToSpotifyDeezer(url);
+            if (!_isRequestValid(requestId)) return;
+            
+            final spotifyUrl = conversion['spotify_url'] as String?;
+            final deezerUrl = conversion['deezer_url'] as String?;
+            
+            if (spotifyUrl != null && spotifyUrl.isNotEmpty) {
+              _log.i('Found Spotify URL: $spotifyUrl, fetching metadata...');
+              final metadata = await PlatformBridge.getSpotifyMetadataWithFallback(spotifyUrl);
+              if (!_isRequestValid(requestId)) return;
+              
+              final trackData = metadata['track'] as Map<String, dynamic>;
+              final track = _parseTrack(trackData);
+              state = TrackState(
+                tracks: [track],
+                isLoading: false,
+                coverUrl: track.coverUrl,
+              );
+              return;
+            } else if (deezerUrl != null && deezerUrl.isNotEmpty) {
+              _log.i('Found Deezer URL: $deezerUrl, fetching metadata...');
+              final deezerParsed = await PlatformBridge.parseDeezerUrl(deezerUrl);
+              final metadata = await PlatformBridge.getDeezerMetadata('track', deezerParsed['id'] as String);
+              if (!_isRequestValid(requestId)) return;
+              
+              final trackData = metadata['track'] as Map<String, dynamic>;
+              final track = _parseTrack(trackData);
+              state = TrackState(
+                tracks: [track],
+                isLoading: false,
+                coverUrl: track.coverUrl,
+              );
+              return;
+            }
+          } catch (e) {
+            _log.w('Failed to convert Tidal URL via SongLink: $e');
+          }
+        }
+        
+        // For album/artist/playlist, not yet supported
+        state = TrackState(
+          isLoading: false,
+          error: 'Tidal $type links are not fully supported yet. Only track links work via SongLink conversion.',
+          hasSearchText: state.hasSearchText,
+        );
+        return;
+      }
+      
+      // Step 4: Fall back to Spotify parsing
       final parsed = await PlatformBridge.parseSpotifyUrl(url);
-      if (!_isRequestValid(requestId)) return; // Request cancelled
+      if (!_isRequestValid(requestId)) return;
       
       final type = parsed['type'] as String;
 
@@ -264,7 +388,7 @@ class TrackNotifier extends Notifier<TrackState> {
         rethrow;
       }
       
-      if (!_isRequestValid(requestId)) return; // Request cancelled
+      if (!_isRequestValid(requestId)) return;
 
       if (type == 'track') {
         final trackData = metadata['track'] as Map<String, dynamic>;

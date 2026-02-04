@@ -1720,3 +1720,40 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		LyricsLRC:   lyricsLRC,
 	}, nil
 }
+
+func parseTidalURL(input string) (string, string, error) {
+	trimmed := strings.TrimSpace(input)
+	if trimmed == "" {
+		return "", "", fmt.Errorf("empty URL")
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return "", "", err
+	}
+
+	if parsed.Host != "tidal.com" && parsed.Host != "listen.tidal.com" && parsed.Host != "www.tidal.com" {
+		return "", "", fmt.Errorf("not a Tidal URL")
+	}
+
+	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+
+	// Handle /browse/track/123 format
+	if len(parts) > 0 && parts[0] == "browse" {
+		parts = parts[1:]
+	}
+
+	if len(parts) < 2 {
+		return "", "", fmt.Errorf("invalid Tidal URL format")
+	}
+
+	resourceType := parts[0]
+	resourceID := parts[1]
+
+	switch resourceType {
+	case "track", "album", "artist", "playlist":
+		return resourceType, resourceID, nil
+	default:
+		return "", "", fmt.Errorf("unsupported Tidal resource type: %s", resourceType)
+	}
+}

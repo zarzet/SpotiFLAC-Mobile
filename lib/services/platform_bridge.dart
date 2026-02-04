@@ -368,6 +368,16 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
+  static Future<Map<String, dynamic>> parseTidalUrl(String url) async {
+    final result = await _channel.invokeMethod('parseTidalUrl', {'url': url});
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> convertTidalToSpotifyDeezer(String tidalUrl) async {
+    final result = await _channel.invokeMethod('convertTidalToSpotifyDeezer', {'url': tidalUrl});
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
   static Future<Map<String, dynamic>> searchDeezerByISRC(String isrc) async {
     final result = await _channel.invokeMethod('searchDeezerByISRC', {'isrc': isrc});
     return jsonDecode(result as String) as Map<String, dynamic>;

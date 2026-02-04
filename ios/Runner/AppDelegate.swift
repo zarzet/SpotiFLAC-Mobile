@@ -242,6 +242,20 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
 
+        case "parseTidalUrl":
+            let args = call.arguments as! [String: Any]
+            let url = args["url"] as! String
+            let response = GobackendParseTidalURLExport(url, &error)
+            if let error = error { throw error }
+            return response
+
+        case "convertTidalToSpotifyDeezer":
+            let args = call.arguments as! [String: Any]
+            let url = args["url"] as! String
+            let response = GobackendConvertTidalToSpotifyDeezer(url, &error)
+            if let error = error { throw error }
+            return response
+
         case "searchDeezerByISRC":
             let args = call.arguments as! [String: Any]
             let isrc = args["isrc"] as! String

@@ -787,6 +787,51 @@ func ParseDeezerURLExport(url string) (string, error) {
 	return string(jsonBytes), nil
 }
 
+func ParseTidalURLExport(url string) (string, error) {
+	resourceType, resourceID, err := parseTidalURL(url)
+	if err != nil {
+		return "", err
+	}
+
+	result := map[string]string{
+		"type": resourceType,
+		"id":   resourceID,
+	}
+
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+func ConvertTidalToSpotifyDeezer(tidalURL string) (string, error) {
+	client := NewSongLinkClient()
+	availability, err := client.CheckAvailabilityFromURL(tidalURL)
+	if err != nil {
+		return "", err
+	}
+
+	result := map[string]string{
+		"spotify_id":  availability.SpotifyID,
+		"deezer_id":   availability.DeezerID,
+		"deezer_url":  availability.DeezerURL,
+		"spotify_url": "",
+	}
+
+	if availability.SpotifyID != "" {
+		result["spotify_url"] = "https://open.spotify.com/track/" + availability.SpotifyID
+	}
+
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
 func GetDeezerExtendedMetadata(trackID string) (string, error) {
 	if trackID == "" {
 		return "", fmt.Errorf("empty track ID")
