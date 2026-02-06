@@ -129,6 +129,7 @@ type DownloadRequest struct {
 	CoverURL             string `json:"cover_url"`
 	OutputDir            string `json:"output_dir"`
 	OutputPath           string `json:"output_path,omitempty"`
+	OutputFD             int    `json:"output_fd,omitempty"`
 	OutputExt            string `json:"output_ext,omitempty"`
 	FilenameFormat       string `json:"filename_format"`
 	Quality              string `json:"quality"`
@@ -204,7 +205,7 @@ func DownloadTrack(requestJSON string) (string, error) {
 	req.OutputPath = strings.TrimSpace(req.OutputPath)
 	req.OutputExt = strings.TrimSpace(req.OutputExt)
 
-	if req.OutputPath == "" && req.OutputDir != "" {
+	if req.OutputPath == "" && req.OutputFD <= 0 && req.OutputDir != "" {
 		AddAllowedDownloadDir(req.OutputDir)
 	}
 
@@ -345,7 +346,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 	req.OutputPath = strings.TrimSpace(req.OutputPath)
 	req.OutputExt = strings.TrimSpace(req.OutputExt)
 
-	if req.OutputPath == "" && req.OutputDir != "" {
+	if req.OutputPath == "" && req.OutputFD <= 0 && req.OutputDir != "" {
 		AddAllowedDownloadDir(req.OutputDir)
 	}
 
@@ -1285,7 +1286,7 @@ func DownloadWithExtensionsJSON(requestJSON string) (string, error) {
 	req.OutputDir = strings.TrimSpace(req.OutputDir)
 	req.OutputPath = strings.TrimSpace(req.OutputPath)
 	req.OutputExt = strings.TrimSpace(req.OutputExt)
-	if req.OutputPath == "" && req.OutputDir != "" {
+	if req.OutputPath == "" && req.OutputFD <= 0 && req.OutputDir != "" {
 		AddAllowedDownloadDir(req.OutputDir)
 	}
 

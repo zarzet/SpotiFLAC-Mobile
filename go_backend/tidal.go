@@ -851,7 +851,7 @@ func parseManifest(manifestB64 string) (directURL string, initURL string, mediaU
 	return "", initURL, mediaURLs, nil
 }
 
-func (t *TidalDownloader) DownloadFile(downloadURL, outputPath, itemID string) error {
+func (t *TidalDownloader) DownloadFile(downloadURL, outputPath string, outputFD int, itemID string) error {
 	ctx := context.Background()
 
 	if strings.HasPrefix(downloadURL, "MANIFEST:") {
@@ -864,7 +864,7 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath, itemID string) e
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
-		return t.downloadFromManifest(ctx, strings.TrimPrefix(downloadURL, "MANIFEST:"), outputPath, itemID)
+		return t.downloadFromManifest(ctx, strings.TrimPrefix(downloadURL, "MANIFEST:"), outputPath, outputFD, itemID)
 	}
 
 	if itemID != "" {
@@ -901,7 +901,7 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath, itemID string) e
 		SetItemBytesTotal(itemID, expectedSize)
 	}
 
-	out, err := os.Create(outputPath)
+	out, err := openOutputForWrite(outputPath, outputFD)
 	if err != nil {
 		return err
 	}
@@ -920,30 +920,30 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath, itemID string) e
 	closeErr := out.Close()
 
 	if err != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to flush buffer: %w", flushErr)
 	}
 	if closeErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to close file: %w", closeErr)
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 
 	return nil
 }
 
-func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64, outputPath, itemID string) error {
+func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64, outputPath string, outputFD int, itemID string) error {
 	fmt.Println("[Tidal] Parsing manifest...")
 	directURL, initURL, mediaURLs, err := parseManifest(manifestB64)
 	if err != nil {
@@ -988,7 +988,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 			SetItemBytesTotal(itemID, expectedSize)
 		}
 
-		out, err := os.Create(outputPath)
+		out, err := openOutputForWrite(outputPath, outputFD)
 		if err != nil {
 			return fmt.Errorf("failed to create file: %w", err)
 		}
@@ -1004,19 +1004,19 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		closeErr := out.Close()
 
 		if err != nil {
-			os.Remove(outputPath)
+			cleanupOutputOnError(outputPath, outputFD)
 			if isDownloadCancelled(itemID) {
 				return ErrDownloadCancelled
 			}
 			return fmt.Errorf("download interrupted: %w", err)
 		}
 		if closeErr != nil {
-			os.Remove(outputPath)
+			cleanupOutputOnError(outputPath, outputFD)
 			return fmt.Errorf("failed to close file: %w", closeErr)
 		}
 
 		if expectedSize > 0 && written != expectedSize {
-			os.Remove(outputPath)
+			cleanupOutputOnError(outputPath, outputFD)
 			return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 		}
 
@@ -1037,7 +1037,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	}
 	GoLog("[Tidal] DASH format - downloading %d segments directly to: %s\n", len(mediaURLs), m4aPath)
 
-	out, err := os.Create(m4aPath)
+	out, err := openOutputForWrite(m4aPath, outputFD)
 	if err != nil {
 		GoLog("[Tidal] Failed to create M4A file: %v\n", err)
 		return fmt.Errorf("failed to create M4A file: %w", err)
@@ -1046,20 +1046,20 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	GoLog("[Tidal] Downloading init segment...\n")
 	if isDownloadCancelled(itemID) {
 		out.Close()
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		return ErrDownloadCancelled
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", initURL, nil)
 	if err != nil {
 		out.Close()
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		GoLog("[Tidal] Init segment request failed: %v\n", err)
 		return fmt.Errorf("failed to create init segment request: %w", err)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
 		out.Close()
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
@@ -1069,7 +1069,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	if resp.StatusCode != 200 {
 		resp.Body.Close()
 		out.Close()
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		GoLog("[Tidal] Init segment HTTP error: %d\n", resp.StatusCode)
 		return fmt.Errorf("init segment download failed with status %d", resp.StatusCode)
 	}
@@ -1077,7 +1077,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	resp.Body.Close()
 	if err != nil {
 		out.Close()
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
@@ -1089,7 +1089,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	for i, mediaURL := range mediaURLs {
 		if isDownloadCancelled(itemID) {
 			out.Close()
-			os.Remove(m4aPath)
+			cleanupOutputOnError(m4aPath, outputFD)
 			return ErrDownloadCancelled
 		}
 
@@ -1105,14 +1105,14 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		req, err := http.NewRequestWithContext(ctx, "GET", mediaURL, nil)
 		if err != nil {
 			out.Close()
-			os.Remove(m4aPath)
+			cleanupOutputOnError(m4aPath, outputFD)
 			GoLog("[Tidal] Segment %d request failed: %v\n", i+1, err)
 			return fmt.Errorf("failed to create segment %d request: %w", i+1, err)
 		}
 		resp, err := client.Do(req)
 		if err != nil {
 			out.Close()
-			os.Remove(m4aPath)
+			cleanupOutputOnError(m4aPath, outputFD)
 			if isDownloadCancelled(itemID) {
 				return ErrDownloadCancelled
 			}
@@ -1122,7 +1122,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		if resp.StatusCode != 200 {
 			resp.Body.Close()
 			out.Close()
-			os.Remove(m4aPath)
+			cleanupOutputOnError(m4aPath, outputFD)
 			GoLog("[Tidal] Segment %d HTTP error: %d\n", i+1, resp.StatusCode)
 			return fmt.Errorf("segment %d download failed with status %d", i+1, resp.StatusCode)
 		}
@@ -1130,7 +1130,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		resp.Body.Close()
 		if err != nil {
 			out.Close()
-			os.Remove(m4aPath)
+			cleanupOutputOnError(m4aPath, outputFD)
 			if isDownloadCancelled(itemID) {
 				return ErrDownloadCancelled
 			}
@@ -1140,7 +1140,7 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 	}
 
 	if err := out.Close(); err != nil {
-		os.Remove(m4aPath)
+		cleanupOutputOnError(m4aPath, outputFD)
 		GoLog("[Tidal] Failed to close M4A file: %v\n", err)
 		return fmt.Errorf("failed to close M4A file: %w", err)
 	}
@@ -1409,7 +1409,7 @@ func isLatinScript(s string) bool {
 func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	downloader := NewTidalDownloader()
 
-	isSafOutput := strings.TrimSpace(req.OutputPath) != ""
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
 	if !isSafOutput {
 		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
 			return TidalDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
@@ -1627,6 +1627,9 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	var m4aPath string
 	if isSafOutput {
 		outputPath = strings.TrimSpace(req.OutputPath)
+		if outputPath == "" && isFDOutput(req.OutputFD) {
+			outputPath = fmt.Sprintf("/proc/self/fd/%d", req.OutputFD)
+		}
 		m4aPath = outputPath
 	} else {
 		if outputExt == ".m4a" || quality == "HIGH" {
@@ -1689,7 +1692,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		return "Direct URL"
 	}())
 
-	if err := downloader.DownloadFile(downloadInfo.URL, outputPath, req.ItemID); err != nil {
+	if err := downloader.DownloadFile(downloadInfo.URL, outputPath, req.OutputFD, req.ItemID); err != nil {
 		if errors.Is(err, ErrDownloadCancelled) {
 			return TidalDownloadResult{}, ErrDownloadCancelled
 		}

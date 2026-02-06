@@ -201,13 +201,15 @@ class DownloadHistoryState {
           .toSet(),
       _bySpotifyId = Map.fromEntries(
         items
-          .where((item) => item.spotifyId != null && item.spotifyId!.isNotEmpty)
-          .map((item) => MapEntry(item.spotifyId!, item)),
+            .where(
+              (item) => item.spotifyId != null && item.spotifyId!.isNotEmpty,
+            )
+            .map((item) => MapEntry(item.spotifyId!, item)),
       ),
       _byIsrc = Map.fromEntries(
         items
-          .where((item) => item.isrc != null && item.isrc!.isNotEmpty)
-          .map((item) => MapEntry(item.isrc!, item)),
+            .where((item) => item.isrc != null && item.isrc!.isNotEmpty)
+            .map((item) => MapEntry(item.isrc!, item)),
       );
 
   bool isDownloaded(String spotifyId) =>
@@ -216,8 +218,7 @@ class DownloadHistoryState {
   DownloadHistoryItem? getBySpotifyId(String spotifyId) =>
       _bySpotifyId[spotifyId];
 
-  DownloadHistoryItem? getByIsrc(String isrc) =>
-      _byIsrc[isrc];
+  DownloadHistoryItem? getByIsrc(String isrc) => _byIsrc[isrc];
 
   DownloadHistoryState copyWith({List<DownloadHistoryItem>? items}) {
     return DownloadHistoryState(items: items ?? this.items);
@@ -248,19 +249,19 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       if (migrated) {
         _historyLog.i('Migrated history from SharedPreferences to SQLite');
       }
-      
+
       if (Platform.isIOS) {
         final pathsMigrated = await _db.migrateIosContainerPaths();
         if (pathsMigrated) {
           _historyLog.i('Migrated iOS container paths after app update');
         }
       }
-      
+
       final jsonList = await _db.getAll();
       final items = jsonList
           .map((e) => DownloadHistoryItem.fromJson(e))
           .toList();
-      
+
       state = state.copyWith(items: items);
       _historyLog.i('Loaded ${items.length} items from SQLite database');
 
@@ -355,7 +356,9 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     }
 
     if (existing != null) {
-      final updatedItems = state.items.where((i) => i.id != existing!.id).toList();
+      final updatedItems = state.items
+          .where((i) => i.id != existing!.id)
+          .toList();
       updatedItems.insert(0, item);
       state = state.copyWith(items: updatedItems);
       _historyLog.d('Updated existing history entry: ${item.trackName}');
@@ -363,7 +366,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       state = state.copyWith(items: [item, ...state.items]);
       _historyLog.d('Added new history entry: ${item.trackName}');
     }
-    
+
     _db.upsert(item.toJson()).catchError((e) {
       _historyLog.e('Failed to save to database: $e');
     });
@@ -391,15 +394,15 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
   DownloadHistoryItem? getBySpotifyId(String spotifyId) {
     return state.getBySpotifyId(spotifyId);
   }
-  
+
   DownloadHistoryItem? getByIsrc(String isrc) {
     return state.getByIsrc(isrc);
   }
-  
+
   Future<DownloadHistoryItem?> getBySpotifyIdAsync(String spotifyId) async {
     final inMemory = state.getBySpotifyId(spotifyId);
     if (inMemory != null) return inMemory;
-    
+
     final json = await _db.getBySpotifyId(spotifyId);
     if (json == null) return null;
     return DownloadHistoryItem.fromJson(json);
@@ -411,7 +414,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       _historyLog.e('Failed to clear database: $e');
     });
   }
-  
+
   Future<int> getDatabaseCount() async {
     return await _db.getCount();
   }
@@ -758,8 +761,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               trackName: trackName,
               artistName: artistName,
               progress: notifProgress,
-                total: notifTotal > 0 ? notifTotal : 1,
-              );
+              total: notifTotal > 0 ? notifTotal : 1,
+            );
 
             if (Platform.isAndroid) {
               PlatformBridge.updateDownloadServiceProgress(
@@ -839,27 +842,35 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     state = state.copyWith(outputDir: dir);
   }
 
-  Future<String> _buildOutputDir(Track track, String folderOrganization, {bool separateSingles = false, String albumFolderStructure = 'artist_album'}) async {
+  Future<String> _buildOutputDir(
+    Track track,
+    String folderOrganization, {
+    bool separateSingles = false,
+    String albumFolderStructure = 'artist_album',
+  }) async {
     String baseDir = state.outputDir;
-    final albumArtist = _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+    final albumArtist =
+        _normalizeOptionalString(track.albumArtist) ?? track.artistName;
 
     if (separateSingles) {
       final isSingle = track.isSingle;
       final artistName = _sanitizeFolderName(albumArtist);
-      
+
       if (albumFolderStructure == 'artist_album_singles') {
         if (isSingle) {
-          final singlesPath = '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}Singles';
+          final singlesPath =
+              '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}Singles';
           await _ensureDirExists(singlesPath, label: 'Artist Singles folder');
           return singlesPath;
         } else {
           final albumName = _sanitizeFolderName(track.albumName);
-          final albumPath = '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}$albumName';
+          final albumPath =
+              '$baseDir${Platform.pathSeparator}$artistName${Platform.pathSeparator}$albumName';
           await _ensureDirExists(albumPath, label: 'Artist Album folder');
           return albumPath;
         }
       }
-      
+
       if (isSingle) {
         final singlesPath = '$baseDir${Platform.pathSeparator}Singles';
         await _ensureDirExists(singlesPath, label: 'Singles folder');
@@ -868,23 +879,27 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final albumName = _sanitizeFolderName(track.albumName);
         final year = _extractYear(track.releaseDate);
         String albumPath;
-        
+
         switch (albumFolderStructure) {
           case 'album_only':
-            albumPath = '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$albumName';
+            albumPath =
+                '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$albumName';
             break;
           case 'artist_year_album':
             final yearAlbum = year != null ? '[$year] $albumName' : albumName;
-            albumPath = '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$artistName${Platform.pathSeparator}$yearAlbum';
+            albumPath =
+                '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$artistName${Platform.pathSeparator}$yearAlbum';
             break;
           case 'year_album':
             final yearAlbum = year != null ? '[$year] $albumName' : albumName;
-            albumPath = '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$yearAlbum';
+            albumPath =
+                '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$yearAlbum';
             break;
           default:
-            albumPath = '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$artistName${Platform.pathSeparator}$albumName';
+            albumPath =
+                '$baseDir${Platform.pathSeparator}Albums${Platform.pathSeparator}$artistName${Platform.pathSeparator}$albumName';
         }
-        
+
         await _ensureDirExists(albumPath, label: 'Album folder');
         return albumPath;
       }
@@ -950,7 +965,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     bool separateSingles = false,
     String albumFolderStructure = 'artist_album',
   }) async {
-    final albumArtist = _normalizeOptionalString(track.albumArtist) ?? track.artistName;
+    final albumArtist =
+        _normalizeOptionalString(track.albumArtist) ?? track.artistName;
 
     if (separateSingles) {
       final isSingle = track.isSingle;
@@ -1250,7 +1266,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
   }
 
-void removeItem(String id) {
+  void removeItem(String id) {
     final items = state.items.where((item) => item.id != id).toList();
     state = state.copyWith(items: items);
     _saveQueueToStorage();
@@ -1281,7 +1297,8 @@ void removeItem(String id) {
 
       // Use date-only format for daily grouping (YYYY-MM-DD)
       final now = DateTime.now();
-      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final dateStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       final fileName = 'failed_downloads_$dateStr.txt';
       final filePath = '$failedDownloadsDir/$fileName';
 
@@ -1289,7 +1306,7 @@ void removeItem(String id) {
       final bool fileExists = await file.exists();
 
       final buffer = StringBuffer();
-      
+
       if (!fileExists) {
         buffer.writeln('# SpotiFLAC Failed Downloads');
         buffer.writeln('# Date: $dateStr');
@@ -1298,15 +1315,18 @@ void removeItem(String id) {
         buffer.writeln('');
       }
 
-      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
-      
+      final timeStr =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+
       for (final item in failedItems) {
         final track = item.track;
         final spotifyUrl = track.id.startsWith('deezer:')
             ? 'https://www.deezer.com/track/${track.id.substring(7)}'
             : 'https://open.spotify.com/track/${track.id}';
         final error = item.error ?? 'Unknown error';
-        buffer.writeln('[$timeStr] ${track.name} - ${track.artistName} | $spotifyUrl | $error');
+        buffer.writeln(
+          '[$timeStr] ${track.name} - ${track.artistName} | $spotifyUrl | $error',
+        );
       }
 
       if (fileExists) {
@@ -1337,21 +1357,22 @@ void removeItem(String id) {
     try {
       final settings = ref.read(settingsProvider);
       final extensionState = ref.read(extensionProvider);
-      
+
       if (!settings.useExtensionProviders) return;
-      
+
       final hasPostProcessing = extensionState.extensions.any(
         (e) => e.enabled && e.hasPostProcessing,
       );
       if (!hasPostProcessing) return;
-      
+
       _log.d('Running post-processing hooks on: $filePath');
-      
+
       final metadata = <String, dynamic>{
         'title': track.name,
         'artist': track.artistName,
         'album': track.albumName,
-        'album_artist': _normalizeOptionalString(track.albumArtist) ?? track.artistName,
+        'album_artist':
+            _normalizeOptionalString(track.albumArtist) ?? track.artistName,
         'track_number': track.trackNumber ?? 1,
         'disc_number': track.discNumber ?? 1,
         'isrc': track.isrc ?? '',
@@ -1359,17 +1380,17 @@ void removeItem(String id) {
         'duration_ms': track.duration * 1000,
         'cover_url': track.coverUrl ?? '',
       };
-      
+
       final result = await PlatformBridge.runPostProcessingV2(
         filePath,
         metadata: metadata,
       );
-      
+
       if (result['success'] == true) {
         final hooksRun = result['hooks_run'] as int? ?? 0;
         final newPath = result['file_path'] as String?;
         _log.i('Post-processing completed: $hooksRun hook(s) executed');
-        
+
         if (newPath != null && newPath != filePath) {
           _log.d('File path changed by post-processing: $newPath');
         }
@@ -1386,28 +1407,77 @@ void removeItem(String id) {
     const spotifySize300 = 'ab67616d00001e02';
     const spotifySize640 = 'ab67616d0000b273';
     const spotifySizeMax = 'ab67616d000082c1';
-    
+
     var result = coverUrl;
     if (result.contains(spotifySize300)) {
       result = result.replaceFirst(spotifySize300, spotifySize640);
     }
-    
+
     if (result.contains(spotifySize640)) {
       result = result.replaceFirst(spotifySize640, spotifySizeMax);
     }
-    
+
     return result;
   }
 
+  int? _parsePositiveInt(dynamic value) {
+    if (value is int && value > 0) return value;
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
+  }
+
+  Track _buildTrackForMetadataEmbedding(
+    Track baseTrack,
+    Map<String, dynamic> backendResult,
+    String? normalizedAlbumArtist,
+  ) {
+    final backendTrackNum = _parsePositiveInt(backendResult['track_number']);
+    final backendDiscNum = _parsePositiveInt(backendResult['disc_number']);
+    final backendYear = _normalizeOptionalString(
+      backendResult['release_date'] as String?,
+    );
+    final backendAlbum = _normalizeOptionalString(
+      backendResult['album'] as String?,
+    );
+
+    if (backendTrackNum == null &&
+        backendDiscNum == null &&
+        backendYear == null &&
+        backendAlbum == null) {
+      return baseTrack;
+    }
+
+    return Track(
+      id: baseTrack.id,
+      name: baseTrack.name,
+      artistName: baseTrack.artistName,
+      albumName: backendAlbum ?? baseTrack.albumName,
+      albumArtist: normalizedAlbumArtist,
+      coverUrl: baseTrack.coverUrl,
+      duration: baseTrack.duration,
+      isrc: baseTrack.isrc,
+      trackNumber: backendTrackNum ?? baseTrack.trackNumber,
+      discNumber: backendDiscNum ?? baseTrack.discNumber,
+      releaseDate: backendYear ?? baseTrack.releaseDate,
+      deezerId: baseTrack.deezerId,
+      availability: baseTrack.availability,
+      albumType: baseTrack.albumType,
+      source: baseTrack.source,
+    );
+  }
+
   Future<void> _embedMetadataAndCover(
-    String flacPath, 
+    String flacPath,
     Track track, {
     String? genre,
     String? label,
     String? copyright,
   }) async {
     final settings = ref.read(settingsProvider);
-    
+
     String? coverPath;
     var coverUrl = track.coverUrl;
     if (coverUrl != null && coverUrl.isNotEmpty) {
@@ -1416,7 +1486,7 @@ void removeItem(String id) {
           coverUrl = _upgradeToMaxQualityCover(coverUrl);
           _log.d('Cover URL upgraded to max quality: $coverUrl');
         }
-        
+
         final tempDir = await getTemporaryDirectory();
         final uniqueId =
             '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
@@ -1449,8 +1519,8 @@ void removeItem(String id) {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist = _normalizeOptionalString(track.albumArtist) ??
-          track.artistName;
+      final albumArtist =
+          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
       metadata['ALBUMARTIST'] = albumArtist;
 
       if (track.trackNumber != null) {
@@ -1489,7 +1559,7 @@ void removeItem(String id) {
 
       try {
         final durationMs = track.duration * 1000;
-        
+
         final lrcContent = await PlatformBridge.getLyricsLRC(
           track.id,
           track.name,
@@ -1541,14 +1611,14 @@ void removeItem(String id) {
   }
 
   Future<void> _embedMetadataToMp3(
-    String mp3Path, 
+    String mp3Path,
     Track track, {
     String? genre,
     String? label,
     String? copyright,
   }) async {
     final settings = ref.read(settingsProvider);
-    
+
     String? coverPath;
     var coverUrl = track.coverUrl;
     if (coverUrl != null && coverUrl.isNotEmpty) {
@@ -1557,7 +1627,7 @@ void removeItem(String id) {
           coverUrl = _upgradeToMaxQualityCover(coverUrl);
           _log.d('Cover URL upgraded to max quality for MP3: $coverUrl');
         }
-        
+
         final tempDir = await getTemporaryDirectory();
         final uniqueId =
             '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
@@ -1573,7 +1643,9 @@ void removeItem(String id) {
           await sink.close();
           _log.d('Cover downloaded for MP3: $coverPath');
         } else {
-          _log.w('Failed to download cover for MP3: HTTP ${response.statusCode}');
+          _log.w(
+            'Failed to download cover for MP3: HTTP ${response.statusCode}',
+          );
           coverPath = null;
         }
         httpClient.close();
@@ -1590,8 +1662,8 @@ void removeItem(String id) {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist = _normalizeOptionalString(track.albumArtist) ??
-          track.artistName;
+      final albumArtist =
+          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
       metadata['ALBUMARTIST'] = albumArtist;
 
       if (track.trackNumber != null) {
@@ -1630,12 +1702,13 @@ void removeItem(String id) {
 
       final lyricsMode = settings.lyricsMode;
       final shouldEmbed = lyricsMode == 'embed' || lyricsMode == 'both';
-      final shouldSaveExternal = lyricsMode == 'external' || lyricsMode == 'both';
-      
+      final shouldSaveExternal =
+          lyricsMode == 'external' || lyricsMode == 'both';
+
       if (settings.embedLyrics && (shouldEmbed || shouldSaveExternal)) {
         try {
           final durationMs = track.duration * 1000;
-          
+
           final lrcContent = await PlatformBridge.getLyricsLRC(
             track.id,
             track.name,
@@ -1648,12 +1721,17 @@ void removeItem(String id) {
             if (shouldEmbed) {
               metadata['LYRICS'] = lrcContent;
               metadata['UNSYNCEDLYRICS'] = lrcContent;
-              _log.d('Lyrics fetched for MP3 embedding (${lrcContent.length} chars)');
+              _log.d(
+                'Lyrics fetched for MP3 embedding (${lrcContent.length} chars)',
+              );
             }
-            
+
             if (shouldSaveExternal) {
               try {
-                final lrcPath = mp3Path.replaceAll(RegExp(r'\.mp3$', caseSensitive: false), '.lrc');
+                final lrcPath = mp3Path.replaceAll(
+                  RegExp(r'\.mp3$', caseSensitive: false),
+                  '.lrc',
+                );
                 await File(lrcPath).writeAsString(lrcContent);
                 _log.d('External LRC file saved: $lrcPath');
               } catch (e) {
@@ -1698,14 +1776,14 @@ void removeItem(String id) {
   }
 
   Future<void> _embedMetadataToOpus(
-    String opusPath, 
+    String opusPath,
     Track track, {
     String? genre,
     String? label,
     String? copyright,
   }) async {
     final settings = ref.read(settingsProvider);
-    
+
     String? coverPath;
     var coverUrl = track.coverUrl;
     if (coverUrl != null && coverUrl.isNotEmpty) {
@@ -1714,7 +1792,7 @@ void removeItem(String id) {
           coverUrl = _upgradeToMaxQualityCover(coverUrl);
           _log.d('Cover URL upgraded to max quality for Opus: $coverUrl');
         }
-        
+
         final tempDir = await getTemporaryDirectory();
         final uniqueId =
             '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(10000)}';
@@ -1730,7 +1808,9 @@ void removeItem(String id) {
           await sink.close();
           _log.d('Cover downloaded for Opus: $coverPath');
         } else {
-          _log.w('Failed to download cover for Opus: HTTP ${response.statusCode}');
+          _log.w(
+            'Failed to download cover for Opus: HTTP ${response.statusCode}',
+          );
           coverPath = null;
         }
         httpClient.close();
@@ -1747,8 +1827,8 @@ void removeItem(String id) {
         'ALBUM': track.albumName,
       };
 
-      final albumArtist = _normalizeOptionalString(track.albumArtist) ??
-          track.artistName;
+      final albumArtist =
+          _normalizeOptionalString(track.albumArtist) ?? track.artistName;
       metadata['ALBUMARTIST'] = albumArtist;
 
       if (track.trackNumber != null) {
@@ -1784,12 +1864,13 @@ void removeItem(String id) {
 
       final lyricsMode = settings.lyricsMode;
       final shouldEmbed = lyricsMode == 'embed' || lyricsMode == 'both';
-      final shouldSaveExternal = lyricsMode == 'external' || lyricsMode == 'both';
-      
+      final shouldSaveExternal =
+          lyricsMode == 'external' || lyricsMode == 'both';
+
       if (settings.embedLyrics && (shouldEmbed || shouldSaveExternal)) {
         try {
           final durationMs = track.duration * 1000;
-          
+
           final lrcContent = await PlatformBridge.getLyricsLRC(
             track.id,
             track.name,
@@ -1801,12 +1882,17 @@ void removeItem(String id) {
           if (lrcContent.isNotEmpty) {
             if (shouldEmbed) {
               metadata['LYRICS'] = lrcContent;
-              _log.d('Lyrics fetched for Opus embedding (${lrcContent.length} chars)');
+              _log.d(
+                'Lyrics fetched for Opus embedding (${lrcContent.length} chars)',
+              );
             }
-            
+
             if (shouldSaveExternal) {
               try {
-                final lrcPath = opusPath.replaceAll(RegExp(r'\.opus$', caseSensitive: false), '.lrc');
+                final lrcPath = opusPath.replaceAll(
+                  RegExp(r'\.opus$', caseSensitive: false),
+                  '.lrc',
+                );
                 await File(lrcPath).writeAsString(lrcContent);
                 _log.d('External LRC file saved: $lrcPath');
               } catch (e) {
@@ -1920,7 +2006,7 @@ void removeItem(String id) {
     }
   }
 
-Future<void> _processQueue() async {
+  Future<void> _processQueue() async {
     if (state.isProcessing) return;
 
     // Check network connectivity before starting
@@ -1969,11 +2055,14 @@ Future<void> _processQueue() async {
 
     // iOS: Validate that outputDir is writable (not iCloud Drive which Go can't access)
     if (!isSafMode && Platform.isIOS && state.outputDir.isNotEmpty) {
-      final isICloudPath = state.outputDir.contains('Mobile Documents') ||
+      final isICloudPath =
+          state.outputDir.contains('Mobile Documents') ||
           state.outputDir.contains('CloudDocs') ||
           state.outputDir.contains('com~apple~CloudDocs');
       if (isICloudPath) {
-        _log.w('iOS: iCloud Drive path detected, falling back to app Documents folder');
+        _log.w(
+          'iOS: iCloud Drive path detected, falling back to app Documents folder',
+        );
         _log.w('Go backend cannot write to iCloud Drive due to iOS sandboxing');
         final dir = await getApplicationDocumentsDirectory();
         final musicDir = Directory('${dir.path}/SpotiFLAC');
@@ -2022,7 +2111,8 @@ Future<void> _processQueue() async {
             updateItemStatus(
               item.id,
               DownloadStatus.failed,
-              error: 'SAF permission invalid or revoked. Please reconfigure download location in Settings.',
+              error:
+                  'SAF permission invalid or revoked. Please reconfigure download location in Settings.',
             );
           }
         }
@@ -2059,7 +2149,7 @@ Future<void> _processQueue() async {
       _downloadCount = 0;
     }
 
-_log.i(
+    _log.i(
       'Queue stats - completed: $_completedInSession, failed: $_failedInSession, totalAtStart: $_totalQueuedAtStart',
     );
     if (_totalQueuedAtStart > 0) {
@@ -2128,7 +2218,6 @@ _log.i(
   Future<void> _processQueueParallel() async {
     final maxConcurrent = state.concurrentDownloads;
     final activeDownloads = <String, Future<void>>{};
-
 
     _startMultiProgressPolling();
 
@@ -2254,7 +2343,9 @@ _log.i(
                 releaseDate: data['release_date'] as String?,
                 deezerId: rawId,
                 availability: trackToDownload.availability,
-                albumType: (data['album_type'] as String?) ?? trackToDownload.albumType,
+                albumType:
+                    (data['album_type'] as String?) ??
+                    trackToDownload.albumType,
                 source: trackToDownload.source,
               );
               _log.d(
@@ -2274,8 +2365,9 @@ _log.i(
 
       _log.d('Track coverUrl after enrichment: ${trackToDownload.coverUrl}');
 
-      final normalizedAlbumArtist =
-          _normalizeOptionalString(trackToDownload.albumArtist);
+      final normalizedAlbumArtist = _normalizeOptionalString(
+        trackToDownload.albumArtist,
+      );
 
       final quality = item.qualityOverride ?? state.audioQuality;
       final isSafMode = _isSafMode(settings);
@@ -2303,17 +2395,15 @@ _log.i(
       String? safBaseName;
       String safOutputExt = _determineOutputExt(quality, item.service);
       if (isSafMode) {
-        final baseName = await PlatformBridge.buildFilename(
-          state.filenameFormat,
-          {
-            'title': trackToDownload.name,
-            'artist': trackToDownload.artistName,
-            'album': trackToDownload.albumName,
-            'track': trackToDownload.trackNumber ?? 0,
-            'disc': trackToDownload.discNumber ?? 0,
-            'year': _extractYear(trackToDownload.releaseDate) ?? '',
-          },
-        );
+        final baseName =
+            await PlatformBridge.buildFilename(state.filenameFormat, {
+              'title': trackToDownload.name,
+              'artist': trackToDownload.artistName,
+              'album': trackToDownload.albumName,
+              'track': trackToDownload.trackNumber ?? 0,
+              'disc': trackToDownload.discNumber ?? 0,
+              'year': _extractYear(trackToDownload.releaseDate) ?? '',
+            });
         final sanitized = await PlatformBridge.sanitizeFilename(baseName);
         safBaseName = sanitized;
         safFileName = '$sanitized$safOutputExt';
@@ -2322,20 +2412,26 @@ _log.i(
 
       String? genre;
       String? label;
-      
+
       String? deezerTrackId = trackToDownload.deezerId;
       if (deezerTrackId == null && trackToDownload.id.startsWith('deezer:')) {
         deezerTrackId = trackToDownload.id.split(':')[1];
       }
-      if (deezerTrackId == null && trackToDownload.availability?.deezerId != null) {
+      if (deezerTrackId == null &&
+          trackToDownload.availability?.deezerId != null) {
         deezerTrackId = trackToDownload.availability!.deezerId;
       }
-      
-      if (deezerTrackId == null && trackToDownload.isrc != null && trackToDownload.isrc!.isNotEmpty) {
+
+      if (deezerTrackId == null &&
+          trackToDownload.isrc != null &&
+          trackToDownload.isrc!.isNotEmpty) {
         try {
           _log.d('No Deezer ID, searching by ISRC: ${trackToDownload.isrc}');
-          final deezerResult = await PlatformBridge.searchDeezerByISRC(trackToDownload.isrc!);
-          if (deezerResult['success'] == true && deezerResult['track_id'] != null) {
+          final deezerResult = await PlatformBridge.searchDeezerByISRC(
+            trackToDownload.isrc!,
+          );
+          if (deezerResult['success'] == true &&
+              deezerResult['track_id'] != null) {
             deezerTrackId = deezerResult['track_id'].toString();
             _log.d('Found Deezer track ID via ISRC: $deezerTrackId');
           }
@@ -2343,10 +2439,11 @@ _log.i(
           _log.w('Failed to search Deezer by ISRC: $e');
         }
       }
-      
+
       if (deezerTrackId != null && deezerTrackId.isNotEmpty) {
         try {
-          final extendedMetadata = await PlatformBridge.getDeezerExtendedMetadata(deezerTrackId);
+          final extendedMetadata =
+              await PlatformBridge.getDeezerExtendedMetadata(deezerTrackId);
           if (extendedMetadata != null) {
             genre = extendedMetadata['genre'];
             label = extendedMetadata['label'];
@@ -2362,8 +2459,11 @@ _log.i(
       Map<String, dynamic> result;
 
       final extensionState = ref.read(extensionProvider);
-      final hasActiveExtensions = extensionState.extensions.any((e) => e.enabled);
-      final useExtensions = settings.useExtensionProviders && hasActiveExtensions;
+      final hasActiveExtensions = extensionState.extensions.any(
+        (e) => e.enabled,
+      );
+      final useExtensions =
+          settings.useExtensionProviders && hasActiveExtensions;
 
       Future<Map<String, dynamic>> runDownload({
         required bool useSaf,
@@ -2515,16 +2615,18 @@ _log.i(
       if (result['success'] == true) {
         var filePath = result['file_path'] as String?;
         final reportedFileName = result['file_name'] as String?;
-        if (effectiveSafMode && reportedFileName != null && reportedFileName.isNotEmpty) {
+        if (effectiveSafMode &&
+            reportedFileName != null &&
+            reportedFileName.isNotEmpty) {
           finalSafFileName = reportedFileName;
         }
-        
+
         // Check if file already existed (detected via ISRC match in Go backend)
         final wasExisting = result['already_exists'] == true;
         if (wasExisting) {
           _log.i('File already exists in library: $filePath');
         }
-        
+
         _log.i('Download success, file: $filePath');
 
         final actualBitDepth = result['actual_bit_depth'] as int?;
@@ -2542,20 +2644,45 @@ _log.i(
           _log.i('Actual quality: $actualQuality');
         }
 
+        final actualService =
+            ((result['service'] as String?)?.toLowerCase()) ??
+            item.service.toLowerCase();
         final isContentUriPath = filePath != null && isContentUri(filePath);
-        final mimeType = isContentUriPath ? await _getSafMimeType(filePath) : null;
-        final isM4aFile = filePath != null &&
+        final mimeType = isContentUriPath
+            ? await _getSafMimeType(filePath)
+            : null;
+        final isM4aFile =
+            filePath != null &&
             (filePath.endsWith('.m4a') ||
                 (mimeType != null && mimeType.contains('mp4')));
+        final isFlacFile =
+            filePath != null &&
+            (filePath.endsWith('.flac') ||
+                (mimeType != null && mimeType.contains('flac')));
+        final shouldForceTidalSafM4aHandling =
+            isContentUriPath &&
+            effectiveSafMode &&
+            actualService == 'tidal' &&
+            quality != 'HIGH' &&
+            filePath.endsWith('.flac') &&
+            (mimeType == null || mimeType.contains('flac'));
 
-        if (isM4aFile) {
-          // At this point filePath is guaranteed non-null by isM4aFile check
+        if (shouldForceTidalSafM4aHandling) {
+          _log.w(
+            'Tidal SAF file is labeled FLAC but backend returned DASH/M4A stream; forcing FFmpeg conversion to FLAC.',
+          );
+        }
+
+        if (isM4aFile || shouldForceTidalSafM4aHandling) {
+          // At this point filePath is guaranteed non-null by the checks above.
           final currentFilePath = filePath;
-          
+
           if (isContentUriPath && effectiveSafMode) {
             if (quality == 'HIGH') {
               final tidalHighFormat = settings.tidalHighFormat;
-              _log.i('Tidal HIGH quality (SAF), converting M4A to $tidalHighFormat...');
+              _log.i(
+                'Tidal HIGH quality (SAF), converting M4A to $tidalHighFormat...',
+              );
 
               final tempPath = await _copySafToTemp(currentFilePath);
               if (tempPath != null) {
@@ -2567,7 +2694,9 @@ _log.i(
                     progress: 0.95,
                   );
 
-                  final format = tidalHighFormat.startsWith('opus') ? 'opus' : 'mp3';
+                  final format = tidalHighFormat.startsWith('opus')
+                      ? 'opus'
+                      : 'mp3';
                   convertedPath = await FFmpegService.convertM4aToLossy(
                     tempPath,
                     format: format,
@@ -2576,7 +2705,9 @@ _log.i(
                   );
 
                   if (convertedPath != null) {
-                    _log.i('Successfully converted M4A to $format (temp): $convertedPath');
+                    _log.i(
+                      'Successfully converted M4A to $format (temp): $convertedPath',
+                    );
                     _log.i('Embedding metadata to $format...');
                     updateItemStatus(
                       item.id,
@@ -2617,7 +2748,9 @@ _log.i(
                     );
 
                     if (newUri != null) {
-                      await _deleteSafFile(currentFilePath);
+                      if (newUri != currentFilePath) {
+                        await _deleteSafFile(currentFilePath);
+                      }
                       filePath = newUri;
                       finalSafFileName = newFileName;
                       final bitrateDisplay = tidalHighFormat.contains('_')
@@ -2625,11 +2758,15 @@ _log.i(
                           : '320kbps';
                       actualQuality = '${format.toUpperCase()} $bitrateDisplay';
                     } else {
-                      _log.w('Failed to write converted $format to SAF, keeping M4A');
+                      _log.w(
+                        'Failed to write converted $format to SAF, keeping M4A',
+                      );
                       actualQuality = 'AAC 320kbps';
                     }
                   } else {
-                    _log.w('M4A to $format conversion failed, keeping M4A file');
+                    _log.w(
+                      'M4A to $format conversion failed, keeping M4A file',
+                    );
                     actualQuality = 'AAC 320kbps';
                   }
                 } catch (e) {
@@ -2637,9 +2774,13 @@ _log.i(
                   actualQuality = 'AAC 320kbps';
                 } finally {
                   // Clean up temp files
-                  try { await File(tempPath).delete(); } catch (_) {}
+                  try {
+                    await File(tempPath).delete();
+                  } catch (_) {}
                   if (convertedPath != null) {
-                    try { await File(convertedPath).delete(); } catch (_) {}
+                    try {
+                      await File(convertedPath).delete();
+                    } catch (_) {}
                   }
                 }
               }
@@ -2661,43 +2802,14 @@ _log.i(
                     flacPath = await FFmpegService.convertM4aToFlac(tempPath);
                     if (flacPath != null) {
                       _log.d('Converted to FLAC (temp): $flacPath');
-                      _log.d('Embedding metadata and cover to converted FLAC...');
-
-                      Track finalTrack = trackToDownload;
-                      if (result.containsKey('track_number') ||
-                          result.containsKey('release_date')) {
-                        final backendTrackNum = result['track_number'] as int?;
-                        final backendDiscNum = result['disc_number'] as int?;
-                        final backendYear = result['release_date'] as String?;
-                        final backendAlbum = result['album'] as String?;
-
-                        final newTrackNumber =
-                            (backendTrackNum != null && backendTrackNum > 0)
-                                ? backendTrackNum
-                                : trackToDownload.trackNumber;
-                        final newDiscNumber =
-                            (backendDiscNum != null && backendDiscNum > 0)
-                                ? backendDiscNum
-                                : trackToDownload.discNumber;
-
-                        finalTrack = Track(
-                          id: trackToDownload.id,
-                          name: trackToDownload.name,
-                          artistName: trackToDownload.artistName,
-                          albumName: backendAlbum ?? trackToDownload.albumName,
-                          albumArtist: normalizedAlbumArtist,
-                          coverUrl: trackToDownload.coverUrl,
-                          duration: trackToDownload.duration,
-                          isrc: trackToDownload.isrc,
-                          trackNumber: newTrackNumber,
-                          discNumber: newDiscNumber,
-                          releaseDate: backendYear ?? trackToDownload.releaseDate,
-                          deezerId: trackToDownload.deezerId,
-                          availability: trackToDownload.availability,
-                          albumType: trackToDownload.albumType,
-                          source: trackToDownload.source,
-                        );
-                      }
+                      _log.d(
+                        'Embedding metadata and cover to converted FLAC...',
+                      );
+                      final finalTrack = _buildTrackForMetadataEmbedding(
+                        trackToDownload,
+                        result,
+                        normalizedAlbumArtist,
+                      );
 
                       final backendGenre = result['genre'] as String?;
                       final backendLabel = result['label'] as String?;
@@ -2721,23 +2833,31 @@ _log.i(
                       );
 
                       if (newUri != null) {
-                        await _deleteSafFile(currentFilePath);
+                        if (newUri != currentFilePath) {
+                          await _deleteSafFile(currentFilePath);
+                        }
                         filePath = newUri;
                         finalSafFileName = newFileName;
                       } else {
                         _log.w('Failed to write FLAC to SAF, keeping M4A');
                       }
                     } else {
-                      _log.w('FFmpeg conversion returned null, keeping M4A file');
+                      _log.w(
+                        'FFmpeg conversion returned null, keeping M4A file',
+                      );
                     }
                   }
                 } catch (e) {
                   _log.w('SAF M4A->FLAC conversion failed: $e');
                 } finally {
                   // Clean up temp files
-                  try { await File(tempPath).delete(); } catch (_) {}
+                  try {
+                    await File(tempPath).delete();
+                  } catch (_) {}
                   if (flacPath != null) {
-                    try { await File(flacPath).delete(); } catch (_) {}
+                    try {
+                      await File(flacPath).delete();
+                    } catch (_) {}
                   }
                 }
               }
@@ -2746,7 +2866,9 @@ _log.i(
             // Local file path flow (original)
             if (quality == 'HIGH') {
               final tidalHighFormat = settings.tidalHighFormat;
-              _log.i('Tidal HIGH quality download, converting M4A to $tidalHighFormat...');
+              _log.i(
+                'Tidal HIGH quality download, converting M4A to $tidalHighFormat...',
+              );
 
               try {
                 updateItemStatus(
@@ -2755,7 +2877,9 @@ _log.i(
                   progress: 0.95,
                 );
 
-                final format = tidalHighFormat.startsWith('opus') ? 'opus' : 'mp3';
+                final format = tidalHighFormat.startsWith('opus')
+                    ? 'opus'
+                    : 'mp3';
                 final convertedPath = await FFmpegService.convertM4aToLossy(
                   currentFilePath,
                   format: format,
@@ -2769,7 +2893,9 @@ _log.i(
                       ? '${tidalHighFormat.split('_').last}kbps'
                       : '320kbps';
                   actualQuality = '${format.toUpperCase()} $bitrateDisplay';
-                  _log.i('Successfully converted M4A to $format: $convertedPath');
+                  _log.i(
+                    'Successfully converted M4A to $format: $convertedPath',
+                  );
 
                   _log.i('Embedding metadata to $format...');
                   updateItemStatus(
@@ -2831,67 +2957,34 @@ _log.i(
                       DownloadStatus.downloading,
                       progress: 0.95,
                     );
-                    final flacPath = await FFmpegService.convertM4aToFlac(currentFilePath);
+                    final flacPath = await FFmpegService.convertM4aToFlac(
+                      currentFilePath,
+                    );
 
                     if (flacPath != null) {
                       filePath = flacPath;
                       _log.d('Converted to FLAC: $flacPath');
 
-                      _log.d('Embedding metadata and cover to converted FLAC...');
+                      _log.d(
+                        'Embedding metadata and cover to converted FLAC...',
+                      );
                       try {
-                        Track finalTrack = trackToDownload;
-                        if (result.containsKey('track_number') ||
-                            result.containsKey('release_date')) {
-                          _log.d(
-                            'Using metadata from backend response for embedding',
-                          );
-                          final backendTrackNum = result['track_number'] as int?;
-                          final backendDiscNum = result['disc_number'] as int?;
-                          final backendYear = result['release_date'] as String?;
-                          final backendAlbum = result['album'] as String?;
-
-                          _log.d(
-                            'Backend metadata - Track: $backendTrackNum, Disc: $backendDiscNum, Year: $backendYear',
-                          );
-
-                          final newTrackNumber =
-                              (backendTrackNum != null && backendTrackNum > 0)
-                                  ? backendTrackNum
-                                  : trackToDownload.trackNumber;
-                          final newDiscNumber =
-                              (backendDiscNum != null && backendDiscNum > 0)
-                                  ? backendDiscNum
-                                  : trackToDownload.discNumber;
-
-                          _log.d(
-                            'Final metadata for embedding - Track: $newTrackNumber, Disc: $newDiscNumber',
-                          );
-
-                          finalTrack = Track(
-                            id: trackToDownload.id,
-                            name: trackToDownload.name,
-                            artistName: trackToDownload.artistName,
-                            albumName: backendAlbum ?? trackToDownload.albumName,
-                            albumArtist: normalizedAlbumArtist,
-                            coverUrl: trackToDownload.coverUrl,
-                            duration: trackToDownload.duration,
-                            isrc: trackToDownload.isrc,
-                            trackNumber: newTrackNumber,
-                            discNumber: newDiscNumber,
-                            releaseDate: backendYear ?? trackToDownload.releaseDate,
-                            deezerId: trackToDownload.deezerId,
-                            availability: trackToDownload.availability,
-                            albumType: trackToDownload.albumType,
-                            source: trackToDownload.source,
-                          );
-                        }
+                        final finalTrack = _buildTrackForMetadataEmbedding(
+                          trackToDownload,
+                          result,
+                          normalizedAlbumArtist,
+                        );
 
                         final backendGenre = result['genre'] as String?;
                         final backendLabel = result['label'] as String?;
                         final backendCopyright = result['copyright'] as String?;
 
-                        if (backendGenre != null || backendLabel != null || backendCopyright != null) {
-                          _log.d('Extended metadata from backend - Genre: $backendGenre, Label: $backendLabel, Copyright: $backendCopyright');
+                        if (backendGenre != null ||
+                            backendLabel != null ||
+                            backendCopyright != null) {
+                          _log.d(
+                            'Extended metadata from backend - Genre: $backendGenre, Label: $backendLabel, Copyright: $backendCopyright',
+                          );
                         }
 
                         await _embedMetadataAndCover(
@@ -2906,13 +2999,78 @@ _log.i(
                         _log.w('Warning: Failed to embed metadata/cover: $e');
                       }
                     } else {
-                      _log.w('FFmpeg conversion returned null, keeping M4A file');
+                      _log.w(
+                        'FFmpeg conversion returned null, keeping M4A file',
+                      );
                     }
                   }
                 }
               } catch (e) {
-                _log.w('FFmpeg conversion process failed: $e, keeping M4A file');
+                _log.w(
+                  'FFmpeg conversion process failed: $e, keeping M4A file',
+                );
               }
+            }
+          }
+        } else if (isContentUriPath &&
+            effectiveSafMode &&
+            isFlacFile &&
+            !wasExisting) {
+          final currentFilePath = filePath;
+          _log.d(
+            'SAF FLAC detected, embedding metadata and cover via temp file...',
+          );
+          final tempPath = await _copySafToTemp(currentFilePath);
+          if (tempPath != null) {
+            try {
+              updateItemStatus(
+                item.id,
+                DownloadStatus.downloading,
+                progress: 0.99,
+              );
+
+              final finalTrack = _buildTrackForMetadataEmbedding(
+                trackToDownload,
+                result,
+                normalizedAlbumArtist,
+              );
+              final backendGenre = result['genre'] as String?;
+              final backendLabel = result['label'] as String?;
+              final backendCopyright = result['copyright'] as String?;
+
+              await _embedMetadataAndCover(
+                tempPath,
+                finalTrack,
+                genre: backendGenre ?? genre,
+                label: backendLabel ?? label,
+                copyright: backendCopyright,
+              );
+
+              final newFileName = '${safBaseName ?? 'track'}.flac';
+              final newUri = await _writeTempToSaf(
+                treeUri: settings.downloadTreeUri,
+                relativeDir: effectiveOutputDir,
+                fileName: newFileName,
+                mimeType: _mimeTypeForExt('.flac'),
+                srcPath: tempPath,
+              );
+
+              if (newUri != null) {
+                if (newUri != currentFilePath) {
+                  await _deleteSafFile(currentFilePath);
+                }
+                filePath = newUri;
+                finalSafFileName = newFileName;
+                _log.d('SAF FLAC metadata embedding completed');
+              } else {
+                _log.w('Failed to write metadata-updated FLAC back to SAF');
+              }
+            } catch (e) {
+              _log.w('SAF FLAC metadata embedding failed: $e');
+            } finally {
+              try {
+                await File(tempPath).delete();
+              } catch (_) {}
             }
           }
         }
@@ -2939,7 +3097,8 @@ _log.i(
 
         final lyricsMode = settings.lyricsMode;
         final shouldSaveExternalLrc =
-            settings.embedLyrics && (lyricsMode == 'external' || lyricsMode == 'both');
+            settings.embedLyrics &&
+            (lyricsMode == 'external' || lyricsMode == 'both');
         if (shouldSaveExternalLrc &&
             effectiveSafMode &&
             filePath != null &&
@@ -2962,9 +3121,9 @@ _log.i(
             final baseName = finalSafFileName != null
                 ? finalSafFileName.replaceFirst(RegExp(r'\.[^.]+$'), '')
                 : safBaseName ??
-                    await PlatformBridge.sanitizeFilename(
-                      '${trackToDownload.artistName} - ${trackToDownload.name}',
-                    );
+                      await PlatformBridge.sanitizeFilename(
+                        '${trackToDownload.artistName} - ${trackToDownload.name}',
+                      );
             await _writeLrcToSaf(
               treeUri: settings.downloadTreeUri,
               relativeDir: effectiveOutputDir,
@@ -2979,11 +3138,14 @@ _log.i(
         }
 
         _completedInSession++;
-        
+
         final historyNotifier = ref.read(downloadHistoryProvider.notifier);
-        final existingInHistory = historyNotifier.getBySpotifyId(trackToDownload.id) ??
-            (trackToDownload.isrc != null ? historyNotifier.getByIsrc(trackToDownload.isrc!) : null);
-        
+        final existingInHistory =
+            historyNotifier.getBySpotifyId(trackToDownload.id) ??
+            (trackToDownload.isrc != null
+                ? historyNotifier.getByIsrc(trackToDownload.isrc!)
+                : null);
+
         if (wasExisting && existingInHistory != null) {
           _log.i('Track already in library, skipping history update');
           await _notificationService.showDownloadComplete(
@@ -2996,7 +3158,7 @@ _log.i(
           removeItem(item.id);
           return;
         }
-        
+
         await _notificationService.showDownloadComplete(
           trackName: item.track.name,
           artistName: item.track.artistName,
@@ -3023,9 +3185,9 @@ _log.i(
 
           final historyAlbumArtist =
               (normalizedAlbumArtist != null &&
-                      normalizedAlbumArtist != trackToDownload.artistName)
-                  ? normalizedAlbumArtist
-                  : null;
+                  normalizedAlbumArtist != trackToDownload.artistName)
+              ? normalizedAlbumArtist
+              : null;
 
           final isMp3 = filePath.endsWith('.mp3');
           final historyBitDepth = isMp3 ? null : backendBitDepth;
@@ -3039,7 +3201,8 @@ _log.i(
                   trackName: (backendTitle != null && backendTitle.isNotEmpty)
                       ? backendTitle
                       : trackToDownload.name,
-                  artistName: (backendArtist != null && backendArtist.isNotEmpty)
+                  artistName:
+                      (backendArtist != null && backendArtist.isNotEmpty)
                       ? backendArtist
                       : trackToDownload.artistName,
                   albumName: (backendAlbum != null && backendAlbum.isNotEmpty)
@@ -3049,9 +3212,13 @@ _log.i(
                   coverUrl: trackToDownload.coverUrl,
                   filePath: filePath,
                   storageMode: effectiveSafMode ? 'saf' : 'app',
-                  downloadTreeUri: effectiveSafMode ? settings.downloadTreeUri : null,
+                  downloadTreeUri: effectiveSafMode
+                      ? settings.downloadTreeUri
+                      : null,
                   safRelativeDir: effectiveSafMode ? effectiveOutputDir : null,
-                  safFileName: effectiveSafMode ? (finalSafFileName ?? safFileName) : null,
+                  safFileName: effectiveSafMode
+                      ? (finalSafFileName ?? safFileName)
+                      : null,
                   safRepaired: false,
                   service: result['service'] as String? ?? item.service,
                   downloadedAt: DateTime.now(),

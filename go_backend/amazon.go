@@ -149,7 +149,7 @@ func (a *AmazonDownloader) downloadFromAfkarXYZ(amazonURL string) (string, strin
 	return downloadURL, fileName, nil
 }
 
-func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath, itemID string) error {
+func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath string, outputFD int, itemID string) error {
 	ctx := context.Background()
 
 	if itemID != "" {
@@ -188,7 +188,7 @@ func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath, itemID string) 
 		SetItemBytesTotal(itemID, expectedSize)
 	}
 
-	out, err := os.Create(outputPath)
+	out, err := openOutputForWrite(outputPath, outputFD)
 	if err != nil {
 		return err
 	}
@@ -207,23 +207,23 @@ func (a *AmazonDownloader) DownloadFile(downloadURL, outputPath, itemID string) 
 	closeErr := out.Close()
 
 	if err != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to flush buffer: %w", flushErr)
 	}
 	if closeErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to close file: %w", closeErr)
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 
@@ -249,7 +249,7 @@ type AmazonDownloadResult struct {
 func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	downloader := NewAmazonDownloader()
 
-	isSafOutput := strings.TrimSpace(req.OutputPath) != ""
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
 	if !isSafOutput {
 		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
 			return AmazonDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
@@ -317,6 +317,9 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	var outputPath string
 	if isSafOutput {
 		outputPath = strings.TrimSpace(req.OutputPath)
+		if outputPath == "" && isFDOutput(req.OutputFD) {
+			outputPath = fmt.Sprintf("/proc/self/fd/%d", req.OutputFD)
+		}
 	} else {
 		filename = sanitizeFilename(filename) + ".flac"
 		outputPath = filepath.Join(req.OutputDir, filename)
@@ -342,7 +345,7 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	}()
 
 	// Download audio file with item ID for progress tracking
-	if err := downloader.DownloadFile(downloadURL, outputPath, req.ItemID); err != nil {
+	if err := downloader.DownloadFile(downloadURL, outputPath, req.OutputFD, req.ItemID); err != nil {
 		if errors.Is(err, ErrDownloadCancelled) {
 			return AmazonDownloadResult{}, ErrDownloadCancelled
 		}
@@ -415,54 +418,63 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
-		GoLog("[Amazon] Warning: failed to embed metadata: %v\n", err)
-	}
-
-	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
-		lyricsMode := req.LyricsMode
-		if lyricsMode == "" {
-			lyricsMode = "embed"
+	if isSafOutput {
+		GoLog("[Amazon] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+	} else {
+		if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
+			GoLog("[Amazon] Warning: failed to embed metadata: %v\n", err)
 		}
 
-		if !isSafOutput && (lyricsMode == "external" || lyricsMode == "both") {
-			GoLog("[Amazon] Saving external LRC file...\n")
-			if lrcPath, lrcErr := SaveLRCFile(outputPath, parallelResult.LyricsLRC); lrcErr != nil {
-				GoLog("[Amazon] Warning: failed to save LRC file: %v\n", lrcErr)
-			} else {
-				GoLog("[Amazon] LRC file saved: %s\n", lrcPath)
+		if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+			lyricsMode := req.LyricsMode
+			if lyricsMode == "" {
+				lyricsMode = "embed"
 			}
-		}
 
-		if lyricsMode == "embed" || lyricsMode == "both" {
-			GoLog("[Amazon] Embedding parallel-fetched lyrics (%d lines)...\n", len(parallelResult.LyricsData.Lines))
-			if embedErr := EmbedLyrics(outputPath, parallelResult.LyricsLRC); embedErr != nil {
-				GoLog("[Amazon] Warning: failed to embed lyrics: %v\n", embedErr)
-			} else {
-				GoLog("[Amazon] Lyrics embedded successfully\n")
+			if lyricsMode == "external" || lyricsMode == "both" {
+				GoLog("[Amazon] Saving external LRC file...\n")
+				if lrcPath, lrcErr := SaveLRCFile(outputPath, parallelResult.LyricsLRC); lrcErr != nil {
+					GoLog("[Amazon] Warning: failed to save LRC file: %v\n", lrcErr)
+				} else {
+					GoLog("[Amazon] LRC file saved: %s\n", lrcPath)
+				}
 			}
+
+			if lyricsMode == "embed" || lyricsMode == "both" {
+				GoLog("[Amazon] Embedding parallel-fetched lyrics (%d lines)...\n", len(parallelResult.LyricsData.Lines))
+				if embedErr := EmbedLyrics(outputPath, parallelResult.LyricsLRC); embedErr != nil {
+					GoLog("[Amazon] Warning: failed to embed lyrics: %v\n", embedErr)
+				} else {
+					GoLog("[Amazon] Lyrics embedded successfully\n")
+				}
+			}
+		} else if req.EmbedLyrics {
+			GoLog("[Amazon] No lyrics available from parallel fetch\n")
 		}
-	} else if req.EmbedLyrics {
-		GoLog("[Amazon] No lyrics available from parallel fetch\n")
 	}
 
 	GoLog("[Amazon] Downloaded successfully from Amazon Music\n")
 
-	quality, err := GetAudioQuality(outputPath)
-	if err != nil {
-		GoLog("[Amazon] Warning: couldn't read quality from file: %v\n", err)
+	quality := AudioQuality{}
+	if isSafOutput {
+		GoLog("[Amazon] SAF output detected - skipping post-write file inspection in backend\n")
 	} else {
-		GoLog("[Amazon] Actual quality: %d-bit/%dHz\n", quality.BitDepth, quality.SampleRate)
-	}
+		quality, err = GetAudioQuality(outputPath)
+		if err != nil {
+			GoLog("[Amazon] Warning: couldn't read quality from file: %v\n", err)
+		} else {
+			GoLog("[Amazon] Actual quality: %d-bit/%dHz\n", quality.BitDepth, quality.SampleRate)
+		}
 
-	finalMeta, metaReadErr := ReadMetadata(outputPath)
-	if metaReadErr == nil && finalMeta != nil {
-		GoLog("[Amazon] Final metadata from file - Track: %d, Disc: %d, Date: %s\n",
-			finalMeta.TrackNumber, finalMeta.DiscNumber, finalMeta.Date)
-		actualTrackNum = finalMeta.TrackNumber
-		actualDiscNum = finalMeta.DiscNumber
-		if finalMeta.Date != "" {
-			req.ReleaseDate = finalMeta.Date
+		finalMeta, metaReadErr := ReadMetadata(outputPath)
+		if metaReadErr == nil && finalMeta != nil {
+			GoLog("[Amazon] Final metadata from file - Track: %d, Disc: %d, Date: %s\n",
+				finalMeta.TrackNumber, finalMeta.DiscNumber, finalMeta.Date)
+			actualTrackNum = finalMeta.TrackNumber
+			actualDiscNum = finalMeta.DiscNumber
+			if finalMeta.Date != "" {
+				req.ReleaseDate = finalMeta.Date
+			}
 		}
 	}
 

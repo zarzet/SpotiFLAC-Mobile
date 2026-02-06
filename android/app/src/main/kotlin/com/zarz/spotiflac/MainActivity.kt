@@ -6,7 +6,11 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode
+import io.flutter.embedding.android.FlutterFragment
+import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.android.RenderMode
+import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
@@ -23,7 +27,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Locale
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "com.zarz.spotiflac/backend"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingSafTreeResult: MethodChannel.Result? = null
@@ -105,100 +109,146 @@ class MainActivity: FlutterActivity() {
             "sm-t225",      // Samsung Tab A7 Lite LTE
             "hammerhead",   // Nexus 5 (Adreno 330)
         )
-    }
+        /**
+         * Check if device should use Skia instead of Impeller.
+         * Returns true for devices with old/problematic GPUs or old Android versions.
+         */
+        private fun shouldDisableImpeller(): Boolean {
+            val hardware = Build.HARDWARE.lowercase(Locale.ROOT)
+            val board = Build.BOARD.lowercase(Locale.ROOT)
+            val model = Build.MODEL.lowercase(Locale.ROOT)
+            val device = Build.DEVICE.lowercase(Locale.ROOT)
 
-    /**
-     * Override Flutter shell args to disable Impeller on problematic devices.
-     * This is called before the Flutter engine starts.
-     */
-    override fun getFlutterShellArgs(): FlutterShellArgs {
-        val args = super.getFlutterShellArgs()
-        
-        if (shouldDisableImpeller()) {
-            // Log for debugging
-            android.util.Log.i("SpotiFLAC", "Legacy/problematic GPU detected: Disabling Impeller for ${Build.MODEL}")
-            android.util.Log.i("SpotiFLAC", "Device: ${Build.MANUFACTURER} ${Build.MODEL}, SDK: ${Build.VERSION.SDK_INT}")
-            android.util.Log.i("SpotiFLAC", "Hardware: ${Build.HARDWARE}, Board: ${Build.BOARD}")
-            
-            // Disable Impeller, forcing Skia renderer
-            args.add("--enable-impeller=false")
-        } else {
-            android.util.Log.i("SpotiFLAC", "Using Impeller renderer for ${Build.MODEL}")
-        }
-        
-        return args
-    }
-
-    /**
-     * Check if device should use Skia instead of Impeller.
-     * Returns true for devices with old/problematic GPUs or old Android versions.
-     */
-    private fun shouldDisableImpeller(): Boolean {
-        val hardware = Build.HARDWARE.lowercase(Locale.ROOT)
-        val board = Build.BOARD.lowercase(Locale.ROOT)
-        val model = Build.MODEL.lowercase(Locale.ROOT)
-        val device = Build.DEVICE.lowercase(Locale.ROOT)
-        
-        // 1. Check for explicitly problematic device models
-        for (problematicModel in PROBLEMATIC_MODELS) {
-            if (model.contains(problematicModel) || device.contains(problematicModel)) {
-                android.util.Log.i("SpotiFLAC", "Matched problematic model: $problematicModel")
-                return true
-            }
-        }
-        
-        // 2. Check for problematic chipsets
-        for (chipset in PROBLEMATIC_CHIPSETS) {
-            if (hardware.contains(chipset) || board.contains(chipset)) {
-                android.util.Log.i("SpotiFLAC", "Matched problematic chipset: $chipset")
-                return true
-            }
-        }
-        
-        // 3. For Android < 10 (API 29), be more aggressive about disabling Impeller
-        if (Build.VERSION.SDK_INT < SAFE_API_FOR_IMPELLER) {
-            // For older Android, check GPU renderer if available
-            val gpuRenderer = getGpuRenderer().lowercase(Locale.ROOT)
-            
-            // Check for known problematic GPUs
-            for (pattern in PROBLEMATIC_GPU_PATTERNS) {
-                if (gpuRenderer.contains(pattern)) {
-                    android.util.Log.i("SpotiFLAC", "Matched problematic GPU on old Android: $pattern")
+            // 1. Check for explicitly problematic device models
+            for (problematicModel in PROBLEMATIC_MODELS) {
+                if (model.contains(problematicModel) || device.contains(problematicModel)) {
+                    android.util.Log.i("SpotiFLAC", "Matched problematic model: $problematicModel")
                     return true
                 }
             }
-            
-            // For very old Android (< 8.0), always use Skia as Vulkan support is spotty
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                android.util.Log.i("SpotiFLAC", "Android < 8.0, using Skia for safety")
-                return true
+
+            // 2. Check for problematic chipsets
+            for (chipset in PROBLEMATIC_CHIPSETS) {
+                if (hardware.contains(chipset) || board.contains(chipset)) {
+                    android.util.Log.i("SpotiFLAC", "Matched problematic chipset: $chipset")
+                    return true
+                }
             }
-        }
-        
-        // 4. For Android 10+, still check for known problematic GPUs
-        val gpuRenderer = getGpuRenderer().lowercase(Locale.ROOT)
-        for (pattern in PROBLEMATIC_GPU_PATTERNS) {
-            if (gpuRenderer.contains(pattern)) {
-                android.util.Log.i("SpotiFLAC", "Matched problematic GPU: $pattern")
-                return true
+
+            // 3. For Android < 10 (API 29), be more aggressive about disabling Impeller
+            if (Build.VERSION.SDK_INT < SAFE_API_FOR_IMPELLER) {
+                // For older Android, check GPU renderer if available
+                val gpuRenderer = getGpuRenderer().lowercase(Locale.ROOT)
+
+                // Check for known problematic GPUs
+                for (pattern in PROBLEMATIC_GPU_PATTERNS) {
+                    if (gpuRenderer.contains(pattern)) {
+                        android.util.Log.i("SpotiFLAC", "Matched problematic GPU on old Android: $pattern")
+                        return true
+                    }
+                }
+
+                // For very old Android (< 8.0), always use Skia as Vulkan support is spotty
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    android.util.Log.i("SpotiFLAC", "Android < 8.0, using Skia for safety")
+                    return true
+                }
             }
+
+            // 4. For Android 10+, still check for known problematic GPUs
+            val gpuRenderer = getGpuRenderer().lowercase(Locale.ROOT)
+            for (pattern in PROBLEMATIC_GPU_PATTERNS) {
+                if (gpuRenderer.contains(pattern)) {
+                    android.util.Log.i("SpotiFLAC", "Matched problematic GPU: $pattern")
+                    return true
+                }
+            }
+
+            return false
         }
-        
-        return false
-    }
-    
+
     /**
      * Try to get GPU renderer string.
      * Note: This may return empty on some devices before OpenGL context is created.
      */
-    private fun getGpuRenderer(): String {
-        return try {
-            // This might not work before GL context is created,
-            // but worth trying for additional detection
-            android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_RENDERER) ?: ""
-        } catch (e: Exception) {
-            ""
+        private fun getGpuRenderer(): String {
+            return try {
+                // This might not work before GL context is created,
+                // but worth trying for additional detection
+                android.opengl.GLES20.glGetString(android.opengl.GLES20.GL_RENDERER) ?: ""
+            } catch (e: Exception) {
+                ""
+            }
         }
+    }
+
+    class ImpellerAwareFlutterFragment : FlutterFragment() {
+        override fun getFlutterShellArgs(): FlutterShellArgs {
+            val args = super.getFlutterShellArgs()
+            if (shouldDisableImpeller()) {
+                android.util.Log.w("SpotiFLAC", "Legacy/problematic GPU detected for ${Build.MODEL}")
+                android.util.Log.w("SpotiFLAC", "Device: ${Build.MANUFACTURER} ${Build.MODEL}, SDK: ${Build.VERSION.SDK_INT}")
+                android.util.Log.w("SpotiFLAC", "Hardware: ${Build.HARDWARE}, Board: ${Build.BOARD}")
+                args.add("--enable-impeller=false")
+            } else {
+                android.util.Log.i("SpotiFLAC", "Using Impeller renderer for ${Build.MODEL}")
+            }
+            return args
+        }
+    }
+
+    override fun createFlutterFragment(): FlutterFragment {
+        val backgroundMode = getBackgroundMode()
+        val renderMode = getRenderMode()
+        val transparencyMode =
+            if (backgroundMode == BackgroundMode.opaque) TransparencyMode.opaque else TransparencyMode.transparent
+        val shouldDelayFirstAndroidViewDraw = renderMode == RenderMode.surface
+
+        getCachedEngineId()?.let { cachedEngineId ->
+            return FlutterFragment.CachedEngineFragmentBuilder(
+                ImpellerAwareFlutterFragment::class.java,
+                cachedEngineId
+            )
+                .renderMode(renderMode)
+                .transparencyMode(transparencyMode)
+                .handleDeeplinking(shouldHandleDeeplinking())
+                .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
+                .destroyEngineWithFragment(shouldDestroyEngineWithHost())
+                .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+                .shouldAutomaticallyHandleOnBackPressed(true)
+                .build()
+        }
+
+        getCachedEngineGroupId()?.let { cachedEngineGroupId ->
+            return FlutterFragment.NewEngineInGroupFragmentBuilder(
+                ImpellerAwareFlutterFragment::class.java,
+                cachedEngineGroupId
+            )
+                .dartEntrypoint(getDartEntrypointFunctionName())
+                .initialRoute(getInitialRoute())
+                .handleDeeplinking(shouldHandleDeeplinking())
+                .renderMode(renderMode)
+                .transparencyMode(transparencyMode)
+                .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
+                .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+                .shouldAutomaticallyHandleOnBackPressed(true)
+                .build()
+        }
+
+        return FlutterFragment.NewEngineFragmentBuilder(ImpellerAwareFlutterFragment::class.java)
+            .dartEntrypoint(getDartEntrypointFunctionName())
+            .dartLibraryUri(getDartEntrypointLibraryUri() ?: "")
+            .dartEntrypointArgs(getDartEntrypointArgs() ?: emptyList())
+            .initialRoute(getInitialRoute())
+            .appBundlePath(getAppBundlePath())
+            .flutterShellArgs(FlutterShellArgs.fromIntent(intent))
+            .handleDeeplinking(shouldHandleDeeplinking())
+            .renderMode(renderMode)
+            .transparencyMode(transparencyMode)
+            .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
+            .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
+            .shouldAutomaticallyHandleOnBackPressed(true)
+            .build()
     }
 
     private fun normalizeExt(ext: String?): String {
@@ -347,13 +397,26 @@ class MainActivity: FlutterActivity() {
 
     private fun copyUriToTemp(uri: Uri, fallbackExt: String? = null): String? {
         val mime = contentResolver.getType(uri)
-        val ext = when (mime) {
+        val nameHint = (
+            DocumentFile.fromSingleUri(this, uri)?.name
+                ?: uri.lastPathSegment
+                ?: ""
+        ).lowercase(Locale.ROOT)
+        val extFromName = when {
+            nameHint.endsWith(".m4a") -> ".m4a"
+            nameHint.endsWith(".mp3") -> ".mp3"
+            nameHint.endsWith(".opus") -> ".opus"
+            nameHint.endsWith(".flac") -> ".flac"
+            else -> ""
+        }
+        val extFromMime = when (mime) {
             "audio/mp4" -> ".m4a"
             "audio/mpeg" -> ".mp3"
             "audio/ogg" -> ".opus"
             "audio/flac" -> ".flac"
-            else -> fallbackExt ?: ""
+            else -> ""
         }
+        val ext = if (extFromName.isNotBlank()) extFromName else if (extFromMime.isNotBlank()) extFromMime else (fallbackExt ?: "")
         val suffix: String? = if (ext.isNotBlank()) ext else null
         val tempFile = File.createTempFile("saf_", suffix, cacheDir)
         contentResolver.openInputStream(uri)?.use { input ->
@@ -407,9 +470,12 @@ class MainActivity: FlutterActivity() {
 
         val pfd = contentResolver.openFileDescriptor(document.uri, "rw")
             ?: return errorJson("Failed to open SAF file")
+        var detachedFd: Int? = null
 
         try {
-            req.put("output_path", "/proc/self/fd/${pfd.fd}")
+            detachedFd = pfd.detachFd()
+            req.put("output_path", "/proc/self/fd/$detachedFd")
+            req.put("output_fd", detachedFd)
             req.put("output_ext", outputExt)
             val response = downloader(req.toString())
             val respObj = JSONObject(response)
@@ -424,9 +490,11 @@ class MainActivity: FlutterActivity() {
             document.delete()
             return errorJson("SAF download failed: ${e.message}")
         } finally {
-            try {
-                pfd.close()
-            } catch (_: Exception) {}
+            if (detachedFd == null) {
+                try {
+                    pfd.close()
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -677,7 +745,7 @@ class MainActivity: FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             scope.launch {
                 try {
@@ -917,9 +985,12 @@ class MainActivity: FlutterActivity() {
                                 if (treeUriStr.isBlank()) return@withContext null
                                 val dir = ensureDocumentDir(Uri.parse(treeUriStr), relativeDir) ?: return@withContext null
                                 val existing = dir.findFile(fileName)
+                                val createdNew = existing == null
                                 val doc = existing ?: dir.createFile(mimeType, fileName) ?: return@withContext null
                                 if (!writeUriFromPath(doc.uri, srcPath)) {
-                                    doc.delete()
+                                    if (createdNew) {
+                                        doc.delete()
+                                    }
                                     return@withContext null
                                 }
                                 doc.uri.toString()
@@ -957,7 +1028,22 @@ class MainActivity: FlutterActivity() {
                             val filePath = call.argument<String>("file_path") ?: ""
                             val durationMs = call.argument<Int>("duration_ms")?.toLong() ?: 0L
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.getLyricsLRC(spotifyId, trackName, artistName, filePath, durationMs)
+                                if (filePath.startsWith("content://")) {
+                                    val tempPath = copyUriToTemp(Uri.parse(filePath))
+                                    if (tempPath == null) {
+                                        ""
+                                    } else {
+                                        try {
+                                            Gobackend.getLyricsLRC(spotifyId, trackName, artistName, tempPath, durationMs)
+                                        } finally {
+                                            try {
+                                                File(tempPath).delete()
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                } else {
+                                    Gobackend.getLyricsLRC(spotifyId, trackName, artistName, filePath, durationMs)
+                                }
                             }
                             result.success(response)
                         }
@@ -965,7 +1051,33 @@ class MainActivity: FlutterActivity() {
                             val filePath = call.argument<String>("file_path") ?: ""
                             val lyrics = call.argument<String>("lyrics") ?: ""
                             val response = withContext(Dispatchers.IO) {
-                                Gobackend.embedLyricsToFile(filePath, lyrics)
+                                if (filePath.startsWith("content://")) {
+                                    val uri = Uri.parse(filePath)
+                                    val tempPath = copyUriToTemp(uri, ".flac")
+                                        ?: return@withContext errorJson("Failed to copy SAF file to temp")
+                                    try {
+                                        val raw = Gobackend.embedLyricsToFile(tempPath, lyrics)
+                                        val obj = JSONObject(raw)
+                                        if (!obj.optBoolean("success", false)) {
+                                            return@withContext raw
+                                        }
+
+                                        if (!writeUriFromPath(uri, tempPath)) {
+                                            return@withContext errorJson("Failed to write embedded lyrics back to SAF file")
+                                        }
+
+                                        obj.put("file_path", filePath)
+                                        obj.toString()
+                                    } catch (e: Exception) {
+                                        errorJson("Failed to embed lyrics to SAF file: ${e.message}")
+                                    } finally {
+                                        try {
+                                            File(tempPath).delete()
+                                        } catch (_: Exception) {}
+                                    }
+                                } else {
+                                    Gobackend.embedLyricsToFile(filePath, lyrics)
+                                }
                             }
                             result.success(response)
                         }

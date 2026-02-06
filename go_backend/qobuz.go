@@ -380,6 +380,42 @@ func decodeXOR(data []byte) string {
 	return string(result)
 }
 
+func extractQobuzDownloadURLFromBody(body []byte) (string, error) {
+	var raw map[string]any
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return "", fmt.Errorf("invalid JSON: %v", err)
+	}
+
+	if errMsg, ok := raw["error"].(string); ok && strings.TrimSpace(errMsg) != "" {
+		return "", fmt.Errorf("%s", errMsg)
+	}
+
+	if success, ok := raw["success"].(bool); ok && !success {
+		if msg, ok := raw["message"].(string); ok && strings.TrimSpace(msg) != "" {
+			return "", fmt.Errorf("%s", msg)
+		}
+		return "", fmt.Errorf("api returned success=false")
+	}
+
+	if urlVal, ok := raw["url"].(string); ok && strings.TrimSpace(urlVal) != "" {
+		return strings.TrimSpace(urlVal), nil
+	}
+	if linkVal, ok := raw["link"].(string); ok && strings.TrimSpace(linkVal) != "" {
+		return strings.TrimSpace(linkVal), nil
+	}
+
+	if data, ok := raw["data"].(map[string]any); ok {
+		if urlVal, ok := data["url"].(string); ok && strings.TrimSpace(urlVal) != "" {
+			return strings.TrimSpace(urlVal), nil
+		}
+		if linkVal, ok := data["link"].(string); ok && strings.TrimSpace(linkVal) != "" {
+			return strings.TrimSpace(linkVal), nil
+		}
+	}
+
+	return "", fmt.Errorf("no download URL in response")
+}
+
 func (q *QobuzDownloader) downloadFromJumo(trackID int64, quality string) (string, error) {
 	formatID := mapJumoQuality(quality)
 	region := "US"
@@ -810,27 +846,12 @@ func fetchQobuzURLWithRetry(api string, trackID int64, quality string, timeout t
 			return "", fmt.Errorf("received HTML instead of JSON")
 		}
 
-		var errorResp struct {
-			Error string `json:"error"`
+		urlVal, parseErr := extractQobuzDownloadURLFromBody(body)
+		if parseErr == nil {
+			return urlVal, nil
 		}
-		if json.Unmarshal(body, &errorResp) == nil && errorResp.Error != "" {
-			// API-level errors are usually not retryable (track not found, etc.)
-			return "", fmt.Errorf("%s", errorResp.Error)
-		}
-
-		var result struct {
-			URL string `json:"url"`
-		}
-		if err := json.Unmarshal(body, &result); err != nil {
-			lastErr = fmt.Errorf("invalid JSON: %v", err)
-			continue
-		}
-
-		if result.URL != "" {
-			return result.URL, nil
-		}
-
-		return "", fmt.Errorf("no download URL in response")
+		lastErr = parseErr
+		continue
 	}
 
 	if lastErr != nil {
@@ -926,7 +947,7 @@ func (q *QobuzDownloader) GetDownloadURL(trackID int64, quality string) (string,
 	return "", fmt.Errorf("all Qobuz APIs and Jumo fallback failed: %w", err)
 }
 
-func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath, itemID string) error {
+func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD int, itemID string) error {
 	ctx := context.Background()
 
 	if itemID != "" {
@@ -963,7 +984,7 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath, itemID string) e
 		SetItemBytesTotal(itemID, expectedSize)
 	}
 
-	out, err := os.Create(outputPath)
+	out, err := openOutputForWrite(outputPath, outputFD)
 	if err != nil {
 		return err
 	}
@@ -982,23 +1003,23 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath, itemID string) e
 	closeErr := out.Close()
 
 	if err != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to flush buffer: %w", flushErr)
 	}
 	if closeErr != nil {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to close file: %w", closeErr)
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		os.Remove(outputPath)
+		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 
@@ -1022,7 +1043,7 @@ type QobuzDownloadResult struct {
 func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	downloader := NewQobuzDownloader()
 
-	isSafOutput := strings.TrimSpace(req.OutputPath) != ""
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
 	if !isSafOutput {
 		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
 			return QobuzDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
@@ -1137,6 +1158,9 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	var outputPath string
 	if isSafOutput {
 		outputPath = strings.TrimSpace(req.OutputPath)
+		if outputPath == "" && isFDOutput(req.OutputFD) {
+			outputPath = fmt.Sprintf("/proc/self/fd/%d", req.OutputFD)
+		}
 	} else {
 		filename = sanitizeFilename(filename) + ".flac"
 		outputPath = filepath.Join(req.OutputDir, filename)
@@ -1180,7 +1204,7 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		)
 	}()
 
-	if err := downloader.DownloadFile(downloadURL, outputPath, req.ItemID); err != nil {
+	if err := downloader.DownloadFile(downloadURL, outputPath, req.OutputFD, req.ItemID); err != nil {
 		if errors.Is(err, ErrDownloadCancelled) {
 			return QobuzDownloadResult{}, ErrDownloadCancelled
 		}
@@ -1225,35 +1249,39 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		GoLog("[Qobuz] Using parallel-fetched cover (%d bytes)\n", len(coverData))
 	}
 
-	if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
-		fmt.Printf("Warning: failed to embed metadata: %v\n", err)
-	}
-
-	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
-		lyricsMode := req.LyricsMode
-		if lyricsMode == "" {
-			lyricsMode = "embed"
+	if isSafOutput {
+		GoLog("[Qobuz] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+	} else {
+		if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
+			fmt.Printf("Warning: failed to embed metadata: %v\n", err)
 		}
 
-		if !isSafOutput && (lyricsMode == "external" || lyricsMode == "both") {
-			GoLog("[Qobuz] Saving external LRC file...\n")
-			if lrcPath, lrcErr := SaveLRCFile(outputPath, parallelResult.LyricsLRC); lrcErr != nil {
-				GoLog("[Qobuz] Warning: failed to save LRC file: %v\n", lrcErr)
-			} else {
-				GoLog("[Qobuz] LRC file saved: %s\n", lrcPath)
+		if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+			lyricsMode := req.LyricsMode
+			if lyricsMode == "" {
+				lyricsMode = "embed"
 			}
-		}
 
-		if lyricsMode == "embed" || lyricsMode == "both" {
-			GoLog("[Qobuz] Embedding parallel-fetched lyrics (%d lines)...\n", len(parallelResult.LyricsData.Lines))
-			if embedErr := EmbedLyrics(outputPath, parallelResult.LyricsLRC); embedErr != nil {
-				GoLog("[Qobuz] Warning: failed to embed lyrics: %v\n", embedErr)
-			} else {
-				fmt.Println("[Qobuz] Lyrics embedded successfully")
+			if lyricsMode == "external" || lyricsMode == "both" {
+				GoLog("[Qobuz] Saving external LRC file...\n")
+				if lrcPath, lrcErr := SaveLRCFile(outputPath, parallelResult.LyricsLRC); lrcErr != nil {
+					GoLog("[Qobuz] Warning: failed to save LRC file: %v\n", lrcErr)
+				} else {
+					GoLog("[Qobuz] LRC file saved: %s\n", lrcPath)
+				}
 			}
+
+			if lyricsMode == "embed" || lyricsMode == "both" {
+				GoLog("[Qobuz] Embedding parallel-fetched lyrics (%d lines)...\n", len(parallelResult.LyricsData.Lines))
+				if embedErr := EmbedLyrics(outputPath, parallelResult.LyricsLRC); embedErr != nil {
+					GoLog("[Qobuz] Warning: failed to embed lyrics: %v\n", embedErr)
+				} else {
+					fmt.Println("[Qobuz] Lyrics embedded successfully")
+				}
+			}
+		} else if req.EmbedLyrics {
+			fmt.Println("[Qobuz] No lyrics available from parallel fetch")
 		}
-	} else if req.EmbedLyrics {
-		fmt.Println("[Qobuz] No lyrics available from parallel fetch")
 	}
 
 	if !isSafOutput {

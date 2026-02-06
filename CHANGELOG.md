@@ -25,6 +25,11 @@
 - Tidal/Qobuz/Amazon/Extension downloads use SAF-aware output when enabled
 - Post-processing hooks run for SAF content URIs (via temp file bridge)
 - File operations in Library/Queue/Track screens now SAF-aware (`open`, `exists`, `delete`, `stat`)
+- Android build tooling upgraded to Gradle 9.3.1 (wrapper)
+- Android build path validated with Java 25 (Gradle/Kotlin/assemble debug)
+- SAF tree picker flow in `MainActivity` migrated to Activity Result API (`registerForActivityResult`)
+- `MainActivity` host migrated to `FlutterFragmentActivity` for SAF picker compatibility
+- Legacy `startActivityForResult` / `onActivityResult` SAF picker path removed
 
 ### Fixed
 
@@ -33,6 +38,9 @@
 - SAF download fallback: retry in app-private storage when SAF write fails
 - Tidal DASH manifest writing when output path is a file descriptor (no invalid `.m4a` path)
 - External LRC output in SAF mode
+- Restored old-device renderer fallback while using `FlutterFragmentActivity` by injecting shell args from a custom `FlutterFragment` (`--enable-impeller=false` on problematic devices)
+- Preserved Flutter fragment creation behavior (cached engine, engine group, new engine) while adding Impeller fallback support
+- SAF tree picker result now consistently returns `tree_uri` payload with persisted URI permission handling
 
 ---
 

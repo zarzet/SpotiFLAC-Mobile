@@ -10,12 +10,28 @@ import 'package:spotiflac_android/utils/logger.dart';
 final _log = AppLogger('FFmpeg');
 
 class FFmpegService {
+  static String _buildOutputPath(String inputPath, String extension) {
+    final normalizedExt = extension.startsWith('.') ? extension : '.$extension';
+    final inputFile = File(inputPath);
+    final dir = inputFile.parent.path;
+    final filename = inputFile.uri.pathSegments.last;
+    final dotIndex = filename.lastIndexOf('.');
+    final baseName = dotIndex > 0 ? filename.substring(0, dotIndex) : filename;
+    var outputPath = '$dir${Platform.pathSeparator}$baseName$normalizedExt';
+
+    if (outputPath == inputPath) {
+      outputPath =
+          '$dir${Platform.pathSeparator}${baseName}_converted$normalizedExt';
+    }
+    return outputPath;
+  }
+
   static Future<FFmpegResult> _execute(String command) async {
     try {
       final session = await FFmpegKit.execute(command);
       final returnCode = await session.getReturnCode();
       final output = await session.getOutput() ?? '';
-      
+
       return FFmpegResult(
         success: ReturnCode.isSuccess(returnCode),
         returnCode: returnCode?.getValue() ?? -1,
@@ -28,7 +44,7 @@ class FFmpegService {
   }
 
   static Future<String?> convertM4aToFlac(String inputPath) async {
-    final outputPath = inputPath.replaceAll('.m4a', '.flac');
+    final outputPath = _buildOutputPath(inputPath, '.flac');
 
     final command =
         '-i "$inputPath" -c:a flac -compression_level 8 "$outputPath" -y';
@@ -59,10 +75,10 @@ class FFmpegService {
         bitrateValue = '${parts[1]}k';
       }
     }
-    
+
     final extension = format == 'opus' ? '.opus' : '.mp3';
-    final outputPath = inputPath.replaceAll('.m4a', extension);
-    
+    final outputPath = _buildOutputPath(inputPath, extension);
+
     String command;
     if (format == 'opus') {
       command =
@@ -92,7 +108,7 @@ class FFmpegService {
     String bitrate = '320k',
     bool deleteOriginal = true,
   }) async {
-    final outputPath = inputPath.replaceAll('.flac', '.mp3');
+    final outputPath = _buildOutputPath(inputPath, '.mp3');
 
     final command =
         '-i "$inputPath" -codec:a libmp3lame -b:a $bitrate -map 0:a -map_metadata 0 -id3v2_version 3 "$outputPath" -y';
@@ -117,7 +133,7 @@ class FFmpegService {
     String bitrate = '128k',
     bool deleteOriginal = true,
   }) async {
-    final outputPath = inputPath.replaceAll('.flac', '.opus');
+    final outputPath = _buildOutputPath(inputPath, '.opus');
 
     final command =
         '-i "$inputPath" -codec:a libopus -b:a $bitrate -vbr on -compression_level 10 -map 0:a -map_metadata 0 "$outputPath" -y';
@@ -150,15 +166,27 @@ class FFmpegService {
         bitrateValue = '${parts[1]}k';
       }
     }
-    
+
     switch (format.toLowerCase()) {
       case 'opus':
-        final opusBitrate = bitrate?.startsWith('opus_') == true ? bitrateValue : '128k';
-        return convertFlacToOpus(inputPath, bitrate: opusBitrate, deleteOriginal: deleteOriginal);
+        final opusBitrate = bitrate?.startsWith('opus_') == true
+            ? bitrateValue
+            : '128k';
+        return convertFlacToOpus(
+          inputPath,
+          bitrate: opusBitrate,
+          deleteOriginal: deleteOriginal,
+        );
       case 'mp3':
       default:
-        final mp3Bitrate = bitrate?.startsWith('mp3_') == true ? bitrateValue : '320k';
-        return convertFlacToMp3(inputPath, bitrate: mp3Bitrate, deleteOriginal: deleteOriginal);
+        final mp3Bitrate = bitrate?.startsWith('mp3_') == true
+            ? bitrateValue
+            : '320k';
+        return convertFlacToMp3(
+          inputPath,
+          bitrate: mp3Bitrate,
+          deleteOriginal: deleteOriginal,
+        );
     }
   }
 
@@ -168,8 +196,10 @@ class FFmpegService {
     String bitrate = '256k',
   }) async {
     final dir = File(inputPath).parent.path;
-    final baseName =
-        inputPath.split(Platform.pathSeparator).last.replaceAll('.flac', '');
+    final baseName = inputPath
+        .split(Platform.pathSeparator)
+        .last
+        .replaceAll('.flac', '');
     final outputDir = '$dir${Platform.pathSeparator}M4A';
 
     await Directory(outputDir).create(recursive: true);
@@ -220,16 +250,16 @@ class FFmpegService {
     final tempDir = await getTemporaryDirectory();
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
     final tempOutput = '${tempDir.path}/temp_embed_$uniqueId.flac';
-    
+
     final StringBuffer cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$flacPath" ');
-    
+
     if (coverPath != null) {
       cmdBuffer.write('-i "$coverPath" ');
     }
-    
+
     cmdBuffer.write('-map 0:a ');
-    
+
     if (coverPath != null) {
       cmdBuffer.write('-map 1:0 ');
       cmdBuffer.write('-c:v copy ');
@@ -237,18 +267,18 @@ class FFmpegService {
       cmdBuffer.write('-metadata:s:v title="Album cover" ');
       cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
     }
-    
+
     cmdBuffer.write('-c:a copy ');
-    
+
     if (metadata != null) {
       metadata.forEach((key, value) {
         final sanitizedValue = value.replaceAll('"', '\\"');
         cmdBuffer.write('-metadata $key="$sanitizedValue" ');
       });
     }
-    
+
     cmdBuffer.write('"$tempOutput" -y');
-    
+
     final command = cmdBuffer.toString();
     _log.d('Executing FFmpeg command: $command');
 
@@ -258,20 +288,19 @@ class FFmpegService {
       try {
         final tempFile = File(tempOutput);
         final originalFile = File(flacPath);
-        
-        if (await tempFile.exists()) {
-             if (await originalFile.exists()) {
-               await originalFile.delete();
-             }
-             await tempFile.copy(flacPath);
-             await tempFile.delete();
-             
-             return flacPath;
-        } else {
-             _log.e('Temp output file not found: $tempOutput');
-             return null;
-        }
 
+        if (await tempFile.exists()) {
+          if (await originalFile.exists()) {
+            await originalFile.delete();
+          }
+          await tempFile.copy(flacPath);
+          await tempFile.delete();
+
+          return flacPath;
+        } else {
+          _log.e('Temp output file not found: $tempOutput');
+          return null;
+        }
       } catch (e) {
         _log.e('Failed to replace file after metadata embed: $e');
         return null;
@@ -299,16 +328,16 @@ class FFmpegService {
     final tempDir = await getTemporaryDirectory();
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
     final tempOutput = '${tempDir.path}/temp_embed_$uniqueId.mp3';
-    
+
     final StringBuffer cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$mp3Path" ');
-    
+
     if (coverPath != null) {
       cmdBuffer.write('-i "$coverPath" ');
     }
-    
+
     cmdBuffer.write('-map 0:a ');
-    
+
     if (coverPath != null) {
       cmdBuffer.write('-map 1:0 ');
       cmdBuffer.write('-c:v:0 copy ');
@@ -316,9 +345,9 @@ class FFmpegService {
       cmdBuffer.write('-metadata:s:v title="Album cover" ');
       cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
     }
-    
+
     cmdBuffer.write('-c:a copy ');
-    
+
     if (metadata != null) {
       final id3Metadata = _convertToId3Tags(metadata);
       id3Metadata.forEach((key, value) {
@@ -326,9 +355,9 @@ class FFmpegService {
         cmdBuffer.write('-metadata $key="$sanitizedValue" ');
       });
     }
-    
+
     cmdBuffer.write('-id3v2_version 3 "$tempOutput" -y');
-    
+
     final command = cmdBuffer.toString();
     _log.d('Executing FFmpeg MP3 embed command: $command');
 
@@ -338,21 +367,20 @@ class FFmpegService {
       try {
         final tempFile = File(tempOutput);
         final originalFile = File(mp3Path);
-        
-        if (await tempFile.exists()) {
-             if (await originalFile.exists()) {
-               await originalFile.delete();
-             }
-             await tempFile.copy(mp3Path);
-             await tempFile.delete();
-             
-             _log.d('MP3 metadata embedded successfully');
-             return mp3Path;
-        } else {
-             _log.e('Temp MP3 output file not found: $tempOutput');
-             return null;
-        }
 
+        if (await tempFile.exists()) {
+          if (await originalFile.exists()) {
+            await originalFile.delete();
+          }
+          await tempFile.copy(mp3Path);
+          await tempFile.delete();
+
+          _log.d('MP3 metadata embedded successfully');
+          return mp3Path;
+        } else {
+          _log.e('Temp MP3 output file not found: $tempOutput');
+          return null;
+        }
       } catch (e) {
         _log.e('Failed to replace MP3 file after metadata embed: $e');
         return null;
@@ -380,26 +408,28 @@ class FFmpegService {
     final tempDir = await getTemporaryDirectory();
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
     final tempOutput = '${tempDir.path}/temp_embed_$uniqueId.opus';
-    
+
     final StringBuffer cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$opusPath" ');
     cmdBuffer.write('-map 0:a ');
     cmdBuffer.write('-c:a copy ');
-    
+
     if (metadata != null) {
       metadata.forEach((key, value) {
         final sanitizedValue = value.replaceAll('"', '\\"');
         cmdBuffer.write('-metadata $key="$sanitizedValue" ');
       });
     }
-    
+
     if (coverPath != null) {
       try {
         final pictureBlock = await _createMetadataBlockPicture(coverPath);
         if (pictureBlock != null) {
           final escapedBlock = pictureBlock.replaceAll('"', '\\"');
           cmdBuffer.write('-metadata METADATA_BLOCK_PICTURE="$escapedBlock" ');
-          _log.d('Created METADATA_BLOCK_PICTURE for Opus (${pictureBlock.length} chars)');
+          _log.d(
+            'Created METADATA_BLOCK_PICTURE for Opus (${pictureBlock.length} chars)',
+          );
         } else {
           _log.w('Failed to create METADATA_BLOCK_PICTURE, skipping cover');
         }
@@ -407,9 +437,9 @@ class FFmpegService {
         _log.e('Error creating METADATA_BLOCK_PICTURE: $e');
       }
     }
-    
+
     cmdBuffer.write('"$tempOutput" -y');
-    
+
     final command = cmdBuffer.toString();
     _log.d('Executing FFmpeg Opus embed command');
 
@@ -419,21 +449,20 @@ class FFmpegService {
       try {
         final tempFile = File(tempOutput);
         final originalFile = File(opusPath);
-        
-        if (await tempFile.exists()) {
-             if (await originalFile.exists()) {
-               await originalFile.delete();
-             }
-             await tempFile.copy(opusPath);
-             await tempFile.delete();
-             
-             _log.d('Opus metadata embedded successfully');
-             return opusPath;
-        } else {
-             _log.e('Temp Opus output file not found: $tempOutput');
-             return null;
-        }
 
+        if (await tempFile.exists()) {
+          if (await originalFile.exists()) {
+            await originalFile.delete();
+          }
+          await tempFile.copy(opusPath);
+          await tempFile.delete();
+
+          _log.d('Opus metadata embedded successfully');
+          return opusPath;
+        } else {
+          _log.e('Temp Opus output file not found: $tempOutput');
+          return null;
+        }
       } catch (e) {
         _log.e('Failed to replace Opus file after metadata embed: $e');
         return null;
@@ -460,81 +489,94 @@ class FFmpegService {
         _log.e('Cover image not found: $imagePath');
         return null;
       }
-      
+
       final imageData = await file.readAsBytes();
-      
+
       String mimeType;
       if (imagePath.toLowerCase().endsWith('.png')) {
         mimeType = 'image/png';
-      } else if (imagePath.toLowerCase().endsWith('.jpg') || 
-                 imagePath.toLowerCase().endsWith('.jpeg')) {
+      } else if (imagePath.toLowerCase().endsWith('.jpg') ||
+          imagePath.toLowerCase().endsWith('.jpeg')) {
         mimeType = 'image/jpeg';
       } else {
-        if (imageData.length >= 8 && 
-            imageData[0] == 0x89 && imageData[1] == 0x50 && 
-            imageData[2] == 0x4E && imageData[3] == 0x47) {
+        if (imageData.length >= 8 &&
+            imageData[0] == 0x89 &&
+            imageData[1] == 0x50 &&
+            imageData[2] == 0x4E &&
+            imageData[3] == 0x47) {
           mimeType = 'image/png';
-        } else if (imageData.length >= 2 && 
-                   imageData[0] == 0xFF && imageData[1] == 0xD8) {
+        } else if (imageData.length >= 2 &&
+            imageData[0] == 0xFF &&
+            imageData[1] == 0xD8) {
           mimeType = 'image/jpeg';
         } else {
           mimeType = 'image/jpeg';
         }
       }
-      
+
       final mimeBytes = utf8.encode(mimeType);
       const description = '';
       final descBytes = utf8.encode(description);
-      
-      final blockSize = 4 + 4 + mimeBytes.length + 4 + descBytes.length + 
-                        4 + 4 + 4 + 4 + 4 + imageData.length;
-      
+
+      final blockSize =
+          4 +
+          4 +
+          mimeBytes.length +
+          4 +
+          descBytes.length +
+          4 +
+          4 +
+          4 +
+          4 +
+          4 +
+          imageData.length;
+
       final buffer = ByteData(blockSize);
       var offset = 0;
-      
+
       buffer.setUint32(offset, 3, Endian.big);
       offset += 4;
-      
+
       buffer.setUint32(offset, mimeBytes.length, Endian.big);
       offset += 4;
-      
+
       final blockBytes = Uint8List(blockSize);
       blockBytes.setRange(0, offset, buffer.buffer.asUint8List());
       blockBytes.setRange(offset, offset + mimeBytes.length, mimeBytes);
       offset += mimeBytes.length;
-      
+
       final tempBuffer = ByteData(4);
       tempBuffer.setUint32(0, descBytes.length, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       blockBytes.setRange(offset, offset + descBytes.length, descBytes);
       offset += descBytes.length;
-      
+
       tempBuffer.setUint32(0, 0, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       tempBuffer.setUint32(0, 0, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       tempBuffer.setUint32(0, 0, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       tempBuffer.setUint32(0, 0, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       tempBuffer.setUint32(0, imageData.length, Endian.big);
       blockBytes.setRange(offset, offset + 4, tempBuffer.buffer.asUint8List());
       offset += 4;
-      
+
       blockBytes.setRange(offset, offset + imageData.length, imageData);
-      
+
       final base64String = base64Encode(blockBytes);
-      
+
       return base64String;
     } catch (e) {
       _log.e('Error creating METADATA_BLOCK_PICTURE: $e');
@@ -542,13 +584,15 @@ class FFmpegService {
     }
   }
 
-  static Map<String, String> _convertToId3Tags(Map<String, String> vorbisMetadata) {
+  static Map<String, String> _convertToId3Tags(
+    Map<String, String> vorbisMetadata,
+  ) {
     final id3Map = <String, String>{};
-    
+
     for (final entry in vorbisMetadata.entries) {
       final key = entry.key.toUpperCase();
       final value = entry.value;
-      
+
       switch (key) {
         case 'TITLE':
           id3Map['title'] = value;
@@ -585,7 +629,7 @@ class FFmpegService {
           id3Map[key.toLowerCase()] = value;
       }
     }
-    
+
     return id3Map;
   }
 }
