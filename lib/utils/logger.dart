@@ -46,10 +46,11 @@ class LogBuffer extends ChangeNotifier {
   LogBuffer._internal();
 
   static const int maxEntries = 500;
+  static const Duration _goLogPollingInterval = Duration(milliseconds: 800);
   final Queue<LogEntry> _entries = Queue<LogEntry>();
   Timer? _goLogTimer;
   int _lastGoLogIndex = 0;
-  
+
   static bool _loggingEnabled = false;
   static bool get loggingEnabled => _loggingEnabled;
   static set loggingEnabled(bool value) {
@@ -68,7 +69,7 @@ class LogBuffer extends ChangeNotifier {
     if (!_loggingEnabled && entry.level != 'ERROR' && entry.level != 'FATAL') {
       return;
     }
-    
+
     if (_entries.length >= maxEntries) {
       _entries.removeFirst();
     }
@@ -78,7 +79,7 @@ class LogBuffer extends ChangeNotifier {
 
   void startGoLogPolling() {
     _goLogTimer?.cancel();
-    _goLogTimer = Timer.periodic(const Duration(milliseconds: 500), (_) async {
+    _goLogTimer = Timer.periodic(_goLogPollingInterval, (_) async {
       await _fetchGoLogs();
     });
   }
@@ -93,13 +94,13 @@ class LogBuffer extends ChangeNotifier {
       final result = await PlatformBridge.getGoLogsSince(_lastGoLogIndex);
       final logs = result['logs'] as List<dynamic>? ?? [];
       final nextIndex = result['next_index'] as int? ?? _lastGoLogIndex;
-      
+
       for (final log in logs) {
         final timestamp = log['timestamp'] as String? ?? '';
         final level = log['level'] as String? ?? 'INFO';
         final tag = log['tag'] as String? ?? 'Go';
         final message = log['message'] as String? ?? '';
-        
+
         DateTime parsedTime = DateTime.now();
         if (timestamp.isNotEmpty) {
           try {
@@ -107,25 +108,29 @@ class LogBuffer extends ChangeNotifier {
             if (parts.length >= 3) {
               final secParts = parts[2].split('.');
               parsedTime = DateTime(
-                parsedTime.year, parsedTime.month, parsedTime.day,
-                int.parse(parts[0]), int.parse(parts[1]),
+                parsedTime.year,
+                parsedTime.month,
+                parsedTime.day,
+                int.parse(parts[0]),
+                int.parse(parts[1]),
                 int.parse(secParts[0]),
                 secParts.length > 1 ? int.parse(secParts[1]) : 0,
               );
             }
-          } catch (_) {
-          }
+          } catch (_) {}
         }
-        
-        add(LogEntry(
-          timestamp: parsedTime,
-          level: level,
-          tag: tag,
-          message: message,
-          isFromGo: true,
-        ));
+
+        add(
+          LogEntry(
+            timestamp: parsedTime,
+            level: level,
+            tag: tag,
+            message: message,
+            isFromGo: true,
+          ),
+        );
       }
-      
+
       _lastGoLogIndex = nextIndex;
     } catch (e) {
       if (kDebugMode) {
@@ -156,27 +161,31 @@ class LogBuffer extends ChangeNotifier {
 
   Future<String> exportWithDeviceInfo() async {
     final buffer = StringBuffer();
-    
+
     buffer.writeln('=' * 60);
     buffer.writeln('SPOTIFLAC LOG EXPORT');
     buffer.writeln('=' * 60);
     buffer.writeln();
-    
+
     buffer.writeln('--- App Information ---');
-    buffer.writeln('App Version: ${AppInfo.version} (Build ${AppInfo.buildNumber})');
+    buffer.writeln(
+      'App Version: ${AppInfo.version} (Build ${AppInfo.buildNumber})',
+    );
     buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
     buffer.writeln();
-    
+
     buffer.writeln('--- Device Information ---');
     try {
       final deviceInfo = DeviceInfoPlugin();
-      
+
       if (Platform.isAndroid) {
         final android = await deviceInfo.androidInfo;
         buffer.writeln('Platform: Android');
         buffer.writeln('Device: ${android.manufacturer} ${android.model}');
         buffer.writeln('Brand: ${android.brand}');
-        buffer.writeln('Android Version: ${android.version.release} (SDK ${android.version.sdkInt})');
+        buffer.writeln(
+          'Android Version: ${android.version.release} (SDK ${android.version.sdkInt})',
+        );
         buffer.writeln('Device ID: ${android.id}');
         buffer.writeln('Hardware: ${android.hardware}');
         buffer.writeln('Product: ${android.product}');
@@ -196,16 +205,16 @@ class LogBuffer extends ChangeNotifier {
       buffer.writeln('Failed to get device info: $e');
     }
     buffer.writeln();
-    
+
     buffer.writeln('--- Log Summary ---');
     buffer.writeln('Total Entries: ${_entries.length}');
-    
+
     int errorCount = 0;
     int warnCount = 0;
     int infoCount = 0;
     int debugCount = 0;
     int goCount = 0;
-    
+
     for (final entry in _entries) {
       switch (entry.level) {
         case 'ERROR':
@@ -224,23 +233,23 @@ class LogBuffer extends ChangeNotifier {
       }
       if (entry.isFromGo) goCount++;
     }
-    
+
     buffer.writeln('Errors: $errorCount');
     buffer.writeln('Warnings: $warnCount');
     buffer.writeln('Info: $infoCount');
     buffer.writeln('Debug: $debugCount');
     buffer.writeln('From Go Backend: $goCount');
     buffer.writeln();
-    
+
     buffer.writeln('=' * 60);
     buffer.writeln('LOG ENTRIES');
     buffer.writeln('=' * 60);
     buffer.writeln();
-    
+
     for (final entry in _entries) {
       buffer.writeln(entry.toString());
     }
-    
+
     return buffer.toString();
   }
 
@@ -280,13 +289,15 @@ class BufferedOutput extends LogOutput {
 
     final level = _levelToString(event.level);
     final message = event.lines.join('\n');
-    
-    LogBuffer().add(LogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      tag: tag,
-      message: message,
-    ));
+
+    LogBuffer().add(
+      LogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        tag: tag,
+        message: message,
+      ),
+    );
   }
 
   String _levelToString(Level level) {
@@ -336,13 +347,15 @@ class AppLogger {
   }
 
   void _addToBuffer(String level, String message, {String? error}) {
-    LogBuffer().add(LogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      tag: _tag,
-      message: message,
-      error: error,
-    ));
+    LogBuffer().add(
+      LogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        tag: _tag,
+        message: message,
+        error: error,
+      ),
+    );
   }
 
   void d(String message) {

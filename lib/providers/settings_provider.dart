@@ -10,10 +10,14 @@ const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
 const _currentMigrationVersion = 2;
 const _spotifyClientSecretKey = 'spotify_client_secret';
+final _log = AppLogger('SettingsProvider');
 
 class SettingsNotifier extends Notifier<AppSettings> {
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  bool _isSavingSettings = false;
+  bool _saveQueued = false;
+  String? _pendingSettingsJson;
 
   @override
   AppSettings build() {
@@ -26,27 +30,27 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final json = prefs.getString(_settingsKey);
     if (json != null) {
       state = AppSettings.fromJson(jsonDecode(json));
-      
+
       await _runMigrations(prefs);
     }
 
     await _loadSpotifyClientSecret(prefs);
 
     _applySpotifyCredentials();
-    
+
     LogBuffer.loggingEnabled = state.enableLogging;
   }
 
   Future<void> _runMigrations(SharedPreferences prefs) async {
     final lastMigration = prefs.getInt(_migrationVersionKey) ?? 0;
-    
+
     if (lastMigration < 1) {
       if (!state.useCustomSpotifyCredentials) {
         state = state.copyWith(metadataSource: 'deezer');
         await _saveSettings();
       }
     }
-    
+
     if (lastMigration < _currentMigrationVersion) {
       if (state.downloadTreeUri.isNotEmpty && state.storageMode != 'saf') {
         state = state.copyWith(storageMode: 'saf');
@@ -61,20 +65,43 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   Future<void> _saveSettings() async {
-    final prefs = await _prefs;
-    final settingsToSave = state.copyWith(
-      spotifyClientSecret: '',
-    );
-    await prefs.setString(_settingsKey, jsonEncode(settingsToSave.toJson()));
+    final settingsToSave = state.copyWith(spotifyClientSecret: '');
+    _pendingSettingsJson = jsonEncode(settingsToSave.toJson());
+
+    if (_isSavingSettings) {
+      _saveQueued = true;
+      return;
+    }
+
+    _isSavingSettings = true;
+    try {
+      final prefs = await _prefs;
+      do {
+        final jsonToWrite = _pendingSettingsJson;
+        _saveQueued = false;
+        if (jsonToWrite != null) {
+          await prefs.setString(_settingsKey, jsonToWrite);
+        }
+      } while (_saveQueued);
+    } catch (e) {
+      _log.e('Failed to save settings: $e');
+    } finally {
+      _isSavingSettings = false;
+    }
   }
 
   Future<void> _loadSpotifyClientSecret(SharedPreferences prefs) async {
-    final storedSecret = await _secureStorage.read(key: _spotifyClientSecretKey);
+    final storedSecret = await _secureStorage.read(
+      key: _spotifyClientSecretKey,
+    );
     final prefsSecret = state.spotifyClientSecret;
 
     if ((storedSecret == null || storedSecret.isEmpty) &&
         prefsSecret.isNotEmpty) {
-      await _secureStorage.write(key: _spotifyClientSecretKey, value: prefsSecret);
+      await _secureStorage.write(
+        key: _spotifyClientSecretKey,
+        value: prefsSecret,
+      );
     }
 
     final effectiveSecret = (storedSecret != null && storedSecret.isNotEmpty)
@@ -99,7 +126,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   Future<void> _applySpotifyCredentials() async {
-    if (state.spotifyClientId.isNotEmpty && 
+    if (state.spotifyClientId.isNotEmpty &&
         state.spotifyClientSecret.isNotEmpty) {
       await PlatformBridge.setSpotifyCredentials(
         state.spotifyClientId,
@@ -225,7 +252,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
-  Future<void> setSpotifyCredentials(String clientId, String clientSecret) async {
+  Future<void> setSpotifyCredentials(
+    String clientId,
+    String clientSecret,
+  ) async {
     state = state.copyWith(
       spotifyClientId: clientId,
       spotifyClientSecret: clientSecret,
@@ -236,10 +266,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   Future<void> clearSpotifyCredentials() async {
-    state = state.copyWith(
-      spotifyClientId: '',
-      spotifyClientSecret: '',
-    );
+    state = state.copyWith(spotifyClientId: '', spotifyClientSecret: '');
     await _storeSpotifyClientSecret('');
     _saveSettings();
     _applySpotifyCredentials();
@@ -301,7 +328,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
-void setUseAllFilesAccess(bool enabled) {
+  void setUseAllFilesAccess(bool enabled) {
     state = state.copyWith(useAllFilesAccess: enabled);
     _saveSettings();
   }

@@ -82,9 +82,9 @@ class _MainShellState extends ConsumerState<MainShell> {
         }
       }
     }
-    
+
     if (!mounted) return;
-    
+
     Navigator.of(context).popUntil((route) => route.isFirst);
 
     if (_currentIndex != 0) {
@@ -181,10 +181,14 @@ class _MainShellState extends ConsumerState<MainShell> {
                 final treeUri = result['tree_uri'] as String? ?? '';
                 final displayName = result['display_name'] as String? ?? '';
                 if (treeUri.isNotEmpty) {
-                  ref.read(settingsProvider.notifier).setDownloadTreeUri(
-                    treeUri,
-                    displayName: displayName.isNotEmpty ? displayName : treeUri,
-                  );
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setDownloadTreeUri(
+                        treeUri,
+                        displayName: displayName.isNotEmpty
+                            ? displayName
+                            : treeUri,
+                      );
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -280,7 +284,16 @@ class _MainShellState extends ConsumerState<MainShell> {
     final queueState = ref.watch(
       downloadQueueProvider.select((s) => s.queuedCount),
     );
-    final trackState = ref.watch(trackProvider);
+    final trackHasSearchText = ref.watch(
+      trackProvider.select((s) => s.hasSearchText),
+    );
+    final trackHasContent = ref.watch(
+      trackProvider.select((s) => s.hasContent),
+    );
+    final trackIsLoading = ref.watch(trackProvider.select((s) => s.isLoading));
+    final trackIsShowingRecentAccess = ref.watch(
+      trackProvider.select((s) => s.isShowingRecentAccess),
+    );
     final showStore = ref.watch(
       settingsProvider.select((s) => s.showExtensionStore),
     );
@@ -292,10 +305,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final canPop =
         _currentIndex == 0 &&
-        !trackState.hasSearchText &&
-        !trackState.hasContent &&
-        !trackState.isLoading &&
-        !trackState.isShowingRecentAccess &&
+        !trackHasSearchText &&
+        !trackHasContent &&
+        !trackIsLoading &&
+        !trackIsShowingRecentAccess &&
         !isKeyboardVisible;
 
     final tabs = <Widget>[

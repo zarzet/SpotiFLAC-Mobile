@@ -226,8 +226,11 @@ class DownloadHistoryState {
 }
 
 class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
+  static const int _safRepairBatchSize = 20;
+  static const int _safRepairMaxPerLaunch = 60;
   final HistoryDatabase _db = HistoryDatabase.instance;
   bool _isLoaded = false;
+  bool _isSafRepairInProgress = false;
 
   @override
   DownloadHistoryState build() {
@@ -267,8 +270,14 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
 
       if (Platform.isAndroid) {
         Future.microtask(() async {
-          await _repairMissingSafEntries(items);
+          await _repairMissingSafEntries(
+            items,
+            maxItems: _safRepairMaxPerLaunch,
+          );
+          await cleanupOrphanedDownloads();
         });
+      } else {
+        Future.microtask(() => cleanupOrphanedDownloads());
       }
     } catch (e, stack) {
       _historyLog.e('Failed to load history from database: $e', e, stack);
@@ -285,10 +294,16 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     return '';
   }
 
-  Future<void> _repairMissingSafEntries(List<DownloadHistoryItem> items) async {
-    final updatedItems = [...items];
-    var changed = false;
+  Future<void> _repairMissingSafEntries(
+    List<DownloadHistoryItem> items, {
+    required int maxItems,
+  }) async {
+    if (_isSafRepairInProgress || items.isEmpty) {
+      return;
+    }
+    _isSafRepairInProgress = true;
 
+    final candidateIndexes = <int>[];
     for (var i = 0; i < items.length; i++) {
       final item = items[i];
       if (item.storageMode != 'saf') continue;
@@ -299,46 +314,85 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       if (item.filePath.isEmpty || !isContentUri(item.filePath)) {
         continue;
       }
-
-      final exists = await fileExists(item.filePath);
-      if (exists) continue;
-
-      final fallbackName = item.safFileName ?? _fileNameFromUri(item.filePath);
-      if (fallbackName.isEmpty) {
-        _historyLog.w('Missing SAF filename for history item: ${item.id}');
-        continue;
-      }
-
-      try {
-        final resolved = await PlatformBridge.resolveSafFile(
-          treeUri: item.downloadTreeUri!,
-          relativeDir: item.safRelativeDir ?? '',
-          fileName: fallbackName,
-        );
-        final newUri = resolved['uri'] as String? ?? '';
-        if (newUri.isEmpty) continue;
-
-        final newRelativeDir = resolved['relative_dir'] as String?;
-        final updated = item.copyWith(
-          filePath: newUri,
-          safRelativeDir: (newRelativeDir != null && newRelativeDir.isNotEmpty)
-              ? newRelativeDir
-              : item.safRelativeDir,
-          safFileName: fallbackName,
-          safRepaired: true,
-        );
-
-        updatedItems[i] = updated;
-        changed = true;
-        await _db.upsert(updated.toJson());
-        _historyLog.i('Repaired SAF URI for history item: ${item.id}');
-      } catch (e) {
-        _historyLog.w('Failed to repair SAF URI: $e');
-      }
+      candidateIndexes.add(i);
+      if (candidateIndexes.length >= maxItems) break;
     }
 
-    if (changed) {
-      state = state.copyWith(items: updatedItems);
+    if (candidateIndexes.isEmpty) {
+      _isSafRepairInProgress = false;
+      return;
+    }
+
+    final updatedItems = [...items];
+    var changed = false;
+    var repairedCount = 0;
+    var verifiedCount = 0;
+
+    try {
+      for (var c = 0; c < candidateIndexes.length; c++) {
+        final i = candidateIndexes[c];
+        final item = items[i];
+
+        final exists = await fileExists(item.filePath);
+        if (exists) {
+          final verified = item.copyWith(
+            safRepaired: true,
+            safFileName: item.safFileName ?? _fileNameFromUri(item.filePath),
+          );
+          updatedItems[i] = verified;
+          changed = true;
+          verifiedCount++;
+          await _db.upsert(verified.toJson());
+        } else {
+          final fallbackName =
+              item.safFileName ?? _fileNameFromUri(item.filePath);
+          if (fallbackName.isEmpty) {
+            _historyLog.w('Missing SAF filename for history item: ${item.id}');
+            continue;
+          }
+
+          try {
+            final resolved = await PlatformBridge.resolveSafFile(
+              treeUri: item.downloadTreeUri!,
+              relativeDir: item.safRelativeDir ?? '',
+              fileName: fallbackName,
+            );
+            final newUri = resolved['uri'] as String? ?? '';
+            if (newUri.isEmpty) continue;
+
+            final newRelativeDir = resolved['relative_dir'] as String?;
+            final updated = item.copyWith(
+              filePath: newUri,
+              safRelativeDir:
+                  (newRelativeDir != null && newRelativeDir.isNotEmpty)
+                  ? newRelativeDir
+                  : item.safRelativeDir,
+              safFileName: fallbackName,
+              safRepaired: true,
+            );
+
+            updatedItems[i] = updated;
+            changed = true;
+            repairedCount++;
+            await _db.upsert(updated.toJson());
+          } catch (e) {
+            _historyLog.w('Failed to repair SAF URI: $e');
+          }
+        }
+
+        if ((c + 1) % _safRepairBatchSize == 0) {
+          await Future.delayed(const Duration(milliseconds: 16));
+        }
+      }
+
+      if (changed) {
+        state = state.copyWith(items: updatedItems);
+        _historyLog.i(
+          'SAF repair pass: verified=$verifiedCount, repaired=$repairedCount, checked=${candidateIndexes.length}',
+        );
+      }
+    } finally {
+      _isSafRepairInProgress = false;
     }
   }
 
@@ -412,18 +466,18 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
   /// Returns the number of orphaned entries removed
   Future<int> cleanupOrphanedDownloads() async {
     _historyLog.i('Starting orphaned downloads cleanup...');
-    
+
     final entries = await _db.getAllEntriesWithPaths();
     final orphanedIds = <String>[];
-    
+
     for (final entry in entries) {
       final id = entry['id'] as String;
       final filePath = entry['file_path'] as String?;
-      
+
       if (filePath == null || filePath.isEmpty) continue;
-      
+
       bool exists = false;
-      
+
       if (filePath.startsWith('content://')) {
         // SAF path - check via platform bridge
         try {
@@ -436,31 +490,33 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         // Regular file path
         exists = File(filePath).existsSync();
       }
-      
+
       if (!exists) {
         orphanedIds.add(id);
         _historyLog.d('Found orphaned entry: $id ($filePath)');
       }
     }
-    
+
     if (orphanedIds.isEmpty) {
       _historyLog.i('No orphaned entries found');
       return 0;
     }
-    
+
     // Delete from database
     final deletedCount = await _db.deleteByIds(orphanedIds);
-    
+
     // Update in-memory state
     final orphanedSet = orphanedIds.toSet();
     state = state.copyWith(
-      items: state.items.where((item) => !orphanedSet.contains(item.id)).toList(),
+      items: state.items
+          .where((item) => !orphanedSet.contains(item.id))
+          .toList(),
     );
-    
+
     _historyLog.i('Cleaned up $deletedCount orphaned entries');
     return deletedCount;
   }
-  
+
   void clearHistory() {
     state = DownloadHistoryState();
     _db.clearAll().catchError((e) {
@@ -557,6 +613,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   int _downloadCount = 0;
   static const _cleanupInterval = 50;
   static const _queueStorageKey = 'download_queue';
+  static const _progressPollingInterval = Duration(milliseconds: 800);
   final NotificationService _notificationService = NotificationService();
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   int _totalQueuedAtStart = 0;
@@ -564,6 +621,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   int _failedInSession = 0;
   bool _isLoaded = false;
   final Set<String> _ensuredDirs = {};
+  int _progressPollingErrorCount = 0;
+  String? _lastServiceTrackName;
+  String? _lastServiceArtistName;
+  int _lastServicePercent = -1;
+  int _lastServiceQueueCount = -1;
+  DateTime _lastServiceUpdateAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   DownloadQueueState build() {
@@ -647,9 +710,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   void _startMultiProgressPolling() {
     _progressTimer?.cancel();
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 500), (
-      timer,
-    ) async {
+    _progressTimer = Timer.periodic(_progressPollingInterval, (timer) async {
       try {
         final allProgress = await PlatformBridge.getAllDownloadProgress();
         final items = allProgress['items'] as Map<String, dynamic>? ?? {};
@@ -818,23 +879,76 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             );
 
             if (Platform.isAndroid) {
-              PlatformBridge.updateDownloadServiceProgress(
+              _maybeUpdateAndroidDownloadService(
                 trackName: firstDownloading.track.name,
                 artistName: firstDownloading.track.artistName,
                 progress: notifProgress,
                 total: notifTotal > 0 ? notifTotal : 1,
                 queueCount: queuedCount,
-              ).catchError((_) {});
+              );
             }
           }
         }
-      } catch (_) {}
+        _progressPollingErrorCount = 0;
+      } catch (e) {
+        _progressPollingErrorCount++;
+        if (_progressPollingErrorCount <= 3) {
+          _log.w('Progress polling failed: $e');
+        }
+      }
     });
+  }
+
+  void _maybeUpdateAndroidDownloadService({
+    required String trackName,
+    required String artistName,
+    required int progress,
+    required int total,
+    required int queueCount,
+  }) {
+    final now = DateTime.now();
+    final safeTotal = total > 0 ? total : 1;
+    final progressPercent = ((progress * 100) / safeTotal)
+        .round()
+        .clamp(0, 100)
+        .toInt();
+
+    final didContentChange =
+        trackName != _lastServiceTrackName ||
+        artistName != _lastServiceArtistName ||
+        queueCount != _lastServiceQueueCount ||
+        progressPercent != _lastServicePercent;
+    final allowHeartbeat =
+        now.difference(_lastServiceUpdateAt) >= const Duration(seconds: 5);
+
+    if (!didContentChange && !allowHeartbeat) {
+      return;
+    }
+
+    _lastServiceTrackName = trackName;
+    _lastServiceArtistName = artistName;
+    _lastServicePercent = progressPercent;
+    _lastServiceQueueCount = queueCount;
+    _lastServiceUpdateAt = now;
+
+    PlatformBridge.updateDownloadServiceProgress(
+      trackName: trackName,
+      artistName: artistName,
+      progress: progress,
+      total: safeTotal,
+      queueCount: queueCount,
+    ).catchError((_) {});
   }
 
   void _stopProgressPolling() {
     _progressTimer?.cancel();
     _progressTimer = null;
+    _progressPollingErrorCount = 0;
+    _lastServiceTrackName = null;
+    _lastServiceArtistName = null;
+    _lastServicePercent = -1;
+    _lastServiceQueueCount = -1;
+    _lastServiceUpdateAt = DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Future<void> _initOutputDir() async {
@@ -2241,7 +2355,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     while (true) {
       if (state.isPaused) {
         _log.d('Queue is paused, waiting...');
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future.delayed(_progressPollingInterval);
         continue;
       }
 
@@ -2280,7 +2394,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         if (activeDownloads.isNotEmpty) {
           await Future.any(activeDownloads.values);
         } else {
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future.delayed(_progressPollingInterval);
         }
         continue;
       }

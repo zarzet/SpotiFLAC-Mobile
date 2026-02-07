@@ -11,21 +11,9 @@ import 'package:spotiflac_android/services/cover_cache_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await CoverCacheManager.initialize();
-  debugPrint('CoverCacheManager initialized: ${CoverCacheManager.isInitialized}');
-  
-  await Future.wait([
-    NotificationService().initialize(),
-    ShareIntentService().initialize(),
-  ]);
-  
+
   runApp(
-    ProviderScope(
-      child: const _EagerInitialization(
-        child: SpotiFLACApp(),
-      ),
-    ),
+    ProviderScope(child: const _EagerInitialization(child: SpotiFLACApp())),
   );
 }
 
@@ -35,15 +23,29 @@ class _EagerInitialization extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<_EagerInitialization> createState() => _EagerInitializationState();
+  ConsumerState<_EagerInitialization> createState() =>
+      _EagerInitializationState();
 }
 
 class _EagerInitializationState extends ConsumerState<_EagerInitialization> {
   @override
   void initState() {
     super.initState();
+    _initializeAppServices();
     _initializeExtensions();
     ref.read(downloadHistoryProvider);
+  }
+
+  Future<void> _initializeAppServices() async {
+    try {
+      await CoverCacheManager.initialize();
+      await Future.wait([
+        NotificationService().initialize(),
+        ShareIntentService().initialize(),
+      ]);
+    } catch (e) {
+      debugPrint('Failed to initialize app services: $e');
+    }
   }
 
   Future<void> _initializeExtensions() async {
@@ -51,11 +53,13 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization> {
       final appDir = await getApplicationDocumentsDirectory();
       final extensionsDir = '${appDir.path}/extensions';
       final dataDir = '${appDir.path}/extension_data';
-      
+
       await Directory(extensionsDir).create(recursive: true);
       await Directory(dataDir).create(recursive: true);
-      
-      await ref.read(extensionProvider.notifier).initialize(extensionsDir, dataDir);
+
+      await ref
+          .read(extensionProvider.notifier)
+          .initialize(extensionsDir, dataDir);
     } catch (e) {
       debugPrint('Failed to initialize extensions: $e');
     }

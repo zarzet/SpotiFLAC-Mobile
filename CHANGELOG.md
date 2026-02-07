@@ -1,12 +1,40 @@
 # Changelog
 
-## [3.5.1] - 2026-02-07
+## [3.5.1] - 2026-02-08
 
 ### Performance
 
 - Removed PaletteService (palette_generator) from all screens for faster navigation and reduced memory usage
 - Album, Playlist, Downloaded Album, Local Album, and Track Metadata screens now use blurred cover art as header background instead of dominant color extraction
 - Removed `palette_generator` dependency
+- App startup now renders immediately (`runApp`) while service initialization runs asynchronously in eager init
+- Main shell provider subscriptions now use field-level `select(...)` to reduce unnecessary rebuilds
+- Settings persistence now uses single-flight + queued save coalescing to avoid redundant disk writes
+- Progress polling cadence adjusted to 800ms for download queue, local library scan progress, and Go log polling
+- Android foreground download service progress updates are throttled (change-based updates + 5s heartbeat)
+- SAF history repair is now batched (`20` items per batch) and capped per launch (`60`) to reduce startup I/O spikes
+- Incremental library scan now builds final item list in-memory instead of reloading from database
+- Local cover images in queue/library use direct `Image.file` with `errorBuilder` instead of `FutureBuilder` existence check
+- CSV parser `_parseLine` rewritten: correct escaped-quote handling, no quote characters in output
+- Removed unused legacy screen files (`home_screen.dart`, `queue_screen.dart`, `settings_screen.dart`, `settings_tab.dart`)
+- Incremental local library scan now merges delta results in-memory and sorts once, avoiding full-state reload churn
+- Queue local cover rendering now uses direct `Image.file` + `errorBuilder` (removed repeated async file-exists checks)
+
+### Added
+
+- Auto-cleanup orphaned downloads on history load (files that no longer exist are automatically removed from history)
+
+### Changed
+
+- Removed legacy screen files that were no longer used after the tab/part refactor:
+  - `lib/screens/home_screen.dart`
+  - `lib/screens/queue_screen.dart`
+  - `lib/screens/settings_screen.dart`
+  - `lib/screens/settings_tab.dart`
+
+### Fixed
+
+- CSV parser now correctly handles escaped quotes (`""`) inside quoted fields during import
 
 ---
 
