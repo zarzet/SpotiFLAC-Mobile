@@ -101,8 +101,8 @@ dependencies {
     // Include all AAR and JAR files from libs folder
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.documentfile:documentfile:1.1.0")
+    implementation("androidx.activity:activity-ktx:1.12.3")
 }
