@@ -5,39 +5,39 @@
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
-  "appDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "appDescription": "Téléchargez des pistes Spotify en qualité sans perte de Tidal, Qobuz et Amazon Music.",
   "@appDescription": {
     "description": "App description shown in about page"
   },
-  "navHome": "Home",
+  "navHome": "Accueil",
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "Bibliothèques",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
-  "navHistory": "History",
+  "navHistory": "Historique",
   "@navHistory": {
     "description": "Bottom navigation - History tab (legacy)"
   },
-  "navSettings": "Settings",
+  "navSettings": "Paramètres",
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Store",
+  "navStore": "Magasin",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
-  "homeTitle": "Home",
+  "homeTitle": "Accueil",
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSearchHint": "Paste Spotify URL or search...",
+  "homeSearchHint": "Coller l'URL Spotify ou rechercher...",
   "@homeSearchHint": {
     "description": "Placeholder text in search box"
   },
-  "homeSearchHintExtension": "Search with {extensionName}...",
+  "homeSearchHintExtension": "Rechercher avec {extensionName}...",
   "@homeSearchHintExtension": {
     "description": "Placeholder when extension search is active",
     "placeholders": {
@@ -47,23 +47,23 @@
       }
     }
   },
-  "homeSubtitle": "Paste a Spotify link or search by name",
+  "homeSubtitle": "Coller un lien Spotify ou rechercher par nom",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "Supports: Track, Album, Playlist, Artist URLs",
+  "homeSupports": "Supports: Piste, Album, Playlist, Artiste URLs",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
-  "homeRecent": "Recent",
+  "homeRecent": "Récent",
   "@homeRecent": {
     "description": "Section header for recent searches"
   },
-  "historyTitle": "History",
+  "historyTitle": "Historique",
   "@historyTitle": {
     "description": "History screen title"
   },
-  "historyDownloading": "Downloading ({count})",
+  "historyDownloading": "Téléchargement ({count})",
   "@historyDownloading": {
     "description": "Tab showing active downloads count",
     "placeholders": {
@@ -73,11 +73,11 @@
       }
     }
   },
-  "historyDownloaded": "Downloaded",
+  "historyDownloaded": "Téléchargé",
   "@historyDownloaded": {
     "description": "Tab showing completed downloads"
   },
-  "historyFilterAll": "All",
+  "historyFilterAll": "Tous",
   "@historyFilterAll": {
     "description": "Filter chip - show all items"
   },
@@ -85,7 +85,7 @@
   "@historyFilterAlbums": {
     "description": "Filter chip - show albums only"
   },
-  "historyFilterSingles": "Singles",
+  "historyFilterSingles": "Titres",
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
@@ -107,43 +107,43 @@
       }
     }
   },
-  "historyNoDownloads": "No download history",
+  "historyNoDownloads": "Pas d'historique de téléchargement",
   "@historyNoDownloads": {
     "description": "Empty state title"
   },
-  "historyNoDownloadsSubtitle": "Downloaded tracks will appear here",
+  "historyNoDownloadsSubtitle": "Les pistes téléchargées apparaîtront ici",
   "@historyNoDownloadsSubtitle": {
     "description": "Empty state subtitle"
   },
-  "historyNoAlbums": "No album downloads",
+  "historyNoAlbums": "Pas de téléchargement d'album",
   "@historyNoAlbums": {
     "description": "Empty state when filtering albums"
   },
-  "historyNoAlbumsSubtitle": "Download multiple tracks from an album to see them here",
+  "historyNoAlbumsSubtitle": "Téléchargez plusieurs titres d'un album pour les voir ici",
   "@historyNoAlbumsSubtitle": {
     "description": "Empty state subtitle for albums filter"
   },
-  "historyNoSingles": "No single downloads",
+  "historyNoSingles": "Pas de téléchargements uniques",
   "@historyNoSingles": {
     "description": "Empty state when filtering singles"
   },
-  "historyNoSinglesSubtitle": "Single track downloads will appear here",
+  "historyNoSinglesSubtitle": "Les téléchargements de pistes uniques apparaîtront ici",
   "@historyNoSinglesSubtitle": {
     "description": "Empty state subtitle for singles filter"
   },
-  "historySearchHint": "Search history...",
+  "historySearchHint": "Historique de recherche...",
   "@historySearchHint": {
     "description": "Search bar placeholder in history"
   },
-  "settingsTitle": "Settings",
+  "settingsTitle": "Paramètres",
   "@settingsTitle": {
     "description": "Settings screen title"
   },
-  "settingsDownload": "Download",
+  "settingsDownload": "Télécharger",
   "@settingsDownload": {
     "description": "Settings section - download options"
   },
-  "settingsAppearance": "Appearance",
+  "settingsAppearance": "Apparence",
   "@settingsAppearance": {
     "description": "Settings section - visual customization"
   },
@@ -155,63 +155,63 @@
   "@settingsExtensions": {
     "description": "Settings section - extension management"
   },
-  "settingsAbout": "About",
+  "settingsAbout": "À propos",
   "@settingsAbout": {
     "description": "Settings section - app info"
   },
-  "downloadTitle": "Download",
+  "downloadTitle": "Télécharger",
   "@downloadTitle": {
     "description": "Download settings page title"
   },
-  "downloadLocation": "Download Location",
+  "downloadLocation": "Télécharger Localisation",
   "@downloadLocation": {
     "description": "Setting for download folder"
   },
-  "downloadLocationSubtitle": "Choose where to save files",
+  "downloadLocationSubtitle": "Choisissez où enregistrer des fichiers",
   "@downloadLocationSubtitle": {
     "description": "Subtitle for download location"
   },
-  "downloadLocationDefault": "Default location",
+  "downloadLocationDefault": "Localisation par défaut",
   "@downloadLocationDefault": {
     "description": "Shown when using default folder"
   },
-  "downloadDefaultService": "Default Service",
+  "downloadDefaultService": "Service par défaut",
   "@downloadDefaultService": {
     "description": "Setting for preferred download service (Tidal/Qobuz/Amazon)"
   },
-  "downloadDefaultServiceSubtitle": "Service used for downloads",
+  "downloadDefaultServiceSubtitle": "Service utilisé pour les téléchargements",
   "@downloadDefaultServiceSubtitle": {
     "description": "Subtitle for default service"
   },
-  "downloadDefaultQuality": "Default Quality",
+  "downloadDefaultQuality": "Qualité par défaut",
   "@downloadDefaultQuality": {
     "description": "Setting for audio quality"
   },
-  "downloadAskQuality": "Ask Quality Before Download",
+  "downloadAskQuality": "Demandez La Qualité Avant Le Téléchargement",
   "@downloadAskQuality": {
     "description": "Toggle to show quality picker"
   },
-  "downloadAskQualitySubtitle": "Show quality picker for each download",
+  "downloadAskQualitySubtitle": "Afficher le sélecteur de qualité pour chaque téléchargement",
   "@downloadAskQualitySubtitle": {
     "description": "Subtitle for ask quality toggle"
   },
-  "downloadFilenameFormat": "Filename Format",
+  "downloadFilenameFormat": "Nom du fichier",
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
-  "downloadFolderOrganization": "Folder Organization",
+  "downloadFolderOrganization": "Organisation du dossier",
   "@downloadFolderOrganization": {
     "description": "Setting for folder structure"
   },
-  "downloadSeparateSingles": "Separate Singles",
+  "downloadSeparateSingles": "Titres séparés",
   "@downloadSeparateSingles": {
     "description": "Toggle to separate single tracks"
   },
-  "downloadSeparateSinglesSubtitle": "Put single tracks in a separate folder",
+  "downloadSeparateSinglesSubtitle": "Mettre des pistes uniques dans un dossier séparé",
   "@downloadSeparateSinglesSubtitle": {
     "description": "Subtitle for separate singles toggle"
   },
-  "qualityBest": "Best Available",
+  "qualityBest": "Meilleur Disponible",
   "@qualityBest": {
     "description": "Audio quality option - highest available"
   },
@@ -227,47 +227,47 @@
   "@quality128": {
     "description": "Audio quality option - 128kbps MP3"
   },
-  "appearanceTitle": "Appearance",
+  "appearanceTitle": "Apparence",
   "@appearanceTitle": {
     "description": "Appearance settings page title"
   },
-  "appearanceTheme": "Theme",
+  "appearanceTheme": "Thème",
   "@appearanceTheme": {
     "description": "Theme mode setting"
   },
-  "appearanceThemeSystem": "System",
+  "appearanceThemeSystem": "Système",
   "@appearanceThemeSystem": {
     "description": "Follow system theme"
   },
-  "appearanceThemeLight": "Light",
+  "appearanceThemeLight": "Clair",
   "@appearanceThemeLight": {
     "description": "Light theme"
   },
-  "appearanceThemeDark": "Dark",
+  "appearanceThemeDark": "Sombre",
   "@appearanceThemeDark": {
     "description": "Dark theme"
   },
-  "appearanceDynamicColor": "Dynamic Color",
+  "appearanceDynamicColor": "Couleur dynamique",
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "Use colors from your wallpaper",
+  "appearanceDynamicColorSubtitle": "Utilisez les couleurs de votre fond d'écran",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
-  "appearanceAccentColor": "Accent Color",
+  "appearanceAccentColor": "Couleur d'accent",
   "@appearanceAccentColor": {
     "description": "Custom accent color picker"
   },
-  "appearanceHistoryView": "History View",
+  "appearanceHistoryView": "Historique Vue",
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "List",
+  "appearanceHistoryViewList": "",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
-  "appearanceHistoryViewGrid": "Grid",
+  "appearanceHistoryViewGrid": "Grille",
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
@@ -275,19 +275,19 @@
   "@optionsTitle": {
     "description": "Options settings page title"
   },
-  "optionsSearchSource": "Search Source",
+  "optionsSearchSource": "Recherche Source",
   "@optionsSearchSource": {
     "description": "Section for search provider settings"
   },
-  "optionsPrimaryProvider": "Primary Provider",
+  "optionsPrimaryProvider": "Fournisseur principal",
   "@optionsPrimaryProvider": {
     "description": "Main search provider setting"
   },
-  "optionsPrimaryProviderSubtitle": "Service used when searching by track name.",
+  "optionsPrimaryProviderSubtitle": "Service utilisé lors de la recherche par nom de piste.",
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
-  "optionsUsingExtension": "Using extension: {extensionName}",
+  "optionsUsingExtension": "Utilisation de l'extension: {extensionName}",
   "@optionsUsingExtension": {
     "description": "Shows active extension name",
     "placeholders": {
@@ -296,7 +296,7 @@
       }
     }
   },
-  "optionsSwitchBack": "Tap Deezer or Spotify to switch back from extension",
+  "optionsSwitchBack": "Appuyez sur Deezer ou Spotify pour revenir à l'extension",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
@@ -304,11 +304,11 @@
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
-  "optionsAutoFallbackSubtitle": "Try other services if download fails",
+  "optionsAutoFallbackSubtitle": "Essayez d'autres services si le téléchargement échoue",
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsUseExtensionProviders": "Use Extension Providers",
+  "optionsUseExtensionProviders": "Utiliser des fournisseurs d'extension",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
@@ -472,19 +472,19 @@
       }
     }
   },
-  "extensionsUninstall": "Uninstall",
+  "extensionsUninstall": "Désinstaller",
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "extensionsSetAsSearch": "Set as Search Provider",
+  "extensionsSetAsSearch": "Défini comme fournisseur de recherche",
   "@extensionsSetAsSearch": {
     "description": "Use extension for search"
   },
-  "storeTitle": "Extension Store",
+  "storeTitle": "Magasin d'extension",
   "@storeTitle": {
     "description": "Store screen title"
   },
-  "storeSearch": "Search extensions...",
+  "storeSearch": "Recherche d'extensions...",
   "@storeSearch": {
     "description": "Store search placeholder"
   },
@@ -708,7 +708,7 @@
   "@trackMetadataDuration": {
     "description": "Metadata field - track length"
   },
-  "trackMetadataQuality": "Quality",
+  "trackMetadataQuality": "",
   "@trackMetadataQuality": {
     "description": "Metadata field - audio quality"
   },
@@ -724,47 +724,47 @@
   "@trackMetadataService": {
     "description": "Metadata field - download service used"
   },
-  "trackMetadataPlay": "Play",
+  "trackMetadataPlay": "Jouer",
   "@trackMetadataPlay": {
     "description": "Action button - play track"
   },
-  "trackMetadataShare": "Share",
+  "trackMetadataShare": "Partager",
   "@trackMetadataShare": {
     "description": "Action button - share track"
   },
-  "trackMetadataDelete": "Delete",
+  "trackMetadataDelete": "Supprimer",
   "@trackMetadataDelete": {
     "description": "Action button - delete track"
   },
-  "trackMetadataRedownload": "Re-download",
+  "trackMetadataRedownload": "Re-télécharger",
   "@trackMetadataRedownload": {
     "description": "Action button - download again"
   },
-  "trackMetadataOpenFolder": "Open Folder",
+  "trackMetadataOpenFolder": "Dossier ouvert",
   "@trackMetadataOpenFolder": {
     "description": "Action button - open containing folder"
   },
-  "setupTitle": "Welcome to SpotiFLAC",
+  "setupTitle": "Bienvenue chez SpotiFLAC",
   "@setupTitle": {
     "description": "Setup wizard title"
   },
-  "setupSubtitle": "Let's get you started",
+  "setupSubtitle": "On va commencer",
   "@setupSubtitle": {
     "description": "Setup wizard subtitle"
   },
-  "setupStoragePermission": "Storage Permission",
+  "setupStoragePermission": "Permission de stockage",
   "@setupStoragePermission": {
     "description": "Storage permission step title"
   },
-  "setupStoragePermissionSubtitle": "Required to save downloaded files",
+  "setupStoragePermissionSubtitle": "Requis pour enregistrer les fichiers téléchargés",
   "@setupStoragePermissionSubtitle": {
     "description": "Explanation for storage permission"
   },
-  "setupStoragePermissionGranted": "Permission granted",
+  "setupStoragePermissionGranted": "Permission accordée",
   "@setupStoragePermissionGranted": {
     "description": "Status when permission granted"
   },
-  "setupStoragePermissionDenied": "Permission denied",
+  "setupStoragePermissionDenied": "Permission refusée",
   "@setupStoragePermissionDenied": {
     "description": "Status when permission denied"
   },
@@ -923,15 +923,15 @@
   "@setupNotificationDescription": {
     "description": "Explanation for notifications"
   },
-  "setupFolderSelected": "Download Folder Selected!",
+  "setupFolderSelected": "Dossier de téléchargement sélectionné!",
   "@setupFolderSelected": {
     "description": "Success message for folder selection"
   },
-  "setupFolderChoose": "Choose Download Folder",
+  "setupFolderChoose": "Choisissez le dossier pour télécharger",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
-  "setupFolderDescription": "Select a folder where your downloaded music will be saved.",
+  "setupFolderDescription": "Sélectionnez un dossier dans lequel votre musique téléchargée sera enregistrée.",
   "@setupFolderDescription": {
     "description": "Explanation for folder selection"
   },
@@ -3239,5 +3239,262 @@
         "type": "int"
       }
     }
+  },
+  "storageSwitchTitle": "Switch Storage Mode",
+  "@storageSwitchTitle": {
+    "description": "Dialog title when switching storage mode"
+  },
+  "storageSwitchToSafTitle": "Switch to SAF Storage?",
+  "@storageSwitchToSafTitle": {
+    "description": "Dialog title when switching to SAF"
+  },
+  "storageSwitchToAppTitle": "Switch to App Storage?",
+  "@storageSwitchToAppTitle": {
+    "description": "Dialog title when switching to app storage"
+  },
+  "storageSwitchToSafMessage": "Your existing downloads will remain in the current location and stay accessible.\n\nNew downloads will be saved to your selected SAF folder.",
+  "@storageSwitchToSafMessage": {
+    "description": "Explanation when switching to SAF"
+  },
+  "storageSwitchToAppMessage": "Your existing downloads will remain in the current SAF location and stay accessible.\n\nNew downloads will be saved to Music/SpotiFLAC folder.",
+  "@storageSwitchToAppMessage": {
+    "description": "Explanation when switching to app storage"
+  },
+  "storageSwitchExistingDownloads": "Existing Downloads",
+  "@storageSwitchExistingDownloads": {
+    "description": "Section header for existing downloads info"
+  },
+  "storageSwitchExistingDownloadsInfo": "{count} tracks in {mode} storage",
+  "@storageSwitchExistingDownloadsInfo": {
+    "description": "Info about existing downloads count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "storageSwitchNewDownloads": "New Downloads",
+  "@storageSwitchNewDownloads": {
+    "description": "Section header for new downloads info"
+  },
+  "storageSwitchNewDownloadsLocation": "Will be saved to: {location}",
+  "@storageSwitchNewDownloadsLocation": {
+    "description": "Shows where new downloads will go",
+    "placeholders": {
+      "location": {
+        "type": "String"
+      }
+    }
+  },
+  "storageSwitchContinue": "Continue",
+  "@storageSwitchContinue": {
+    "description": "Button to proceed with storage switch"
+  },
+  "storageSwitchSelectFolder": "Select SAF Folder",
+  "@storageSwitchSelectFolder": {
+    "description": "Button to select SAF folder"
+  },
+  "storageAppStorage": "App Storage",
+  "@storageAppStorage": {
+    "description": "Label for app storage mode"
+  },
+  "storageSafStorage": "SAF Storage",
+  "@storageSafStorage": {
+    "description": "Label for SAF storage mode"
+  },
+  "storageModeBadge": "Storage: {mode}",
+  "@storageModeBadge": {
+    "description": "Badge showing storage mode for a track",
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "storageStatsTitle": "Storage Statistics",
+  "@storageStatsTitle": {
+    "description": "Section title for storage stats"
+  },
+  "storageStatsAppCount": "{count} tracks in App Storage",
+  "@storageStatsAppCount": {
+    "description": "Count of tracks in app storage",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storageStatsSafCount": "{count} tracks in SAF Storage",
+  "@storageStatsSafCount": {
+    "description": "Count of tracks in SAF storage",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storageModeInfo": "Your files are stored in multiple locations",
+  "@storageModeInfo": {
+    "description": "Info when user has files in both storage modes"
+  },
+  "tutorialWelcomeTitle": "Welcome to SpotiFLAC!",
+  "@tutorialWelcomeTitle": {
+    "description": "Tutorial welcome page title"
+  },
+  "tutorialWelcomeDesc": "Let's learn how to download your favorite music in lossless quality. This quick tutorial will show you the basics.",
+  "@tutorialWelcomeDesc": {
+    "description": "Tutorial welcome page description"
+  },
+  "tutorialWelcomeTip1": "Download music from Spotify, Deezer, or paste any supported URL",
+  "@tutorialWelcomeTip1": {
+    "description": "Tutorial welcome tip 1"
+  },
+  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "@tutorialWelcomeTip2": {
+    "description": "Tutorial welcome tip 2"
+  },
+  "tutorialWelcomeTip3": "Automatic metadata, cover art, and lyrics embedding",
+  "@tutorialWelcomeTip3": {
+    "description": "Tutorial welcome tip 3"
+  },
+  "tutorialSearchTitle": "Finding Music",
+  "@tutorialSearchTitle": {
+    "description": "Tutorial search page title"
+  },
+  "tutorialSearchDesc": "There are two easy ways to find music you want to download.",
+  "@tutorialSearchDesc": {
+    "description": "Tutorial search page description"
+  },
+  "tutorialSearchTip1": "Paste a Spotify or Deezer URL directly in the search box",
+  "@tutorialSearchTip1": {
+    "description": "Tutorial search tip 1"
+  },
+  "tutorialSearchTip2": "Or type the song name, artist, or album to search",
+  "@tutorialSearchTip2": {
+    "description": "Tutorial search tip 2"
+  },
+  "tutorialSearchTip3": "Supports tracks, albums, playlists, and artist pages",
+  "@tutorialSearchTip3": {
+    "description": "Tutorial search tip 3"
+  },
+  "tutorialDownloadTitle": "Downloading Music",
+  "@tutorialDownloadTitle": {
+    "description": "Tutorial download page title"
+  },
+  "tutorialDownloadDesc": "Downloading music is simple and fast. Here's how it works.",
+  "@tutorialDownloadDesc": {
+    "description": "Tutorial download page description"
+  },
+  "tutorialDownloadTip1": "Tap the download button next to any track to start downloading",
+  "@tutorialDownloadTip1": {
+    "description": "Tutorial download tip 1"
+  },
+  "tutorialDownloadTip2": "Choose your preferred quality (FLAC, Hi-Res, or MP3)",
+  "@tutorialDownloadTip2": {
+    "description": "Tutorial download tip 2"
+  },
+  "tutorialDownloadTip3": "Download entire albums or playlists with one tap",
+  "@tutorialDownloadTip3": {
+    "description": "Tutorial download tip 3"
+  },
+  "tutorialLibraryTitle": "Your Library",
+  "@tutorialLibraryTitle": {
+    "description": "Tutorial library page title"
+  },
+  "tutorialLibraryDesc": "All your downloaded music is organized in the Library tab.",
+  "@tutorialLibraryDesc": {
+    "description": "Tutorial library page description"
+  },
+  "tutorialLibraryTip1": "View download progress and queue in the Library tab",
+  "@tutorialLibraryTip1": {
+    "description": "Tutorial library tip 1"
+  },
+  "tutorialLibraryTip2": "Tap any track to play it with your music player",
+  "@tutorialLibraryTip2": {
+    "description": "Tutorial library tip 2"
+  },
+  "tutorialLibraryTip3": "Switch between list and grid view for better browsing",
+  "@tutorialLibraryTip3": {
+    "description": "Tutorial library tip 3"
+  },
+  "tutorialExtensionsTitle": "Extensions",
+  "@tutorialExtensionsTitle": {
+    "description": "Tutorial extensions page title"
+  },
+  "tutorialExtensionsDesc": "Extend the app's capabilities with community extensions.",
+  "@tutorialExtensionsDesc": {
+    "description": "Tutorial extensions page description"
+  },
+  "tutorialExtensionsTip1": "Browse the Store tab to discover useful extensions",
+  "@tutorialExtensionsTip1": {
+    "description": "Tutorial extensions tip 1"
+  },
+  "tutorialExtensionsTip2": "Add new download providers or search sources",
+  "@tutorialExtensionsTip2": {
+    "description": "Tutorial extensions tip 2"
+  },
+  "tutorialExtensionsTip3": "Get lyrics, enhanced metadata, and more features",
+  "@tutorialExtensionsTip3": {
+    "description": "Tutorial extensions tip 3"
+  },
+  "tutorialSettingsTitle": "Customize Your Experience",
+  "@tutorialSettingsTitle": {
+    "description": "Tutorial settings page title"
+  },
+  "tutorialSettingsDesc": "Personalize the app in Settings to match your preferences.",
+  "@tutorialSettingsDesc": {
+    "description": "Tutorial settings page description"
+  },
+  "tutorialSettingsTip1": "Change download location and folder organization",
+  "@tutorialSettingsTip1": {
+    "description": "Tutorial settings tip 1"
+  },
+  "tutorialSettingsTip2": "Set default audio quality and format preferences",
+  "@tutorialSettingsTip2": {
+    "description": "Tutorial settings tip 2"
+  },
+  "tutorialSettingsTip3": "Customize app theme and appearance",
+  "@tutorialSettingsTip3": {
+    "description": "Tutorial settings tip 3"
+  },
+  "tutorialReadyMessage": "You're all set! Start downloading your favorite music now.",
+  "@tutorialReadyMessage": {
+    "description": "Tutorial completion message"
+  },
+  "tutorialExample": "EXAMPLE",
+  "@tutorialExample": {
+    "description": "Example label in tutorial"
+  },
+  "libraryForceFullScan": "Force Full Scan",
+  "@libraryForceFullScan": {
+    "description": "Button to force a complete rescan of library"
+  },
+  "libraryForceFullScanSubtitle": "Rescan all files, ignoring cache",
+  "@libraryForceFullScanSubtitle": {
+    "description": "Subtitle for force full scan button"
+  },
+  "cleanupOrphanedDownloads": "Cleanup Orphaned Downloads",
+  "@cleanupOrphanedDownloads": {
+    "description": "Button to remove history entries for deleted files"
+  },
+  "cleanupOrphanedDownloadsSubtitle": "Remove history entries for files that no longer exist",
+  "@cleanupOrphanedDownloadsSubtitle": {
+    "description": "Subtitle for orphaned cleanup button"
+  },
+  "cleanupOrphanedDownloadsResult": "Removed {count} orphaned entries from history",
+  "@cleanupOrphanedDownloadsResult": {
+    "description": "Snackbar after orphan cleanup",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanupOrphanedDownloadsNone": "No orphaned entries found",
+  "@cleanupOrphanedDownloadsNone": {
+    "description": "Snackbar when no orphans found"
   }
 }
