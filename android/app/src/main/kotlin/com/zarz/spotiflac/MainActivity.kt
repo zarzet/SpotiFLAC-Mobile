@@ -606,7 +606,9 @@ class MainActivity: FlutterFragmentActivity() {
                     val metadataJson = Gobackend.readAudioMetadataJSON(tempPath)
                     if (metadataJson.isNotBlank()) {
                         val obj = JSONObject(metadataJson)
+                        val lastModified = doc.lastModified()
                         obj.put("filePath", doc.uri.toString())
+                        obj.put("fileModTime", lastModified)
                         results.put(obj)
                     } else {
                         errors++
@@ -635,6 +637,226 @@ class MainActivity: FlutterFragmentActivity() {
         }
 
         return results.toString()
+    }
+
+    /**
+     * Incremental SAF tree scan - only scans new or modified files.
+     * @param treeUriStr The SAF tree URI to scan
+     * @param existingFilesJson JSON object mapping file URI -> lastModified timestamp
+     * @return JSON object with new/changed files and removed URIs
+     */
+    private fun scanSafTreeIncremental(treeUriStr: String, existingFilesJson: String): String {
+        if (treeUriStr.isBlank()) {
+            val result = JSONObject()
+            result.put("files", JSONArray())
+            result.put("removedUris", JSONArray())
+            result.put("skippedCount", 0)
+            result.put("totalFiles", 0)
+            return result.toString()
+        }
+
+        val treeUri = Uri.parse(treeUriStr)
+        val root = DocumentFile.fromTreeUri(this, treeUri) ?: run {
+            val result = JSONObject()
+            result.put("files", JSONArray())
+            result.put("removedUris", JSONArray())
+            result.put("skippedCount", 0)
+            result.put("totalFiles", 0)
+            return result.toString()
+        }
+
+        // Parse existing files map: URI -> lastModified
+        val existingFiles = mutableMapOf<String, Long>()
+        try {
+            val obj = JSONObject(existingFilesJson)
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                existingFiles[key] = obj.optLong(key, 0)
+            }
+        } catch (_: Exception) {}
+
+        resetSafScanProgress()
+        safScanCancel = false
+        safScanActive = true
+
+        val supportedExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
+        val audioFiles = mutableListOf<Triple<DocumentFile, String, Long>>() // doc, path, lastModified
+        val currentUris = mutableSetOf<String>()
+
+        // Collect all audio files with lastModified
+        val queue: ArrayDeque<Pair<DocumentFile, String>> = ArrayDeque()
+        queue.add(root to "")
+
+        while (queue.isNotEmpty()) {
+            if (safScanCancel) {
+                updateSafScanProgress { it.isComplete = true }
+                val result = JSONObject()
+                result.put("files", JSONArray())
+                result.put("removedUris", JSONArray())
+                result.put("skippedCount", 0)
+                result.put("totalFiles", 0)
+                result.put("cancelled", true)
+                return result.toString()
+            }
+
+            val (dir, path) = queue.removeFirst()
+            for (child in dir.listFiles()) {
+                if (safScanCancel) {
+                    updateSafScanProgress { it.isComplete = true }
+                    val result = JSONObject()
+                    result.put("files", JSONArray())
+                    result.put("removedUris", JSONArray())
+                    result.put("skippedCount", 0)
+                    result.put("totalFiles", 0)
+                    result.put("cancelled", true)
+                    return result.toString()
+                }
+
+                if (child.isDirectory) {
+                    val childName = child.name ?: continue
+                    val childPath = if (path.isBlank()) childName else "$path/$childName"
+                    queue.add(child to childPath)
+                } else if (child.isFile) {
+                    val name = child.name ?: continue
+                    val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                    if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+                        val uriStr = child.uri.toString()
+                        val lastModified = child.lastModified()
+                        currentUris.add(uriStr)
+                        
+                        // Check if file is new or modified
+                        val existingModified = existingFiles[uriStr]
+                        if (existingModified == null || existingModified != lastModified) {
+                            audioFiles.add(Triple(child, path, lastModified))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Find removed files (in existing but not in current)
+        val removedUris = existingFiles.keys.filter { !currentUris.contains(it) }
+        val totalFiles = currentUris.size
+        val skippedCount = (totalFiles - audioFiles.size).coerceAtLeast(0)
+
+        updateSafScanProgress {
+            it.totalFiles = totalFiles
+        }
+
+        if (audioFiles.isEmpty()) {
+            updateSafScanProgress {
+                it.isComplete = true
+                it.scannedFiles = totalFiles
+                it.progressPct = 100.0
+            }
+            val result = JSONObject()
+            result.put("files", JSONArray())
+            result.put("removedUris", JSONArray(removedUris))
+            result.put("skippedCount", skippedCount)
+            result.put("totalFiles", totalFiles)
+            return result.toString()
+        }
+
+        val results = JSONArray()
+        var scanned = 0
+        var errors = 0
+
+        for ((doc, _, lastModified) in audioFiles) {
+            if (safScanCancel) {
+                updateSafScanProgress { it.isComplete = true }
+                val result = JSONObject()
+                result.put("files", JSONArray())
+                result.put("removedUris", JSONArray())
+                result.put("skippedCount", skippedCount)
+                result.put("totalFiles", totalFiles)
+                result.put("cancelled", true)
+                return result.toString()
+            }
+
+            val name = doc.name ?: ""
+            updateSafScanProgress {
+                it.currentFile = name
+            }
+
+            val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+            val fallbackExt = if (ext.isNotBlank()) ".${ext}" else null
+            val tempPath = copyUriToTemp(doc.uri, fallbackExt)
+            if (tempPath == null) {
+                errors++
+            } else {
+                try {
+                    val metadataJson = Gobackend.readAudioMetadataJSON(tempPath)
+                    if (metadataJson.isNotBlank()) {
+                        val obj = JSONObject(metadataJson)
+                        obj.put("filePath", doc.uri.toString())
+                        obj.put("fileModTime", lastModified)
+                        obj.put("lastModified", lastModified)
+                        results.put(obj)
+                    } else {
+                        errors++
+                    }
+                } catch (_: Exception) {
+                    errors++
+                } finally {
+                    try {
+                        File(tempPath).delete()
+                    } catch (_: Exception) {}
+                }
+            }
+
+            scanned++
+            val processed = skippedCount + scanned
+            val pct = if (totalFiles > 0) {
+                processed.toDouble() / totalFiles.toDouble() * 100.0
+            } else {
+                100.0
+            }
+            updateSafScanProgress {
+                it.scannedFiles = processed
+                it.errorCount = errors
+                it.progressPct = pct
+            }
+        }
+
+        updateSafScanProgress {
+            it.isComplete = true
+            it.progressPct = 100.0
+        }
+
+        val result = JSONObject()
+        result.put("files", results)
+        result.put("removedUris", JSONArray(removedUris))
+        result.put("skippedCount", skippedCount)
+        result.put("totalFiles", totalFiles)
+        return result.toString()
+    }
+
+    /**
+     * Resolve SAF file last-modified values for a list of content URIs.
+     * Returns JSON object mapping uri -> lastModified (unix millis).
+     */
+    private fun getSafFileModTimes(urisJson: String): String {
+        val result = JSONObject()
+        val uris = try {
+            JSONArray(urisJson)
+        } catch (_: Exception) {
+            JSONArray()
+        }
+
+        for (i in 0 until uris.length()) {
+            val uriStr = uris.optString(i, "")
+            if (uriStr.isBlank()) continue
+            try {
+                val uri = Uri.parse(uriStr)
+                val doc = DocumentFile.fromSingleUri(this, uri)
+                if (doc != null && doc.exists()) {
+                    result.put(uriStr, doc.lastModified())
+                }
+            } catch (_: Exception) {}
+        }
+
+        return result.toString()
     }
 
     private fun runPostProcessingSaf(fileUriStr: String, metadataJson: String): String {
@@ -1476,13 +1698,6 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
-                        "removeExtension" -> {
-                            val extensionId = call.argument<String>("extension_id") ?: ""
-                            withContext(Dispatchers.IO) {
-                                Gobackend.removeExtensionByID(extensionId)
-                            }
-                            result.success(null)
-                        }
                         "cleanupExtensions" -> {
                             withContext(Dispatchers.IO) {
                                 Gobackend.cleanupExtensions()
@@ -1746,10 +1961,34 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
+                        "scanLibraryFolderIncremental" -> {
+                            val folderPath = call.argument<String>("folder_path") ?: ""
+                            val existingFiles = call.argument<String>("existing_files") ?: "{}"
+                            val response = withContext(Dispatchers.IO) {
+                                safScanActive = false
+                                Gobackend.scanLibraryFolderIncrementalJSON(folderPath, existingFiles)
+                            }
+                            result.success(response)
+                        }
                         "scanSafTree" -> {
                             val treeUri = call.argument<String>("tree_uri") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 scanSafTree(treeUri)
+                            }
+                            result.success(response)
+                        }
+                        "scanSafTreeIncremental" -> {
+                            val treeUri = call.argument<String>("tree_uri") ?: ""
+                            val existingFiles = call.argument<String>("existing_files") ?: "{}"
+                            val response = withContext(Dispatchers.IO) {
+                                scanSafTreeIncremental(treeUri, existingFiles)
+                            }
+                            result.success(response)
+                        }
+                        "getSafFileModTimes" -> {
+                            val uris = call.argument<String>("uris") ?: "[]"
+                            val response = withContext(Dispatchers.IO) {
+                                getSafFileModTimes(uris)
                             }
                             result.success(response)
                         }

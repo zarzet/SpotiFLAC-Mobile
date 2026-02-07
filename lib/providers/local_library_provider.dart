@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
@@ -96,6 +98,7 @@ class LocalLibraryState {
 
 class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   final LibraryDatabase _db = LibraryDatabase.instance;
+  final HistoryDatabase _historyDb = HistoryDatabase.instance;
   Timer? _progressTimer;
   bool _isLoaded = false;
   bool _scanCancelRequested = false;
@@ -145,14 +148,14 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await _loadFromDatabase();
   }
 
-  Future<void> startScan(String folderPath) async {
+  Future<void> startScan(String folderPath, {bool forceFullScan = false}) async {
     if (state.isScanning) {
       _log.w('Scan already in progress');
       return;
     }
 
     _scanCancelRequested = false;
-    _log.i('Starting library scan: $folderPath');
+    _log.i('Starting library scan: $folderPath (incremental: ${!forceFullScan})');
     state = state.copyWith(
       isScanning: true,
       scanProgress: 0,
@@ -176,40 +179,163 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
     try {
       final isSaf = folderPath.startsWith('content://');
-      final results = isSaf
-          ? await PlatformBridge.scanSafTree(folderPath)
-          : await PlatformBridge.scanLibraryFolder(folderPath);
-      if (_scanCancelRequested) {
-        state = state.copyWith(isScanning: false, scanWasCancelled: true);
-        return;
-      }
       
-      final items = <LocalLibraryItem>[];
-      for (final json in results) {
-        final item = LocalLibraryItem.fromJson(json);
-        items.add(item);
+      // Get all file paths from download history to exclude them
+      final downloadedPaths = await _historyDb.getAllFilePaths();
+      _log.i('Excluding ${downloadedPaths.length} downloaded files from library scan');
+      
+      if (forceFullScan) {
+        // Full scan path - ignores existing data
+        final results = isSaf
+            ? await PlatformBridge.scanSafTree(folderPath)
+            : await PlatformBridge.scanLibraryFolder(folderPath);
+        if (_scanCancelRequested) {
+          state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          return;
+        }
+        
+        final items = <LocalLibraryItem>[];
+        int skippedDownloads = 0;
+        for (final json in results) {
+          final filePath = json['filePath'] as String?;
+          // Skip files that are already in download history
+          if (filePath != null && downloadedPaths.contains(filePath)) {
+            skippedDownloads++;
+            continue;
+          }
+          final item = LocalLibraryItem.fromJson(json);
+          items.add(item);
+        }
+        
+        if (skippedDownloads > 0) {
+          _log.i('Skipped $skippedDownloads files already in download history');
+        }
+
+        await _db.upsertBatch(items.map((e) => e.toJson()).toList());
+
+        final now = DateTime.now();
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_lastScannedAtKey, now.toIso8601String());
+          _log.d('Saved lastScannedAt: $now');
+        } catch (e) {
+          _log.w('Failed to save lastScannedAt: $e');
+        }
+
+        state = state.copyWith(
+          items: items,
+          isScanning: false,
+          scanProgress: 100,
+          lastScannedAt: now,
+          scanWasCancelled: false,
+        );
+
+        _log.i('Full scan complete: ${items.length} tracks found');
+      } else {
+        // Incremental scan path - only scans new/modified files
+        final existingFiles = await _db.getFileModTimes();
+        _log.i('Incremental scan: ${existingFiles.length} existing files in database');
+
+        final backfilledModTimes = await _backfillLegacyFileModTimes(
+          isSaf: isSaf,
+          existingFiles: existingFiles,
+        );
+        if (backfilledModTimes.isNotEmpty) {
+          await _db.updateFileModTimes(backfilledModTimes);
+          existingFiles.addAll(backfilledModTimes);
+          _log.i('Backfilled ${backfilledModTimes.length} legacy mod times');
+        }
+        
+        // Use appropriate incremental scan method based on SAF or not
+        final Map<String, dynamic> result;
+        if (isSaf) {
+          result = await PlatformBridge.scanSafTreeIncremental(
+            folderPath,
+            existingFiles,
+          );
+        } else {
+          result = await PlatformBridge.scanLibraryFolderIncremental(
+            folderPath,
+            existingFiles,
+          );
+        }
+        
+        if (_scanCancelRequested) {
+          state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          return;
+        }
+        
+        // Parse incremental scan result
+        // SAF returns 'files' and 'removedUris', non-SAF returns 'scanned' and 'deletedPaths'
+        final scannedList = (result['files'] as List<dynamic>?)
+            ?? (result['scanned'] as List<dynamic>?)
+            ?? [];
+        final deletedPaths = (result['removedUris'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList()
+            ?? (result['deletedPaths'] as List<dynamic>?)
+                ?.map((e) => e as String)
+                .toList()
+            ?? [];
+        final skippedCount = result['skippedCount'] as int? ?? 0;
+        final totalFiles = result['totalFiles'] as int? ?? 0;
+        
+        _log.i('Incremental result: ${scannedList.length} scanned, '
+            '$skippedCount skipped, ${deletedPaths.length} deleted, $totalFiles total');
+        
+        // Upsert new/modified items (excluding downloaded files)
+        if (scannedList.isNotEmpty) {
+          final items = <LocalLibraryItem>[];
+          int skippedDownloads = 0;
+          for (final json in scannedList) {
+            final map = json as Map<String, dynamic>;
+            final filePath = map['filePath'] as String?;
+            // Skip files that are already in download history
+            if (filePath != null && downloadedPaths.contains(filePath)) {
+              skippedDownloads++;
+              continue;
+            }
+            items.add(LocalLibraryItem.fromJson(map));
+          }
+          if (items.isNotEmpty) {
+            await _db.upsertBatch(items.map((e) => e.toJson()).toList());
+            _log.i('Upserted ${items.length} items');
+          }
+          if (skippedDownloads > 0) {
+            _log.i('Skipped $skippedDownloads files already in download history');
+          }
+        }
+        
+        // Delete removed items
+        if (deletedPaths.isNotEmpty) {
+          final deleteCount = await _db.deleteByPaths(deletedPaths);
+          _log.i('Deleted $deleteCount items from database');
+        }
+        
+        // Reload all items from database to get complete list
+        final allItems = await _db.getAll();
+        final items = allItems.map((e) => LocalLibraryItem.fromJson(e)).toList();
+        
+        final now = DateTime.now();
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_lastScannedAtKey, now.toIso8601String());
+          _log.d('Saved lastScannedAt: $now');
+        } catch (e) {
+          _log.w('Failed to save lastScannedAt: $e');
+        }
+
+        state = state.copyWith(
+          items: items,
+          isScanning: false,
+          scanProgress: 100,
+          lastScannedAt: now,
+          scanWasCancelled: false,
+        );
+
+        _log.i('Incremental scan complete: ${items.length} total tracks '
+            '(${scannedList.length} new/updated, $skippedCount unchanged, ${deletedPaths.length} removed)');
       }
-
-      await _db.upsertBatch(items.map((e) => e.toJson()).toList());
-
-      final now = DateTime.now();
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_lastScannedAtKey, now.toIso8601String());
-        _log.d('Saved lastScannedAt: $now');
-      } catch (e) {
-        _log.w('Failed to save lastScannedAt: $e');
-      }
-
-      state = state.copyWith(
-        items: items,
-        isScanning: false,
-        scanProgress: 100,
-        lastScannedAt: now,
-        scanWasCancelled: false,
-      );
-
-      _log.i('Scan complete: ${items.length} tracks found');
     } catch (e, stack) {
       _log.e('Library scan failed: $e', e, stack);
       state = state.copyWith(isScanning: false, scanWasCancelled: false);
@@ -315,6 +441,59 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
   Future<int> getCount() async {
     return await _db.getCount();
+  }
+
+  Future<Map<String, int>> _backfillLegacyFileModTimes({
+    required bool isSaf,
+    required Map<String, int> existingFiles,
+  }) async {
+    final legacyPaths = existingFiles.entries
+        .where((entry) => entry.value <= 0)
+        .map((entry) => entry.key)
+        .toList();
+    if (legacyPaths.isEmpty) {
+      return const {};
+    }
+
+    if (isSaf) {
+      final uris = legacyPaths
+          .where((path) => path.startsWith('content://'))
+          .toList();
+      if (uris.isEmpty) {
+        return const {};
+      }
+      const chunkSize = 500;
+      final backfilled = <String, int>{};
+      try {
+        for (var i = 0; i < uris.length; i += chunkSize) {
+          if (_scanCancelRequested) {
+            break;
+          }
+          final end = (i + chunkSize < uris.length) ? i + chunkSize : uris.length;
+          final chunk = uris.sublist(i, end);
+          final chunkResult = await PlatformBridge.getSafFileModTimes(chunk);
+          backfilled.addAll(chunkResult);
+        }
+        return backfilled;
+      } catch (e) {
+        _log.w('Failed to backfill SAF mod times: $e');
+        return const {};
+      }
+    }
+
+    final backfilled = <String, int>{};
+    for (final path in legacyPaths) {
+      if (_scanCancelRequested || path.startsWith('content://')) {
+        continue;
+      }
+      try {
+        final stat = await File(path).stat();
+        if (stat.type == FileSystemEntityType.file) {
+          backfilled[path] = stat.modified.millisecondsSinceEpoch;
+        }
+      } catch (_) {}
+    }
+    return backfilled;
   }
 }
 

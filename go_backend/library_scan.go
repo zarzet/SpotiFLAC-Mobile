@@ -20,6 +20,7 @@ type LibraryScanResult struct {
 	FilePath    string `json:"filePath"`
 	CoverPath   string `json:"coverPath,omitempty"`
 	ScannedAt   string `json:"scannedAt"`
+	FileModTime int64  `json:"fileModTime,omitempty"` // Unix timestamp in milliseconds
 	ISRC        string `json:"isrc,omitempty"`
 	TrackNumber int    `json:"trackNumber,omitempty"`
 	DiscNumber  int    `json:"discNumber,omitempty"`
@@ -38,6 +39,14 @@ type LibraryScanProgress struct {
 	ErrorCount   int     `json:"error_count"`
 	ProgressPct  float64 `json:"progress_pct"`
 	IsComplete   bool    `json:"is_complete"`
+}
+
+// IncrementalScanResult contains results of an incremental library scan
+type IncrementalScanResult struct {
+	Scanned      []LibraryScanResult `json:"scanned"`      // New or updated files
+	DeletedPaths []string            `json:"deletedPaths"` // Files that no longer exist
+	SkippedCount int                 `json:"skippedCount"` // Files that were unchanged
+	TotalFiles   int                 `json:"totalFiles"`   // Total files in folder
 }
 
 var (
@@ -177,6 +186,11 @@ func scanAudioFile(filePath, scanTime string) (*LibraryScanResult, error) {
 		FilePath:  filePath,
 		ScannedAt: scanTime,
 		Format:    strings.TrimPrefix(ext, "."),
+	}
+
+	// Get file modification time
+	if info, err := os.Stat(filePath); err == nil {
+		result.FileModTime = info.ModTime().UnixMilli()
 	}
 
 	libraryCoverCacheMu.RLock()
@@ -409,6 +423,186 @@ func ReadAudioMetadata(filePath string) (string, error) {
 	jsonBytes, err := json.Marshal(result)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonBytes), nil
+}
+
+// ScanLibraryFolderIncremental performs an incremental scan of the library folder
+// existingFilesJSON is a JSON object mapping filePath -> modTime (unix millis)
+// Only files that are new or have changed modification time will be scanned
+func ScanLibraryFolderIncremental(folderPath, existingFilesJSON string) (string, error) {
+	if folderPath == "" {
+		return "{}", fmt.Errorf("folder path is empty")
+	}
+
+	info, err := os.Stat(folderPath)
+	if err != nil {
+		return "{}", fmt.Errorf("folder not found: %w", err)
+	}
+	if !info.IsDir() {
+		return "{}", fmt.Errorf("path is not a folder: %s", folderPath)
+	}
+
+	// Parse existing files map
+	existingFiles := make(map[string]int64)
+	if existingFilesJSON != "" && existingFilesJSON != "{}" {
+		if err := json.Unmarshal([]byte(existingFilesJSON), &existingFiles); err != nil {
+			GoLog("[LibraryScan] Warning: failed to parse existing files JSON: %v\n", err)
+		}
+	}
+
+	GoLog("[LibraryScan] Incremental scan starting, %d existing files in database\n", len(existingFiles))
+
+	// Reset progress
+	libraryScanProgressMu.Lock()
+	libraryScanProgress = LibraryScanProgress{}
+	libraryScanProgressMu.Unlock()
+
+	// Setup cancellation
+	libraryScanCancelMu.Lock()
+	if libraryScanCancel != nil {
+		close(libraryScanCancel)
+	}
+	libraryScanCancel = make(chan struct{})
+	cancelCh := libraryScanCancel
+	libraryScanCancelMu.Unlock()
+
+	// Collect all audio files with their mod times
+	type fileInfo struct {
+		path    string
+		modTime int64
+	}
+	var currentFiles []fileInfo
+	currentPathSet := make(map[string]bool)
+
+	err = filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		select {
+		case <-cancelCh:
+			return fmt.Errorf("scan cancelled")
+		default:
+		}
+
+		if !info.IsDir() {
+			ext := strings.ToLower(filepath.Ext(path))
+			if supportedAudioFormats[ext] {
+				currentFiles = append(currentFiles, fileInfo{
+					path:    path,
+					modTime: info.ModTime().UnixMilli(),
+				})
+				currentPathSet[path] = true
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return "{}", err
+	}
+
+	totalFiles := len(currentFiles)
+	libraryScanProgressMu.Lock()
+	libraryScanProgress.TotalFiles = totalFiles
+	libraryScanProgressMu.Unlock()
+
+	// Find files to scan (new or modified)
+	var filesToScan []fileInfo
+	skippedCount := 0
+
+	for _, f := range currentFiles {
+		existingModTime, exists := existingFiles[f.path]
+		if !exists {
+			// New file
+			filesToScan = append(filesToScan, f)
+		} else if f.modTime != existingModTime {
+			// Modified file
+			filesToScan = append(filesToScan, f)
+		} else {
+			// Unchanged file - skip
+			skippedCount++
+		}
+	}
+
+	// Find deleted files
+	var deletedPaths []string
+	for existingPath := range existingFiles {
+		if !currentPathSet[existingPath] {
+			deletedPaths = append(deletedPaths, existingPath)
+		}
+	}
+
+	GoLog("[LibraryScan] Incremental: %d to scan, %d skipped, %d deleted\n",
+		len(filesToScan), skippedCount, len(deletedPaths))
+
+	if len(filesToScan) == 0 {
+		libraryScanProgressMu.Lock()
+		libraryScanProgress.ScannedFiles = totalFiles
+		libraryScanProgress.IsComplete = true
+		libraryScanProgress.ProgressPct = 100
+		libraryScanProgressMu.Unlock()
+
+		result := IncrementalScanResult{
+			Scanned:      []LibraryScanResult{},
+			DeletedPaths: deletedPaths,
+			SkippedCount: skippedCount,
+			TotalFiles:   totalFiles,
+		}
+		jsonBytes, _ := json.Marshal(result)
+		return string(jsonBytes), nil
+	}
+
+	// Scan the files that need scanning
+	results := make([]LibraryScanResult, 0, len(filesToScan))
+	scanTime := time.Now().UTC().Format(time.RFC3339)
+	errorCount := 0
+
+	for i, f := range filesToScan {
+		select {
+		case <-cancelCh:
+			return "{}", fmt.Errorf("scan cancelled")
+		default:
+		}
+
+		libraryScanProgressMu.Lock()
+		libraryScanProgress.ScannedFiles = skippedCount + i + 1
+		libraryScanProgress.CurrentFile = filepath.Base(f.path)
+		libraryScanProgress.ProgressPct = float64(skippedCount+i+1) / float64(totalFiles) * 100
+		libraryScanProgressMu.Unlock()
+
+		result, err := scanAudioFile(f.path, scanTime)
+		if err != nil {
+			errorCount++
+			GoLog("[LibraryScan] Error scanning %s: %v\n", f.path, err)
+			continue
+		}
+
+		results = append(results, *result)
+	}
+
+	libraryScanProgressMu.Lock()
+	libraryScanProgress.ErrorCount = errorCount
+	libraryScanProgress.IsComplete = true
+	libraryScanProgress.ScannedFiles = totalFiles
+	libraryScanProgress.ProgressPct = 100
+	libraryScanProgressMu.Unlock()
+
+	GoLog("[LibraryScan] Incremental scan complete: %d scanned, %d skipped, %d deleted, %d errors\n",
+		len(results), skippedCount, len(deletedPaths), errorCount)
+
+	scanResult := IncrementalScanResult{
+		Scanned:      results,
+		DeletedPaths: deletedPaths,
+		SkippedCount: skippedCount,
+		TotalFiles:   totalFiles,
+	}
+
+	jsonBytes, err := json.Marshal(scanResult)
+	if err != nil {
+		return "{}", fmt.Errorf("failed to marshal results: %w", err)
 	}
 
 	return string(jsonBytes), nil

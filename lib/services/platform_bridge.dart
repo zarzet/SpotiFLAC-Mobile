@@ -953,7 +953,7 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     });
   }
 
-  /// Scan a folder for audio files and read their metadata
+/// Scan a folder for audio files and read their metadata
   /// Returns a list of track metadata
   static Future<List<Map<String, dynamic>>> scanLibraryFolder(String folderPath) async {
     _log.i('scanLibraryFolder: $folderPath');
@@ -964,6 +964,22 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
+  /// Perform an incremental scan of the library folder
+  /// Only scans files that are new or have changed since last scan
+  /// [existingFiles] is a map of filePath -> modTime (unix millis)
+  /// Returns IncrementalScanResult with scanned items, deleted paths, and skip count
+  static Future<Map<String, dynamic>> scanLibraryFolderIncremental(
+    String folderPath,
+    Map<String, int> existingFiles,
+  ) async {
+    _log.i('scanLibraryFolderIncremental: $folderPath (${existingFiles.length} existing files)');
+    final result = await _channel.invokeMethod('scanLibraryFolderIncremental', {
+      'folder_path': folderPath,
+      'existing_files': jsonEncode(existingFiles),
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
   static Future<List<Map<String, dynamic>>> scanSafTree(String treeUri) async {
     _log.i('scanSafTree: $treeUri');
     final result = await _channel.invokeMethod('scanSafTree', {
@@ -971,6 +987,30 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     });
     final list = jsonDecode(result as String) as List<dynamic>;
     return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  /// Incremental SAF tree scan - only scans new or modified files
+  /// Returns a map with 'files' (new/changed) and 'removedUris' (deleted files)
+  static Future<Map<String, dynamic>> scanSafTreeIncremental(
+    String treeUri,
+    Map<String, int> existingFiles,
+  ) async {
+    _log.i('scanSafTreeIncremental: $treeUri (${existingFiles.length} existing files)');
+    final result = await _channel.invokeMethod('scanSafTreeIncremental', {
+      'tree_uri': treeUri,
+      'existing_files': jsonEncode(existingFiles),
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  /// Get last-modified timestamps for a list of SAF file URIs.
+  /// Returns map uri -> modTime (unix millis), only for files that still exist.
+  static Future<Map<String, int>> getSafFileModTimes(List<String> uris) async {
+    final result = await _channel.invokeMethod('getSafFileModTimes', {
+      'uris': jsonEncode(uris),
+    });
+    final map = jsonDecode(result as String) as Map<String, dynamic>;
+    return map.map((key, value) => MapEntry(key, (value as num).toInt()));
   }
 
   /// Get current library scan progress

@@ -17,6 +17,10 @@
 - New settings fields for storage mode + SAF tree URI
 - SAF platform bridge methods: pick tree, stat/exists/delete, open content URI, copy to temp, write back to SAF
 - SAF library scan mode (DocumentFile traversal + metadata read)
+- Incremental library scanning for filesystem and SAF paths (only scans new/modified files and detects removed files)
+- Force Full Scan action in Library Settings to rescan all files on demand
+- Downloaded files are now excluded from Local Library scan results to prevent duplicate entries
+- Legacy library rows now support `file_mod_time` backfill before incremental scans (faster follow-up scans after upgrade)
 - Library UI toggle to show SAF-repaired history items
 - Scan cancelled banner + retry action for library scans
 - Android DocumentFile dependency for SAF operations
@@ -24,6 +28,7 @@
 - Donate page in Settings with Ko-fi and Buy Me a Coffee links
 - Per-App Language support on Android 13+ (locale_config.xml)
 - Interactive tutorial with working search bar simulation and clickable download buttons
+- Tutorial completion state is persisted after onboarding
 - Visual feedback animations for page transitions, entrance effects, and feature lists
 - New dedicated welcome step in setup wizard with improved branding
 
@@ -33,6 +38,10 @@
 - Tidal/Qobuz/Amazon/Extension downloads use SAF-aware output when enabled
 - Post-processing hooks run for SAF content URIs (via temp file bridge)
 - File operations in Library/Queue/Track screens now SAF-aware (`open`, `exists`, `delete`, `stat`)
+- Local Library scan defaults to incremental mode; full rescan is available via Force Full Scan
+- Local library database upgraded to schema v3 with `file_mod_time` tracking for incremental scan cache
+- Platform channels expanded with incremental scan APIs (`scanLibraryFolderIncremental`) on Android and iOS
+- Android platform channel adds `getSafFileModTimes` for SAF legacy cache backfill
 - Android build tooling upgraded to Gradle 9.3.1 (wrapper)
 - Android build path validated with Java 25 (Gradle/Kotlin/assemble debug)
 - SAF tree picker flow in `MainActivity` migrated to Activity Result API (`registerForActivityResult`)
@@ -61,6 +70,10 @@
 - Library scan hero card showing 0 tracks during scan (now shows scanned file count in real-time)
 - Library folder picker no longer requires MANAGE_EXTERNAL_STORAGE on Android 10+ (uses SAF tree picker)
 - One-time SAF migration prompt for users updating from pre-SAF versions
+- Fixed `fileModTime` propagation across Go/Android/Dart so incremental scan cache is stored and reused correctly
+- Fixed SAF incremental scan key mismatch (`lastModified` vs `fileModTime`) and normalized result fields (`skippedCount`, `totalFiles`)
+- Fixed incremental scan progress when all files are skipped (`scanned_files` now reaches total files)
+- Removed duplicate `"removeExtension"` branch in Android method channel handler (eliminates Kotlin duplicate-branch warning)
 
 ---
 

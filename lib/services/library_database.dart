@@ -15,6 +15,7 @@ class LocalLibraryItem {
   final String filePath;
   final String? coverPath;
   final DateTime scannedAt;
+  final int? fileModTime;
   final String? isrc;
   final int? trackNumber;
   final int? discNumber;
@@ -34,6 +35,7 @@ class LocalLibraryItem {
     required this.filePath,
     this.coverPath,
     required this.scannedAt,
+    this.fileModTime,
     this.isrc,
     this.trackNumber,
     this.discNumber,
@@ -54,6 +56,7 @@ class LocalLibraryItem {
     'filePath': filePath,
     'coverPath': coverPath,
     'scannedAt': scannedAt.toIso8601String(),
+    'fileModTime': fileModTime,
     'isrc': isrc,
     'trackNumber': trackNumber,
     'discNumber': discNumber,
@@ -75,6 +78,7 @@ class LocalLibraryItem {
         filePath: json['filePath'] as String,
         coverPath: json['coverPath'] as String?,
         scannedAt: DateTime.parse(json['scannedAt'] as String),
+        fileModTime: (json['fileModTime'] as num?)?.toInt(),
         isrc: json['isrc'] as String?,
         trackNumber: json['trackNumber'] as int?,
         discNumber: json['discNumber'] as int?,
@@ -111,7 +115,7 @@ class LibraryDatabase {
     
     return await openDatabase(
       path,
-      version: 2, // Bumped version for cover_path migration
+      version: 3, // Bumped version for file_mod_time migration
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -130,6 +134,7 @@ class LibraryDatabase {
         file_path TEXT NOT NULL UNIQUE,
         cover_path TEXT,
         scanned_at TEXT NOT NULL,
+        file_mod_time INTEGER,
         isrc TEXT,
         track_number INTEGER,
         disc_number INTEGER,
@@ -158,6 +163,12 @@ class LibraryDatabase {
       await db.execute('ALTER TABLE library ADD COLUMN cover_path TEXT');
       _log.i('Added cover_path column');
     }
+    
+    if (oldVersion < 3) {
+      // Add file_mod_time column for incremental scanning
+      await db.execute('ALTER TABLE library ADD COLUMN file_mod_time INTEGER');
+      _log.i('Added file_mod_time column for incremental scanning');
+    }
   }
   
   Map<String, dynamic> _jsonToDbRow(Map<String, dynamic> json) {
@@ -170,6 +181,7 @@ class LibraryDatabase {
       'file_path': json['filePath'],
       'cover_path': json['coverPath'],
       'scanned_at': json['scannedAt'],
+      'file_mod_time': json['fileModTime'],
       'isrc': json['isrc'],
       'track_number': json['trackNumber'],
       'disc_number': json['discNumber'],
@@ -192,6 +204,7 @@ class LibraryDatabase {
       'filePath': row['file_path'],
       'coverPath': row['cover_path'],
       'scannedAt': row['scanned_at'],
+      'fileModTime': row['file_mod_time'],
       'isrc': row['isrc'],
       'trackNumber': row['track_number'],
       'discNumber': row['disc_number'],
@@ -382,5 +395,59 @@ class LibraryDatabase {
     final db = await database;
     await db.close();
     _database = null;
+  }
+  
+  /// Get all file paths with their modification times for incremental scanning
+  /// Returns a map of filePath -> fileModTime (unix timestamp in milliseconds)
+  Future<Map<String, int>> getFileModTimes() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT file_path, COALESCE(file_mod_time, 0) AS file_mod_time FROM library'
+    );
+    final result = <String, int>{};
+    for (final row in rows) {
+      final path = row['file_path'] as String;
+      final modTime = (row['file_mod_time'] as num?)?.toInt() ?? 0;
+      result[path] = modTime;
+    }
+    return result;
+  }
+  
+  /// Update file_mod_time for existing rows using file_path as key.
+  Future<void> updateFileModTimes(Map<String, int> fileModTimes) async {
+    if (fileModTimes.isEmpty) return;
+    final db = await database;
+    final batch = db.batch();
+    for (final entry in fileModTimes.entries) {
+      batch.update(
+        'library',
+        {'file_mod_time': entry.value},
+        where: 'file_path = ?',
+        whereArgs: [entry.key],
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+  
+  /// Get all file paths in the library (for detecting deleted files)
+  Future<Set<String>> getAllFilePaths() async {
+    final db = await database;
+    final rows = await db.rawQuery('SELECT file_path FROM library');
+    return rows.map((r) => r['file_path'] as String).toSet();
+  }
+  
+  /// Delete multiple items by their file paths
+  Future<int> deleteByPaths(List<String> filePaths) async {
+    if (filePaths.isEmpty) return 0;
+    final db = await database;
+    final placeholders = List.filled(filePaths.length, '?').join(',');
+    final result = await db.rawDelete(
+      'DELETE FROM library WHERE file_path IN ($placeholders)',
+      filePaths,
+    );
+    if (result > 0) {
+      _log.i('Deleted $result items from library');
+    }
+    return result;
   }
 }
