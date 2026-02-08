@@ -37,7 +37,7 @@ var (
 func NewSongLinkClient() *SongLinkClient {
 	songLinkClientOnce.Do(func() {
 		globalSongLinkClient = &SongLinkClient{
-			client: NewHTTPClientWithTimeout(SongLinkTimeout),
+			client: NewMetadataHTTPClient(SongLinkTimeout),
 		}
 	})
 	return globalSongLinkClient

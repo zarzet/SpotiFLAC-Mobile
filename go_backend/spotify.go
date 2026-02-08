@@ -114,7 +114,7 @@ func NewSpotifyMetadataClient() (*SpotifyMetadataClient, error) {
 	src := rand.NewSource(time.Now().UnixNano())
 
 	c := &SpotifyMetadataClient{
-		httpClient:   NewHTTPClientWithTimeout(15 * time.Second),
+		httpClient:   NewMetadataHTTPClient(15 * time.Second),
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		rng:          rand.New(src),

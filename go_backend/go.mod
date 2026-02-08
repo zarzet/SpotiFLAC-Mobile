@@ -7,10 +7,7 @@ toolchain go1.25.7
 require (
 	github.com/dop251/goja v0.0.0-20260106131823-651366fbe6e3
 	github.com/go-flac/flacpicture/v2 v2.0.2
-	github.com/go-flac/flacpicture/v2 v2.0.2
 	github.com/go-flac/flacvorbis/v2 v2.0.2
-	github.com/go-flac/flacvorbis/v2 v2.0.2
-	github.com/go-flac/go-flac/v2 v2.0.4
 	github.com/go-flac/go-flac/v2 v2.0.4
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/mobile v0.0.0-20260204172633-1dceadbbeea3

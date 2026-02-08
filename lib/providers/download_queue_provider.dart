@@ -3444,6 +3444,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           errorType: errorType,
         );
         _failedInSession++;
+
+        // Immediately cleanup connections after failure to prevent
+        // poisoned connection pool from affecting subsequent downloads
+        try {
+          await PlatformBridge.cleanupConnections();
+        } catch (e) {
+          _log.e('Post-failure connection cleanup failed: $e');
+        }
       }
 
       _downloadCount++;
@@ -3485,6 +3493,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         errorType: errorType,
       );
       _failedInSession++;
+
+      // Immediately cleanup connections after exception
+      try {
+        await PlatformBridge.cleanupConnections();
+      } catch (cleanupErr) {
+        _log.e('Post-exception connection cleanup failed: $cleanupErr');
+      }
     }
   }
 }

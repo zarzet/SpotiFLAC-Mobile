@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.5.2] - 2026-02-08
+
+### Fixed
+
+- Fixed local library scan crashing on Samsung One UI devices due to MediaStore URI mismatch in SAF tree traversal
+- Added MediaStore URI fallback in SAF file reader: when SAF permission is denied for Samsung-returned MediaStore URIs, automatically retries using READ_MEDIA_AUDIO permission
+- Hardened SAF scan with per-directory and per-file error handling: scan now skips problematic files instead of aborting entirely
+- Added visited directory tracking to prevent infinite loops from circular SAF references
+- Fixed metadata enrichment cascading failure after one queued download fails: metadata APIs (Deezer, SongLink, Spotify) now use isolated `metadataTransport` so failed download connections cannot poison metadata requests
+- Added immediate connection cleanup on every download failure path (error response and exception), not only periodic cleanup every N downloads
+- Fixed incremental SAF scan edge case where `lastModified()` failure could misclassify existing files as removed (`removedUris`)
+- Fixed tracks marked "In Library" still showing active download button - download button now shows as completed (checkmark) for local library tracks across all screens (album, playlist, artist, home/search)
+
 ## [3.5.1] - 2026-02-08
 
 ### Performance

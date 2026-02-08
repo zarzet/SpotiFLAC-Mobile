@@ -55,6 +55,27 @@ var sharedTransport = &http.Transport{
 	DisableCompression:    true,
 }
 
+// metadataTransport is a separate transport for metadata API calls (Deezer, Spotify, SongLink).
+// Isolated from download traffic so that download failures cannot poison
+// the connection pool used by metadata enrichment.
+var metadataTransport = &http.Transport{
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	MaxIdleConns:          30,
+	MaxIdleConnsPerHost:   5,
+	MaxConnsPerHost:       10,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	DisableKeepAlives:     false,
+	ForceAttemptHTTP2:     true,
+	WriteBufferSize:       32 * 1024,
+	ReadBufferSize:        32 * 1024,
+	DisableCompression:    true,
+}
+
 var sharedClient = &http.Client{
 	Transport: sharedTransport,
 	Timeout:   DefaultTimeout,
@@ -72,6 +93,15 @@ func NewHTTPClientWithTimeout(timeout time.Duration) *http.Client {
 	}
 }
 
+// NewMetadataHTTPClient creates an HTTP client using the isolated metadata transport.
+// Use this for API calls that should not be affected by download traffic.
+func NewMetadataHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Transport: metadataTransport,
+		Timeout:   timeout,
+	}
+}
+
 func GetSharedClient() *http.Client {
 	return sharedClient
 }
@@ -82,6 +112,7 @@ func GetDownloadClient() *http.Client {
 
 func CloseIdleConnections() {
 	sharedTransport.CloseIdleConnections()
+	metadataTransport.CloseIdleConnections()
 }
 
 // Also checks for ISP blocking on errors

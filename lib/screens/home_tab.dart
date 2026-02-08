@@ -2466,7 +2466,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
     final isCompleted = queueItem?.status == DownloadStatus.completed;
     final progress = queueItem?.progress ?? 0.0;
     
-    final showAsDownloaded = isCompleted || (!isQueued && isInHistory);
+    final showAsDownloaded = isCompleted || (!isQueued && isInHistory) || isInLocalLibrary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

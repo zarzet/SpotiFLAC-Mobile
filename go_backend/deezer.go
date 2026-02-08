@@ -47,7 +47,7 @@ var (
 func GetDeezerClient() *DeezerClient {
 	deezerClientOnce.Do(func() {
 		deezerClient = &DeezerClient{
-			httpClient:  NewHTTPClientWithTimeout(deezerAPITimeoutMobile),
+			httpClient:  NewMetadataHTTPClient(deezerAPITimeoutMobile),
 			searchCache: make(map[string]*cacheEntry),
 			albumCache:  make(map[string]*cacheEntry),
 			artistCache: make(map[string]*cacheEntry),

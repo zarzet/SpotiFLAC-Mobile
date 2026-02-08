@@ -457,7 +457,7 @@ class _PlaylistTrackItem extends ConsumerWidget {
     final isCompleted = queueItem?.status == DownloadStatus.completed;
     final progress = queueItem?.progress ?? 0.0;
     
-    final showAsDownloaded = isCompleted || (!isQueued && isInHistory);
+    final showAsDownloaded = isCompleted || (!isQueued && isInHistory) || isInLocalLibrary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),

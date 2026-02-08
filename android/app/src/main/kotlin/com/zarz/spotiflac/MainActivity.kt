@@ -424,36 +424,159 @@ class MainActivity: FlutterFragmentActivity() {
         return obj.toString()
     }
 
-    private fun copyUriToTemp(uri: Uri, fallbackExt: String? = null): String? {
-        val mime = contentResolver.getType(uri)
-        val nameHint = (
-            DocumentFile.fromSingleUri(this, uri)?.name
-                ?: uri.lastPathSegment
-                ?: ""
-        ).lowercase(Locale.ROOT)
-        val extFromName = when {
-            nameHint.endsWith(".m4a") -> ".m4a"
-            nameHint.endsWith(".mp3") -> ".mp3"
-            nameHint.endsWith(".opus") -> ".opus"
-            nameHint.endsWith(".flac") -> ".flac"
+    /**
+     * Detect whether a content URI belongs to the MediaStore provider.
+     * Samsung One UI may return MediaStore URIs from SAF tree traversal,
+     * which require READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE permission
+     * instead of SAF tree permission.
+     */
+    private fun isMediaStoreUri(uri: Uri): Boolean {
+        val authority = uri.authority ?: return false
+        return authority == "media" ||
+               authority.startsWith("media.") ||
+               authority.contains("media")
+    }
+
+    /**
+     * Resolve extension from a MediaStore URI by querying DISPLAY_NAME or MIME_TYPE.
+     */
+    private fun resolveMediaStoreExt(uri: Uri, fallbackExt: String?): String {
+        // Try DISPLAY_NAME first
+        try {
+            contentResolver.query(uri, arrayOf(android.provider.MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val name = cursor.getString(0)?.lowercase(Locale.ROOT) ?: ""
+                    val ext = extFromFileName(name)
+                    if (ext.isNotBlank()) return ext
+                }
+            }
+        } catch (_: Exception) {}
+
+        // Try MIME_TYPE
+        try {
+            val mime = contentResolver.getType(uri)
+            val ext = extFromMimeType(mime)
+            if (ext.isNotBlank()) return ext
+        } catch (_: Exception) {}
+
+        return fallbackExt ?: ""
+    }
+
+    private fun extFromFileName(name: String): String {
+        return when {
+            name.endsWith(".m4a") -> ".m4a"
+            name.endsWith(".mp3") -> ".mp3"
+            name.endsWith(".opus") -> ".opus"
+            name.endsWith(".flac") -> ".flac"
+            name.endsWith(".ogg") -> ".ogg"
             else -> ""
         }
-        val extFromMime = when (mime) {
+    }
+
+    private fun extFromMimeType(mime: String?): String {
+        return when (mime) {
             "audio/mp4" -> ".m4a"
             "audio/mpeg" -> ".mp3"
             "audio/ogg" -> ".opus"
             "audio/flac" -> ".flac"
             else -> ""
         }
-        val ext = if (extFromName.isNotBlank()) extFromName else if (extFromMime.isNotBlank()) extFromMime else (fallbackExt ?: "")
-        val suffix: String? = if (ext.isNotBlank()) ext else null
-        val tempFile = File.createTempFile("saf_", suffix, cacheDir)
-        contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(tempFile).use { output ->
-                input.copyTo(output)
+    }
+
+    private fun copyUriToTemp(uri: Uri, fallbackExt: String? = null): String? {
+        var tempFile: File? = null
+        var success = false
+
+        try {
+            val mime = try { contentResolver.getType(uri) } catch (_: Exception) { null }
+            val nameHint = (
+                try { DocumentFile.fromSingleUri(this, uri)?.name } catch (_: Exception) { null }
+                    ?: uri.lastPathSegment
+                    ?: ""
+            ).lowercase(Locale.ROOT)
+            val extFromName = extFromFileName(nameHint)
+            val extFromMime = extFromMimeType(mime)
+            val ext = if (extFromName.isNotBlank()) extFromName else if (extFromMime.isNotBlank()) extFromMime else (fallbackExt ?: "")
+            val suffix: String? = if (ext.isNotBlank()) ext else null
+            tempFile = File.createTempFile("saf_", suffix, cacheDir)
+
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
+
+            success = true
+            return tempFile.absolutePath
+        } catch (e: SecurityException) {
+            // SAF permission denied - try MediaStore fallback for Samsung One UI
+            // which may return MediaStore URIs from SAF tree traversal
+            if (isMediaStoreUri(uri)) {
+                android.util.Log.d(
+                    "SpotiFLAC",
+                    "SAF denied for MediaStore URI, trying MediaStore fallback: $uri",
+                )
+                val result = copyMediaStoreUriToTemp(uri, fallbackExt)
+                if (result != null) {
+                    success = true
+                    return result
+                }
             }
-        } ?: return null
-        return tempFile.absolutePath
+            android.util.Log.w(
+                "SpotiFLAC",
+                "SAF read denied for $uri: ${e.message}",
+            )
+            return null
+        } catch (e: Exception) {
+            android.util.Log.w(
+                "SpotiFLAC",
+                "Failed copying SAF uri $uri to temp: ${e.message}",
+            )
+            return null
+        } finally {
+            if (!success) {
+                try {
+                    tempFile?.delete()
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    /**
+     * Fallback for Samsung One UI: read a MediaStore content URI using
+     * READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE permission instead of SAF.
+     * This handles the case where SAF tree traversal returns MediaStore URIs
+     * that the SAF document provider cannot access.
+     */
+    private fun copyMediaStoreUriToTemp(uri: Uri, fallbackExt: String?): String? {
+        var tempFile: File? = null
+        try {
+            val ext = resolveMediaStoreExt(uri, fallbackExt)
+            val suffix: String? = if (ext.isNotBlank()) ext else null
+            tempFile = File.createTempFile("ms_", suffix, cacheDir)
+
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: run {
+                tempFile.delete()
+                return null
+            }
+
+            android.util.Log.d(
+                "SpotiFLAC",
+                "MediaStore fallback succeeded for $uri",
+            )
+            return tempFile.absolutePath
+        } catch (e: Exception) {
+            android.util.Log.w(
+                "SpotiFLAC",
+                "MediaStore fallback also failed for $uri: ${e.message}",
+            )
+            try { tempFile?.delete() } catch (_: Exception) {}
+            return null
+        }
     }
 
     private fun writeUriFromPath(uri: Uri, srcPath: String): Boolean {
@@ -547,9 +670,14 @@ class MainActivity: FlutterFragmentActivity() {
         resetSafScanProgress()
         safScanCancel = false
         safScanActive = true
+        updateSafScanProgress {
+            it.currentFile = "Scanning folders..."
+        }
 
         val supportedExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
         val audioFiles = mutableListOf<Pair<DocumentFile, String>>()
+        val visitedDirUris = mutableSetOf<String>()
+        var traversalErrors = 0
 
         val queue: ArrayDeque<Pair<DocumentFile, String>> = ArrayDeque()
         queue.add(root to "")
@@ -561,22 +689,52 @@ class MainActivity: FlutterFragmentActivity() {
             }
 
             val (dir, path) = queue.removeFirst()
-            for (child in dir.listFiles()) {
+            val dirUri = dir.uri.toString()
+            if (!visitedDirUris.add(dirUri)) {
+                continue
+            }
+
+            val children = try {
+                dir.listFiles()
+            } catch (e: Exception) {
+                traversalErrors++
+                updateSafScanProgress { it.errorCount = traversalErrors }
+                android.util.Log.w(
+                    "SpotiFLAC",
+                    "SAF scan: failed listing directory $dirUri: ${e.message}",
+                )
+                continue
+            }
+
+            for (child in children) {
                 if (safScanCancel) {
                     updateSafScanProgress { it.isComplete = true }
                     return "[]"
                 }
 
-                if (child.isDirectory) {
-                    val childName = child.name ?: continue
-                    val childPath = if (path.isBlank()) childName else "$path/$childName"
-                    queue.add(child to childPath)
-                } else if (child.isFile) {
-                    val name = child.name ?: continue
-                    val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                    if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
-                        audioFiles.add(child to path)
+                try {
+                    if (child.isDirectory) {
+                        val childName = child.name ?: continue
+                        val childPath = if (path.isBlank()) childName else "$path/$childName"
+                        val childUri = child.uri.toString()
+                        if (childUri == dirUri || visitedDirUris.contains(childUri)) {
+                            continue
+                        }
+                        queue.add(child to childPath)
+                    } else if (child.isFile) {
+                        val name = child.name ?: continue
+                        val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                        if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+                            audioFiles.add(child to path)
+                        }
                     }
+                } catch (e: Exception) {
+                    traversalErrors++
+                    updateSafScanProgress { it.errorCount = traversalErrors }
+                    android.util.Log.w(
+                        "SpotiFLAC",
+                        "SAF scan: skipped child under $dirUri: ${e.message}",
+                    )
                 }
             }
         }
@@ -595,7 +753,7 @@ class MainActivity: FlutterFragmentActivity() {
 
         val results = JSONArray()
         var scanned = 0
-        var errors = 0
+        var errors = traversalErrors
 
         for ((doc, _) in audioFiles) {
             if (safScanCancel) {
@@ -603,14 +761,22 @@ class MainActivity: FlutterFragmentActivity() {
                 return "[]"
             }
 
-            val name = doc.name ?: ""
+            val name = try { doc.name ?: "" } catch (_: Exception) { "" }
             updateSafScanProgress {
                 it.currentFile = name
             }
 
             val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
             val fallbackExt = if (ext.isNotBlank()) ".${ext}" else null
-            val tempPath = copyUriToTemp(doc.uri, fallbackExt)
+            val tempPath = try {
+                copyUriToTemp(doc.uri, fallbackExt)
+            } catch (e: Exception) {
+                android.util.Log.w(
+                    "SpotiFLAC",
+                    "SAF scan: failed to copy ${doc.uri}: ${e.message}",
+                )
+                null
+            }
             if (tempPath == null) {
                 errors++
             } else {
@@ -618,7 +784,7 @@ class MainActivity: FlutterFragmentActivity() {
                     val metadataJson = Gobackend.readAudioMetadataJSON(tempPath)
                     if (metadataJson.isNotBlank()) {
                         val obj = JSONObject(metadataJson)
-                        val lastModified = doc.lastModified()
+                        val lastModified = try { doc.lastModified() } catch (_: Exception) { 0L }
                         obj.put("filePath", doc.uri.toString())
                         obj.put("fileModTime", lastModified)
                         results.put(obj)
@@ -691,10 +857,15 @@ class MainActivity: FlutterFragmentActivity() {
         resetSafScanProgress()
         safScanCancel = false
         safScanActive = true
+        updateSafScanProgress {
+            it.currentFile = "Scanning folders..."
+        }
 
         val supportedExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
         val audioFiles = mutableListOf<Triple<DocumentFile, String, Long>>() // doc, path, lastModified
         val currentUris = mutableSetOf<String>()
+        val visitedDirUris = mutableSetOf<String>()
+        var traversalErrors = 0
 
         // Collect all audio files with lastModified
         val queue: ArrayDeque<Pair<DocumentFile, String>> = ArrayDeque()
@@ -713,7 +884,24 @@ class MainActivity: FlutterFragmentActivity() {
             }
 
             val (dir, path) = queue.removeFirst()
-            for (child in dir.listFiles()) {
+            val dirUri = dir.uri.toString()
+            if (!visitedDirUris.add(dirUri)) {
+                continue
+            }
+
+            val children = try {
+                dir.listFiles()
+            } catch (e: Exception) {
+                traversalErrors++
+                updateSafScanProgress { it.errorCount = traversalErrors }
+                android.util.Log.w(
+                    "SpotiFLAC",
+                    "SAF incremental scan: failed listing directory $dirUri: ${e.message}",
+                )
+                continue
+            }
+
+            for (child in children) {
                 if (safScanCancel) {
                     updateSafScanProgress { it.isComplete = true }
                     val result = JSONObject()
@@ -725,24 +913,44 @@ class MainActivity: FlutterFragmentActivity() {
                     return result.toString()
                 }
 
-                if (child.isDirectory) {
-                    val childName = child.name ?: continue
-                    val childPath = if (path.isBlank()) childName else "$path/$childName"
-                    queue.add(child to childPath)
-                } else if (child.isFile) {
-                    val name = child.name ?: continue
-                    val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                    if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+                try {
+                    if (child.isDirectory) {
+                        val childName = child.name ?: continue
+                        val childPath = if (path.isBlank()) childName else "$path/$childName"
+                        val childUri = child.uri.toString()
+                        if (childUri == dirUri || visitedDirUris.contains(childUri)) {
+                            continue
+                        }
+                        queue.add(child to childPath)
+                    } else if (child.isFile) {
+                        // Mark file as present first so it cannot be mis-classified as removed
+                        // when provider-specific metadata calls (e.g., lastModified) fail.
                         val uriStr = child.uri.toString()
-                        val lastModified = child.lastModified()
                         currentUris.add(uriStr)
-                        
-                        // Check if file is new or modified
-                        val existingModified = existingFiles[uriStr]
-                        if (existingModified == null || existingModified != lastModified) {
-                            audioFiles.add(Triple(child, path, lastModified))
+
+                        val name = child.name ?: continue
+                        val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                        if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+                            val existingModified = existingFiles[uriStr]
+                            val lastModified = try {
+                                child.lastModified()
+                            } catch (_: Exception) {
+                                existingModified ?: 0L
+                            }
+
+                            // Check if file is new or modified
+                            if (existingModified == null || existingModified != lastModified) {
+                                audioFiles.add(Triple(child, path, lastModified))
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    traversalErrors++
+                    updateSafScanProgress { it.errorCount = traversalErrors }
+                    android.util.Log.w(
+                        "SpotiFLAC",
+                        "SAF incremental scan: skipped child under $dirUri: ${e.message}",
+                    )
                 }
             }
         }
@@ -772,7 +980,7 @@ class MainActivity: FlutterFragmentActivity() {
 
         val results = JSONArray()
         var scanned = 0
-        var errors = 0
+        var errors = traversalErrors
 
         for ((doc, _, lastModified) in audioFiles) {
             if (safScanCancel) {
@@ -786,14 +994,22 @@ class MainActivity: FlutterFragmentActivity() {
                 return result.toString()
             }
 
-            val name = doc.name ?: ""
+            val name = try { doc.name ?: "" } catch (_: Exception) { "" }
             updateSafScanProgress {
                 it.currentFile = name
             }
 
             val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
             val fallbackExt = if (ext.isNotBlank()) ".${ext}" else null
-            val tempPath = copyUriToTemp(doc.uri, fallbackExt)
+            val tempPath = try {
+                copyUriToTemp(doc.uri, fallbackExt)
+            } catch (e: Exception) {
+                android.util.Log.w(
+                    "SpotiFLAC",
+                    "SAF incremental scan: failed to copy ${doc.uri}: ${e.message}",
+                )
+                null
+            }
             if (tempPath == null) {
                 errors++
             } else {
@@ -801,9 +1017,10 @@ class MainActivity: FlutterFragmentActivity() {
                     val metadataJson = Gobackend.readAudioMetadataJSON(tempPath)
                     if (metadataJson.isNotBlank()) {
                         val obj = JSONObject(metadataJson)
+                        val safeLastModified = try { doc.lastModified() } catch (_: Exception) { lastModified }
                         obj.put("filePath", doc.uri.toString())
-                        obj.put("fileModTime", lastModified)
-                        obj.put("lastModified", lastModified)
+                        obj.put("fileModTime", safeLastModified)
+                        obj.put("lastModified", safeLastModified)
                         results.put(obj)
                     } else {
                         errors++
