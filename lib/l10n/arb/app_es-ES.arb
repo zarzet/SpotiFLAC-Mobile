@@ -13,7 +13,7 @@
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "Biblioteca",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
@@ -604,7 +604,7 @@
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
-  "aboutSjdonadoDesc": "Creator of I Don't Have Spotify (IDHS). The fallback link resolver that saves the day!",
+  "aboutSjdonadoDesc": "Creador de I No tengo Spotify (IDHS). ¡La solución de enlace de reserva que salva el día!",
   "@aboutSjdonadoDesc": {
     "description": "Credit description for sjdonado"
   },
@@ -628,7 +628,7 @@
   "@aboutSpotiSaver": {
     "description": "Name of SpotiSaver API service - DO NOT TRANSLATE"
   },
-  "aboutSpotiSaverDesc": "Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!",
+  "aboutSpotiSaverDesc": "Tidal de transmisión Hi-Res FLAC. ¡Una pieza clave del rompecabezas sin pérdida!",
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
@@ -879,7 +879,7 @@
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
-  "setupIcloudNotSupported": "iCloud Drive is not supported. Please use the app Documents folder.",
+  "setupIcloudNotSupported": "iCloud Drive no es compatible. Utilice la carpeta Documentos de la aplicación.",
   "@setupIcloudNotSupported": {
     "description": "Error when user selects iCloud Drive on iOS"
   },
@@ -1214,7 +1214,7 @@
       }
     }
   },
-  "snackbarAlreadyInLibrary": "\"{trackName}\" already exists in your library",
+  "snackbarAlreadyInLibrary": "\"{trackName}\" ya existe en tu biblioteca",
   "@snackbarAlreadyInLibrary": {
     "description": "Snackbar - track already exists in local library",
     "placeholders": {
@@ -2454,43 +2454,43 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "qualityLossy": "Lossy",
+  "qualityLossy": "Con pérdidas",
   "@qualityLossy": {
     "description": "Quality option - lossy format (MP3/Opus)"
   },
-  "qualityLossyMp3Subtitle": "MP3 320kbps (converted from FLAC)",
+  "qualityLossyMp3Subtitle": "MP3 320kbps (convertido desde FLAC)",
   "@qualityLossyMp3Subtitle": {
     "description": "Technical spec for lossy MP3"
   },
-  "qualityLossyOpusSubtitle": "Opus 128kbps (converted from FLAC)",
+  "qualityLossyOpusSubtitle": "Opus 128kbps (convertido de FLAC)",
   "@qualityLossyOpusSubtitle": {
     "description": "Technical spec for lossy Opus"
   },
-  "enableLossyOption": "Enable Lossy Option",
+  "enableLossyOption": "Habilitar opción con pérdida",
   "@enableLossyOption": {
     "description": "Setting - enable lossy quality option"
   },
-  "enableLossyOptionSubtitleOn": "Lossy quality option is available",
+  "enableLossyOptionSubtitleOn": "La opción de calidad con pérdida está disponible",
   "@enableLossyOptionSubtitleOn": {
     "description": "Subtitle when lossy is enabled"
   },
-  "enableLossyOptionSubtitleOff": "Downloads FLAC then converts to lossy format",
+  "enableLossyOptionSubtitleOff": "Descargas FLAC y luego se convierten en formato con pérdida",
   "@enableLossyOptionSubtitleOff": {
     "description": "Subtitle when lossy is disabled"
   },
-  "lossyFormat": "Lossy Format",
+  "lossyFormat": "Formato con Perdido",
   "@lossyFormat": {
     "description": "Setting - choose lossy format"
   },
-  "lossyFormatDescription": "Choose the lossy format for conversion",
+  "lossyFormatDescription": "Elegir el formato con pérdida para la conversión",
   "@lossyFormatDescription": {
     "description": "Description for lossy format picker"
   },
-  "lossyFormatMp3Subtitle": "320kbps, best compatibility",
+  "lossyFormatMp3Subtitle": "320kbps, mejor compatibilidad",
   "@lossyFormatMp3Subtitle": {
     "description": "MP3 format description"
   },
-  "lossyFormatOpusSubtitle": "128kbps, better quality at smaller size",
+  "lossyFormatOpusSubtitle": "128kbps, mejor calidad a menor tamaño",
   "@lossyFormatOpusSubtitle": {
     "description": "Opus format description"
   },
@@ -2618,43 +2618,43 @@
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "queueExportFailed": "Export",
+  "queueExportFailed": "Exportar",
   "@queueExportFailed": {
     "description": "Button - export failed downloads to TXT"
   },
-  "queueExportFailedSuccess": "Failed downloads exported to TXT file",
+  "queueExportFailedSuccess": "Descarga fallida exportada al archivo TXT",
   "@queueExportFailedSuccess": {
     "description": "Success message after exporting failed downloads"
   },
-  "queueExportFailedClear": "Clear Failed",
+  "queueExportFailedClear": "Limpieza Fallida",
   "@queueExportFailedClear": {
     "description": "Action to clear failed downloads after export"
   },
-  "queueExportFailedError": "Failed to export downloads",
+  "queueExportFailedError": "Error al exportar descargas",
   "@queueExportFailedError": {
     "description": "Error message when export fails"
   },
-  "settingsAutoExportFailed": "Auto-export failed downloads",
+  "settingsAutoExportFailed": "Autoexportar descargas fallidas",
   "@settingsAutoExportFailed": {
     "description": "Setting toggle for auto-export"
   },
-  "settingsAutoExportFailedSubtitle": "Save failed downloads to TXT file automatically",
+  "settingsAutoExportFailedSubtitle": "Guardar descargas fallidas en el archivo TXT automáticamente",
   "@settingsAutoExportFailedSubtitle": {
     "description": "Subtitle for auto-export setting"
   },
-  "settingsDownloadNetwork": "Download Network",
+  "settingsDownloadNetwork": "Red de descarga",
   "@settingsDownloadNetwork": {
     "description": "Setting for network type preference"
   },
-  "settingsDownloadNetworkAny": "WiFi + Mobile Data",
+  "settingsDownloadNetworkAny": "WiFi + Datos móviles",
   "@settingsDownloadNetworkAny": {
     "description": "Network option - use any connection"
   },
-  "settingsDownloadNetworkWifiOnly": "WiFi Only",
+  "settingsDownloadNetworkWifiOnly": "Iniciar solo por Wifi",
   "@settingsDownloadNetworkWifiOnly": {
     "description": "Network option - only use WiFi"
   },
-  "settingsDownloadNetworkSubtitle": "Choose which network to use for downloads. When set to WiFi Only, downloads will pause on mobile data.",
+  "settingsDownloadNetworkSubtitle": "Elegir qué red usar para descargas. Cuando se establece en WiFi solamente, las descargas se detendrán en los datos móviles.",
   "@settingsDownloadNetworkSubtitle": {
     "description": "Subtitle explaining network preference"
   },
@@ -2722,11 +2722,11 @@
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistAlbumSingles": "Artist / Album + Singles",
+  "albumFolderArtistAlbumSingles": "Artista / Álbum + Pistas",
   "@albumFolderArtistAlbumSingles": {
     "description": "Album folder option with singles inside artist"
   },
-  "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
+  "albumFolderArtistAlbumSinglesSubtitle": "Artista/Álbum/ y Artista/pistas/",
   "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
   },
@@ -2836,15 +2836,15 @@
       }
     }
   },
-  "discographyDownload": "Download Discography",
+  "discographyDownload": "Descargar Discografía",
   "@discographyDownload": {
     "description": "Button - download artist discography"
   },
-  "discographyDownloadAll": "Download All",
+  "discographyDownloadAll": "Descargar Todo",
   "@discographyDownloadAll": {
     "description": "Option - download entire discography"
   },
-  "discographyDownloadAllSubtitle": "{count} tracks from {albumCount} releases",
+  "discographyDownloadAllSubtitle": "{count} pistas de {albumCount} lanzamientos",
   "@discographyDownloadAllSubtitle": {
     "description": "Subtitle showing total tracks and albums",
     "placeholders": {
@@ -2856,11 +2856,11 @@
       }
     }
   },
-  "discographyAlbumsOnly": "Albums Only",
+  "discographyAlbumsOnly": "Sólo álbumes",
   "@discographyAlbumsOnly": {
     "description": "Option - download only albums"
   },
-  "discographyAlbumsOnlySubtitle": "{count} tracks from {albumCount} albums",
+  "discographyAlbumsOnlySubtitle": "{count} pistas de {albumCount} álbumes",
   "@discographyAlbumsOnlySubtitle": {
     "description": "Subtitle showing album tracks count",
     "placeholders": {
@@ -2872,7 +2872,7 @@
       }
     }
   },
-  "discographySinglesOnly": "Singles & EPs Only",
+  "discographySinglesOnly": "Solo sencillos & EPs ",
   "@discographySinglesOnly": {
     "description": "Option - download only singles"
   },
