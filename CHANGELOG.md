@@ -31,6 +31,8 @@
   - Automatic fallback in Spotify metadata fetch path when primary source fails
 - Lyrics extraction now supports MP3 (ID3v2) and Opus/OGG (Vorbis comments) in addition to FLAC
   - Includes heuristic detection of lyrics stored in Comment fields
+- Edit Metadata now supports manual cover selection (pick/replace cover image) and embeds it into audio tags on save
+- Save Lyrics now shows an immediate in-progress snackbar (`Saving lyrics...`) so users know the operation has started
 
 ### Changed
 
@@ -43,6 +45,8 @@
 - Amazon now uses the new `amazon.afkarxyz.fun` API flow (ASIN-based track endpoint + legacy fallback) with encrypted stream support
 - Amazon ASIN extraction rewritten with robust URL/query-param parsing and regex fallback
 - Amazon provider re-enabled in download service picker and download settings (alongside Tidal, Qobuz, and YouTube picker flow)
+- Track Metadata cover UI now refreshes from the embedded file after Edit Metadata/Re-enrich, so the displayed art matches actual file tags
+- Edit Metadata cover section moved to the top of the form and now previews current embedded cover before replacement (plus selected replacement preview)
 
 ### Fixed
 
@@ -58,6 +62,25 @@
   - Added shared Go response builder for `DownloadTrack` and `DownloadWithFallback`
   - Success responses now consistently include `genre`, `label`, `copyright`, and `lyrics_lrc`
 - YouTube success response now also includes extended metadata fields (`cover_url`, `genre`, `label`, `copyright`) for parity with other providers
+- Fixed `Save Lyrics` crash on Android (`java.lang.Integer cannot be cast to java.lang.Long`) by normalizing `duration_ms` channel argument as `Number -> Long`
+- Fixed FLAC Re-enrich cover edge case where metadata could be written without cover when temp cover file creation failed; FLAC cover embed now uses in-memory bytes and verifies cover after write
+- Fixed FLAC picture-block embed robustness by detecting image MIME via magic bytes (JPEG/PNG/GIF/WEBP) instead of relying on filename extension
+- Fixed MP3/Opus metadata rewrite flows to preserve existing embedded cover when no new cover is available
+- Fixed Library tab cover not updating after manual cover edit/re-embed for downloaded tracks
+  - Queue/Library now prefers embedded cover art extracted from local files (not just cached `coverUrl`)
+  - Added per-track extraction cache with file-modification invalidation so updated embedded art is reflected in Library
+  - Extraction is now on-demand for edited tracks only (not full-library reload)
+  - Returning from Track Metadata now refreshes cover cache only for the affected track
+  - Cover refresh is now skipped when file modification time is unchanged, removing unnecessary flash when simply opening/closing metadata screen
+- Fixed repeated cover preview extraction in Track Metadata screen (`track_cover_preview_*`) causing visible flash when reopening
+  - Added in-memory preview cache keyed by file path so reopening metadata reuses existing preview without re-extract
+  - Cache validation uses file modification time for filesystem paths; SAF paths are refreshed only after successful edit actions
+  - Queue/Library now also compares SAF file last-modified (`getSafFileModTimes`) before refreshing embedded-cover cache
+  - Preview cache key is now stable per track item (not volatile temp SAF path), eliminating false cache misses on SAF-backed files
+  - Track Metadata no longer auto-extracts cover preview on every screen open; extraction now runs only after actual edit/re-enrich changes (or when explicitly forced)
+- Track metadata edits/re-enrich now sync updated tags back into `downloadHistoryProvider` + SQLite history rows
+  - Non-Library screens that read download history (Home/album/history views) now reflect updated title/artist/album/tags without manual rescan
+  - Track Metadata back-navigation now returns an explicit update result after successful edits/re-enrich, enabling History-tab cover refresh fallback when SAF timestamps are unreliable
 
 ### Technical
 

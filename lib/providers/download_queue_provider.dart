@@ -151,20 +151,37 @@ class DownloadHistoryItem {
       );
 
   DownloadHistoryItem copyWith({
+    String? trackName,
+    String? artistName,
+    String? albumName,
+    String? albumArtist,
+    String? coverUrl,
     String? filePath,
     String? storageMode,
     String? downloadTreeUri,
     String? safRelativeDir,
     String? safFileName,
     bool? safRepaired,
+    String? isrc,
+    String? spotifyId,
+    int? trackNumber,
+    int? discNumber,
+    int? duration,
+    String? releaseDate,
+    String? quality,
+    int? bitDepth,
+    int? sampleRate,
+    String? genre,
+    String? label,
+    String? copyright,
   }) {
     return DownloadHistoryItem(
       id: id,
-      trackName: trackName,
-      artistName: artistName,
-      albumName: albumName,
-      albumArtist: albumArtist,
-      coverUrl: coverUrl,
+      trackName: trackName ?? this.trackName,
+      artistName: artistName ?? this.artistName,
+      albumName: albumName ?? this.albumName,
+      albumArtist: albumArtist ?? this.albumArtist,
+      coverUrl: coverUrl ?? this.coverUrl,
       filePath: filePath ?? this.filePath,
       storageMode: storageMode ?? this.storageMode,
       downloadTreeUri: downloadTreeUri ?? this.downloadTreeUri,
@@ -173,18 +190,18 @@ class DownloadHistoryItem {
       safRepaired: safRepaired ?? this.safRepaired,
       service: service,
       downloadedAt: downloadedAt,
-      isrc: isrc,
-      spotifyId: spotifyId,
-      trackNumber: trackNumber,
-      discNumber: discNumber,
-      duration: duration,
-      releaseDate: releaseDate,
-      quality: quality,
-      bitDepth: bitDepth,
-      sampleRate: sampleRate,
-      genre: genre,
-      label: label,
-      copyright: copyright,
+      isrc: isrc ?? this.isrc,
+      spotifyId: spotifyId ?? this.spotifyId,
+      trackNumber: trackNumber ?? this.trackNumber,
+      discNumber: discNumber ?? this.discNumber,
+      duration: duration ?? this.duration,
+      releaseDate: releaseDate ?? this.releaseDate,
+      quality: quality ?? this.quality,
+      bitDepth: bitDepth ?? this.bitDepth,
+      sampleRate: sampleRate ?? this.sampleRate,
+      genre: genre ?? this.genre,
+      label: label ?? this.label,
+      copyright: copyright ?? this.copyright,
     );
   }
 }
@@ -461,6 +478,44 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     final json = await _db.getBySpotifyId(spotifyId);
     if (json == null) return null;
     return DownloadHistoryItem.fromJson(json);
+  }
+
+  Future<void> updateMetadataForItem({
+    required String id,
+    required String trackName,
+    required String artistName,
+    required String albumName,
+    String? albumArtist,
+    String? isrc,
+    int? trackNumber,
+    int? discNumber,
+    String? releaseDate,
+    String? genre,
+    String? label,
+    String? copyright,
+  }) async {
+    final index = state.items.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+
+    final current = state.items[index];
+    final updated = current.copyWith(
+      trackName: trackName,
+      artistName: artistName,
+      albumName: albumName,
+      albumArtist: albumArtist,
+      isrc: isrc,
+      trackNumber: trackNumber,
+      discNumber: discNumber,
+      releaseDate: releaseDate,
+      genre: genre,
+      label: label,
+      copyright: copyright,
+    );
+
+    final updatedItems = [...state.items];
+    updatedItems[index] = updated;
+    state = state.copyWith(items: updatedItems);
+    await _db.upsert(updated.toJson());
   }
 
   /// Remove history entries where the file no longer exists on disk
@@ -2670,8 +2725,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           if (spotifyId.startsWith('spotify:track:')) {
             spotifyId = spotifyId.split(':').last;
           }
-          _log.d('No Deezer ID, converting from Spotify via SongLink: $spotifyId');
-          final deezerData = await PlatformBridge.convertSpotifyToDeezer('track', spotifyId);
+          _log.d(
+            'No Deezer ID, converting from Spotify via SongLink: $spotifyId',
+          );
+          final deezerData = await PlatformBridge.convertSpotifyToDeezer(
+            'track',
+            spotifyId,
+          );
           // Response is TrackResponse: {"track": {"spotify_id": "deezer:XXXXX", ...}}
           final trackData = deezerData['track'];
           if (trackData is Map<String, dynamic>) {
@@ -2681,20 +2741,29 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               _log.d('Found Deezer track ID via SongLink: $deezerTrackId');
             } else if (deezerData['id'] != null) {
               deezerTrackId = deezerData['id'].toString();
-              _log.d('Found Deezer track ID via SongLink (legacy): $deezerTrackId');
+              _log.d(
+                'Found Deezer track ID via SongLink (legacy): $deezerTrackId',
+              );
             }
 
             // Enrich track metadata from Deezer response (release_date, isrc, etc.)
-            final deezerReleaseDate = _normalizeOptionalString(trackData['release_date'] as String?);
-            final deezerIsrc = _normalizeOptionalString(trackData['isrc'] as String?);
+            final deezerReleaseDate = _normalizeOptionalString(
+              trackData['release_date'] as String?,
+            );
+            final deezerIsrc = _normalizeOptionalString(
+              trackData['isrc'] as String?,
+            );
             final deezerTrackNum = trackData['track_number'] as int?;
             final deezerDiscNum = trackData['disc_number'] as int?;
 
             final needsEnrich =
-                (trackToDownload.releaseDate == null && deezerReleaseDate != null) ||
+                (trackToDownload.releaseDate == null &&
+                    deezerReleaseDate != null) ||
                 (trackToDownload.isrc == null && deezerIsrc != null) ||
-                (!_isValidISRC(trackToDownload.isrc ?? '') && deezerIsrc != null) ||
-                (trackToDownload.trackNumber == null && deezerTrackNum != null) ||
+                (!_isValidISRC(trackToDownload.isrc ?? '') &&
+                    deezerIsrc != null) ||
+                (trackToDownload.trackNumber == null &&
+                    deezerTrackNum != null) ||
                 (trackToDownload.discNumber == null && deezerDiscNum != null);
 
             if (needsEnrich) {
@@ -2717,7 +2786,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 albumType: trackToDownload.albumType,
                 source: trackToDownload.source,
               );
-              _log.d('Enriched track from Deezer - date: ${trackToDownload.releaseDate}, ISRC: ${trackToDownload.isrc}, track: ${trackToDownload.trackNumber}, disc: ${trackToDownload.discNumber}');
+              _log.d(
+                'Enriched track from Deezer - date: ${trackToDownload.releaseDate}, ISRC: ${trackToDownload.isrc}, track: ${trackToDownload.trackNumber}, disc: ${trackToDownload.discNumber}',
+              );
             }
           } else if (deezerData['id'] != null) {
             deezerTrackId = deezerData['id'].toString();
@@ -2909,14 +2980,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             decryptionKey.isNotEmpty &&
             filePath != null &&
             actualService == 'amazon') {
-          _log.i(
-            'Amazon encrypted stream detected, decrypting via FFmpeg...',
-          );
-          updateItemStatus(
-            item.id,
-            DownloadStatus.downloading,
-            progress: 0.9,
-          );
+          _log.i('Amazon encrypted stream detected, decrypting via FFmpeg...');
+          updateItemStatus(item.id, DownloadStatus.downloading, progress: 0.9);
 
           if (effectiveSafMode && isContentUri(filePath)) {
             final currentFilePath = filePath;
@@ -3485,14 +3550,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
 
         // YouTube downloads: embed metadata to raw Opus/MP3 files from Cobalt
-        if (!wasExisting &&
-            item.service == 'youtube' &&
-            filePath != null) {
+        if (!wasExisting && item.service == 'youtube' && filePath != null) {
           final isOpusFile = filePath.endsWith('.opus');
           final isMp3File = filePath.endsWith('.mp3');
 
           if (isOpusFile || isMp3File) {
-            _log.i('YouTube download: embedding metadata to ${isOpusFile ? 'Opus' : 'MP3'} file');
+            _log.i(
+              'YouTube download: embedding metadata to ${isOpusFile ? 'Opus' : 'MP3'} file',
+            );
             updateItemStatus(
               item.id,
               DownloadStatus.downloading,

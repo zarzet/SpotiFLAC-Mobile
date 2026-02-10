@@ -911,8 +911,15 @@ func parseVorbisComments(data []byte, metadata *AudioMetadata) {
 			break
 		}
 
-		if commentLen > 10000 {
+		remaining := uint32(reader.Len())
+		if commentLen > remaining {
 			break
+		}
+		// Large comment entries are typically METADATA_BLOCK_PICTURE.
+		// Skip them so we can continue parsing normal text tags after/before.
+		if commentLen > 512*1024 {
+			reader.Seek(int64(commentLen), io.SeekCurrent)
+			continue
 		}
 
 		comment := make([]byte, commentLen)

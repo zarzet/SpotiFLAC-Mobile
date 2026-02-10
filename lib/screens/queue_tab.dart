@@ -14,6 +14,7 @@ import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
+import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/screens/local_album_screen.dart';
@@ -105,6 +106,7 @@ class _GroupedAlbum {
   final String albumName;
   final String artistName;
   final String? coverUrl;
+  final String sampleFilePath;
   final List<DownloadHistoryItem> tracks;
   final DateTime latestDownload;
   final String searchKey;
@@ -113,6 +115,7 @@ class _GroupedAlbum {
     required this.albumName,
     required this.artistName,
     this.coverUrl,
+    required this.sampleFilePath,
     required this.tracks,
     required this.latestDownload,
   }) : searchKey = '${albumName.toLowerCase()}|${artistName.toLowerCase()}';
@@ -290,6 +293,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   _HistoryStats? _historyStatsCache;
   final Map<String, String> _searchIndexCache = {};
   final Map<String, String> _localSearchIndexCache = {};
+  final Map<String, String> _downloadedEmbeddedCoverCache = {};
+  final Set<String> _pendingDownloadedCoverExtract = {};
+  final Set<String> _pendingDownloadedCoverRefresh = {};
+  final Set<String> _failedDownloadedCoverExtract = {};
   Map<String, DownloadHistoryItem> _historyItemsById = {};
   List<List<String>> _historyFilterEntries = const [];
   Map<String, List<DownloadHistoryItem>> _filteredHistoryCache = const {};
@@ -338,6 +345,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   @override
   void dispose() {
+    for (final coverPath in _downloadedEmbeddedCoverCache.values) {
+      _cleanupTempCoverPathSync(coverPath);
+    }
+    _downloadedEmbeddedCoverCache.clear();
+    _pendingDownloadedCoverExtract.clear();
+    _pendingDownloadedCoverRefresh.clear();
+    _failedDownloadedCoverExtract.clear();
     for (final notifier in _fileExistsNotifiers.values) {
       notifier.dispose();
     }
@@ -405,6 +419,19 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           '${item.albumName.toLowerCase()}|${(item.albumArtist ?? item.artistName).toLowerCase()}';
       return [item.id, albumKey, searchKey];
     }, growable: false);
+
+    if (historyChanged) {
+      final validPaths = items
+          .map((item) => _cleanFilePath(item.filePath))
+          .where((path) => path.isNotEmpty)
+          .toSet();
+      final staleKeys = _downloadedEmbeddedCoverCache.keys
+          .where((path) => !validPaths.contains(path))
+          .toList(growable: false);
+      for (final key in staleKeys) {
+        _invalidateDownloadedEmbeddedCover(key);
+      }
+    }
     _requestFilterRefresh();
   }
 
@@ -743,6 +770,149 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       return filePath.substring(7);
     }
     return filePath;
+  }
+
+  void _cleanupTempCoverPathSync(String? coverPath) {
+    if (coverPath == null || coverPath.isEmpty) return;
+    try {
+      final file = File(coverPath);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+      final parent = file.parent;
+      if (parent.existsSync()) {
+        parent.deleteSync(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  void _invalidateDownloadedEmbeddedCover(String? filePath) {
+    final cleanPath = _cleanFilePath(filePath);
+    if (cleanPath.isEmpty) return;
+
+    final cachedPath = _downloadedEmbeddedCoverCache.remove(cleanPath);
+    _pendingDownloadedCoverExtract.remove(cleanPath);
+    _pendingDownloadedCoverRefresh.remove(cleanPath);
+    _failedDownloadedCoverExtract.remove(cleanPath);
+    _cleanupTempCoverPathSync(cachedPath);
+  }
+
+  Future<int?> _readFileModTimeMillis(String? filePath) async {
+    final cleanPath = _cleanFilePath(filePath);
+    if (cleanPath.isEmpty) return null;
+
+    if (cleanPath.startsWith('content://')) {
+      try {
+        final modTimes = await PlatformBridge.getSafFileModTimes([cleanPath]);
+        return modTimes[cleanPath];
+      } catch (_) {
+        return null;
+      }
+    }
+
+    try {
+      return File(cleanPath).statSync().modified.millisecondsSinceEpoch;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _scheduleDownloadedEmbeddedCoverRefreshForPath(
+    String? filePath, {
+    int? beforeModTime,
+    bool force = false,
+  }) async {
+    final cleanPath = _cleanFilePath(filePath);
+    if (cleanPath.isEmpty) return;
+
+    if (!force) {
+      if (beforeModTime == null) {
+        return;
+      }
+      final afterModTime = await _readFileModTimeMillis(cleanPath);
+      if (afterModTime != null && afterModTime == beforeModTime) {
+        return;
+      }
+    }
+
+    _pendingDownloadedCoverRefresh.add(cleanPath);
+    _failedDownloadedCoverExtract.remove(cleanPath);
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  String? _resolveDownloadedEmbeddedCoverPath(String? filePath) {
+    final cleanPath = _cleanFilePath(filePath);
+    if (cleanPath.isEmpty) return null;
+
+    if (_pendingDownloadedCoverRefresh.remove(cleanPath)) {
+      _ensureDownloadedEmbeddedCover(cleanPath, forceRefresh: true);
+    }
+
+    final cachedPath = _downloadedEmbeddedCoverCache[cleanPath];
+    if (cachedPath != null) {
+      if (File(cachedPath).existsSync()) {
+        return cachedPath;
+      }
+      _downloadedEmbeddedCoverCache.remove(cleanPath);
+      _cleanupTempCoverPathSync(cachedPath);
+    }
+
+    return null;
+  }
+
+  void _ensureDownloadedEmbeddedCover(
+    String cleanPath, {
+    bool forceRefresh = false,
+  }) {
+    if (cleanPath.isEmpty) return;
+    if (_pendingDownloadedCoverExtract.contains(cleanPath)) return;
+    if (!forceRefresh && _downloadedEmbeddedCoverCache.containsKey(cleanPath)) {
+      return;
+    }
+    if (!forceRefresh && _failedDownloadedCoverExtract.contains(cleanPath)) {
+      return;
+    }
+
+    _pendingDownloadedCoverExtract.add(cleanPath);
+    Future.microtask(() async {
+      String? outputPath;
+      try {
+        final tempDir = await Directory.systemTemp.createTemp('library_cover_');
+        outputPath = '${tempDir.path}${Platform.pathSeparator}cover.jpg';
+        final result = await PlatformBridge.extractCoverToFile(
+          cleanPath,
+          outputPath,
+        );
+
+        final hasCover =
+            result['error'] == null && await File(outputPath).exists();
+        if (!hasCover) {
+          _failedDownloadedCoverExtract.add(cleanPath);
+          _cleanupTempCoverPathSync(outputPath);
+          return;
+        }
+
+        if (!mounted) {
+          _cleanupTempCoverPathSync(outputPath);
+          return;
+        }
+
+        final previous = _downloadedEmbeddedCoverCache[cleanPath];
+        _downloadedEmbeddedCoverCache[cleanPath] = outputPath;
+        _failedDownloadedCoverExtract.remove(cleanPath);
+        if (previous != null && previous != outputPath) {
+          _cleanupTempCoverPathSync(previous);
+        }
+        setState(() {});
+      } catch (_) {
+        _failedDownloadedCoverExtract.add(cleanPath);
+        _cleanupTempCoverPathSync(outputPath);
+      } finally {
+        _pendingDownloadedCoverExtract.remove(cleanPath);
+      }
+    });
   }
 
   ValueListenable<bool> _fileExistsListenable(String? filePath) {
@@ -1293,7 +1463,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     );
   }
 
-  void _navigateToMetadataScreen(DownloadItem item) {
+  Future<void> _navigateToMetadataScreen(DownloadItem item) async {
     final historyItem = ref
         .read(downloadHistoryProvider)
         .items
@@ -1311,10 +1481,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           ),
         );
 
+    final navigator = Navigator.of(context);
     _precacheCover(historyItem.coverUrl);
     _searchFocusNode.unfocus();
-    Navigator.push(
-      context,
+    final beforeModTime = await _readFileModTimeMillis(historyItem.filePath);
+    if (!mounted) return;
+    final result = await navigator.push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
@@ -1323,14 +1495,31 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
-    ).then((_) => _searchFocusNode.unfocus());
+    );
+    _searchFocusNode.unfocus();
+    if (result == true) {
+      await _scheduleDownloadedEmbeddedCoverRefreshForPath(
+        historyItem.filePath,
+        beforeModTime: beforeModTime,
+        force: true,
+      );
+      return;
+    }
+    await _scheduleDownloadedEmbeddedCoverRefreshForPath(
+      historyItem.filePath,
+      beforeModTime: beforeModTime,
+    );
   }
 
-  void _navigateToHistoryMetadataScreen(DownloadHistoryItem item) {
+  Future<void> _navigateToHistoryMetadataScreen(
+    DownloadHistoryItem item,
+  ) async {
+    final navigator = Navigator.of(context);
     _precacheCover(item.coverUrl);
     _searchFocusNode.unfocus();
-    Navigator.push(
-      context,
+    final beforeModTime = await _readFileModTimeMillis(item.filePath);
+    if (!mounted) return;
+    final result = await navigator.push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 250),
@@ -1339,7 +1528,20 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         transitionsBuilder: (context, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
-    ).then((_) => _searchFocusNode.unfocus());
+    );
+    _searchFocusNode.unfocus();
+    if (result == true) {
+      await _scheduleDownloadedEmbeddedCoverRefreshForPath(
+        item.filePath,
+        beforeModTime: beforeModTime,
+        force: true,
+      );
+      return;
+    }
+    await _scheduleDownloadedEmbeddedCoverRefreshForPath(
+      item.filePath,
+      beforeModTime: beforeModTime,
+    );
   }
 
   void _navigateToLocalMetadataScreen(LocalLibraryItem item) {
@@ -1434,6 +1636,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           albumName: tracks.first.albumName,
           artistName: tracks.first.albumArtist ?? tracks.first.artistName,
           coverUrl: tracks.first.coverUrl,
+          sampleFilePath: tracks.first.filePath,
           tracks: tracks,
           latestDownload: tracks
               .map((t) => t.downloadedAt)
@@ -2574,6 +2777,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _GroupedAlbum album,
     ColorScheme colorScheme,
   ) {
+    final embeddedCoverPath = _resolveDownloadedEmbeddedCoverPath(
+      album.sampleFilePath,
+    );
     return GestureDetector(
       onTap: () => _navigateToDownloadedAlbum(album),
       child: Column(
@@ -2584,7 +2790,27 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: album.coverUrl != null
+                  child: embeddedCoverPath != null
+                      ? Image.file(
+                          File(embeddedCoverPath),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          cacheWidth: 300,
+                          cacheHeight: 300,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: colorScheme.surfaceContainerHighest,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.album,
+                                    color: colorScheme.onSurfaceVariant,
+                                    size: 48,
+                                  ),
+                                ),
+                              ),
+                        )
+                      : album.coverUrl != null
                       ? CachedNetworkImage(
                           imageUrl: album.coverUrl!,
                           fit: BoxFit.cover,
@@ -3154,6 +3380,26 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     double size,
   ) {
     final isDownloaded = item.source == LibraryItemSource.downloaded;
+    if (isDownloaded) {
+      final embeddedCoverPath = _resolveDownloadedEmbeddedCoverPath(
+        item.filePath,
+      );
+      if (embeddedCoverPath != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            File(embeddedCoverPath),
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            cacheWidth: (size * 2).toInt(),
+            cacheHeight: (size * 2).toInt(),
+            errorBuilder: (context, error, stackTrace) =>
+                _buildPlaceholderCover(colorScheme, size, isDownloaded),
+          ),
+        );
+      }
+    }
 
     // Network URL cover (downloaded items)
     if (item.coverUrl != null) {
@@ -3235,6 +3481,30 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     ColorScheme colorScheme,
   ) {
     final isDownloaded = item.source == LibraryItemSource.downloaded;
+    if (isDownloaded) {
+      final embeddedCoverPath = _resolveDownloadedEmbeddedCoverPath(
+        item.filePath,
+      );
+      if (embeddedCoverPath != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.file(
+            File(embeddedCoverPath),
+            fit: BoxFit.cover,
+            cacheWidth: 200,
+            cacheHeight: 200,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.music_note,
+                color: colorScheme.onSurfaceVariant,
+                size: 32,
+              ),
+            ),
+          ),
+        );
+      }
+    }
 
     // Network URL cover (downloaded items)
     if (item.coverUrl != null) {
