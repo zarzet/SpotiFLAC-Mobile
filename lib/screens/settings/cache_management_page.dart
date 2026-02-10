@@ -60,19 +60,30 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
   }
 
   Future<_CacheOverview> _buildOverview() async {
-    final appCacheDir = await getApplicationCacheDirectory();
-    final tempDir = await getTemporaryDirectory();
+    final appCacheDirFuture = getApplicationCacheDirectory();
+    final tempDirFuture = getTemporaryDirectory();
+    final appSupportDirFuture = getApplicationSupportDirectory();
+    final coverStatsFuture = CoverCacheManager.getStats();
+    final prefsFuture = SharedPreferences.getInstance();
+    final trackCacheEntriesFuture = _getTrackCacheSizeSafe();
+
+    final appCacheDir = await appCacheDirFuture;
+    final tempDir = await tempDirFuture;
     final appCachePath = p.normalize(appCacheDir.path);
     final tempPath = p.normalize(tempDir.path);
     final tempIsSameAsAppCache = appCachePath == tempPath;
 
-    final appCacheStats = await _scanDirectory(Directory(appCachePath));
-    final tempStats = tempIsSameAsAppCache
-        ? null
-        : await _scanDirectory(Directory(tempPath));
-    final coverStats = await CoverCacheManager.getStats();
+    final appCacheStatsFuture = _scanDirectory(Directory(appCachePath));
+    final tempStatsFuture = tempIsSameAsAppCache
+        ? Future<_DirectoryStats?>.value(null)
+        : _scanDirectory(Directory(tempPath));
 
-    final prefs = await SharedPreferences.getInstance();
+    final appSupportDir = await appSupportDirFuture;
+    final libraryCoverStatsFuture = _scanDirectory(
+      Directory('${appSupportDir.path}/library_covers'),
+    );
+
+    final prefs = await prefsFuture;
     final explorePayload = prefs.getString(_exploreCacheKey);
     final exploreTs = prefs.getInt(_exploreCacheTsKey);
     var exploreBytes = 0;
@@ -84,16 +95,11 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
     }
     final hasExploreCache = exploreBytes > 0;
 
-    int trackCacheEntries;
-    try {
-      trackCacheEntries = await PlatformBridge.getTrackCacheSize();
-    } catch (_) {
-      trackCacheEntries = 0;
-    }
-
-    final appSupportDir = await getApplicationSupportDirectory();
-    final libraryCoverDir = Directory('${appSupportDir.path}/library_covers');
-    final libraryCoverStats = await _scanDirectory(libraryCoverDir);
+    final appCacheStats = await appCacheStatsFuture;
+    final tempStats = await tempStatsFuture;
+    final coverStats = await coverStatsFuture;
+    final libraryCoverStats = await libraryCoverStatsFuture;
+    final trackCacheEntries = await trackCacheEntriesFuture;
 
     return _CacheOverview(
       appCachePath: appCachePath,
@@ -132,16 +138,37 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
     return _DirectoryStats(fileCount: fileCount, totalSizeBytes: totalSize);
   }
 
+  Future<int> _getTrackCacheSizeSafe() async {
+    try {
+      return await PlatformBridge.getTrackCacheSize();
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<void> _clearDirectoryContents(String path) async {
     final directory = Directory(path);
     if (!await directory.exists()) return;
 
     try {
-      final entities = directory.listSync(followLinks: false);
-      for (final entity in entities) {
-        try {
-          await entity.delete(recursive: true);
-        } catch (_) {}
+      final entities = <FileSystemEntity>[];
+      await for (final entity in directory.list(followLinks: false)) {
+        entities.add(entity);
+      }
+
+      const deleteChunkSize = 24;
+      for (var i = 0; i < entities.length; i += deleteChunkSize) {
+        final end = (i + deleteChunkSize < entities.length)
+            ? i + deleteChunkSize
+            : entities.length;
+        final chunk = entities.sublist(i, end);
+        await Future.wait(
+          chunk.map((entity) async {
+            try {
+              await entity.delete(recursive: true);
+            } catch (_) {}
+          }),
+        );
       }
     } catch (_) {}
 
@@ -583,7 +610,9 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
                     subtitle: _buildSubtitle(
                       context.l10n.cacheTrackLookupDesc,
                       overview.trackCacheEntries > 0
-                          ? context.l10n.cacheEntries(overview.trackCacheEntries)
+                          ? context.l10n.cacheEntries(
+                              overview.trackCacheEntries,
+                            )
                           : context.l10n.cacheNoData,
                     ),
                     trailing: _buildClearTrailing(
@@ -611,7 +640,8 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
                   SettingsItem(
                     icon: Icons.cleaning_services_outlined,
                     title: context.l10n.cacheCleanupUnused,
-                    subtitle: '${context.l10n.cacheCleanupUnusedDesc}\n${context.l10n.cacheCleanupUnusedSubtitle}',
+                    subtitle:
+                        '${context.l10n.cacheCleanupUnusedDesc}\n${context.l10n.cacheCleanupUnusedSubtitle}',
                     trailing: _buildClearTrailing(
                       'cleanup_unused',
                       _cleanupUnusedData,

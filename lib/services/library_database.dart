@@ -229,6 +229,7 @@ class LibraryDatabase {
   }
   
   Future<void> upsertBatch(List<Map<String, dynamic>> items) async {
+    if (items.isEmpty) return;
     final db = await database;
     final batch = db.batch();
     
@@ -350,16 +351,46 @@ class LibraryDatabase {
   Future<int> cleanupMissingFiles() async {
     final db = await database;
     final rows = await db.query('library', columns: ['id', 'file_path']);
-    
-    int removed = 0;
-    for (final row in rows) {
-      final filePath = row['file_path'] as String;
-      if (!await fileExists(filePath)) {
-        await db.delete('library', where: 'id = ?', whereArgs: [row['id']]);
-        removed++;
+
+    final missingIds = <String>[];
+    const checkChunkSize = 16;
+    for (var i = 0; i < rows.length; i += checkChunkSize) {
+      final end = (i + checkChunkSize < rows.length)
+          ? i + checkChunkSize
+          : rows.length;
+      final chunk = rows.sublist(i, end);
+      final checks = await Future.wait<MapEntry<String, bool>>(
+        chunk.map((row) async {
+          final id = row['id'] as String;
+          final filePath = row['file_path'] as String;
+          return MapEntry(id, await fileExists(filePath));
+        }),
+      );
+      for (final check in checks) {
+        if (!check.value) {
+          missingIds.add(check.key);
+        }
       }
     }
-    
+
+    if (missingIds.isEmpty) {
+      return 0;
+    }
+
+    var removed = 0;
+    const deleteChunkSize = 500;
+    for (var i = 0; i < missingIds.length; i += deleteChunkSize) {
+      final end = (i + deleteChunkSize < missingIds.length)
+          ? i + deleteChunkSize
+          : missingIds.length;
+      final idChunk = missingIds.sublist(i, end);
+      final placeholders = List.filled(idChunk.length, '?').join(',');
+      removed += await db.rawDelete(
+        'DELETE FROM library WHERE id IN ($placeholders)',
+        idChunk,
+      );
+    }
+
     if (removed > 0) {
       _log.i('Cleaned up $removed missing files from library');
     }
@@ -440,14 +471,22 @@ class LibraryDatabase {
   Future<int> deleteByPaths(List<String> filePaths) async {
     if (filePaths.isEmpty) return 0;
     final db = await database;
-    final placeholders = List.filled(filePaths.length, '?').join(',');
-    final result = await db.rawDelete(
-      'DELETE FROM library WHERE file_path IN ($placeholders)',
-      filePaths,
-    );
-    if (result > 0) {
-      _log.i('Deleted $result items from library');
+    var totalDeleted = 0;
+    const chunkSize = 500;
+    for (var i = 0; i < filePaths.length; i += chunkSize) {
+      final end = (i + chunkSize < filePaths.length)
+          ? i + chunkSize
+          : filePaths.length;
+      final chunk = filePaths.sublist(i, end);
+      final placeholders = List.filled(chunk.length, '?').join(',');
+      totalDeleted += await db.rawDelete(
+        'DELETE FROM library WHERE file_path IN ($placeholders)',
+        chunk,
+      );
     }
-    return result;
+    if (totalDeleted > 0) {
+      _log.i('Deleted $totalDeleted items from library');
+    }
+    return totalDeleted;
   }
 }

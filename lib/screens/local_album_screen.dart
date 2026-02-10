@@ -36,6 +36,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
   late Map<int, List<LocalLibraryItem>> _discGroupsCache;
   late List<int> _sortedDiscNumbersCache;
   late bool _hasMultipleDiscsCache;
+  String? _commonQualityCache;
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     _discGroupsCache = _groupTracksByDisc(_sortedTracksCache);
     _sortedDiscNumbersCache = _discGroupsCache.keys.toList()..sort();
     _hasMultipleDiscsCache = _discGroupsCache.length > 1;
+    _commonQualityCache = _computeCommonQuality(_sortedTracksCache);
   }
 
   Map<int, List<LocalLibraryItem>> _groupTracksByDisc(
@@ -160,15 +162,16 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     if (confirmed == true && mounted) {
       final libraryNotifier = ref.read(localLibraryProvider.notifier);
       final idsToDelete = _selectedIds.toList();
+      final tracksById = {for (final track in currentTracks) track.id: track};
 
       int deletedCount = 0;
       for (final id in idsToDelete) {
-        final item = currentTracks.where((e) => e.id == id).firstOrNull;
+        final item = tracksById[id];
         if (item != null) {
           try {
             await deleteFile(item.filePath);
           } catch (_) {}
-          libraryNotifier.removeItem(id);
+          await libraryNotifier.removeItem(id);
           deletedCount++;
         }
       }
@@ -425,6 +428,8 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     ColorScheme colorScheme,
     List<LocalLibraryItem> tracks,
   ) {
+    final commonQuality = _commonQualityCache;
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -519,22 +524,22 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                     ),
                     const SizedBox(width: 8),
                     // Quality badge if all tracks have the same quality
-                    if (_getCommonQuality(tracks) != null)
+                    if (commonQuality != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getCommonQuality(tracks)!.contains('24')
+                          color: commonQuality.contains('24')
                               ? colorScheme.primaryContainer
                               : colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          _getCommonQuality(tracks)!,
+                          commonQuality,
                           style: TextStyle(
-                            color: _getCommonQuality(tracks)!.contains('24')
+                            color: commonQuality.contains('24')
                                 ? colorScheme.onPrimaryContainer
                                 : colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -552,7 +557,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     );
   }
 
-  String? _getCommonQuality(List<LocalLibraryItem> tracks) {
+  String? _computeCommonQuality(List<LocalLibraryItem> tracks) {
     if (tracks.isEmpty) return null;
     final first = tracks.first;
     if (first.bitDepth == null || first.sampleRate == null) return null;

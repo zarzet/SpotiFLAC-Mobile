@@ -12,6 +12,7 @@ final _log = AppLogger('LocalLibrary');
 
 const _lastScannedAtKey = 'local_library_last_scanned_at';
 const _excludedDownloadedCountKey = 'local_library_excluded_downloaded_count';
+final _prefs = SharedPreferences.getInstance();
 
 class LocalLibraryState {
   final List<LocalLibraryItem> items;
@@ -26,6 +27,7 @@ class LocalLibraryState {
   final int excludedDownloadedCount;
   final Set<String> _trackKeySet;
   final Map<String, LocalLibraryItem> _byIsrc;
+  final Map<String, LocalLibraryItem> _byTrackKey;
 
   LocalLibraryState({
     this.items = const [],
@@ -40,6 +42,7 @@ class LocalLibraryState {
     this.excludedDownloadedCount = 0,
     Set<String>? trackKeySet,
     Map<String, LocalLibraryItem>? byIsrc,
+    Map<String, LocalLibraryItem>? byTrackKey,
   }) : _trackKeySet = trackKeySet ?? items.map((item) => item.matchKey).toSet(),
        _byIsrc =
            byIsrc ??
@@ -47,7 +50,10 @@ class LocalLibraryState {
              items
                  .where((item) => item.isrc != null && item.isrc!.isNotEmpty)
                  .map((item) => MapEntry(item.isrc!, item)),
-           );
+           ),
+       _byTrackKey =
+           byTrackKey ??
+           Map.fromEntries(items.map((item) => MapEntry(item.matchKey, item)));
 
   bool hasIsrc(String isrc) => _byIsrc.containsKey(isrc);
 
@@ -60,7 +66,7 @@ class LocalLibraryState {
 
   LocalLibraryItem? findByTrackAndArtist(String trackName, String artistName) {
     final key = '${trackName.toLowerCase()}|${artistName.toLowerCase()}';
-    return items.where((item) => item.matchKey == key).firstOrNull;
+    return _byTrackKey[key];
   }
 
   bool existsInLibrary({String? isrc, String? trackName, String? artistName}) {
@@ -102,6 +108,7 @@ class LocalLibraryState {
           excludedDownloadedCount ?? this.excludedDownloadedCount,
       trackKeySet: keepDerivedIndex ? _trackKeySet : null,
       byIsrc: keepDerivedIndex ? _byIsrc : null,
+      byTrackKey: keepDerivedIndex ? _byTrackKey : null,
     );
   }
 }
@@ -133,13 +140,17 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _isLoaded = true;
 
     try {
-      final jsonList = await _db.getAll();
-      final items = jsonList.map((e) => LocalLibraryItem.fromJson(e)).toList();
+      final dbItemsFuture = _db.getAll();
+      final prefsFuture = _prefs;
+      final jsonList = await dbItemsFuture;
+      final items = jsonList
+          .map((e) => LocalLibraryItem.fromJson(e))
+          .toList(growable: false);
 
       DateTime? lastScannedAt;
       var excludedDownloadedCount = 0;
       try {
-        final prefs = await SharedPreferences.getInstance();
+        final prefs = await prefsFuture;
         final lastScannedAtStr = prefs.getString(_lastScannedAtKey);
         if (lastScannedAtStr != null && lastScannedAtStr.isNotEmpty) {
           lastScannedAt = DateTime.tryParse(lastScannedAtStr);
@@ -589,17 +600,34 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       }
     }
 
+    final paths = legacyPaths
+        .where((path) => !path.startsWith('content://'))
+        .toList(growable: false);
+    const chunkSize = 24;
     final backfilled = <String, int>{};
-    for (final path in legacyPaths) {
-      if (_scanCancelRequested || path.startsWith('content://')) {
-        continue;
+
+    for (var i = 0; i < paths.length; i += chunkSize) {
+      if (_scanCancelRequested) {
+        break;
       }
-      try {
-        final stat = await File(path).stat();
-        if (stat.type == FileSystemEntityType.file) {
-          backfilled[path] = stat.modified.millisecondsSinceEpoch;
+      final end = (i + chunkSize < paths.length) ? i + chunkSize : paths.length;
+      final chunk = paths.sublist(i, end);
+      final chunkEntries = await Future.wait<MapEntry<String, int>?>(
+        chunk.map((path) async {
+          try {
+            final stat = await File(path).stat();
+            if (stat.type == FileSystemEntityType.file) {
+              return MapEntry(path, stat.modified.millisecondsSinceEpoch);
+            }
+          } catch (_) {}
+          return null;
+        }),
+      );
+      for (final entry in chunkEntries) {
+        if (entry != null) {
+          backfilled[entry.key] = entry.value;
         }
-      } catch (_) {}
+      }
     }
     return backfilled;
   }

@@ -525,12 +525,18 @@ class HistoryDatabase {
     if (ids.isEmpty) return 0;
 
     final db = await database;
-    final placeholders = List.filled(ids.length, '?').join(',');
-    final count = await db.rawDelete(
-      'DELETE FROM history WHERE id IN ($placeholders)',
-      ids,
-    );
-    _log.i('Deleted $count orphaned entries');
-    return count;
+    var totalDeleted = 0;
+    const chunkSize = 500;
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final end = (i + chunkSize < ids.length) ? i + chunkSize : ids.length;
+      final chunk = ids.sublist(i, end);
+      final placeholders = List.filled(chunk.length, '?').join(',');
+      totalDeleted += await db.rawDelete(
+        'DELETE FROM history WHERE id IN ($placeholders)',
+        chunk,
+      );
+    }
+    _log.i('Deleted $totalDeleted orphaned entries');
+    return totalDeleted;
   }
 }

@@ -37,6 +37,14 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   bool _embeddedCoverRefreshScheduled = false;
   List<DownloadHistoryItem>? _albumTracksSourceCache;
   List<DownloadHistoryItem>? _albumTracksCache;
+  List<DownloadHistoryItem>? _discGroupingSourceCache;
+  Map<int, List<DownloadHistoryItem>>? _discGroupingCache;
+  List<int>? _sortedDiscNumbersCache;
+  List<DownloadHistoryItem>? _commonQualitySourceCache;
+  String? _commonQualityCache;
+  List<DownloadHistoryItem>? _embeddedCoverSourceCache;
+  String? _embeddedCoverPathCache;
+  bool _embeddedCoverPathResolved = false;
 
   String get _albumLookupKey =>
       '${widget.albumName.toLowerCase()}|${widget.artistName.toLowerCase()}';
@@ -61,6 +69,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         oldWidget.artistName != widget.artistName) {
       _albumTracksSourceCache = null;
       _albumTracksCache = null;
+      _invalidateDerivedTrackCaches();
     }
   }
 
@@ -104,18 +113,43 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
 
     _albumTracksSourceCache = allItems;
     _albumTracksCache = tracks;
+    _invalidateDerivedTrackCaches();
     return tracks;
   }
 
-  Map<int, List<DownloadHistoryItem>> _groupTracksByDisc(
+  void _invalidateDerivedTrackCaches() {
+    _discGroupingSourceCache = null;
+    _discGroupingCache = null;
+    _sortedDiscNumbersCache = null;
+    _commonQualitySourceCache = null;
+    _commonQualityCache = null;
+    _embeddedCoverSourceCache = null;
+    _embeddedCoverPathCache = null;
+    _embeddedCoverPathResolved = false;
+  }
+
+  Map<int, List<DownloadHistoryItem>> _getDiscGroups(
     List<DownloadHistoryItem> tracks,
   ) {
+    final cached = _discGroupingCache;
+    if (cached != null && identical(tracks, _discGroupingSourceCache)) {
+      return cached;
+    }
+
     final discMap = <int, List<DownloadHistoryItem>>{};
     for (final track in tracks) {
       final discNumber = track.discNumber ?? 1;
       discMap.putIfAbsent(discNumber, () => []).add(track);
     }
+    _discGroupingSourceCache = tracks;
+    _discGroupingCache = discMap;
+    _sortedDiscNumbersCache = discMap.keys.toList()..sort();
     return discMap;
+  }
+
+  List<int> _getSortedDiscNumbers(List<DownloadHistoryItem> tracks) {
+    _getDiscGroups(tracks);
+    return _sortedDiscNumbersCache ?? const [];
   }
 
   void _enterSelectionMode(String itemId) {
@@ -178,10 +212,11 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     if (confirmed == true && mounted) {
       final historyNotifier = ref.read(downloadHistoryProvider.notifier);
       final idsToDelete = _selectedIds.toList();
+      final tracksById = {for (final track in currentTracks) track.id: track};
 
       int deletedCount = 0;
       for (final id in idsToDelete) {
-        final item = currentTracks.where((e) => e.id == id).firstOrNull;
+        final item = tracksById[id];
         if (item != null) {
           try {
             await deleteFile(item.filePath);
@@ -220,6 +255,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   void _onEmbeddedCoverChanged() {
     if (!mounted || _embeddedCoverRefreshScheduled) return;
     _embeddedCoverRefreshScheduled = true;
+    _embeddedCoverPathResolved = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _embeddedCoverRefreshScheduled = false;
       if (mounted) {
@@ -346,11 +382,24 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   }
 
   String? _resolveAlbumEmbeddedCoverPath(List<DownloadHistoryItem> tracks) {
-    if (tracks.isEmpty) return null;
-    return DownloadedEmbeddedCoverResolver.resolve(
+    if (_embeddedCoverPathResolved &&
+        identical(tracks, _embeddedCoverSourceCache)) {
+      return _embeddedCoverPathCache;
+    }
+
+    _embeddedCoverSourceCache = tracks;
+    _embeddedCoverPathResolved = true;
+
+    if (tracks.isEmpty) {
+      _embeddedCoverPathCache = null;
+      return null;
+    }
+
+    _embeddedCoverPathCache = DownloadedEmbeddedCoverResolver.resolve(
       tracks.first.filePath,
       onChanged: _onEmbeddedCoverChanged,
     );
+    return _embeddedCoverPathCache;
   }
 
   Widget _buildAppBar(
@@ -541,6 +590,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     ColorScheme colorScheme,
     List<DownloadHistoryItem> tracks,
   ) {
+    final commonQuality = _getCommonQuality(tracks);
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -604,22 +655,22 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (_getCommonQuality(tracks) != null)
+                    if (commonQuality != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getCommonQuality(tracks)!.startsWith('24')
+                          color: commonQuality.startsWith('24')
                               ? colorScheme.tertiaryContainer
                               : colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          _getCommonQuality(tracks)!,
+                          commonQuality,
                           style: TextStyle(
-                            color: _getCommonQuality(tracks)!.startsWith('24')
+                            color: commonQuality.startsWith('24')
                                 ? colorScheme.onTertiaryContainer
                                 : colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
@@ -638,12 +689,30 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   }
 
   String? _getCommonQuality(List<DownloadHistoryItem> tracks) {
-    if (tracks.isEmpty) return null;
-    final firstQuality = tracks.first.quality;
-    if (firstQuality == null) return null;
-    for (final track in tracks) {
-      if (track.quality != firstQuality) return null;
+    if (identical(tracks, _commonQualitySourceCache)) {
+      return _commonQualityCache;
     }
+
+    if (tracks.isEmpty) {
+      _commonQualitySourceCache = tracks;
+      _commonQualityCache = null;
+      return null;
+    }
+    final firstQuality = tracks.first.quality;
+    if (firstQuality == null) {
+      _commonQualitySourceCache = tracks;
+      _commonQualityCache = null;
+      return null;
+    }
+    for (final track in tracks) {
+      if (track.quality != firstQuality) {
+        _commonQualitySourceCache = tracks;
+        _commonQualityCache = null;
+        return null;
+      }
+    }
+    _commonQualitySourceCache = tracks;
+    _commonQualityCache = firstQuality;
     return firstQuality;
   }
 
@@ -689,7 +758,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     ColorScheme colorScheme,
     List<DownloadHistoryItem> tracks,
   ) {
-    final discMap = _groupTracksByDisc(tracks);
+    final discMap = _getDiscGroups(tracks);
 
     if (discMap.length <= 1) {
       return SliverList(
@@ -703,7 +772,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       );
     }
 
-    final discNumbers = discMap.keys.toList()..sort();
+    final discNumbers = _getSortedDiscNumbers(tracks);
     final List<Widget> children = [];
 
     for (final discNumber in discNumbers) {

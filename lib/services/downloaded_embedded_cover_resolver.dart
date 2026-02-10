@@ -21,6 +21,7 @@ class _EmbeddedCoverCacheEntry {
 class DownloadedEmbeddedCoverResolver {
   static const int _maxCacheEntries = 160;
   static const int _minModCheckIntervalMs = 1200;
+  static const int _minPreviewExistsCheckIntervalMs = 2200;
 
   static final LinkedHashMap<String, _EmbeddedCoverCacheEntry> _cache =
       LinkedHashMap<String, _EmbeddedCoverCacheEntry>();
@@ -28,6 +29,8 @@ class DownloadedEmbeddedCoverResolver {
   static final Set<String> _pendingModCheck = <String>{};
   static final Set<String> _failedExtract = <String>{};
   static final Map<String, int> _lastModCheckMillis = <String, int>{};
+  static final Map<String, int> _lastPreviewExistsCheckMillis =
+      <String, int>{};
 
   static String cleanFilePath(String? filePath) {
     if (filePath == null) return '';
@@ -64,12 +67,21 @@ class DownloadedEmbeddedCoverResolver {
 
     final cached = _cache[cleanPath];
     if (cached != null) {
-      if (File(cached.previewPath).existsSync()) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final lastPreviewCheck = _lastPreviewExistsCheckMillis[cleanPath] ?? 0;
+      final shouldVerifyExists =
+          now - lastPreviewCheck >= _minPreviewExistsCheckIntervalMs;
+
+      if (!shouldVerifyExists || File(cached.previewPath).existsSync()) {
+        if (shouldVerifyExists) {
+          _lastPreviewExistsCheckMillis[cleanPath] = now;
+        }
         _touch(cleanPath, cached);
         _scheduleModCheck(cleanPath, onChanged: onChanged);
         return cached.previewPath;
       }
       _cache.remove(cleanPath);
+      _lastPreviewExistsCheckMillis.remove(cleanPath);
       _cleanupTempCoverPathSync(cached.previewPath);
     }
 
@@ -107,6 +119,7 @@ class DownloadedEmbeddedCoverResolver {
     _pendingModCheck.remove(cleanPath);
     _failedExtract.remove(cleanPath);
     _lastModCheckMillis.remove(cleanPath);
+    _lastPreviewExistsCheckMillis.remove(cleanPath);
     if (cached != null) {
       _cleanupTempCoverPathSync(cached.previewPath);
     }
@@ -129,6 +142,7 @@ class DownloadedEmbeddedCoverResolver {
       _pendingModCheck.remove(oldestKey);
       _failedExtract.remove(oldestKey);
       _lastModCheckMillis.remove(oldestKey);
+      _lastPreviewExistsCheckMillis.remove(oldestKey);
     }
   }
 
@@ -204,6 +218,8 @@ class DownloadedEmbeddedCoverResolver {
         );
         _touch(cleanPath, next);
         _failedExtract.remove(cleanPath);
+        _lastPreviewExistsCheckMillis[cleanPath] =
+            DateTime.now().millisecondsSinceEpoch;
         _trimCacheIfNeeded();
 
         if (previous != null && previous.previewPath != outputPath) {

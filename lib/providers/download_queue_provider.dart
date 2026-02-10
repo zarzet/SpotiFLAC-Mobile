@@ -519,31 +519,36 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
 
     final entries = await _db.getAllEntriesWithPaths();
     final orphanedIds = <String>[];
+    final pathById = <String, String>{};
+    const checkChunkSize = 16;
 
-    for (final entry in entries) {
-      final id = entry['id'] as String;
-      final filePath = entry['file_path'] as String?;
+    for (var i = 0; i < entries.length; i += checkChunkSize) {
+      final end = (i + checkChunkSize < entries.length)
+          ? i + checkChunkSize
+          : entries.length;
+      final chunk = entries.sublist(i, end);
 
-      if (filePath == null || filePath.isEmpty) continue;
+      final checks = await Future.wait<MapEntry<String, bool>?>(
+        chunk.map((entry) async {
+          final id = entry['id'] as String;
+          final filePath = entry['file_path'] as String?;
+          if (filePath == null || filePath.isEmpty) return null;
+          pathById[id] = filePath;
+          try {
+            return MapEntry(id, await fileExists(filePath));
+          } catch (e) {
+            _historyLog.w('Error checking file existence for $id: $e');
+            return MapEntry(id, false);
+          }
+        }),
+      );
 
-      bool exists = false;
-
-      if (filePath.startsWith('content://')) {
-        // SAF path - check via platform bridge
-        try {
-          exists = await PlatformBridge.safExists(filePath);
-        } catch (e) {
-          _historyLog.w('Error checking SAF file existence: $e');
-          exists = false;
-        }
-      } else {
-        // Regular file path
-        exists = File(filePath).existsSync();
-      }
-
-      if (!exists) {
-        orphanedIds.add(id);
-        _historyLog.d('Found orphaned entry: $id ($filePath)');
+      for (final check in checks) {
+        if (check == null || check.value) continue;
+        orphanedIds.add(check.key);
+        _historyLog.d(
+          'Found orphaned entry: ${check.key} (${pathById[check.key] ?? ''})',
+        );
       }
     }
 
