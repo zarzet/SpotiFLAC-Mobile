@@ -64,12 +64,6 @@ String _redactSensitiveText(String value) {
   return redacted;
 }
 
-String _maskIdentifier(String value) {
-  if (value.isEmpty) return value;
-  if (value.length <= 4) return '***';
-  return '${value.substring(0, 2)}***${value.substring(value.length - 2)}';
-}
-
 class LogEntry {
   final DateTime timestamp;
   final String level;
@@ -280,7 +274,11 @@ class LogBuffer extends ChangeNotifier {
         buffer.writeln(
           'Android Version: ${android.version.release} (SDK ${android.version.sdkInt})',
         );
-        buffer.writeln('Device ID: ${_maskIdentifier(android.id)}');
+        buffer.writeln('Build ID: ${android.id}');
+        if (android.version.securityPatch != null &&
+            android.version.securityPatch!.isNotEmpty) {
+          buffer.writeln('Security Patch: ${android.version.securityPatch}');
+        }
         buffer.writeln('Hardware: ${android.hardware}');
         buffer.writeln('Product: ${android.product}');
         buffer.writeln('Supported ABIs: ${android.supportedAbis.join(', ')}');

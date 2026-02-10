@@ -47,6 +47,7 @@
 - Amazon provider re-enabled in download service picker and download settings (alongside Tidal, Qobuz, and YouTube picker flow)
 - Track Metadata cover UI now refreshes from the embedded file after Edit Metadata/Re-enrich, so the displayed art matches actual file tags
 - Edit Metadata cover section moved to the top of the form and now previews current embedded cover before replacement (plus selected replacement preview)
+- Edit Metadata cover preview enlarged (120px to 160px) with shadow, side-by-side layout for current vs selected cover, and label repositioned below image
 
 ### Fixed
 
@@ -82,12 +83,43 @@
   - Non-Library screens that read download history (Home/album/history views) now reflect updated title/artist/album/tags without manual rescan
   - Track Metadata back-navigation now returns an explicit update result after successful edits/re-enrich, enabling History-tab cover refresh fallback when SAF timestamps are unreliable
 
+### Performance
+
+- Configured Flutter image cache limits (240 entries / 60 MiB) and added `ResizeImage` wrappers for cover art precaching across all screens, reducing peak memory usage on cover-heavy pages
+- Added LRU eviction to Deezer cache with configurable max entries per cache type (search/album/artist/ISRC) and periodic expired-entry cleanup to prevent unbounded memory growth in long sessions
+- Download progress notifications are now normalized (2-decimal progress, 1-decimal speed, 0.1 MiB byte steps) and deduplicated by track/artist/percent/queue-count, reducing notification overhead during batch downloads
+- Each queue item now uses a dedicated `ConsumerWidget` with per-item `.select()` instead of rebuilding the entire list on any item change; items are wrapped in `RepaintBoundary` for paint isolation
+- Queue/Library search indexes are now built on-demand per item instead of upfront for all items, with bounded LRU caches (max 4000 entries)
+- `copyWith` now preserves derived lookup indexes (ISRC map, track key set) when items list is unchanged, avoiding O(n) rebuild on every scan progress update
+- Scan progress polling now compares values before calling `setState`, skipping unnecessary widget rebuilds when nothing changed
+- Added in-flight flag to download progress and library scan polling to prevent concurrent timer callbacks from overlapping
+- New `DownloadedEmbeddedCoverResolver` service replaces per-screen cover extraction logic with a shared bounded cache (160 entries), mod-time validation, and throttled refresh checks
+- Multiple embedded cover change callbacks are now coalesced into a single frame via `addPostFrameCallback`, preventing redundant rebuilds
+- Downloaded album screen now caches filtered/sorted track lists and reuses them when the source data reference is unchanged
+- Home tab recent downloads now use single-pass aggregation instead of building full per-album lists, and store only IDs instead of full item objects for the clear-all action
+- Removed duplicate `_downloadedSpotifyIds` Set and `_isrcSet` (both now use existing map lookups), removed unused `_isTyping` state in home tab
+- Track cache pre-warming is now capped at 80 tracks per request to avoid excessive backend calls on large playlists
+- About page contributor avatars now use `memCacheWidth`/`memCacheHeight` to decode at display size instead of full resolution
+
+### Security
+
+- All logs (Go and Dart) now automatically redact Bearer tokens, access/refresh tokens, client secrets, API keys, and passwords using regex-based sanitization before storage
+- Extension auth URLs are now validated for HTTPS-only, no embedded credentials, and no private/local network targets before opening
+- Auth URLs in logs are summarized to scheme+host+path only (query params stripped) to prevent token leakage; token exchange error bodies are truncated and sanitized
+- Extension HTTP requests now block URLs with embedded credentials (`user:pass@host`)
+- Extension storage files changed from `0644` to `0600` (owner-only read/write)
+- All SAF relative directory paths are now sanitized per-segment with `.`/`..` filtering; all user-provided file names pass through `sanitizeFilename()` before use
+- Extension ID is sanitized before building download destination path
+- Device ID in exported log reports is now masked (first 2 + last 2 chars only)
+
 ### Technical
 
 - Centralized request serialization in `PlatformBridge` via shared invoke helper and unified payload model
 - Go strategy router normalizes incoming service casing before dispatch
 - Extension runtime: `customSearch` now passes query/options via VM globals instead of string interpolation, preventing parser edge cases on certain devices
 - Extension runtime: JS panic handler now logs full stack trace for easier debugging
+- `DownloadQueueLookup` expanded with `byItemId` map and `itemIds` list for O(1) queue item access from UI
+- Non-error/non-fatal log entries are now skipped entirely (not just hidden) when detailed logging is disabled, reducing buffer growth and Go log polling overhead
 
 ### Removed
 
