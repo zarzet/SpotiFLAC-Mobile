@@ -12,6 +12,7 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/services/download_request_payload.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/history_database.dart';
@@ -2756,128 +2757,63 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final relativeDir = useSaf ? outputDir : '';
         final fileName = useSaf ? (safFileName ?? '') : '';
         final outputExt = useSaf ? safOutputExt : '';
+        final isYouTube = item.service == 'youtube';
+        final shouldUseExtensions = !isYouTube && useExtensions;
+        final shouldUseFallback =
+            !isYouTube && !shouldUseExtensions && state.autoFallback;
 
-        // YouTube provider - lossy only, bypasses fallback chain
-        if (item.service == 'youtube') {
+        if (isYouTube) {
           _log.d('Using YouTube/Cobalt provider for download');
           _log.d('Quality: $quality (lossy only)');
-          _log.d('Output dir: $outputDir');
-          return PlatformBridge.downloadFromYouTube(
-            trackName: trackToDownload.name,
-            artistName: trackToDownload.artistName,
-            albumName: trackToDownload.albumName,
-            albumArtist: normalizedAlbumArtist,
-            coverUrl: trackToDownload.coverUrl,
-            outputDir: outputDir,
-            filenameFormat: state.filenameFormat,
-            quality: quality,
-            trackNumber: trackToDownload.trackNumber ?? 1,
-            discNumber: trackToDownload.discNumber ?? 1,
-            releaseDate: trackToDownload.releaseDate,
-            itemId: item.id,
-            durationMs: trackToDownload.duration,
-            isrc: trackToDownload.isrc,
-            spotifyId: trackToDownload.id,
-            deezerId: deezerTrackId,
-            storageMode: storageMode,
-            safTreeUri: treeUri,
-            safRelativeDir: relativeDir,
-            safFileName: fileName,
-            safOutputExt: outputExt,
-          );
-        }
-
-        if (useExtensions) {
+        } else if (shouldUseExtensions) {
           _log.d('Using extension providers for download');
           _log.d(
             'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}',
           );
-          _log.d('Output dir: $outputDir');
-          return PlatformBridge.downloadWithExtensions(
-            isrc: trackToDownload.isrc ?? '',
-            spotifyId: trackToDownload.id,
-            trackName: trackToDownload.name,
-            artistName: trackToDownload.artistName,
-            albumName: trackToDownload.albumName,
-            albumArtist: normalizedAlbumArtist,
-            coverUrl: trackToDownload.coverUrl,
-            outputDir: outputDir,
-            filenameFormat: state.filenameFormat,
-            quality: quality,
-            trackNumber: trackToDownload.trackNumber ?? 1,
-            discNumber: trackToDownload.discNumber ?? 1,
-            releaseDate: trackToDownload.releaseDate,
-            itemId: item.id,
-            durationMs: trackToDownload.duration,
-            source: trackToDownload.source,
-            genre: genre,
-            label: label,
-            lyricsMode: settings.lyricsMode,
-            preferredService: item.service,
-            storageMode: storageMode,
-            safTreeUri: treeUri,
-            safRelativeDir: relativeDir,
-            safFileName: fileName,
-            safOutputExt: outputExt,
-          );
-        }
-
-        if (state.autoFallback) {
+        } else if (shouldUseFallback) {
           _log.d('Using auto-fallback mode');
           _log.d(
             'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}',
           );
-          _log.d('Output dir: $outputDir');
-          return PlatformBridge.downloadWithFallback(
-            isrc: trackToDownload.isrc ?? '',
-            spotifyId: trackToDownload.id,
-            trackName: trackToDownload.name,
-            artistName: trackToDownload.artistName,
-            albumName: trackToDownload.albumName,
-            albumArtist: normalizedAlbumArtist,
-            coverUrl: trackToDownload.coverUrl,
-            outputDir: outputDir,
-            filenameFormat: state.filenameFormat,
-            quality: quality,
-            trackNumber: trackToDownload.trackNumber ?? 1,
-            discNumber: trackToDownload.discNumber ?? 1,
-            releaseDate: trackToDownload.releaseDate,
-            preferredService: item.service,
-            itemId: item.id,
-            durationMs: trackToDownload.duration,
-            genre: genre,
-            label: label,
-            lyricsMode: settings.lyricsMode,
-            storageMode: storageMode,
-            safTreeUri: treeUri,
-            safRelativeDir: relativeDir,
-            safFileName: fileName,
-            safOutputExt: outputExt,
-          );
         }
+        _log.d('Output dir: $outputDir');
 
-        return PlatformBridge.downloadTrack(
+        final payload = DownloadRequestPayload(
           isrc: trackToDownload.isrc ?? '',
           service: item.service,
           spotifyId: trackToDownload.id,
           trackName: trackToDownload.name,
           artistName: trackToDownload.artistName,
           albumName: trackToDownload.albumName,
-          albumArtist: normalizedAlbumArtist,
-          coverUrl: trackToDownload.coverUrl,
+          albumArtist: normalizedAlbumArtist ?? trackToDownload.artistName,
+          coverUrl: trackToDownload.coverUrl ?? '',
           outputDir: outputDir,
           filenameFormat: state.filenameFormat,
           quality: quality,
+          // Keep prior behavior: non-YouTube paths were implicitly true.
+          embedLyrics: isYouTube ? settings.embedLyrics : true,
+          embedMaxQualityCover: settings.maxQualityCover,
           trackNumber: trackToDownload.trackNumber ?? 1,
           discNumber: trackToDownload.discNumber ?? 1,
-          releaseDate: trackToDownload.releaseDate,
+          releaseDate: trackToDownload.releaseDate ?? '',
           itemId: item.id,
           durationMs: trackToDownload.duration,
+          source: trackToDownload.source ?? '',
+          genre: genre ?? '',
+          label: label ?? '',
+          deezerId: deezerTrackId ?? '',
+          lyricsMode: settings.lyricsMode,
           storageMode: storageMode,
           safTreeUri: treeUri,
           safRelativeDir: relativeDir,
           safFileName: fileName,
           safOutputExt: outputExt,
+        );
+
+        return PlatformBridge.downloadByStrategy(
+          payload: payload,
+          useExtensions: shouldUseExtensions,
+          useFallback: shouldUseFallback,
         );
       }
 

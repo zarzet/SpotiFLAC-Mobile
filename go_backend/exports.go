@@ -150,6 +150,8 @@ type DownloadRequest struct {
 	QobuzID              string `json:"qobuz_id,omitempty"`
 	DeezerID             string `json:"deezer_id,omitempty"`
 	LyricsMode           string `json:"lyrics_mode,omitempty"`
+	UseExtensions        bool   `json:"use_extensions,omitempty"`
+	UseFallback          bool   `json:"use_fallback,omitempty"`
 }
 
 type DownloadResponse struct {
@@ -190,6 +192,73 @@ type DownloadResult struct {
 	DiscNumber  int
 	ISRC        string
 	LyricsLRC   string
+}
+
+func buildDownloadSuccessResponse(
+	req DownloadRequest,
+	result DownloadResult,
+	service string,
+	message string,
+	filePath string,
+	alreadyExists bool,
+) DownloadResponse {
+	title := result.Title
+	if title == "" {
+		title = req.TrackName
+	}
+
+	artist := result.Artist
+	if artist == "" {
+		artist = req.ArtistName
+	}
+
+	album := result.Album
+	if album == "" {
+		album = req.AlbumName
+	}
+
+	releaseDate := result.ReleaseDate
+	if releaseDate == "" {
+		releaseDate = req.ReleaseDate
+	}
+
+	trackNumber := result.TrackNumber
+	if trackNumber == 0 {
+		trackNumber = req.TrackNumber
+	}
+
+	discNumber := result.DiscNumber
+	if discNumber == 0 {
+		discNumber = req.DiscNumber
+	}
+
+	isrc := result.ISRC
+	if isrc == "" {
+		isrc = req.ISRC
+	}
+
+	return DownloadResponse{
+		Success:          true,
+		Message:          message,
+		FilePath:         filePath,
+		AlreadyExists:    alreadyExists,
+		ActualBitDepth:   result.BitDepth,
+		ActualSampleRate: result.SampleRate,
+		Service:          service,
+		Title:            title,
+		Artist:           artist,
+		Album:            album,
+		AlbumArtist:      req.AlbumArtist,
+		ReleaseDate:      releaseDate,
+		TrackNumber:      trackNumber,
+		DiscNumber:       discNumber,
+		ISRC:             isrc,
+		CoverURL:         req.CoverURL,
+		Genre:            req.Genre,
+		Label:            req.Label,
+		Copyright:        req.Copyright,
+		LyricsLRC:        result.LyricsLRC,
+	}
 }
 
 func DownloadTrack(requestJSON string) (string, error) {
@@ -301,22 +370,14 @@ func DownloadTrack(requestJSON string) (string, error) {
 			result.BitDepth = quality.BitDepth
 			result.SampleRate = quality.SampleRate
 		}
-		resp := DownloadResponse{
-			Success:          true,
-			Message:          "File already exists",
-			FilePath:         actualPath,
-			AlreadyExists:    true,
-			ActualBitDepth:   result.BitDepth,
-			ActualSampleRate: result.SampleRate,
-			Service:          req.Service,
-			Title:            result.Title,
-			Artist:           result.Artist,
-			Album:            result.Album,
-			ReleaseDate:      result.ReleaseDate,
-			TrackNumber:      result.TrackNumber,
-			DiscNumber:       result.DiscNumber,
-			ISRC:             result.ISRC,
-		}
+		resp := buildDownloadSuccessResponse(
+			req,
+			result,
+			req.Service,
+			"File already exists",
+			actualPath,
+			true,
+		)
 		jsonBytes, _ := json.Marshal(resp)
 		return string(jsonBytes), nil
 	}
@@ -330,25 +391,52 @@ func DownloadTrack(requestJSON string) (string, error) {
 		GoLog("[Download] Could not read quality from file: %v\n", qErr)
 	}
 
-	resp := DownloadResponse{
-		Success:          true,
-		Message:          "Download complete",
-		FilePath:         result.FilePath,
-		ActualBitDepth:   result.BitDepth,
-		ActualSampleRate: result.SampleRate,
-		Service:          req.Service,
-		Title:            result.Title,
-		Artist:           result.Artist,
-		Album:            result.Album,
-		ReleaseDate:      result.ReleaseDate,
-		TrackNumber:      result.TrackNumber,
-		DiscNumber:       result.DiscNumber,
-		ISRC:             result.ISRC,
-		LyricsLRC:        result.LyricsLRC,
-	}
+	resp := buildDownloadSuccessResponse(
+		req,
+		result,
+		req.Service,
+		"Download complete",
+		result.FilePath,
+		false,
+	)
 
 	jsonBytes, _ := json.Marshal(resp)
 	return string(jsonBytes), nil
+}
+
+// DownloadByStrategy routes a unified download request to the appropriate flow.
+// Routing priority: YouTube service > extension fallback > built-in fallback > direct service.
+func DownloadByStrategy(requestJSON string) (string, error) {
+	var req DownloadRequest
+	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
+		return errorResponse("Invalid request: " + err.Error())
+	}
+
+	service := strings.TrimSpace(strings.ToLower(req.Service))
+	req.Service = service
+	normalizedBytes, err := json.Marshal(req)
+	if err != nil {
+		return errorResponse("Invalid request: " + err.Error())
+	}
+	normalizedJSON := string(normalizedBytes)
+
+	if service == "youtube" {
+		return DownloadFromYouTube(normalizedJSON)
+	}
+
+	if req.UseExtensions {
+		resp, err := DownloadWithExtensionsJSON(normalizedJSON)
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		return resp, nil
+	}
+
+	if req.UseFallback {
+		return DownloadWithFallback(normalizedJSON)
+	}
+
+	return DownloadTrack(normalizedJSON)
 }
 
 func DownloadWithFallback(requestJSON string) (string, error) {
@@ -470,23 +558,14 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 					result.BitDepth = quality.BitDepth
 					result.SampleRate = quality.SampleRate
 				}
-				resp := DownloadResponse{
-					Success:          true,
-					Message:          "File already exists",
-					FilePath:         actualPath,
-					AlreadyExists:    true,
-					ActualBitDepth:   result.BitDepth,
-					ActualSampleRate: result.SampleRate,
-					Service:          service,
-					Title:            result.Title,
-					Artist:           result.Artist,
-					Album:            result.Album,
-					ReleaseDate:      result.ReleaseDate,
-					TrackNumber:      result.TrackNumber,
-					DiscNumber:       result.DiscNumber,
-					ISRC:             result.ISRC,
-					LyricsLRC:        result.LyricsLRC,
-				}
+				resp := buildDownloadSuccessResponse(
+					req,
+					result,
+					service,
+					"File already exists",
+					actualPath,
+					true,
+				)
 				jsonBytes, _ := json.Marshal(resp)
 				return string(jsonBytes), nil
 			}
@@ -500,22 +579,14 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[Download] Could not read quality from file: %v\n", qErr)
 			}
 
-			resp := DownloadResponse{
-				Success:          true,
-				Message:          "Downloaded from " + service,
-				FilePath:         result.FilePath,
-				ActualBitDepth:   result.BitDepth,
-				ActualSampleRate: result.SampleRate,
-				Service:          service,
-				Title:            result.Title,
-				Artist:           result.Artist,
-				Album:            result.Album,
-				ReleaseDate:      result.ReleaseDate,
-				TrackNumber:      result.TrackNumber,
-				DiscNumber:       result.DiscNumber,
-				ISRC:             result.ISRC,
-				LyricsLRC:        result.LyricsLRC,
-			}
+			resp := buildDownloadSuccessResponse(
+				req,
+				result,
+				service,
+				"Downloaded from "+service,
+				result.FilePath,
+				false,
+			)
 			jsonBytes, _ := json.Marshal(resp)
 			return string(jsonBytes), nil
 		}
@@ -1266,6 +1337,10 @@ func DownloadFromYouTube(requestJSON string) (string, error) {
 		DiscNumber:  youtubeResult.DiscNumber,
 		ISRC:        youtubeResult.ISRC,
 		LyricsLRC:   youtubeResult.LyricsLRC,
+		CoverURL:    req.CoverURL,
+		Genre:       req.Genre,
+		Label:       req.Label,
+		Copyright:   req.Copyright,
 	}
 
 	jsonBytes, _ := json.Marshal(resp)

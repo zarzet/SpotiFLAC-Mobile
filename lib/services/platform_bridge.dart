@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:spotiflac_android/services/download_request_payload.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('PlatformBridge');
@@ -15,11 +16,16 @@ class PlatformBridge {
 
   static Future<Map<String, dynamic>> getSpotifyMetadata(String url) async {
     _log.d('getSpotifyMetadata: $url');
-    final result = await _channel.invokeMethod('getSpotifyMetadata', {'url': url});
+    final result = await _channel.invokeMethod('getSpotifyMetadata', {
+      'url': url,
+    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> searchSpotify(String query, {int limit = 10}) async {
+  static Future<Map<String, dynamic>> searchSpotify(
+    String query, {
+    int limit = 10,
+  }) async {
     _log.d('searchSpotify: "$query" (limit: $limit)');
     final result = await _channel.invokeMethod('searchSpotify', {
       'query': query,
@@ -28,7 +34,11 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> searchSpotifyAll(String query, {int trackLimit = 15, int artistLimit = 3}) async {
+  static Future<Map<String, dynamic>> searchSpotifyAll(
+    String query, {
+    int trackLimit = 15,
+    int artistLimit = 3,
+  }) async {
     _log.d('searchSpotifyAll: "$query"');
     final result = await _channel.invokeMethod('searchSpotifyAll', {
       'query': query,
@@ -38,7 +48,10 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> checkAvailability(String spotifyId, String isrc) async {
+  static Future<Map<String, dynamic>> checkAvailability(
+    String spotifyId,
+    String isrc,
+  ) async {
     _log.d('checkAvailability: $spotifyId (ISRC: $isrc)');
     final result = await _channel.invokeMethod('checkAvailability', {
       'spotify_id': spotifyId,
@@ -47,6 +60,50 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
+  static Future<Map<String, dynamic>> _invokeDownloadMethod(
+    String method,
+    DownloadRequestPayload payload,
+  ) async {
+    final request = jsonEncode(payload.toJson());
+    final result = await _channel.invokeMethod(method, request);
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> downloadByStrategy({
+    required DownloadRequestPayload payload,
+    bool? useExtensions,
+    bool? useFallback,
+  }) async {
+    final routedPayload = payload.withStrategy(
+      useExtensions: useExtensions,
+      useFallback: useFallback,
+    );
+    _log.i(
+      'downloadByStrategy: "${payload.trackName}" by ${payload.artistName} '
+      '(service: ${payload.service}, ext: ${routedPayload.useExtensions}, fallback: ${routedPayload.useFallback})',
+    );
+    final response = await _invokeDownloadMethod(
+      'downloadByStrategy',
+      routedPayload,
+    );
+    if (response['success'] == true) {
+      final service = response['service'] ?? payload.service;
+      final filePath = response['file_path'] ?? '';
+      final bitDepth = response['actual_bit_depth'];
+      final sampleRate = response['actual_sample_rate'];
+      final qualityStr = bitDepth != null && sampleRate != null
+          ? ' ($bitDepth-bit/${(sampleRate / 1000).toStringAsFixed(1)}kHz)'
+          : '';
+      _log.i('Download success via $service$qualityStr: $filePath');
+    } else {
+      final error = response['error'] ?? 'Unknown error';
+      final errorType = response['error_type'] ?? '';
+      _log.e('Download failed: $error (type: $errorType)');
+    }
+    return response;
+  }
+
+  @Deprecated('Use downloadByStrategy with DownloadRequestPayload.')
   static Future<Map<String, dynamic>> downloadTrack({
     required String isrc,
     required String service,
@@ -67,50 +124,53 @@ class PlatformBridge {
     String? releaseDate,
     String? itemId,
     int durationMs = 0,
+    String? source,
+    String? genre,
+    String? label,
+    String? copyright,
+    String lyricsMode = 'embed',
     String storageMode = 'app',
     String safTreeUri = '',
     String safRelativeDir = '',
     String safFileName = '',
     String safOutputExt = '',
   }) async {
-    _log.i('downloadTrack: "$trackName" by $artistName via $service');
-    final request = jsonEncode({
-      'isrc': isrc,
-      'service': service,
-      'spotify_id': spotifyId,
-      'track_name': trackName,
-      'artist_name': artistName,
-      'album_name': albumName,
-      'album_artist': albumArtist ?? artistName,
-      'cover_url': coverUrl,
-      'output_dir': outputDir,
-      'filename_format': filenameFormat,
-      'quality': quality,
-      'embed_lyrics': embedLyrics,
-      'embed_max_quality_cover': embedMaxQualityCover,
-      'track_number': trackNumber,
-      'disc_number': discNumber,
-      'total_tracks': totalTracks,
-      'release_date': releaseDate ?? '',
-      'item_id': itemId ?? '',
-      'duration_ms': durationMs,
-      'storage_mode': storageMode,
-      'saf_tree_uri': safTreeUri,
-      'saf_relative_dir': safRelativeDir,
-      'saf_file_name': safFileName,
-      'saf_output_ext': safOutputExt,
-    });
-    
-    final result = await _channel.invokeMethod('downloadTrack', request);
-    final response = jsonDecode(result as String) as Map<String, dynamic>;
-    if (response['success'] == true) {
-      _log.i('Download success: ${response['file_path']}');
-    } else {
-      _log.w('Download failed: ${response['error']}');
-    }
-    return response;
+    final payload = DownloadRequestPayload(
+      isrc: isrc,
+      service: service,
+      spotifyId: spotifyId,
+      trackName: trackName,
+      artistName: artistName,
+      albumName: albumName,
+      albumArtist: albumArtist ?? artistName,
+      coverUrl: coverUrl ?? '',
+      outputDir: outputDir,
+      filenameFormat: filenameFormat,
+      quality: quality,
+      embedLyrics: embedLyrics,
+      embedMaxQualityCover: embedMaxQualityCover,
+      trackNumber: trackNumber,
+      discNumber: discNumber,
+      totalTracks: totalTracks,
+      releaseDate: releaseDate ?? '',
+      itemId: itemId ?? '',
+      durationMs: durationMs,
+      source: source ?? '',
+      genre: genre ?? '',
+      label: label ?? '',
+      copyright: copyright ?? '',
+      lyricsMode: lyricsMode,
+      storageMode: storageMode,
+      safTreeUri: safTreeUri,
+      safRelativeDir: safRelativeDir,
+      safFileName: safFileName,
+      safOutputExt: safOutputExt,
+    );
+
+    return downloadByStrategy(payload: payload);
   }
 
+  @Deprecated('Use downloadByStrategy with DownloadRequestPayload.')
   static Future<Map<String, dynamic>> downloadWithFallback({
     required String isrc,
     required String spotifyId,
@@ -141,55 +201,38 @@ class PlatformBridge {
     String safFileName = '',
     String safOutputExt = '',
   }) async {
-    _log.i('downloadWithFallback: "$trackName" by $artistName (preferred: $preferredService)');
-    final request = jsonEncode({
-      'isrc': isrc,
-      'service': preferredService,
-      'spotify_id': spotifyId,
-      'track_name': trackName,
-      'artist_name': artistName,
-      'album_name': albumName,
-      'album_artist': albumArtist ?? artistName,
-      'cover_url': coverUrl,
-      'output_dir': outputDir,
-      'filename_format': filenameFormat,
-      'quality': quality,
-      'embed_lyrics': embedLyrics,
-      'embed_max_quality_cover': embedMaxQualityCover,
-      'track_number': trackNumber,
-      'disc_number': discNumber,
-      'total_tracks': totalTracks,
-      'release_date': releaseDate ?? '',
-      'item_id': itemId ?? '',
-      'duration_ms': durationMs,
-      'genre': genre ?? '',
-      'label': label ?? '',
-      'copyright': copyright ?? '',
-      'lyrics_mode': lyricsMode,
-      'storage_mode': storageMode,
-      'saf_tree_uri': safTreeUri,
-      'saf_relative_dir': safRelativeDir,
-      'saf_file_name': safFileName,
-      'saf_output_ext': safOutputExt,
-    });
-    
-    final result = await _channel.invokeMethod('downloadWithFallback', request);
-    final response = jsonDecode(result as String) as Map<String, dynamic>;
-    if (response['success'] == true) {
-      final service = response['service'] ?? 'unknown';
-      final filePath = response['file_path'] ?? '';
-      final bitDepth = response['actual_bit_depth'];
-      final sampleRate = response['actual_sample_rate'];
-      final qualityStr = bitDepth != null && sampleRate != null 
-          ? ' ($bitDepth-bit/${(sampleRate / 1000).toStringAsFixed(1)}kHz)'
-          : '';
-      _log.i('Download success via $service$qualityStr: $filePath');
-    } else {
-      final error = response['error'] ?? 'Unknown error';
-      final errorType = response['error_type'] ?? '';
-      _log.e('Download failed: $error (type: $errorType)');
-    }
-    return response;
+    final payload = DownloadRequestPayload(
+      isrc: isrc,
+      service: preferredService,
+      spotifyId: spotifyId,
+      trackName: trackName,
+      artistName: artistName,
+      albumName: albumName,
+      albumArtist: albumArtist ?? artistName,
+      coverUrl: coverUrl ?? '',
+      outputDir: outputDir,
+      filenameFormat: filenameFormat,
+      quality: quality,
+      embedLyrics: embedLyrics,
+      embedMaxQualityCover: embedMaxQualityCover,
+      trackNumber: trackNumber,
+      discNumber: discNumber,
+      totalTracks: totalTracks,
+      releaseDate: releaseDate ?? '',
+      itemId: itemId ?? '',
+      durationMs: durationMs,
+      genre: genre ?? '',
+      label: label ?? '',
+      copyright: copyright ?? '',
+      lyricsMode: lyricsMode,
+      storageMode: storageMode,
+      safTreeUri: safTreeUri,
+      safRelativeDir: safRelativeDir,
+      safFileName: safFileName,
+      safOutputExt: safOutputExt,
+    );
+
+    return downloadByStrategy(payload: payload, useFallback: true);
   }
 
   static Future<Map<String, dynamic>> getDownloadProgress() async {
@@ -222,7 +265,10 @@ class PlatformBridge {
     await _channel.invokeMethod('setDownloadDirectory', {'path': path});
   }
 
-  static Future<Map<String, dynamic>> checkDuplicate(String outputDir, String isrc) async {
+  static Future<Map<String, dynamic>> checkDuplicate(
+    String outputDir,
+    String isrc,
+  ) async {
     final result = await _channel.invokeMethod('checkDuplicate', {
       'output_dir': outputDir,
       'isrc': isrc,
@@ -230,7 +276,10 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<String> buildFilename(String template, Map<String, dynamic> metadata) async {
+  static Future<String> buildFilename(
+    String template,
+    Map<String, dynamic> metadata,
+  ) async {
     final result = await _channel.invokeMethod('buildFilename', {
       'template': template,
       'metadata': jsonEncode(metadata),
@@ -415,7 +464,9 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> reEnrichFile(Map<String, dynamic> request) async {
+  static Future<Map<String, dynamic>> reEnrichFile(
+    Map<String, dynamic> request,
+  ) async {
     final requestJSON = jsonEncode(request);
     final result = await _channel.invokeMethod('reEnrichFile', {
       'request_json': requestJSON,
@@ -488,7 +539,10 @@ class PlatformBridge {
     return result as bool;
   }
 
-  static Future<void> setSpotifyCredentials(String clientId, String clientSecret) async {
+  static Future<void> setSpotifyCredentials(
+    String clientId,
+    String clientSecret,
+  ) async {
     await _channel.invokeMethod('setSpotifyCredentials', {
       'client_id': clientId,
       'client_secret': clientSecret,
@@ -500,7 +554,9 @@ class PlatformBridge {
     return result as bool;
   }
 
-  static Future<void> preWarmTrackCache(List<Map<String, String>> tracks) async {
+  static Future<void> preWarmTrackCache(
+    List<Map<String, String>> tracks,
+  ) async {
     final tracksJson = jsonEncode(tracks);
     await _channel.invokeMethod('preWarmTrackCache', {'tracks': tracksJson});
   }
@@ -514,7 +570,12 @@ class PlatformBridge {
     await _channel.invokeMethod('clearTrackCache');
   }
 
-  static Future<Map<String, dynamic>> searchDeezerAll(String query, {int trackLimit = 15, int artistLimit = 2, String? filter}) async {
+  static Future<Map<String, dynamic>> searchDeezerAll(
+    String query, {
+    int trackLimit = 15,
+    int artistLimit = 2,
+    String? filter,
+  }) async {
     final result = await _channel.invokeMethod('searchDeezerAll', {
       'query': query,
       'track_limit': trackLimit,
@@ -524,13 +585,18 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> getDeezerMetadata(String resourceType, String resourceId) async {
+  static Future<Map<String, dynamic>> getDeezerMetadata(
+    String resourceType,
+    String resourceId,
+  ) async {
     final result = await _channel.invokeMethod('getDeezerMetadata', {
       'resource_type': resourceType,
       'resource_id': resourceId,
     });
     if (result == null) {
-      throw Exception('getDeezerMetadata returned null for $resourceType:$resourceId');
+      throw Exception(
+        'getDeezerMetadata returned null for $resourceType:$resourceId',
+      );
     }
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
@@ -545,17 +611,25 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> convertTidalToSpotifyDeezer(String tidalUrl) async {
-    final result = await _channel.invokeMethod('convertTidalToSpotifyDeezer', {'url': tidalUrl});
+  static Future<Map<String, dynamic>> convertTidalToSpotifyDeezer(
+    String tidalUrl,
+  ) async {
+    final result = await _channel.invokeMethod('convertTidalToSpotifyDeezer', {
+      'url': tidalUrl,
+    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
   static Future<Map<String, dynamic>> searchDeezerByISRC(String isrc) async {
-    final result = await _channel.invokeMethod('searchDeezerByISRC', {'isrc': isrc});
+    final result = await _channel.invokeMethod('searchDeezerByISRC', {
+      'isrc': isrc,
+    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, String>?> getDeezerExtendedMetadata(String trackId) async {
+  static Future<Map<String, String>?> getDeezerExtendedMetadata(
+    String trackId,
+  ) async {
     try {
       final result = await _channel.invokeMethod('getDeezerExtendedMetadata', {
         'track_id': trackId,
@@ -572,7 +646,10 @@ class PlatformBridge {
     }
   }
 
-  static Future<Map<String, dynamic>> convertSpotifyToDeezer(String resourceType, String spotifyId) async {
+  static Future<Map<String, dynamic>> convertSpotifyToDeezer(
+    String resourceType,
+    String spotifyId,
+  ) async {
     final result = await _channel.invokeMethod('convertSpotifyToDeezer', {
       'resource_type': resourceType,
       'spotify_id': spotifyId,
@@ -580,8 +657,13 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> getSpotifyMetadataWithFallback(String url) async {
-    final result = await _channel.invokeMethod('getSpotifyMetadataWithFallback', {'url': url});
+  static Future<Map<String, dynamic>> getSpotifyMetadataWithFallback(
+    String url,
+  ) async {
+    final result = await _channel.invokeMethod(
+      'getSpotifyMetadataWithFallback',
+      {'url': url},
+    );
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
@@ -592,7 +674,9 @@ class PlatformBridge {
   }
 
   static Future<Map<String, dynamic>> getGoLogsSince(int index) async {
-    final result = await _channel.invokeMethod('getLogsSince', {'index': index});
+    final result = await _channel.invokeMethod('getLogsSince', {
+      'index': index,
+    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
@@ -609,8 +693,10 @@ class PlatformBridge {
     await _channel.invokeMethod('setLoggingEnabled', {'enabled': enabled});
   }
 
-
-  static Future<void> initExtensionSystem(String extensionsDir, String dataDir) async {
+  static Future<void> initExtensionSystem(
+    String extensionsDir,
+    String dataDir,
+  ) async {
     _log.d('initExtensionSystem: $extensionsDir, $dataDir');
     await _channel.invokeMethod('initExtensionSystem', {
       'extensions_dir': extensionsDir,
@@ -618,7 +704,9 @@ class PlatformBridge {
     });
   }
 
-  static Future<Map<String, dynamic>> loadExtensionsFromDir(String dirPath) async {
+  static Future<Map<String, dynamic>> loadExtensionsFromDir(
+    String dirPath,
+  ) async {
     _log.d('loadExtensionsFromDir: $dirPath');
     final result = await _channel.invokeMethod('loadExtensionsFromDir', {
       'dir_path': dirPath,
@@ -626,7 +714,9 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> loadExtensionFromPath(String filePath) async {
+  static Future<Map<String, dynamic>> loadExtensionFromPath(
+    String filePath,
+  ) async {
     _log.d('loadExtensionFromPath: $filePath');
     final result = await _channel.invokeMethod('loadExtensionFromPath', {
       'file_path': filePath,
@@ -656,7 +746,9 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> checkExtensionUpgrade(String filePath) async {
+  static Future<Map<String, dynamic>> checkExtensionUpgrade(
+    String filePath,
+  ) async {
     _log.d('checkExtensionUpgrade: $filePath');
     final result = await _channel.invokeMethod('checkExtensionUpgrade', {
       'file_path': filePath,
@@ -670,7 +762,10 @@ class PlatformBridge {
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-  static Future<void> setExtensionEnabled(String extensionId, bool enabled) async {
+  static Future<void> setExtensionEnabled(
+    String extensionId,
+    bool enabled,
+  ) async {
     _log.d('setExtensionEnabled: $extensionId = $enabled');
     await _channel.invokeMethod('setExtensionEnabled', {
       'extension_id': extensionId,
@@ -691,7 +786,9 @@ class PlatformBridge {
     return list.map((e) => e as String).toList();
   }
 
-  static Future<void> setMetadataProviderPriority(List<String> providerIds) async {
+  static Future<void> setMetadataProviderPriority(
+    List<String> providerIds,
+  ) async {
     _log.d('setMetadataProviderPriority: $providerIds');
     await _channel.invokeMethod('setMetadataProviderPriority', {
       'priority': jsonEncode(providerIds),
@@ -704,14 +801,19 @@ class PlatformBridge {
     return list.map((e) => e as String).toList();
   }
 
-  static Future<Map<String, dynamic>> getExtensionSettings(String extensionId) async {
+  static Future<Map<String, dynamic>> getExtensionSettings(
+    String extensionId,
+  ) async {
     final result = await _channel.invokeMethod('getExtensionSettings', {
       'extension_id': extensionId,
     });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<void> setExtensionSettings(String extensionId, Map<String, dynamic> settings) async {
+  static Future<void> setExtensionSettings(
+    String extensionId,
+    Map<String, dynamic> settings,
+  ) async {
     _log.d('setExtensionSettings: $extensionId');
     await _channel.invokeMethod('setExtensionSettings', {
       'extension_id': extensionId,
@@ -719,7 +821,10 @@ class PlatformBridge {
     });
   }
 
-  static Future<Map<String, dynamic>> invokeExtensionAction(String extensionId, String actionName) async {
+  static Future<Map<String, dynamic>> invokeExtensionAction(
+    String extensionId,
+    String actionName,
+  ) async {
     _log.d('invokeExtensionAction: $extensionId.$actionName');
     final result = await _channel.invokeMethod('invokeExtensionAction', {
       'extension_id': extensionId,
@@ -731,7 +836,10 @@ class PlatformBridge {
     return jsonDecode(result) as Map<String, dynamic>;
   }
 
-  static Future<List<Map<String, dynamic>>> searchTracksWithExtensions(String query, {int limit = 20}) async {
+  static Future<List<Map<String, dynamic>>> searchTracksWithExtensions(
+    String query, {
+    int limit = 20,
+  }) async {
     _log.d('searchTracksWithExtensions: "$query"');
     final result = await _channel.invokeMethod('searchTracksWithExtensions', {
       'query': query,
@@ -741,7 +849,8 @@ class PlatformBridge {
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-static Future<Map<String, dynamic>> downloadWithExtensions({
+  @Deprecated('Use downloadByStrategy with DownloadRequestPayload.')
+  static Future<Map<String, dynamic>> downloadWithExtensions({
     required String isrc,
     required String spotifyId,
     required String trackName,
@@ -763,6 +872,10 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     String? source,
     String? genre,
     String? label,
+    String? copyright,
+    String? tidalId,
+    String? qobuzId,
+    String? deezerId,
     String lyricsMode = 'embed',
     String? preferredService,
     String storageMode = 'app',
@@ -771,40 +884,42 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     String safFileName = '',
     String safOutputExt = '',
   }) async {
-    _log.i('downloadWithExtensions: "$trackName" by $artistName${source != null ? ' (source: $source)' : ''}${preferredService != null ? ' (service: $preferredService)' : ''}');
-    final request = jsonEncode({
-      'isrc': isrc,
-      'spotify_id': spotifyId,
-      'track_name': trackName,
-      'artist_name': artistName,
-      'album_name': albumName,
-      'album_artist': albumArtist ?? artistName,
-      'cover_url': coverUrl,
-      'output_dir': outputDir,
-      'filename_format': filenameFormat,
-      'quality': quality,
-      'embed_lyrics': embedLyrics,
-      'embed_max_quality_cover': embedMaxQualityCover,
-      'track_number': trackNumber,
-      'disc_number': discNumber,
-      'total_tracks': totalTracks,
-      'release_date': releaseDate ?? '',
-      'item_id': itemId ?? '',
-      'duration_ms': durationMs,
-      'source': source ?? '',
-      'genre': genre ?? '',
-      'label': label ?? '',
-      'lyrics_mode': lyricsMode,
-      'service': preferredService ?? '',
-      'storage_mode': storageMode,
-      'saf_tree_uri': safTreeUri,
-      'saf_relative_dir': safRelativeDir,
-      'saf_file_name': safFileName,
-      'saf_output_ext': safOutputExt,
-    });
-    
-    final result = await _channel.invokeMethod('downloadWithExtensions', request);
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    final payload = DownloadRequestPayload(
+      isrc: isrc,
+      service: preferredService ?? '',
+      spotifyId: spotifyId,
+      trackName: trackName,
+      artistName: artistName,
+      albumName: albumName,
+      albumArtist: albumArtist ?? artistName,
+      coverUrl: coverUrl ?? '',
+      outputDir: outputDir,
+      filenameFormat: filenameFormat,
+      quality: quality,
+      embedLyrics: embedLyrics,
+      embedMaxQualityCover: embedMaxQualityCover,
+      trackNumber: trackNumber,
+      discNumber: discNumber,
+      totalTracks: totalTracks,
+      releaseDate: releaseDate ?? '',
+      itemId: itemId ?? '',
+      durationMs: durationMs,
+      source: source ?? '',
+      genre: genre ?? '',
+      label: label ?? '',
+      copyright: copyright ?? '',
+      tidalId: tidalId ?? '',
+      qobuzId: qobuzId ?? '',
+      deezerId: deezerId ?? '',
+      lyricsMode: lyricsMode,
+      storageMode: storageMode,
+      safTreeUri: safTreeUri,
+      safRelativeDir: safRelativeDir,
+      safFileName: safFileName,
+      safOutputExt: safOutputExt,
+    );
+
+    return downloadByStrategy(payload: payload, useExtensions: true);
   }
 
   static Future<void> cleanupExtensions() async {
@@ -812,7 +927,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     await _channel.invokeMethod('cleanupExtensions');
   }
 
-  static Future<Map<String, dynamic>?> getExtensionPendingAuth(String extensionId) async {
+  static Future<Map<String, dynamic>?> getExtensionPendingAuth(
+    String extensionId,
+  ) async {
     final result = await _channel.invokeMethod('getExtensionPendingAuth', {
       'extension_id': extensionId,
     });
@@ -820,7 +937,10 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<void> setExtensionAuthCode(String extensionId, String authCode) async {
+  static Future<void> setExtensionAuthCode(
+    String extensionId,
+    String authCode,
+  ) async {
     _log.d('setExtensionAuthCode: $extensionId');
     await _channel.invokeMethod('setExtensionAuthCode', {
       'extension_id': extensionId,
@@ -862,7 +982,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-  static Future<Map<String, dynamic>?> getPendingFFmpegCommand(String commandId) async {
+  static Future<Map<String, dynamic>?> getPendingFFmpegCommand(
+    String commandId,
+  ) async {
     final result = await _channel.invokeMethod('getPendingFFmpegCommand', {
       'command_id': commandId,
     });
@@ -884,7 +1006,8 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     });
   }
 
-  static Future<List<Map<String, dynamic>>> getAllPendingFFmpegCommands() async {
+  static Future<List<Map<String, dynamic>>>
+  getAllPendingFFmpegCommands() async {
     final result = await _channel.invokeMethod('getAllPendingFFmpegCommands');
     final list = jsonDecode(result as String) as List<dynamic>;
     return list.map((e) => e as Map<String, dynamic>).toList();
@@ -910,7 +1033,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-  static Future<Map<String, dynamic>?> handleURLWithExtension(String url) async {
+  static Future<Map<String, dynamic>?> handleURLWithExtension(
+    String url,
+  ) async {
     try {
       final result = await _channel.invokeMethod('handleURLWithExtension', {
         'url': url,
@@ -923,9 +1048,7 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
   }
 
   static Future<String?> findURLHandler(String url) async {
-    final result = await _channel.invokeMethod('findURLHandler', {
-      'url': url,
-    });
+    final result = await _channel.invokeMethod('findURLHandler', {'url': url});
     if (result == null || result == '') return null;
     return result as String;
   }
@@ -987,7 +1110,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     }
   }
 
-  static Future<Map<String, dynamic>?> getExtensionHomeFeed(String extensionId) async {
+  static Future<Map<String, dynamic>?> getExtensionHomeFeed(
+    String extensionId,
+  ) async {
     try {
       final result = await _channel.invokeMethod('getExtensionHomeFeed', {
         'extension_id': extensionId,
@@ -1000,11 +1125,14 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     }
   }
 
-  static Future<Map<String, dynamic>?> getExtensionBrowseCategories(String extensionId) async {
+  static Future<Map<String, dynamic>?> getExtensionBrowseCategories(
+    String extensionId,
+  ) async {
     try {
-      final result = await _channel.invokeMethod('getExtensionBrowseCategories', {
-        'extension_id': extensionId,
-      });
+      final result = await _channel.invokeMethod(
+        'getExtensionBrowseCategories',
+        {'extension_id': extensionId},
+      );
       if (result == null || result == '') return null;
       return jsonDecode(result as String) as Map<String, dynamic>;
     } catch (e) {
@@ -1023,9 +1151,11 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     });
   }
 
-/// Scan a folder for audio files and read their metadata
+  /// Scan a folder for audio files and read their metadata
   /// Returns a list of track metadata
-  static Future<List<Map<String, dynamic>>> scanLibraryFolder(String folderPath) async {
+  static Future<List<Map<String, dynamic>>> scanLibraryFolder(
+    String folderPath,
+  ) async {
     _log.i('scanLibraryFolder: $folderPath');
     final result = await _channel.invokeMethod('scanLibraryFolder', {
       'folder_path': folderPath,
@@ -1042,7 +1172,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     String folderPath,
     Map<String, int> existingFiles,
   ) async {
-    _log.i('scanLibraryFolderIncremental: $folderPath (${existingFiles.length} existing files)');
+    _log.i(
+      'scanLibraryFolderIncremental: $folderPath (${existingFiles.length} existing files)',
+    );
     final result = await _channel.invokeMethod('scanLibraryFolderIncremental', {
       'folder_path': folderPath,
       'existing_files': jsonEncode(existingFiles),
@@ -1065,7 +1197,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     String treeUri,
     Map<String, int> existingFiles,
   ) async {
-    _log.i('scanSafTreeIncremental: $treeUri (${existingFiles.length} existing files)');
+    _log.i(
+      'scanSafTreeIncremental: $treeUri (${existingFiles.length} existing files)',
+    );
     final result = await _channel.invokeMethod('scanSafTreeIncremental', {
       'tree_uri': treeUri,
       'existing_files': jsonEncode(existingFiles),
@@ -1095,7 +1229,9 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
   }
 
   /// Read metadata from a single audio file
-  static Future<Map<String, dynamic>?> readAudioMetadata(String filePath) async {
+  static Future<Map<String, dynamic>?> readAudioMetadata(
+    String filePath,
+  ) async {
     try {
       final result = await _channel.invokeMethod('readAudioMetadata', {
         'file_path': filePath,
@@ -1107,7 +1243,6 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
       return null;
     }
   }
-
 
   static Future<Map<String, dynamic>> runPostProcessing(
     String filePath, {
@@ -1143,13 +1278,14 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-
   static Future<void> initExtensionStore(String cacheDir) async {
     _log.d('initExtensionStore: $cacheDir');
     await _channel.invokeMethod('initExtensionStore', {'cache_dir': cacheDir});
   }
 
-  static Future<List<Map<String, dynamic>>> getStoreExtensions({bool forceRefresh = false}) async {
+  static Future<List<Map<String, dynamic>>> getStoreExtensions({
+    bool forceRefresh = false,
+  }) async {
     _log.d('getStoreExtensions (forceRefresh: $forceRefresh)');
     final result = await _channel.invokeMethod('getStoreExtensions', {
       'force_refresh': forceRefresh,
@@ -1158,7 +1294,10 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
-  static Future<List<Map<String, dynamic>>> searchStoreExtensions(String query, {String? category}) async {
+  static Future<List<Map<String, dynamic>>> searchStoreExtensions(
+    String query, {
+    String? category,
+  }) async {
     _log.d('searchStoreExtensions: "$query" (category: $category)');
     final result = await _channel.invokeMethod('searchStoreExtensions', {
       'query': query,
@@ -1174,7 +1313,10 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     return list.cast<String>();
   }
 
-  static Future<String> downloadStoreExtension(String extensionId, String destDir) async {
+  static Future<String> downloadStoreExtension(
+    String extensionId,
+    String destDir,
+  ) async {
     _log.i('downloadStoreExtension: $extensionId to $destDir');
     final result = await _channel.invokeMethod('downloadStoreExtension', {
       'extension_id': extensionId,
@@ -1193,6 +1335,7 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
   /// Download a track from YouTube using the Cobalt API.
   /// YouTube is a lossy-only provider (Opus 256kbps or MP3 320kbps).
   /// It does NOT participate in the lossless fallback chain.
+  @Deprecated('Use downloadByStrategy with DownloadRequestPayload.')
   static Future<Map<String, dynamic>> downloadFromYouTube({
     required String trackName,
     required String artistName,
@@ -1210,44 +1353,51 @@ static Future<Map<String, dynamic>> downloadWithExtensions({
     String? isrc,
     String? spotifyId,
     String? deezerId,
+    bool embedLyrics = true,
+    bool embedMaxQualityCover = true,
+    int totalTracks = 1,
+    String? genre,
+    String? label,
+    String? copyright,
+    String lyricsMode = 'embed',
     String storageMode = 'app',
     String safTreeUri = '',
     String safRelativeDir = '',
     String safFileName = '',
     String safOutputExt = '',
   }) async {
-    _log.i('downloadFromYouTube: "$trackName" by $artistName (quality: $quality)');
-    final request = jsonEncode({
-      'track_name': trackName,
-      'artist_name': artistName,
-      'album_name': albumName,
-      'album_artist': albumArtist ?? artistName,
-      'cover_url': coverUrl,
-      'output_dir': outputDir,
-      'filename_format': filenameFormat,
-      'quality': quality,
-      'track_number': trackNumber,
-      'disc_number': discNumber,
-      'release_date': releaseDate ?? '',
-      'item_id': itemId ?? '',
-      'duration_ms': durationMs,
-      'isrc': isrc ?? '',
-      'spotify_id': spotifyId ?? '',
-      'deezer_id': deezerId ?? '',
-      'storage_mode': storageMode,
-      'saf_tree_uri': safTreeUri,
-      'saf_relative_dir': safRelativeDir,
-      'saf_file_name': safFileName,
-      'saf_output_ext': safOutputExt,
-    });
+    final payload = DownloadRequestPayload(
+      isrc: isrc ?? '',
+      service: 'youtube',
+      spotifyId: spotifyId ?? '',
+      trackName: trackName,
+      artistName: artistName,
+      albumName: albumName,
+      albumArtist: albumArtist ?? artistName,
+      coverUrl: coverUrl ?? '',
+      outputDir: outputDir,
+      filenameFormat: filenameFormat,
+      quality: quality,
+      embedLyrics: embedLyrics,
+      embedMaxQualityCover: embedMaxQualityCover,
+      trackNumber: trackNumber,
+      discNumber: discNumber,
+      totalTracks: totalTracks,
+      releaseDate: releaseDate ?? '',
+      itemId: itemId ?? '',
+      durationMs: durationMs,
+      deezerId: deezerId ?? '',
+      genre: genre ?? '',
+      label: label ?? '',
+      copyright: copyright ?? '',
+      lyricsMode: lyricsMode,
+      storageMode: storageMode,
+      safTreeUri: safTreeUri,
+      safRelativeDir: safRelativeDir,
+      safFileName: safFileName,
+      safOutputExt: safOutputExt,
+    );
 
-    final result = await _channel.invokeMethod('downloadFromYouTube', request);
-    final response = jsonDecode(result as String) as Map<String, dynamic>;
-    if (response['success'] == true) {
-      _log.i('YouTube download success: ${response['file_path']}');
-    } else {
-      _log.w('YouTube download failed: ${response['error']}');
-    }
-    return response;
+    return downloadByStrategy(payload: payload);
   }
 }

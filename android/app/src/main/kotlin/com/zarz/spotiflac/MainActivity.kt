@@ -1312,6 +1312,15 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
+                        "downloadByStrategy" -> {
+                            val requestJson = call.arguments as String
+                            val response = withContext(Dispatchers.IO) {
+                                handleSafDownload(requestJson) { json ->
+                                    Gobackend.downloadByStrategy(json)
+                                }
+                            }
+                            result.success(response)
+                        }
                         "getDownloadProgress" -> {
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getDownloadProgress()

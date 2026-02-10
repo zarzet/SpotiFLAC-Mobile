@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.6.1] - 2026-02-10
+
+### Added
+
+- "Use Primary Artist Only" setting: strips featured artists from folder names (e.g. "Justin Bieber, Quavo" becomes "Justin Bieber") for cleaner folder organization
+  - Supports separators: `, ` `;` `&` `feat.` `ft.` `featuring` `with` `x`
+  - Available in Settings > Download > below "Use Album Artist for folders"
+
+### Fixed
+
+- Fixed lyrics mode "External .LRC" still embedding lyrics into metadata - `lyrics_mode` was not being sent to Go backend for single-service downloads and YouTube provider, causing Go to default to "embed"
+- Fixed `flutter_local_notifications` v20 breaking changes - migrated all `initialize()`, `show()`, and `cancel()` calls from positional parameters to named parameters
+- Fixed SAF duplicate folder bug: concurrent batch downloads creating empty folders with `(1)`, `(2)`, `(3)` suffixes - added synchronized lock to `ensureDocumentDir` in Kotlin with duplicate detection and cleanup
+
+---
+
 ## [3.6.0] - 2026-02-09
 
 ### Highlights
