@@ -8,12 +8,66 @@ import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 
 const int _maxLogMessageLength = 500;
+const String _redactedValue = '[REDACTED]';
+
+final RegExp _authorizationBearerPattern = RegExp(
+  r'\bAuthorization\b\s*[:=]\s*Bearer\s+[A-Za-z0-9._~+/\-]+=*',
+  caseSensitive: false,
+);
+
+final RegExp _genericSensitiveKeyValuePattern = RegExp(
+  r'\b(access[_\s-]?token|refresh[_\s-]?token|id[_\s-]?token|client[_\s-]?secret|authorization|password|api[_\s-]?key)\b(\s*[:=]\s*)([^\s,;]+)',
+  caseSensitive: false,
+);
+
+final RegExp _sensitiveQueryPattern = RegExp(
+  r'([?&](?:access_token|refresh_token|id_token|token|client_secret|api_key|apikey|password)=)[^&\s]+',
+  caseSensitive: false,
+);
+
+final RegExp _bearerTokenPattern = RegExp(
+  r'\bBearer\s+[A-Za-z0-9._~+/\-]+=*',
+  caseSensitive: false,
+);
 
 String _truncateLogText(String value, {int maxLength = _maxLogMessageLength}) {
   if (value.length <= maxLength) {
     return value;
   }
   return '${value.substring(0, maxLength)}...[truncated]';
+}
+
+String _redactSensitiveText(String value) {
+  var redacted = value;
+
+  redacted = redacted.replaceAllMapped(_authorizationBearerPattern, (_) {
+    return 'Authorization: Bearer $_redactedValue';
+  });
+
+  redacted = redacted.replaceAllMapped(_genericSensitiveKeyValuePattern, (
+    match,
+  ) {
+    final key = match.group(1) ?? '';
+    final delimiter = match.group(2) ?? '=';
+    return '$key$delimiter$_redactedValue';
+  });
+
+  redacted = redacted.replaceAllMapped(_sensitiveQueryPattern, (match) {
+    final prefix = match.group(1) ?? '';
+    return '$prefix$_redactedValue';
+  });
+
+  redacted = redacted.replaceAllMapped(_bearerTokenPattern, (_) {
+    return 'Bearer $_redactedValue';
+  });
+
+  return redacted;
+}
+
+String _maskIdentifier(String value) {
+  if (value.isEmpty) return value;
+  if (value.length <= 4) return '***';
+  return '${value.substring(0, 2)}***${value.substring(value.length - 2)}';
 }
 
 class LogEntry {
@@ -59,6 +113,7 @@ class LogBuffer extends ChangeNotifier {
   final Queue<LogEntry> _entries = Queue<LogEntry>();
   Timer? _goLogTimer;
   int _lastGoLogIndex = 0;
+  bool _isFetchingGoLogs = false;
 
   static bool _loggingEnabled = false;
   static bool get loggingEnabled => _loggingEnabled;
@@ -79,9 +134,11 @@ class LogBuffer extends ChangeNotifier {
       return;
     }
 
-    final sanitizedMessage = _truncateLogText(entry.message);
+    final sanitizedMessage = _truncateLogText(
+      _redactSensitiveText(entry.message),
+    );
     final sanitizedError = entry.error != null
-        ? _truncateLogText(entry.error!)
+        ? _truncateLogText(_redactSensitiveText(entry.error!))
         : null;
     final sanitizedEntry =
         (sanitizedMessage == entry.message && sanitizedError == entry.error)
@@ -105,13 +162,20 @@ class LogBuffer extends ChangeNotifier {
   void startGoLogPolling() {
     _goLogTimer?.cancel();
     _goLogTimer = Timer.periodic(_goLogPollingInterval, (_) async {
-      await _fetchGoLogs();
+      if (_isFetchingGoLogs) return;
+      _isFetchingGoLogs = true;
+      try {
+        await _fetchGoLogs();
+      } finally {
+        _isFetchingGoLogs = false;
+      }
     });
   }
 
   void stopGoLogPolling() {
     _goLogTimer?.cancel();
     _goLogTimer = null;
+    _isFetchingGoLogs = false;
   }
 
   Future<void> _fetchGoLogs() async {
@@ -216,7 +280,7 @@ class LogBuffer extends ChangeNotifier {
         buffer.writeln(
           'Android Version: ${android.version.release} (SDK ${android.version.sdkInt})',
         );
-        buffer.writeln('Device ID: ${android.id}');
+        buffer.writeln('Device ID: ${_maskIdentifier(android.id)}');
         buffer.writeln('Hardware: ${android.hardware}');
         buffer.writeln('Product: ${android.product}');
         buffer.writeln('Supported ABIs: ${android.supportedAbis.join(', ')}');
@@ -313,12 +377,14 @@ class BufferedOutput extends LogOutput {
   void output(OutputEvent event) {
     if (kDebugMode) {
       for (final line in event.lines) {
-        debugPrint(_truncateLogText(line));
+        debugPrint(_truncateLogText(_redactSensitiveText(line)));
       }
     }
 
     final level = _levelToString(event.level);
-    final message = _truncateLogText(event.lines.join('\n'));
+    final message = _truncateLogText(
+      _redactSensitiveText(event.lines.join('\n')),
+    );
 
     LogBuffer().add(
       LogEntry(
@@ -421,7 +487,7 @@ class AppLogger {
       _addToBuffer('ERROR', message, error: error.toString());
       if (kDebugMode) {
         debugPrint(
-          '[$_tag] ERROR: ${_truncateLogText(message)} | ${_truncateLogText(error.toString())}',
+          '[$_tag] ERROR: ${_truncateLogText(_redactSensitiveText(message))} | ${_truncateLogText(_redactSensitiveText(error.toString()))}',
         );
         if (stackTrace != null) {
           debugPrint(stackTrace.toString());

@@ -228,6 +228,7 @@ Map<String, List<String>> _filterHistoryInIsolate(Map<String, Object> payload) {
   final entries = (payload['entries'] as List).cast<List>();
   final albumCounts = (payload['albumCounts'] as Map).cast<String, int>();
   final query = (payload['query'] as String?) ?? '';
+  final hasQuery = query.isNotEmpty;
 
   final allIds = <String>[];
   final albumIds = <String>[];
@@ -236,10 +237,11 @@ Map<String, List<String>> _filterHistoryInIsolate(Map<String, Object> payload) {
   for (final entry in entries) {
     final id = entry[0] as String;
     final albumKey = entry[1] as String;
-    final searchKey = entry[2] as String;
-
-    if (query.isNotEmpty && !searchKey.contains(query)) {
-      continue;
+    if (hasQuery) {
+      final searchKey = entry[2] as String;
+      if (!searchKey.contains(query)) {
+        continue;
+      }
     }
 
     allIds.add(id);
@@ -276,6 +278,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   final ValueNotifier<bool> _alwaysMissingFileNotifier = ValueNotifier(false);
   final Set<String> _pendingChecks = {};
   static const int _maxCacheSize = 500;
+  static const int _maxSearchIndexCacheSize = 4000;
+  static const int _maxDownloadedEmbeddedCoverCacheSize = 180;
 
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
@@ -311,8 +315,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   final Set<String> _pendingDownloadedCoverExtract = {};
   final Set<String> _pendingDownloadedCoverRefresh = {};
   final Set<String> _failedDownloadedCoverExtract = {};
-  Map<String, DownloadHistoryItem> _historyItemsById = {};
-  List<List<String>> _historyFilterEntries = const [];
   Map<String, List<DownloadHistoryItem>> _filteredHistoryCache = const {};
   List<DownloadHistoryItem>? _filterItemsCache;
   String _filterQueryCache = '';
@@ -407,32 +409,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _historyItemsCache = items;
     _localLibraryItemsCache = localItems;
     _historyStatsCache = _buildHistoryStats(items, localItems);
-    _searchIndexCache
-      ..clear()
-      ..addEntries(
-        items.map((item) => MapEntry(item.id, _buildSearchKey(item))),
-      );
+    if (historyChanged) {
+      _searchIndexCache.clear();
+    }
     if (localChanged) {
-      _localSearchIndexCache
-        ..clear()
-        ..addEntries(
-          localItems.map(
-            (item) => MapEntry(item.id, _buildLocalSearchKey(item)),
-          ),
-        );
+      _localSearchIndexCache.clear();
       _localFilterItemsCache = null;
       _localFilterQueryCache = '';
       _filteredLocalItemsCache = const [];
     }
     _unifiedItemsCache.clear();
-    _historyItemsById = {for (final item in items) item.id: item};
-    _historyFilterEntries = List<List<String>>.generate(items.length, (index) {
-      final item = items[index];
-      final searchKey = _searchIndexCache[item.id] ?? _buildSearchKey(item);
-      final albumKey =
-          '${item.albumName.toLowerCase()}|${(item.albumArtist ?? item.artistName).toLowerCase()}';
-      return [item.id, albumKey, searchKey];
-    }, growable: false);
 
     if (historyChanged) {
       final validPaths = items
@@ -459,6 +445,30 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         .toLowerCase();
   }
 
+  String _historySearchKeyForItem(DownloadHistoryItem item) {
+    final cached = _searchIndexCache[item.id];
+    if (cached != null) return cached;
+
+    final searchKey = _buildSearchKey(item);
+    _searchIndexCache[item.id] = searchKey;
+    while (_searchIndexCache.length > _maxSearchIndexCacheSize) {
+      _searchIndexCache.remove(_searchIndexCache.keys.first);
+    }
+    return searchKey;
+  }
+
+  String _localSearchKeyForItem(LocalLibraryItem item) {
+    final cached = _localSearchIndexCache[item.id];
+    if (cached != null) return cached;
+
+    final searchKey = _buildLocalSearchKey(item);
+    _localSearchIndexCache[item.id] = searchKey;
+    while (_localSearchIndexCache.length > _maxSearchIndexCacheSize) {
+      _localSearchIndexCache.remove(_localSearchIndexCache.keys.first);
+    }
+    return searchKey;
+  }
+
   List<LocalLibraryItem> _filterLocalItems(
     List<LocalLibraryItem> items,
     String query,
@@ -471,11 +481,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
     final filtered = items
         .where((item) {
-          final searchKey =
-              _localSearchIndexCache[item.id] ?? _buildLocalSearchKey(item);
-          if (!_localSearchIndexCache.containsKey(item.id)) {
-            _localSearchIndexCache[item.id] = searchKey;
-          }
+          final searchKey = _localSearchKeyForItem(item);
           return searchKey.contains(query);
         })
         .toList(growable: false);
@@ -548,15 +554,26 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
 
     final requestId = ++_filterRequestId;
+    final includeSearchKey = query.isNotEmpty;
+    final entries = List<List<String>>.generate(items.length, (index) {
+      final item = items[index];
+      final albumKey =
+          '${item.albumName.toLowerCase()}|${(item.albumArtist ?? item.artistName).toLowerCase()}';
+      if (!includeSearchKey) {
+        return [item.id, albumKey];
+      }
+      final searchKey = _historySearchKeyForItem(item);
+      return [item.id, albumKey, searchKey];
+    }, growable: false);
     final payload = <String, Object>{
-      'entries': _historyFilterEntries,
+      'entries': entries,
       'albumCounts': albumCounts,
       'query': query,
     };
 
     compute(_filterHistoryInIsolate, payload).then((result) {
       if (!mounted || requestId != _filterRequestId) return;
-      final itemsById = _historyItemsById;
+      final itemsById = {for (final item in items) item.id: item};
       final filtered = <String, List<DownloadHistoryItem>>{};
       for (final entry in result.entries) {
         filtered[entry.key] = entry.value
@@ -604,10 +621,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final query = searchQuery;
     return items
         .where((item) {
-          final searchKey = _searchIndexCache[item.id] ?? _buildSearchKey(item);
-          if (!_searchIndexCache.containsKey(item.id)) {
-            _searchIndexCache[item.id] = searchKey;
-          }
+          final searchKey = _historySearchKeyForItem(item);
           return searchKey.contains(query);
         })
         .toList(growable: false);
@@ -812,6 +826,18 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _cleanupTempCoverPathSync(cachedPath);
   }
 
+  void _trimDownloadedEmbeddedCoverCache() {
+    while (_downloadedEmbeddedCoverCache.length >
+        _maxDownloadedEmbeddedCoverCacheSize) {
+      final oldestKey = _downloadedEmbeddedCoverCache.keys.first;
+      final removedPath = _downloadedEmbeddedCoverCache.remove(oldestKey);
+      _pendingDownloadedCoverExtract.remove(oldestKey);
+      _pendingDownloadedCoverRefresh.remove(oldestKey);
+      _failedDownloadedCoverExtract.remove(oldestKey);
+      _cleanupTempCoverPathSync(removedPath);
+    }
+  }
+
   Future<int?> _readFileModTimeMillis(String? filePath) async {
     final cleanPath = _cleanFilePath(filePath);
     if (cleanPath.isEmpty) return null;
@@ -918,6 +944,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         final previous = _downloadedEmbeddedCoverCache[cleanPath];
         _downloadedEmbeddedCoverCache[cleanPath] = outputPath;
         _failedDownloadedCoverExtract.remove(cleanPath);
+        _trimDownloadedEmbeddedCoverCache();
         if (previous != null && previous != outputPath) {
           _cleanupTempCoverPathSync(previous);
         }
@@ -1607,10 +1634,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (searchQuery.isNotEmpty) {
       final query = searchQuery;
       filteredItems = items.where((item) {
-        final searchKey = _searchIndexCache[item.id] ?? _buildSearchKey(item);
-        if (!_searchIndexCache.containsKey(item.id)) {
-          _searchIndexCache[item.id] = searchKey;
-        }
+        final searchKey = _historySearchKeyForItem(item);
         return searchKey.contains(query);
       }).toList();
     }
@@ -1797,7 +1821,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _initializePageController();
 
     final hasQueueItems = ref.watch(
-      downloadQueueProvider.select((s) => s.items.isNotEmpty),
+      downloadQueueLookupProvider.select((lookup) => lookup.itemIds.isNotEmpty),
     );
     final allHistoryItems = ref.watch(
       downloadHistoryProvider.select((s) => s.items),
@@ -1825,6 +1849,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         _buildHistoryStats(allHistoryItems, localLibraryItems);
     final groupedAlbums = historyStats.groupedAlbums;
     final groupedLocalAlbums = historyStats.groupedLocalAlbums;
+    final filteredGroupedAlbums = _filterGroupedAlbums(
+      groupedAlbums,
+      _searchQuery,
+    );
+    final filteredGroupedLocalAlbums = _filterGroupedLocalAlbums(
+      groupedLocalAlbums,
+      _searchQuery,
+    );
     final albumCount = historyStats.totalAlbumCount;
     final singleCount = historyStats.totalSingleTracks;
     final filterDataCache = <String, _FilterContentData>{};
@@ -1835,8 +1867,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         () => _computeFilterContentData(
           filterMode: filterMode,
           allHistoryItems: allHistoryItems,
-          groupedAlbums: groupedAlbums,
-          groupedLocalAlbums: groupedLocalAlbums,
+          filteredGroupedAlbums: filteredGroupedAlbums,
+          filteredGroupedLocalAlbums: filteredGroupedLocalAlbums,
           albumCounts: historyStats.albumCounts,
           localAlbumCounts: historyStats.localAlbumCounts,
           localLibraryItems: localLibraryItems,
@@ -2227,8 +2259,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   _FilterContentData _computeFilterContentData({
     required String filterMode,
     required List<DownloadHistoryItem> allHistoryItems,
-    required List<_GroupedAlbum> groupedAlbums,
-    required List<_GroupedLocalAlbum> groupedLocalAlbums,
+    required List<_GroupedAlbum> filteredGroupedAlbums,
+    required List<_GroupedLocalAlbum> filteredGroupedLocalAlbums,
     required Map<String, int> albumCounts,
     required Map<String, int> localAlbumCounts,
     required List<LocalLibraryItem> localLibraryItems,
@@ -2241,16 +2273,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final showFilteringIndicator = _shouldShowFilteringIndicator(
       allHistoryItems: allHistoryItems,
       filterMode: filterMode,
-    );
-
-    final searchQuery = _searchQuery;
-    final filteredGroupedAlbums = _filterGroupedAlbums(
-      groupedAlbums,
-      searchQuery,
-    );
-    final filteredGroupedLocalAlbums = _filterGroupedLocalAlbums(
-      groupedLocalAlbums,
-      searchQuery,
     );
 
     final unifiedItems = _getUnifiedItems(
@@ -2278,7 +2300,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return Consumer(
       builder: (context, ref, child) {
         final queueCount = ref.watch(
-          downloadQueueProvider.select((s) => s.items.length),
+          downloadQueueLookupProvider.select((lookup) => lookup.itemIds.length),
         );
         if (queueCount == 0) {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -2310,10 +2332,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return Consumer(
       builder: (context, ref, child) {
         final queueIdsSnapshot = ref.watch(
-          downloadQueueProvider.select(
-            (s) => _QueueItemIdsSnapshot(
-              s.items.map((item) => item.id).toList(growable: false),
-            ),
+          downloadQueueLookupProvider.select(
+            (lookup) => _QueueItemIdsSnapshot(lookup.itemIds),
           ),
         );
         if (queueIdsSnapshot.ids.isEmpty) {
@@ -4011,14 +4031,7 @@ class _QueueItemSliverRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final item = ref.watch(
-      downloadQueueProvider.select((state) {
-        for (final current in state.items) {
-          if (current.id == itemId) {
-            return current;
-          }
-        }
-        return null;
-      }),
+      downloadQueueLookupProvider.select((lookup) => lookup.byItemId[itemId]),
     );
     if (item == null) {
       return const SizedBox.shrink();

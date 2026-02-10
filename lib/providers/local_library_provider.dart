@@ -24,7 +24,6 @@ class LocalLibraryState {
   final bool scanWasCancelled;
   final DateTime? lastScannedAt;
   final int excludedDownloadedCount;
-  final Set<String> _isrcSet;
   final Set<String> _trackKeySet;
   final Map<String, LocalLibraryItem> _byIsrc;
 
@@ -39,16 +38,9 @@ class LocalLibraryState {
     this.scanWasCancelled = false,
     this.lastScannedAt,
     this.excludedDownloadedCount = 0,
-    Set<String>? isrcSet,
     Set<String>? trackKeySet,
     Map<String, LocalLibraryItem>? byIsrc,
-  }) : _isrcSet =
-           isrcSet ??
-           items
-               .where((item) => item.isrc != null && item.isrc!.isNotEmpty)
-               .map((item) => item.isrc!)
-               .toSet(),
-       _trackKeySet = trackKeySet ?? items.map((item) => item.matchKey).toSet(),
+  }) : _trackKeySet = trackKeySet ?? items.map((item) => item.matchKey).toSet(),
        _byIsrc =
            byIsrc ??
            Map.fromEntries(
@@ -57,7 +49,7 @@ class LocalLibraryState {
                  .map((item) => MapEntry(item.isrc!, item)),
            );
 
-  bool hasIsrc(String isrc) => _isrcSet.contains(isrc);
+  bool hasIsrc(String isrc) => _byIsrc.containsKey(isrc);
 
   bool hasTrack(String trackName, String artistName) {
     final key = '${trackName.toLowerCase()}|${artistName.toLowerCase()}';
@@ -108,7 +100,6 @@ class LocalLibraryState {
       lastScannedAt: lastScannedAt ?? this.lastScannedAt,
       excludedDownloadedCount:
           excludedDownloadedCount ?? this.excludedDownloadedCount,
-      isrcSet: keepDerivedIndex ? _isrcSet : null,
       trackKeySet: keepDerivedIndex ? _trackKeySet : null,
       byIsrc: keepDerivedIndex ? _byIsrc : null,
     );
@@ -123,6 +114,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   bool _isLoaded = false;
   bool _scanCancelRequested = false;
   int _progressPollingErrorCount = 0;
+  bool _isProgressPollingInFlight = false;
 
   @override
   LocalLibraryState build() {
@@ -408,6 +400,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   void _startProgressPolling() {
     _progressTimer?.cancel();
     _progressTimer = Timer.periodic(_progressPollingInterval, (_) async {
+      if (_isProgressPollingInFlight) return;
+      _isProgressPollingInFlight = true;
       try {
         final progress = await PlatformBridge.getLibraryScanProgress();
         final nextProgress =
@@ -447,6 +441,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         if (_progressPollingErrorCount <= 3) {
           _log.w('Library scan progress polling failed: $e');
         }
+      } finally {
+        _isProgressPollingInFlight = false;
       }
     });
   }
@@ -455,6 +451,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _progressTimer?.cancel();
     _progressTimer = null;
     _progressPollingErrorCount = 0;
+    _isProgressPollingInFlight = false;
   }
 
   Future<void> cancelScan() async {

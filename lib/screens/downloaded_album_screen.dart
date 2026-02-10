@@ -34,6 +34,12 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   final Set<String> _selectedIds = {};
   bool _showTitleInAppBar = false;
   final ScrollController _scrollController = ScrollController();
+  bool _embeddedCoverRefreshScheduled = false;
+  List<DownloadHistoryItem>? _albumTracksSourceCache;
+  List<DownloadHistoryItem>? _albumTracksCache;
+
+  String get _albumLookupKey =>
+      '${widget.albumName.toLowerCase()}|${widget.artistName.toLowerCase()}';
 
   @override
   void initState() {
@@ -48,6 +54,16 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant DownloadedAlbumScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.albumName != widget.albumName ||
+        oldWidget.artistName != widget.artistName) {
+      _albumTracksSourceCache = null;
+      _albumTracksCache = null;
+    }
+  }
+
   void _onScroll() {
     final shouldShow = _scrollController.offset > 280;
     if (shouldShow != _showTitleInAppBar) {
@@ -59,28 +75,36 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   List<DownloadHistoryItem> _getAlbumTracks(
     List<DownloadHistoryItem> allItems,
   ) {
-    return allItems.where((item) {
-      // Use albumArtist if available and not empty, otherwise artistName
-      final itemArtist =
-          (item.albumArtist != null && item.albumArtist!.isNotEmpty)
-          ? item.albumArtist!
-          : item.artistName;
-      // Use lowercase for case-insensitive matching
-      final itemKey =
-          '${item.albumName.toLowerCase()}|${itemArtist.toLowerCase()}';
-      final albumKey =
-          '${widget.albumName.toLowerCase()}|${widget.artistName.toLowerCase()}';
-      return itemKey == albumKey;
-    }).toList()..sort((a, b) {
-      // Sort by disc number first, then by track number
-      final aDisc = a.discNumber ?? 1;
-      final bDisc = b.discNumber ?? 1;
-      if (aDisc != bDisc) return aDisc.compareTo(bDisc);
-      final aNum = a.trackNumber ?? 999;
-      final bNum = b.trackNumber ?? 999;
-      if (aNum != bNum) return aNum.compareTo(bNum);
-      return a.trackName.compareTo(b.trackName);
-    });
+    final cached = _albumTracksCache;
+    if (cached != null && identical(allItems, _albumTracksSourceCache)) {
+      return cached;
+    }
+
+    final tracks =
+        allItems.where((item) {
+          // Use albumArtist if available and not empty, otherwise artistName
+          final itemArtist =
+              (item.albumArtist != null && item.albumArtist!.isNotEmpty)
+              ? item.albumArtist!
+              : item.artistName;
+          // Use lowercase for case-insensitive matching
+          final itemKey =
+              '${item.albumName.toLowerCase()}|${itemArtist.toLowerCase()}';
+          return itemKey == _albumLookupKey;
+        }).toList()..sort((a, b) {
+          // Sort by disc number first, then by track number
+          final aDisc = a.discNumber ?? 1;
+          final bDisc = b.discNumber ?? 1;
+          if (aDisc != bDisc) return aDisc.compareTo(bDisc);
+          final aNum = a.trackNumber ?? 999;
+          final bNum = b.trackNumber ?? 999;
+          if (aNum != bNum) return aNum.compareTo(bNum);
+          return a.trackName.compareTo(b.trackName);
+        });
+
+    _albumTracksSourceCache = allItems;
+    _albumTracksCache = tracks;
+    return tracks;
   }
 
   Map<int, List<DownloadHistoryItem>> _groupTracksByDisc(
@@ -194,8 +218,14 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
   }
 
   void _onEmbeddedCoverChanged() {
-    if (!mounted) return;
-    setState(() {});
+    if (!mounted || _embeddedCoverRefreshScheduled) return;
+    _embeddedCoverRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _embeddedCoverRefreshScheduled = false;
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _navigateToMetadataScreen(DownloadHistoryItem item) async {

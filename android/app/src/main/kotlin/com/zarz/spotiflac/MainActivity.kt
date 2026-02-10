@@ -300,8 +300,18 @@ class MainActivity: FlutterFragmentActivity() {
         return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
     }
 
+    private fun sanitizeRelativeDir(relativeDir: String): String {
+        if (relativeDir.isBlank()) return ""
+        return relativeDir
+            .split("/")
+            .map { sanitizeFilename(it) }
+            .filter { it.isNotBlank() && it != "." && it != ".." }
+            .joinToString("/")
+    }
+
     private fun ensureDocumentDir(treeUri: Uri, relativeDir: String): DocumentFile? {
-        if (relativeDir.isBlank()) {
+        val safeRelativeDir = sanitizeRelativeDir(relativeDir)
+        if (safeRelativeDir.isBlank()) {
             return DocumentFile.fromTreeUri(this, treeUri)
         }
 
@@ -310,7 +320,7 @@ class MainActivity: FlutterFragmentActivity() {
         synchronized(safDirLock) {
             var current = DocumentFile.fromTreeUri(this, treeUri) ?: return null
 
-            val parts = relativeDir.split("/").filter { it.isNotBlank() }
+            val parts = safeRelativeDir.split("/").filter { it.isNotBlank() }
             for (part in parts) {
                 val existing = current.findFile(part)
                 current = if (existing != null && existing.isDirectory) {
@@ -335,9 +345,10 @@ class MainActivity: FlutterFragmentActivity() {
 
     private fun findDocumentDir(treeUri: Uri, relativeDir: String): DocumentFile? {
         var current = DocumentFile.fromTreeUri(this, treeUri) ?: return null
-        if (relativeDir.isBlank()) return current
+        val safeRelativeDir = sanitizeRelativeDir(relativeDir)
+        if (safeRelativeDir.isBlank()) return current
 
-        val parts = relativeDir.split("/").filter { it.isNotBlank() }
+        val parts = safeRelativeDir.split("/").filter { it.isNotBlank() }
         for (part in parts) {
             val existing = current.findFile(part)
             if (existing == null || !existing.isDirectory) return null
@@ -377,14 +388,21 @@ class MainActivity: FlutterFragmentActivity() {
             obj.put("relative_dir", "")
             return obj.toString()
         }
+        val safeRelativeDir = sanitizeRelativeDir(relativeDir)
+        val safeFileName = sanitizeFilename(fileName)
+        if (safeFileName.isBlank()) {
+            obj.put("uri", "")
+            obj.put("relative_dir", "")
+            return obj.toString()
+        }
 
         val treeUri = Uri.parse(treeUriStr)
-        val targetDir = findDocumentDir(treeUri, relativeDir)
+        val targetDir = findDocumentDir(treeUri, safeRelativeDir)
         if (targetDir != null) {
-            val direct = targetDir.findFile(fileName)
+            val direct = targetDir.findFile(safeFileName)
             if (direct != null && direct.isFile) {
                 obj.put("uri", direct.uri.toString())
-                obj.put("relative_dir", relativeDir)
+                obj.put("relative_dir", safeRelativeDir)
                 return obj.toString()
             }
         }
@@ -410,7 +428,7 @@ class MainActivity: FlutterFragmentActivity() {
                     val childPath = if (path.isBlank()) childName else "$path/$childName"
                     queue.add(child to childPath)
                 } else if (child.isFile) {
-                    if (child.name == fileName) {
+                    if (child.name == safeFileName) {
                         obj.put("uri", child.uri.toString())
                         obj.put("relative_dir", path)
                         return obj.toString()
@@ -426,7 +444,7 @@ class MainActivity: FlutterFragmentActivity() {
 
     private fun buildSafFileName(req: JSONObject, outputExt: String): String {
         val provided = req.optString("saf_file_name", "")
-        if (provided.isNotBlank()) return provided
+        if (provided.isNotBlank()) return sanitizeFilename(provided)
 
         val trackName = req.optString("track_name", "track")
         val artistName = req.optString("artist_name", "")
@@ -617,7 +635,7 @@ class MainActivity: FlutterFragmentActivity() {
         }
 
         val treeUri = Uri.parse(treeUriStr)
-        val relativeDir = req.optString("saf_relative_dir", "")
+        val relativeDir = sanitizeRelativeDir(req.optString("saf_relative_dir", ""))
         val outputExt = normalizeExt(req.optString("saf_output_ext", ""))
         val mimeType = mimeTypeForExt(outputExt)
         val fileName = buildSafFileName(req, outputExt)
@@ -1474,11 +1492,12 @@ class MainActivity: FlutterFragmentActivity() {
                         "safCreateFromPath" -> {
                             val treeUriStr = call.argument<String>("tree_uri") ?: ""
                             val relativeDir = call.argument<String>("relative_dir") ?: ""
-                            val fileName = call.argument<String>("file_name") ?: ""
+                            val fileName = sanitizeFilename(call.argument<String>("file_name") ?: "")
                             val mimeType = call.argument<String>("mime_type") ?: "application/octet-stream"
                             val srcPath = call.argument<String>("src_path") ?: ""
                             val createdUri = withContext(Dispatchers.IO) {
                                 if (treeUriStr.isBlank()) return@withContext null
+                                if (fileName.isBlank()) return@withContext null
                                 val dir = ensureDocumentDir(Uri.parse(treeUriStr), relativeDir) ?: return@withContext null
                                 val existing = dir.findFile(fileName)
                                 val createdNew = existing == null

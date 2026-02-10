@@ -32,6 +32,9 @@ func (r *ExtensionRuntime) validateDomain(urlStr string) error {
 	if parsed.Scheme != "https" {
 		return fmt.Errorf("network access denied: only https is allowed")
 	}
+	if parsed.User != nil {
+		return fmt.Errorf("invalid URL: embedded credentials are not allowed")
+	}
 
 	domain := parsed.Hostname()
 	if domain == "" {

@@ -2906,14 +2906,26 @@ func GetStoreCategoriesJSON() (string, error) {
 	return string(jsonBytes), nil
 }
 
+func buildStoreExtensionDestPath(destDir, extensionID string) (string, error) {
+	if strings.TrimSpace(extensionID) == "" {
+		return "", fmt.Errorf("invalid extension id")
+	}
+
+	safeExtensionID := sanitizeFilename(extensionID)
+	return filepath.Join(destDir, safeExtensionID+".spotiflac-ext"), nil
+}
+
 func DownloadStoreExtensionJSON(extensionID, destDir string) (string, error) {
 	store := GetExtensionStore()
 	if store == nil {
 		return "", fmt.Errorf("extension store not initialized")
 	}
 
-	destPath := fmt.Sprintf("%s/%s.spotiflac-ext", destDir, extensionID)
-	err := store.DownloadExtension(extensionID, destPath)
+	destPath, err := buildStoreExtensionDestPath(destDir, extensionID)
+	if err != nil {
+		return "", err
+	}
+	err = store.DownloadExtension(extensionID, destPath)
 	if err != nil {
 		return "", err
 	}

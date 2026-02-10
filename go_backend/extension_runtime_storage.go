@@ -46,7 +46,7 @@ func (r *ExtensionRuntime) saveStorage(storage map[string]interface{}) error {
 		return err
 	}
 
-	return os.WriteFile(storagePath, data, 0644)
+	return os.WriteFile(storagePath, data, 0600)
 }
 
 func (r *ExtensionRuntime) storageGet(call goja.FunctionCall) goja.Value {

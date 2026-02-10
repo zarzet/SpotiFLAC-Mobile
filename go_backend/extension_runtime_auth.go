@@ -18,6 +18,43 @@ import (
 
 // ==================== Auth API (OAuth Support) ====================
 
+func validateExtensionAuthURL(urlStr string) error {
+	parsed, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid auth URL: %w", err)
+	}
+
+	if parsed.Scheme != "https" {
+		return fmt.Errorf("invalid auth URL: only https is allowed")
+	}
+
+	host := parsed.Hostname()
+	if host == "" {
+		return fmt.Errorf("invalid auth URL: hostname is required")
+	}
+
+	if parsed.User != nil {
+		return fmt.Errorf("invalid auth URL: embedded credentials are not allowed")
+	}
+
+	if isPrivateIP(host) {
+		return fmt.Errorf("invalid auth URL: private/local network is not allowed")
+	}
+
+	return nil
+}
+
+func summarizeURLForLog(urlStr string) string {
+	parsed, err := url.Parse(urlStr)
+	if err != nil {
+		return urlStr
+	}
+	if parsed.Host == "" {
+		return parsed.Scheme + "://"
+	}
+	return fmt.Sprintf("%s://%s%s", parsed.Scheme, parsed.Host, parsed.Path)
+}
+
 func (r *ExtensionRuntime) authOpenUrl(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		return r.vm.ToValue(map[string]interface{}{
@@ -30,6 +67,13 @@ func (r *ExtensionRuntime) authOpenUrl(call goja.FunctionCall) goja.Value {
 	callbackURL := ""
 	if len(call.Arguments) > 1 && !goja.IsUndefined(call.Arguments[1]) {
 		callbackURL = call.Arguments[1].String()
+	}
+
+	if err := validateExtensionAuthURL(authURL); err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
 	}
 
 	pendingAuthRequestsMu.Lock()
@@ -50,7 +94,7 @@ func (r *ExtensionRuntime) authOpenUrl(call goja.FunctionCall) goja.Value {
 	state.AuthCode = ""
 	extensionAuthStateMu.Unlock()
 
-	GoLog("[Extension:%s] Auth URL requested: %s\n", r.extensionID, authURL)
+	GoLog("[Extension:%s] Auth URL requested: %s\n", r.extensionID, summarizeURLForLog(authURL))
 
 	return r.vm.ToValue(map[string]interface{}{
 		"success": true,
@@ -273,6 +317,12 @@ func (r *ExtensionRuntime) authStartOAuthWithPKCE(call goja.FunctionCall) goja.V
 			"error":   "authUrl, clientId, and redirectUri are required",
 		})
 	}
+	if err := validateExtensionAuthURL(authURL); err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
 
 	scope, _ := config["scope"].(string)
 	extraParams, _ := config["extraParams"].(map[string]interface{})
@@ -331,7 +381,7 @@ func (r *ExtensionRuntime) authStartOAuthWithPKCE(call goja.FunctionCall) goja.V
 	}
 	pendingAuthRequestsMu.Unlock()
 
-	GoLog("[Extension:%s] PKCE OAuth started: %s\n", r.extensionID, fullAuthURL)
+	GoLog("[Extension:%s] PKCE OAuth started: %s\n", r.extensionID, summarizeURLForLog(fullAuthURL))
 
 	return r.vm.ToValue(map[string]interface{}{
 		"success": true,
@@ -441,13 +491,17 @@ func (r *ExtensionRuntime) authExchangeCodeWithPKCE(call goja.FunctionCall) goja
 			"error":   err.Error(),
 		})
 	}
+	bodyPreview := sanitizeSensitiveLogText(string(body))
+	if len(bodyPreview) > 1000 {
+		bodyPreview = bodyPreview[:1000] + "...[truncated]"
+	}
 
 	var tokenResp map[string]interface{}
 	if err := json.Unmarshal(body, &tokenResp); err != nil {
 		return r.vm.ToValue(map[string]interface{}{
 			"success": false,
 			"error":   fmt.Sprintf("failed to parse token response: %v", err),
-			"body":    string(body),
+			"body":    bodyPreview,
 		})
 	}
 
@@ -468,7 +522,7 @@ func (r *ExtensionRuntime) authExchangeCodeWithPKCE(call goja.FunctionCall) goja
 		return r.vm.ToValue(map[string]interface{}{
 			"success": false,
 			"error":   "no access_token in response",
-			"body":    string(body),
+			"body":    bodyPreview,
 		})
 	}
 

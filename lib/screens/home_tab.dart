@@ -35,16 +35,23 @@ class HomeTab extends ConsumerStatefulWidget {
 
 class _RecentAccessView {
   final List<RecentAccessItem> uniqueItems;
-  final List<RecentAccessItem> downloadItems;
+  final List<String> downloadIds;
   final Map<String, String> downloadFilePathByRecentKey;
   final bool hasHiddenDownloads;
 
   const _RecentAccessView({
     required this.uniqueItems,
-    required this.downloadItems,
+    required this.downloadIds,
     required this.downloadFilePathByRecentKey,
     required this.hasHiddenDownloads,
   });
+}
+
+class _RecentAlbumAggregate {
+  int count;
+  DownloadHistoryItem mostRecent;
+
+  _RecentAlbumAggregate({required this.count, required this.mostRecent});
 }
 
 class _CsvImportOptions {
@@ -60,7 +67,6 @@ class _CsvImportOptions {
 class _HomeTabState extends ConsumerState<HomeTab>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   final _urlController = TextEditingController();
-  bool _isTyping = false;
   final FocusNode _searchFocusNode = FocusNode();
   String? _lastSearchQuery;
   late final ProviderSubscription<TrackState> _trackStateSub;
@@ -77,6 +83,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
   List<RecentAccessItem>? _recentAccessItemsCache;
   Set<String>? _recentAccessHiddenIdsCache;
   _RecentAccessView? _recentAccessViewCache;
+  bool _embeddedCoverRefreshScheduled = false;
+  List<Extension>? _thumbnailSizesExtensionsCache;
+  Map<String, (double, double)>? _thumbnailSizesCache;
 
   double _responsiveScale({
     required BuildContext context,
@@ -200,6 +209,27 @@ class _HomeTabState extends ConsumerState<HomeTab>
     super.dispose();
   }
 
+  Map<String, (double, double)> _getThumbnailSizesByExtensionId(
+    List<Extension> extensions,
+  ) {
+    final cached = _thumbnailSizesCache;
+    if (cached != null &&
+        identical(extensions, _thumbnailSizesExtensionsCache)) {
+      return cached;
+    }
+
+    final map = <String, (double, double)>{
+      for (final extension in extensions)
+        if (extension.searchBehavior != null)
+          extension.id: extension.searchBehavior!.getThumbnailSize(
+            defaultSize: 56,
+          ),
+    };
+    _thumbnailSizesExtensionsCache = extensions;
+    _thumbnailSizesCache = map;
+    return map;
+  }
+
   void _onSearchFocusChanged() {
     if (mounted) {
       setState(() {});
@@ -217,7 +247,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         _urlController.text.isNotEmpty &&
         !_searchFocusNode.hasFocus) {
       _urlController.clear();
-      setState(() => _isTyping = false);
     }
   }
 
@@ -240,10 +269,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     ref.read(trackProvider.notifier).setSearchText(text.isNotEmpty);
 
-    if (text.isNotEmpty && !_isTyping) {
-      setState(() => _isTyping = true);
-    } else if (text.isEmpty && _isTyping) {
-      setState(() => _isTyping = false);
+    if (text.isEmpty) {
       _liveSearchDebounce?.cancel();
       return;
     }
@@ -350,7 +376,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     _urlController.clear();
     _searchFocusNode.unfocus();
     _lastSearchQuery = null;
-    setState(() => _isTyping = false);
     ref.read(trackProvider.notifier).clear();
   }
 
@@ -390,7 +415,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
       );
       ref.read(trackProvider.notifier).clear();
       _urlController.clear();
-      setState(() => _isTyping = false);
       return;
     }
 
@@ -416,7 +440,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
       );
       ref.read(trackProvider.notifier).clear();
       _urlController.clear();
-      setState(() => _isTyping = false);
       return;
     }
 
@@ -438,7 +461,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
       );
       ref.read(trackProvider.notifier).clear();
       _urlController.clear();
-      setState(() => _isTyping = false);
       return;
     }
   }
@@ -781,13 +803,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
     final showLocalLibraryIndicator =
         localLibrarySettings.$1 && localLibrarySettings.$2;
-    final thumbnailSizesByExtensionId = <String, (double, double)>{
-      for (final extension in extensions)
-        if (extension.searchBehavior != null)
-          extension.id: extension.searchBehavior!.getThumbnailSize(
-            defaultSize: 56,
-          ),
-    };
+    final thumbnailSizesByExtensionId = _getThumbnailSizesByExtensionId(
+      extensions,
+    );
     Extension? currentSearchExtension;
     List<SearchFilter> searchFilters = [];
 
@@ -1028,8 +1046,14 @@ class _HomeTabState extends ConsumerState<HomeTab>
   }
 
   void _onEmbeddedCoverChanged() {
-    if (!mounted) return;
-    setState(() {});
+    if (!mounted || _embeddedCoverRefreshScheduled) return;
+    _embeddedCoverRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _embeddedCoverRefreshScheduled = false;
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   Widget _buildRecentDownloads(
@@ -1148,66 +1172,58 @@ class _HomeTabState extends ConsumerState<HomeTab>
       return cached;
     }
 
-    final albumGroups = <String, List<DownloadHistoryItem>>{};
+    final albumGroups = <String, _RecentAlbumAggregate>{};
     for (final h in historyItems) {
       final artistForKey = (h.albumArtist != null && h.albumArtist!.isNotEmpty)
           ? h.albumArtist!
           : h.artistName;
       final albumKey = '${h.albumName}|$artistForKey';
-      albumGroups.putIfAbsent(albumKey, () => []).add(h);
+      final existing = albumGroups[albumKey];
+      if (existing == null) {
+        albumGroups[albumKey] = _RecentAlbumAggregate(count: 1, mostRecent: h);
+      } else {
+        existing.count++;
+        if (h.downloadedAt.isAfter(existing.mostRecent.downloadedAt)) {
+          existing.mostRecent = h;
+        }
+      }
     }
 
-    final downloadItems = <RecentAccessItem>[];
+    final downloadIds = <String>[];
+    final visibleDownloads = <RecentAccessItem>[];
     final downloadFilePathByRecentKey = <String, String>{};
-    for (final entry in albumGroups.entries) {
-      final tracks = entry.value;
-      final mostRecent = tracks.reduce(
-        (a, b) => a.downloadedAt.isAfter(b.downloadedAt) ? a : b,
-      );
+    for (final aggregate in albumGroups.values) {
+      final mostRecent = aggregate.mostRecent;
       final artistForKey =
           (mostRecent.albumArtist != null && mostRecent.albumArtist!.isNotEmpty)
           ? mostRecent.albumArtist!
           : mostRecent.artistName;
 
-      if (tracks.length == 1) {
-        final recent = RecentAccessItem(
-          id: mostRecent.spotifyId ?? mostRecent.id,
-          name: mostRecent.trackName,
-          subtitle: mostRecent.artistName,
-          imageUrl: mostRecent.coverUrl,
-          type: RecentAccessType.track,
-          accessedAt: mostRecent.downloadedAt,
-          providerId: 'download',
-        );
-        downloadItems.add(recent);
-        downloadFilePathByRecentKey['${recent.type.name}:${recent.id}'] =
-            mostRecent.filePath;
-      } else {
-        final recent = RecentAccessItem(
-          id: '${mostRecent.albumName}|$artistForKey',
-          name: mostRecent.albumName,
-          subtitle: artistForKey,
-          imageUrl: mostRecent.coverUrl,
-          type: RecentAccessType.album,
-          accessedAt: mostRecent.downloadedAt,
-          providerId: 'download',
-        );
-        downloadItems.add(recent);
-        downloadFilePathByRecentKey['${recent.type.name}:${recent.id}'] =
-            mostRecent.filePath;
+      final isSingleTrack = aggregate.count == 1;
+      final recentId = isSingleTrack
+          ? (mostRecent.spotifyId ?? mostRecent.id)
+          : '${mostRecent.albumName}|$artistForKey';
+      final recent = RecentAccessItem(
+        id: recentId,
+        name: isSingleTrack ? mostRecent.trackName : mostRecent.albumName,
+        subtitle: isSingleTrack ? mostRecent.artistName : artistForKey,
+        imageUrl: mostRecent.coverUrl,
+        type: isSingleTrack ? RecentAccessType.track : RecentAccessType.album,
+        accessedAt: mostRecent.downloadedAt,
+        providerId: 'download',
+      );
+
+      downloadIds.add(recentId);
+      downloadFilePathByRecentKey['${recent.type.name}:${recent.id}'] =
+          mostRecent.filePath;
+      if (!hiddenIds.contains(recentId)) {
+        visibleDownloads.add(recent);
       }
     }
 
-    downloadItems.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
-
-    final visibleDownloads = <RecentAccessItem>[];
-    for (final item in downloadItems) {
-      if (!hiddenIds.contains(item.id)) {
-        visibleDownloads.add(item);
-        if (visibleDownloads.length >= 10) {
-          break;
-        }
-      }
+    visibleDownloads.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
+    if (visibleDownloads.length > 10) {
+      visibleDownloads.removeRange(10, visibleDownloads.length);
     }
 
     final allItems = <RecentAccessItem>[...items, ...visibleDownloads];
@@ -1227,7 +1243,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     final view = _RecentAccessView(
       uniqueItems: uniqueItems,
-      downloadItems: downloadItems,
+      downloadIds: downloadIds,
       downloadFilePathByRecentKey: downloadFilePathByRecentKey,
       hasHiddenDownloads: hiddenIds.isNotEmpty,
     );
@@ -1641,7 +1657,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
   Widget _buildRecentAccess(_RecentAccessView view, ColorScheme colorScheme) {
     final uniqueItems = view.uniqueItems;
-    final downloadItems = view.downloadItems;
+    final downloadIds = view.downloadIds;
     final hasHiddenDownloads = view.hasHiddenDownloads;
 
     return Padding(
@@ -1661,10 +1677,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
               if (uniqueItems.isNotEmpty)
                 TextButton(
                   onPressed: () {
-                    for (final item in downloadItems) {
+                    for (final id in downloadIds) {
                       ref
                           .read(recentAccessProvider.notifier)
-                          .hideDownloadFromRecents(item.id);
+                          .hideDownloadFromRecents(id);
                     }
                     ref.read(recentAccessProvider.notifier).clearHistory();
                   },

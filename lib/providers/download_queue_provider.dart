@@ -208,16 +208,11 @@ class DownloadHistoryItem {
 
 class DownloadHistoryState {
   final List<DownloadHistoryItem> items;
-  final Set<String> _downloadedSpotifyIds;
   final Map<String, DownloadHistoryItem> _bySpotifyId;
   final Map<String, DownloadHistoryItem> _byIsrc;
 
   DownloadHistoryState({this.items = const []})
-    : _downloadedSpotifyIds = items
-          .where((item) => item.spotifyId != null && item.spotifyId!.isNotEmpty)
-          .map((item) => item.spotifyId!)
-          .toSet(),
-      _bySpotifyId = Map.fromEntries(
+    : _bySpotifyId = Map.fromEntries(
         items
             .where(
               (item) => item.spotifyId != null && item.spotifyId!.isNotEmpty,
@@ -230,8 +225,7 @@ class DownloadHistoryState {
             .map((item) => MapEntry(item.isrc!, item)),
       );
 
-  bool isDownloaded(String spotifyId) =>
-      _downloadedSpotifyIds.contains(spotifyId);
+  bool isDownloaded(String spotifyId) => _bySpotifyId.containsKey(spotifyId);
 
   DownloadHistoryItem? getBySpotifyId(String spotifyId) =>
       _bySpotifyId[spotifyId];
@@ -682,6 +676,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   bool _isLoaded = false;
   final Set<String> _ensuredDirs = {};
   int _progressPollingErrorCount = 0;
+  bool _isProgressPollingInFlight = false;
   String? _lastServiceTrackName;
   String? _lastServiceArtistName;
   int _lastServicePercent = -1;
@@ -832,6 +827,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   void _startMultiProgressPolling() {
     _progressTimer?.cancel();
     _progressTimer = Timer.periodic(_progressPollingInterval, (timer) async {
+      if (_isProgressPollingInFlight) return;
+      _isProgressPollingInFlight = true;
       try {
         final allProgress = await PlatformBridge.getAllDownloadProgress();
         final items = allProgress['items'] as Map<String, dynamic>? ?? {};
@@ -915,16 +912,18 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               bytesReceived: normalizedBytes,
             );
 
-            final mbReceived = bytesReceived / (1024 * 1024);
-            final mbTotal = bytesTotal / (1024 * 1024);
-            if (bytesTotal > 0) {
-              _log.d(
-                'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB) @ ${speedMBps.toStringAsFixed(2)} MB/s',
-              );
-            } else {
-              _log.d(
-                'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (DASH segments/unknown size) @ ${speedMBps.toStringAsFixed(2)} MB/s',
-              );
+            if (LogBuffer.loggingEnabled) {
+              final mbReceived = bytesReceived / (1024 * 1024);
+              final mbTotal = bytesTotal / (1024 * 1024);
+              if (bytesTotal > 0) {
+                _log.d(
+                  'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB) @ ${speedMBps.toStringAsFixed(2)} MB/s',
+                );
+              } else {
+                _log.d(
+                  'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (DASH segments/unknown size) @ ${speedMBps.toStringAsFixed(2)} MB/s',
+                );
+              }
             }
           }
         }
@@ -1039,6 +1038,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         if (_progressPollingErrorCount <= 3) {
           _log.w('Progress polling failed: $e');
         }
+      } finally {
+        _isProgressPollingInFlight = false;
       }
     });
   }
@@ -1088,6 +1089,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     _progressTimer?.cancel();
     _progressTimer = null;
     _progressPollingErrorCount = 0;
+    _isProgressPollingInFlight = false;
     _lastServiceTrackName = null;
     _lastServiceArtistName = null;
     _lastServicePercent = -1;
@@ -4011,15 +4013,29 @@ final downloadQueueProvider =
 
 class DownloadQueueLookup {
   final Map<String, DownloadItem> byTrackId;
+  final Map<String, DownloadItem> byItemId;
+  final List<String> itemIds;
 
-  DownloadQueueLookup._(this.byTrackId);
+  DownloadQueueLookup._({
+    required this.byTrackId,
+    required this.byItemId,
+    required this.itemIds,
+  });
 
   factory DownloadQueueLookup.fromItems(List<DownloadItem> items) {
-    final map = <String, DownloadItem>{};
+    final byTrackId = <String, DownloadItem>{};
+    final byItemId = <String, DownloadItem>{};
+    final itemIds = <String>[];
     for (final item in items) {
-      map.putIfAbsent(item.track.id, () => item);
+      byTrackId.putIfAbsent(item.track.id, () => item);
+      byItemId[item.id] = item;
+      itemIds.add(item.id);
     }
-    return DownloadQueueLookup._(map);
+    return DownloadQueueLookup._(
+      byTrackId: byTrackId,
+      byItemId: byItemId,
+      itemIds: itemIds,
+    );
   }
 }
 
