@@ -928,18 +928,6 @@ abstract class AppLocalizations {
   /// **'Support'**
   String get aboutSupport;
 
-  /// Donation link
-  ///
-  /// In en, this message translates to:
-  /// **'Buy me a coffee'**
-  String get aboutBuyMeCoffee;
-
-  /// Subtitle for donation
-  ///
-  /// In en, this message translates to:
-  /// **'Support development on Ko-fi'**
-  String get aboutBuyMeCoffeeSubtitle;
-
   /// Section for app info
   ///
   /// In en, this message translates to:

@@ -465,12 +465,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get aboutSupport => 'Destek';
 
   @override
-  String get aboutBuyMeCoffee => 'Bana bir kahve ısmarla';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Ko-fi üzerinden uygulamayı destekle';
-
-  @override
   String get aboutApp => 'Uygulama';
 
   @override

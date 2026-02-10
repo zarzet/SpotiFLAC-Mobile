@@ -588,14 +588,6 @@
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
-  "aboutBuyMeCoffee": "Belikan saya kopi",
-  "@aboutBuyMeCoffee": {
-    "description": "Donation link"
-  },
-  "aboutBuyMeCoffeeSubtitle": "Dukung pengembangan di Ko-fi",
-  "@aboutBuyMeCoffeeSubtitle": {
-    "description": "Subtitle for donation"
-  },
   "aboutApp": "Aplikasi",
   "@aboutApp": {
     "description": "Section for app info"

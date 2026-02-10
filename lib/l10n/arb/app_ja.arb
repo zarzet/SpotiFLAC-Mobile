@@ -576,14 +576,6 @@
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
-  "aboutBuyMeCoffee": "コーヒーを買ってください",
-  "@aboutBuyMeCoffee": {
-    "description": "Donation link"
-  },
-  "aboutBuyMeCoffeeSubtitle": "Ko-fi で開発をサポートします",
-  "@aboutBuyMeCoffeeSubtitle": {
-    "description": "Subtitle for donation"
-  },
   "aboutApp": "アプリ",
   "@aboutApp": {
     "description": "Section for app info"

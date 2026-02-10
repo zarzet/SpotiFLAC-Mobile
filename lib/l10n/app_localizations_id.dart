@@ -463,12 +463,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get aboutSupport => 'Dukungan';
 
   @override
-  String get aboutBuyMeCoffee => 'Belikan saya kopi';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Dukung pengembangan di Ko-fi';
-
-  @override
   String get aboutApp => 'Aplikasi';
 
   @override

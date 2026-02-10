@@ -471,12 +471,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aboutSupport => 'Поддержка';
 
   @override
-  String get aboutBuyMeCoffee => 'Купить мне кофе';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Поддержать разработку на Ko-fi';
-
-  @override
   String get aboutApp => 'Приложение';
 
   @override

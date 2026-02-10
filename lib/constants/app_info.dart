@@ -17,6 +17,5 @@ class AppInfo {
   static const String originalGithubUrl = 'https://github.com/afkarxyz/SpotiFLAC';
   
   static const String kofiUrl = 'https://ko-fi.com/zarzet';
-  static const String bmacUrl = 'https://buymeacoffee.com/zarzet';
   static const String githubSponsorsUrl = 'https://github.com/sponsors/zarzet/';
 }

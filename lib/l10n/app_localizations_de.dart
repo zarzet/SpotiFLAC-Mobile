@@ -470,13 +470,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutSupport => 'Support';
 
   @override
-  String get aboutBuyMeCoffee => 'Spendiere mir einen Kaffee';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle =>
-      'Unterstütze die Entwicklung auf Ko-fi';
-
-  @override
   String get aboutApp => 'App';
 
   @override

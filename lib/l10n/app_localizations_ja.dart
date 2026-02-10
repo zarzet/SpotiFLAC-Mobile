@@ -454,12 +454,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutSupport => 'サポート';
 
   @override
-  String get aboutBuyMeCoffee => 'コーヒーを買ってください';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Ko-fi で開発をサポートします';
-
-  @override
   String get aboutApp => 'アプリ';
 
   @override

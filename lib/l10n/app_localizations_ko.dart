@@ -458,12 +458,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get aboutSupport => 'Support';
 
   @override
-  String get aboutBuyMeCoffee => 'Buy me a coffee';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Support development on Ko-fi';
-
-  @override
   String get aboutApp => 'App';
 
   @override

@@ -256,21 +256,6 @@ class _DonateLinksCard extends StatelessWidget {
             color: colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
           _DonateCardItem(
-            title: 'Buy Me a Coffee',
-            subtitle: 'buymeacoffee.com/zarzet',
-            customIcon: const BmacIcon(size: 22, color: Colors.black87),
-            color: const Color(0xFFFFDD00),
-            url: AppInfo.bmacUrl,
-            colorScheme: colorScheme,
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            indent: 74,
-            endIndent: 16,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-          _DonateCardItem(
             title: 'GitHub Sponsors',
             subtitle: 'github.com/sponsors/zarzet',
             customIcon: const GitHubIcon(size: 22, color: Colors.white),

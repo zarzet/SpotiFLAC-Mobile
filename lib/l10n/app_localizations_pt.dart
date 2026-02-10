@@ -458,12 +458,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get aboutSupport => 'Support';
 
   @override
-  String get aboutBuyMeCoffee => 'Buy me a coffee';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Support development on Ko-fi';
-
-  @override
   String get aboutApp => 'App';
 
   @override
@@ -3336,12 +3330,6 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get aboutSupport => 'Apoiar';
-
-  @override
-  String get aboutBuyMeCoffee => 'Compre-me um café';
-
-  @override
-  String get aboutBuyMeCoffeeSubtitle => 'Apoie o desenvolvimento na Ko-fi';
 
   @override
   String get aboutApp => 'Aplicativo';
