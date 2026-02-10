@@ -412,15 +412,21 @@ func DownloadByStrategy(requestJSON string) (string, error) {
 		return errorResponse("Invalid request: " + err.Error())
 	}
 
-	service := strings.TrimSpace(strings.ToLower(req.Service))
-	req.Service = service
-	normalizedBytes, err := json.Marshal(req)
+	serviceRaw := strings.TrimSpace(req.Service)
+	serviceNormalized := strings.ToLower(serviceRaw)
+
+	normalizedReq := req
+	if serviceNormalized == "youtube" || isBuiltInProvider(serviceNormalized) {
+		normalizedReq.Service = serviceNormalized
+	}
+
+	normalizedBytes, err := json.Marshal(normalizedReq)
 	if err != nil {
 		return errorResponse("Invalid request: " + err.Error())
 	}
 	normalizedJSON := string(normalizedBytes)
 
-	if service == "youtube" {
+	if serviceNormalized == "youtube" {
 		return DownloadFromYouTube(normalizedJSON)
 	}
 
