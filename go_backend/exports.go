@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -782,6 +783,7 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 
 	lower := strings.ToLower(filePath)
 	isFlac := strings.HasSuffix(lower, ".flac")
+	coverPath := strings.TrimSpace(fields["cover_path"])
 
 	if isFlac {
 		trackNum := 0
@@ -809,7 +811,7 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 			Comment:     fields["comment"],
 		}
 
-		if err := EmbedMetadata(filePath, meta, ""); err != nil {
+		if err := EmbedMetadata(filePath, meta, coverPath); err != nil {
 			return "", fmt.Errorf("failed to write FLAC metadata: %w", err)
 		}
 
@@ -1692,19 +1694,47 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	GoLog("[ReEnrich] track=%d, disc=%d, date=%s, isrc=%s, genre=%s, label=%s\n",
 		req.TrackNumber, req.DiscNumber, req.ReleaseDate, req.ISRC, req.Genre, req.Label)
 
+	lower := strings.ToLower(req.FilePath)
+	isFlac := strings.HasSuffix(lower, ".flac")
+
 	// Download cover art to temp file
 	var coverTempPath string
+	var coverDataBytes []byte
 	if req.CoverURL != "" {
 		coverData, err := downloadCoverToMemory(req.CoverURL, req.MaxQuality)
 		if err != nil {
 			GoLog("[ReEnrich] Failed to download cover: %v\n", err)
 		} else {
-			tmpFile, err := os.CreateTemp("", "reenrich_cover_*.jpg")
-			if err == nil {
-				coverTempPath = tmpFile.Name()
-				tmpFile.Write(coverData)
-				tmpFile.Close()
-				GoLog("[ReEnrich] Cover downloaded: %d KB\n", len(coverData)/1024)
+			coverDataBytes = coverData
+			GoLog("[ReEnrich] Cover downloaded: %d KB\n", len(coverData)/1024)
+			// MP3/Opus requires a real image file path for Dart FFmpeg.
+			// FLAC uses in-memory embed and does not require temp files.
+			if !isFlac {
+				tmpFile, err := os.CreateTemp("", "reenrich_cover_*.jpg")
+				if err != nil {
+					fallbackDir := filepath.Dir(req.FilePath)
+					if fallbackDir == "" || fallbackDir == "." {
+						GoLog("[ReEnrich] Failed to create cover temp file: %v\n", err)
+					} else {
+						tmpFile, err = os.CreateTemp(fallbackDir, "reenrich_cover_*.jpg")
+						if err != nil {
+							GoLog("[ReEnrich] Failed to create cover temp file (fallback dir %s): %v\n", fallbackDir, err)
+						}
+					}
+				}
+				if err == nil && tmpFile != nil {
+					coverTempPath = tmpFile.Name()
+					if _, writeErr := tmpFile.Write(coverData); writeErr != nil {
+						GoLog("[ReEnrich] Failed writing cover temp file: %v\n", writeErr)
+						tmpFile.Close()
+						os.Remove(coverTempPath)
+						coverTempPath = ""
+					} else if closeErr := tmpFile.Close(); closeErr != nil {
+						GoLog("[ReEnrich] Failed closing cover temp file: %v\n", closeErr)
+						os.Remove(coverTempPath)
+						coverTempPath = ""
+					}
+				}
 			}
 		}
 	}
@@ -1733,9 +1763,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 			GoLog("[ReEnrich] Track is instrumental\n")
 		}
 	}
-
-	lower := strings.ToLower(req.FilePath)
-	isFlac := strings.HasSuffix(lower, ".flac")
 
 	// Build enriched metadata response for Dart (includes online search results)
 	enrichedMeta := map[string]interface{}{
@@ -1772,8 +1799,24 @@ func ReEnrichFile(requestJSON string) (string, error) {
 			Lyrics:      lyricsLRC,
 		}
 
-		if err := EmbedMetadata(req.FilePath, metadata, coverTempPath); err != nil {
-			return "", fmt.Errorf("failed to embed metadata: %w", err)
+		if len(coverDataBytes) > 0 {
+			if err := EmbedMetadataWithCoverData(req.FilePath, metadata, coverDataBytes); err != nil {
+				return "", fmt.Errorf("failed to embed metadata with cover: %w", err)
+			}
+		} else {
+			if err := EmbedMetadata(req.FilePath, metadata, ""); err != nil {
+				return "", fmt.Errorf("failed to embed metadata: %w", err)
+			}
+		}
+		if len(coverDataBytes) > 0 {
+			embeddedCover, err := ExtractCoverArt(req.FilePath)
+			if err != nil || len(embeddedCover) == 0 {
+				if err != nil {
+					return "", fmt.Errorf("metadata embedded but cover verification failed: %w", err)
+				}
+				return "", fmt.Errorf("metadata embedded but cover verification failed: empty embedded cover")
+			}
+			GoLog("[ReEnrich] Cover verified after embed (%d bytes)\n", len(embeddedCover))
 		}
 
 		GoLog("[ReEnrich] FLAC metadata embedded successfully\n")

@@ -2867,6 +2867,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get trackSaveLyricsSubtitle => 'Fetch and save lyrics as .lrc file';
 
   @override
+  String get trackSaveLyricsProgress => 'Saving lyrics...';
+
+  @override
   String get trackReEnrich => 'Re-enrich Metadata';
 
   @override

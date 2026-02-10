@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/library_database.dart';
@@ -47,6 +48,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   bool _isInstrumental = false; // Track if detected as instrumental
   bool _isConverting = false; // Track convert operation in progress
   Map<String, dynamic>? _editedMetadata; // Overrides after metadata edit
+  String? _embeddedCoverPreviewPath;
   final ScrollController _scrollController = ScrollController();
   static final RegExp _lrcTimestampPattern = RegExp(
     r'^\[\d{2}:\d{2}\.\d{2,3}\]',
@@ -84,6 +86,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
   @override
   void dispose() {
+    _cleanupTempFileAndParentSync(_embeddedCoverPreviewPath);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -121,6 +124,82 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
     if (mounted && exists && _lyrics == null && !_lyricsLoading) {
       _fetchLyrics();
+    }
+  }
+
+  bool _hasPath(String? path) => path != null && path.trim().isNotEmpty;
+
+  Future<void> _cleanupTempFileAndParent(String? path) async {
+    if (!_hasPath(path)) return;
+    final file = File(path!);
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+    try {
+      final dir = file.parent;
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  void _cleanupTempFileAndParentSync(String? path) {
+    if (!_hasPath(path)) return;
+    final file = File(path!);
+    try {
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    } catch (_) {}
+    try {
+      final dir = file.parent;
+      if (dir.existsSync()) {
+        dir.deleteSync(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _refreshEmbeddedCoverPreview() async {
+    String? newPreviewPath;
+    try {
+      if (!_fileExists) {
+        await _cleanupTempFileAndParent(_embeddedCoverPreviewPath);
+        if (mounted) {
+          setState(() => _embeddedCoverPreviewPath = null);
+        }
+        return;
+      }
+      final tempDir = await Directory.systemTemp.createTemp(
+        'track_cover_preview_',
+      );
+      final outputPath =
+          '${tempDir.path}${Platform.pathSeparator}cover_preview.jpg';
+      final result = await PlatformBridge.extractCoverToFile(
+        cleanFilePath,
+        outputPath,
+      );
+      if (result['error'] == null && await File(outputPath).exists()) {
+        newPreviewPath = outputPath;
+      } else {
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    final oldPreviewPath = _embeddedCoverPreviewPath;
+    if (!mounted) {
+      if (newPreviewPath != null) {
+        await _cleanupTempFileAndParent(newPreviewPath);
+      }
+      return;
+    }
+
+    setState(() => _embeddedCoverPreviewPath = newPreviewPath);
+    if (oldPreviewPath != null && oldPreviewPath != newPreviewPath) {
+      await _cleanupTempFileAndParent(oldPreviewPath);
     }
   }
 
@@ -341,7 +420,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       fit: StackFit.expand,
       children: [
         // Blurred cover art background
-        if (_coverUrl != null)
+        if (_hasPath(_embeddedCoverPreviewPath))
+          Image.file(
+            File(_embeddedCoverPreviewPath!),
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => Container(color: colorScheme.surface),
+          )
+        else if (_coverUrl != null)
           CachedNetworkImage(
             imageUrl: _coverUrl!,
             fit: BoxFit.cover,
@@ -410,7 +495,20 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: _coverUrl != null
+                    child: _hasPath(_embeddedCoverPreviewPath)
+                        ? Image.file(
+                            File(_embeddedCoverPreviewPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.music_note,
+                                size: 64,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : _coverUrl != null
                         ? CachedNetworkImage(
                             imageUrl: _coverUrl!,
                             fit: BoxFit.cover,
@@ -1492,6 +1590,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     try {
       final baseName = _buildSaveBaseName();
       final durationMs = (duration ?? 0) * 1000;
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.trackSaveLyricsProgress)),
+          );
+      }
 
       if (_isSafFile) {
         // SAF file: save to temp, then copy to SAF tree
@@ -1509,13 +1614,15 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
         if (result['error'] != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.l10n.trackSaveFailed(result['error'].toString()),
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    context.l10n.trackSaveFailed(result['error'].toString()),
+                  ),
                 ),
-              ),
-            );
+              );
           }
           try {
             await Directory(tempDir.path).delete(recursive: true);
@@ -1539,19 +1646,25 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           } catch (_) {}
           if (mounted) {
             if (safUri != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.l10n.trackLyricsSaved(baseName)),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    context.l10n.trackSaveFailed('Failed to write to storage'),
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(context.l10n.trackLyricsSaved(baseName)),
                   ),
-                ),
-              );
+                );
+            } else {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      context.l10n.trackSaveFailed(
+                        'Failed to write to storage',
+                      ),
+                    ),
+                  ),
+                );
             }
           }
         } else {
@@ -1559,13 +1672,15 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             await Directory(tempDir.path).delete(recursive: true);
           } catch (_) {}
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.l10n.trackSaveFailed('No storage access'),
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    context.l10n.trackSaveFailed('No storage access'),
+                  ),
                 ),
-              ),
-            );
+              );
           }
         }
         return;
@@ -1585,24 +1700,30 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
       if (mounted) {
         if (result['error'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.l10n.trackSaveFailed(result['error'].toString()),
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  context.l10n.trackSaveFailed(result['error'].toString()),
+                ),
               ),
-            ),
-          );
+            );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.trackLyricsSaved(baseName))),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(context.l10n.trackLyricsSaved(baseName))),
+            );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.trackSaveFailed(e.toString()))),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(context.l10n.trackSaveFailed(e.toString()))),
+          );
       }
     }
   }
@@ -1662,6 +1783,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
       if (method == 'native') {
         // FLAC - handled natively by Go (SAF write-back handled in Kotlin)
+        await _refreshEmbeddedCoverPreview();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.l10n.trackReEnrichSuccess)),
@@ -1674,7 +1796,30 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         final safUri = result['saf_uri'] as String?;
         final ffmpegTarget = tempPath ?? cleanFilePath;
 
-        final coverPath = result['cover_path'] as String?;
+        final downloadedCoverPath = result['cover_path'] as String?;
+        String? effectiveCoverPath = downloadedCoverPath;
+        String? extractedCoverPath;
+        if (!_hasPath(effectiveCoverPath)) {
+          try {
+            final tempDir = await Directory.systemTemp.createTemp(
+              'reenrich_cover_',
+            );
+            final coverOutput =
+                '${tempDir.path}${Platform.pathSeparator}cover.jpg';
+            final extracted = await PlatformBridge.extractCoverToFile(
+              ffmpegTarget,
+              coverOutput,
+            );
+            if (extracted['error'] == null) {
+              effectiveCoverPath = coverOutput;
+              extractedCoverPath = coverOutput;
+            } else {
+              try {
+                await tempDir.delete(recursive: true);
+              } catch (_) {}
+            }
+          } catch (_) {}
+        }
         final metadata = (result['metadata'] as Map<String, dynamic>?)?.map(
           (k, v) => MapEntry(k, v.toString()),
         );
@@ -1684,13 +1829,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         if (lower.endsWith('.mp3')) {
           ffmpegResult = await FFmpegService.embedMetadataToMp3(
             mp3Path: ffmpegTarget,
-            coverPath: coverPath,
+            coverPath: effectiveCoverPath,
             metadata: metadata,
           );
         } else if (lower.endsWith('.opus') || lower.endsWith('.ogg')) {
           ffmpegResult = await FFmpegService.embedMetadataToOpus(
             opusPath: ffmpegTarget,
-            coverPath: coverPath,
+            coverPath: effectiveCoverPath,
             metadata: metadata,
           );
         }
@@ -1709,10 +1854,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               ),
             );
             // Cleanup temp files
-            if (coverPath != null && coverPath.isNotEmpty) {
+            if (_hasPath(downloadedCoverPath)) {
               try {
-                await File(coverPath).delete();
+                await File(downloadedCoverPath!).delete();
               } catch (_) {}
+            }
+            if (_hasPath(extractedCoverPath)) {
+              await _cleanupTempFileAndParent(extractedCoverPath);
             }
             if (tempPath.isNotEmpty) {
               try {
@@ -1730,23 +1878,27 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           } catch (_) {}
         }
 
-        if (mounted) {
-          if (ffmpegResult != null) {
+        if (ffmpegResult != null) {
+          await _refreshEmbeddedCoverPreview();
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(context.l10n.trackReEnrichSuccess)),
             );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.trackReEnrichFfmpegFailed)),
-            );
           }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.trackReEnrichFfmpegFailed)),
+          );
         }
 
         // Cleanup temp cover from Go backend
-        if (coverPath != null && coverPath.isNotEmpty) {
+        if (_hasPath(downloadedCoverPath)) {
           try {
-            await File(coverPath).delete();
+            await File(downloadedCoverPath!).delete();
           } catch (_) {}
+        }
+        if (_hasPath(extractedCoverPath)) {
+          await _cleanupTempFileAndParent(extractedCoverPath);
         }
       } else {
         if (mounted) {
@@ -2531,6 +2683,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       } catch (_) {
         setState(() {});
       }
+      await _refreshEmbeddedCoverPreview();
     }
   }
 
@@ -2708,6 +2861,9 @@ class _EditMetadataSheet extends StatefulWidget {
 class _EditMetadataSheetState extends State<_EditMetadataSheet> {
   bool _saving = false;
   bool _showAdvanced = false;
+  String? _selectedCoverPath;
+  String? _selectedCoverTempDir;
+  String? _selectedCoverName;
 
   late final TextEditingController _titleCtrl;
   late final TextEditingController _artistCtrl;
@@ -2722,6 +2878,117 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
   late final TextEditingController _copyrightCtrl;
   late final TextEditingController _composerCtrl;
   late final TextEditingController _commentCtrl;
+
+  String _resolveImageExtension(String? ext, Uint8List? bytes) {
+    final normalized = (ext ?? '').toLowerCase();
+    if (normalized == 'png' ||
+        normalized == 'jpg' ||
+        normalized == 'jpeg' ||
+        normalized == 'webp') {
+      return normalized == 'jpeg' ? 'jpg' : normalized;
+    }
+    if (bytes != null && bytes.length >= 8) {
+      if (bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4E &&
+          bytes[3] == 0x47) {
+        return 'png';
+      }
+      if (bytes[0] == 0xFF && bytes[1] == 0xD8) {
+        return 'jpg';
+      }
+      if (bytes.length >= 12 &&
+          bytes[0] == 0x52 &&
+          bytes[1] == 0x49 &&
+          bytes[2] == 0x46 &&
+          bytes[3] == 0x46 &&
+          bytes[8] == 0x57 &&
+          bytes[9] == 0x45 &&
+          bytes[10] == 0x42 &&
+          bytes[11] == 0x50) {
+        return 'webp';
+      }
+    }
+    return 'jpg';
+  }
+
+  Future<void> _cleanupSelectedCoverTemp() async {
+    final dirPath = _selectedCoverTempDir;
+    _selectedCoverPath = null;
+    _selectedCoverTempDir = null;
+    _selectedCoverName = null;
+    if (dirPath == null || dirPath.isEmpty) return;
+    try {
+      final dir = Directory(dirPath);
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  void _cleanupSelectedCoverTempSync() {
+    final dirPath = _selectedCoverTempDir;
+    _selectedCoverPath = null;
+    _selectedCoverTempDir = null;
+    _selectedCoverName = null;
+    if (dirPath == null || dirPath.isEmpty) return;
+    try {
+      final dir = Directory(dirPath);
+      if (dir.existsSync()) {
+        dir.deleteSync(recursive: true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pickCoverImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final picked = result.files.first;
+      final bytes = picked.bytes;
+      final sourcePath = picked.path;
+      final extension = _resolveImageExtension(picked.extension, bytes);
+
+      final tempDir = await Directory.systemTemp.createTemp('edit_cover_');
+      final tempPath =
+          '${tempDir.path}${Platform.pathSeparator}cover.$extension';
+
+      if (bytes != null && bytes.isNotEmpty) {
+        await File(tempPath).writeAsBytes(bytes, flush: true);
+      } else if (sourcePath != null && sourcePath.isNotEmpty) {
+        final sourceFile = File(sourcePath);
+        if (!await sourceFile.exists()) {
+          throw Exception('Selected image is not accessible');
+        }
+        await sourceFile.copy(tempPath);
+      } else {
+        throw Exception('Unable to read selected image');
+      }
+
+      await _cleanupSelectedCoverTemp();
+      if (!mounted) {
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (_) {}
+        return;
+      }
+      setState(() {
+        _selectedCoverPath = tempPath;
+        _selectedCoverTempDir = tempDir.path;
+        _selectedCoverName = picked.name;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to pick cover: $e')));
+    }
+  }
 
   @override
   void initState() {
@@ -2744,6 +3011,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
 
   @override
   void dispose() {
+    _cleanupSelectedCoverTempSync();
     _titleCtrl.dispose();
     _artistCtrl.dispose();
     _albumCtrl.dispose();
@@ -2777,6 +3045,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       'copyright': _copyrightCtrl.text,
       'composer': _composerCtrl.text,
       'comment': _commentCtrl.text,
+      'cover_path': _selectedCoverPath ?? '',
     };
 
     try {
@@ -2851,21 +3120,29 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
           vorbisMap['COMMENT'] = metadata['comment']!;
         }
 
-        // Extract existing cover art before re-embedding metadata
-        String? existingCoverPath;
-        try {
-          final tempDir = await Directory.systemTemp.createTemp('cover_');
-          final coverOutput =
-              '${tempDir.path}${Platform.pathSeparator}cover.jpg';
-          final coverResult = await PlatformBridge.extractCoverToFile(
-            ffmpegTarget,
-            coverOutput,
-          );
-          if (coverResult['error'] == null) {
-            existingCoverPath = coverOutput;
+        String? existingCoverPath = _selectedCoverPath;
+        String? extractedCoverPath;
+        if (existingCoverPath == null || existingCoverPath.isEmpty) {
+          // Preserve current embedded cover when user does not pick a new one.
+          try {
+            final tempDir = await Directory.systemTemp.createTemp('cover_');
+            final coverOutput =
+                '${tempDir.path}${Platform.pathSeparator}cover.jpg';
+            final coverResult = await PlatformBridge.extractCoverToFile(
+              ffmpegTarget,
+              coverOutput,
+            );
+            if (coverResult['error'] == null) {
+              existingCoverPath = coverOutput;
+              extractedCoverPath = coverOutput;
+            } else {
+              try {
+                await tempDir.delete(recursive: true);
+              } catch (_) {}
+            }
+          } catch (_) {
+            // No cover to preserve, continue without
           }
-        } catch (_) {
-          // No cover to preserve, continue without
         }
 
         String? ffmpegResult;
@@ -2883,10 +3160,17 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
           );
         }
 
-        // Cleanup temp cover
-        if (existingCoverPath != null) {
+        // Cleanup extracted temp cover (manual selected cover is cleaned on dispose)
+        if (extractedCoverPath != null && extractedCoverPath.isNotEmpty) {
+          final extractedFile = File(extractedCoverPath);
           try {
-            await File(existingCoverPath).delete();
+            await extractedFile.delete();
+          } catch (_) {}
+          try {
+            final dir = extractedFile.parent;
+            if (await dir.exists()) {
+              await dir.delete(recursive: true);
+            }
           } catch (_) {}
         }
 
@@ -3016,6 +3300,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                   ),
                   _field('Genre', _genreCtrl),
                   _field('ISRC', _isrcCtrl),
+                  _buildCoverEditor(cs),
                   // Advanced fields toggle
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -3055,6 +3340,88 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverEditor(ColorScheme cs) {
+    final hasSelectedCover =
+        _selectedCoverPath != null && _selectedCoverPath!.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cover Art',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: cs.onSurface),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : _pickCoverImage,
+                    icon: const Icon(Icons.image_outlined),
+                    label: Text(
+                      hasSelectedCover ? 'Replace Cover' : 'Pick Cover',
+                    ),
+                  ),
+                ),
+                if (hasSelectedCover) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Clear selected cover',
+                    onPressed: _saving
+                        ? null
+                        : () async {
+                            await _cleanupSelectedCoverTemp();
+                            if (!mounted) return;
+                            setState(() {});
+                          },
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ],
+            ),
+            if (hasSelectedCover) ...[
+              const SizedBox(height: 8),
+              Text(
+                _selectedCoverName ?? 'Selected cover',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(
+                  File(_selectedCoverPath!),
+                  height: 120,
+                  width: 120,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 120,
+                    height: 120,
+                    color: cs.surfaceContainerHighest,
+                    child: Icon(Icons.broken_image, color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

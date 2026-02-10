@@ -2870,6 +2870,9 @@ class AppLocalizationsId extends AppLocalizations {
       'Ambil dan simpan lirik sebagai file .lrc';
 
   @override
+  String get trackSaveLyricsProgress => 'Menyimpan lirik...';
+
+  @override
   String get trackReEnrich => 'Perkaya Ulang Metadata';
 
   @override

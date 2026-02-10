@@ -3168,6 +3168,8 @@
   "@trackSaveLyrics": {"description": "Menu action - save lyrics as .lrc file"},
   "trackSaveLyricsSubtitle": "Ambil dan simpan lirik sebagai file .lrc",
   "@trackSaveLyricsSubtitle": {"description": "Subtitle for save lyrics action"},
+  "trackSaveLyricsProgress": "Menyimpan lirik...",
+  "@trackSaveLyricsProgress": {"description": "Snackbar while saving lyrics to file"},
   "trackReEnrich": "Perkaya Ulang Metadata",
   "@trackReEnrich": {"description": "Menu action - re-embed metadata into audio file"},
   "trackReEnrichSubtitle": "Tanamkan ulang metadata tanpa mengunduh ulang",

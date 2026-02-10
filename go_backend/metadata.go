@@ -4,8 +4,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	stdimage "image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -13,6 +18,82 @@ import (
 	"github.com/go-flac/flacvorbis/v2"
 	"github.com/go-flac/go-flac/v2"
 )
+
+func detectCoverMIME(coverPath string, coverData []byte) string {
+	// Prefer magic-byte detection over file extension.
+	// Some providers return non-JPEG data behind .jpg URLs.
+	if len(coverData) >= 8 &&
+		coverData[0] == 0x89 &&
+		coverData[1] == 0x50 &&
+		coverData[2] == 0x4E &&
+		coverData[3] == 0x47 &&
+		coverData[4] == 0x0D &&
+		coverData[5] == 0x0A &&
+		coverData[6] == 0x1A &&
+		coverData[7] == 0x0A {
+		return "image/png"
+	}
+	if len(coverData) >= 3 &&
+		coverData[0] == 0xFF &&
+		coverData[1] == 0xD8 &&
+		coverData[2] == 0xFF {
+		return "image/jpeg"
+	}
+	if len(coverData) >= 6 {
+		header := string(coverData[:6])
+		if header == "GIF87a" || header == "GIF89a" {
+			return "image/gif"
+		}
+	}
+	if len(coverData) >= 12 &&
+		string(coverData[:4]) == "RIFF" &&
+		string(coverData[8:12]) == "WEBP" {
+		return "image/webp"
+	}
+
+	switch strings.ToLower(filepath.Ext(strings.TrimSpace(coverPath))) {
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".webp":
+		return "image/webp"
+	case ".gif":
+		return "image/gif"
+	}
+
+	return "image/jpeg"
+}
+
+func buildPictureBlock(coverPath string, coverData []byte) (flac.MetaDataBlock, error) {
+	if len(coverData) == 0 {
+		return flac.MetaDataBlock{}, fmt.Errorf("empty cover data")
+	}
+
+	mime := detectCoverMIME(coverPath, coverData)
+	picture := &flacpicture.MetadataBlockPicture{
+		PictureType: flacpicture.PictureTypeFrontCover,
+		MIME:        mime,
+		Description: "Front Cover",
+		ImageData:   coverData,
+	}
+
+	// Width/height/depth are optional in practice; keep zero when decode fails.
+	if cfg, format, err := stdimage.DecodeConfig(bytes.NewReader(coverData)); err == nil {
+		picture.Width = uint32(cfg.Width)
+		picture.Height = uint32(cfg.Height)
+		switch format {
+		case "png":
+			picture.ColorDepth = 32
+		case "jpeg":
+			picture.ColorDepth = 24
+		default:
+			picture.ColorDepth = 0
+		}
+	}
+
+	return picture.Marshal(), nil
+}
 
 type Metadata struct {
 	Title       string
@@ -127,19 +208,12 @@ func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
 					}
 				}
 
-				picture, err := flacpicture.NewFromImageData(
-					flacpicture.PictureTypeFrontCover,
-					"Front Cover",
-					coverData,
-					"image/jpeg",
-				)
+				picBlock, err := buildPictureBlock(coverPath, coverData)
 				if err != nil {
-					fmt.Printf("[Metadata] Warning: Failed to create picture block: %v\n", err)
-				} else {
-					picBlock := picture.Marshal()
-					f.Meta = append(f.Meta, &picBlock)
-					fmt.Printf("[Metadata] Cover art embedded successfully (%d bytes)\n", len(coverData))
+					return fmt.Errorf("failed to create picture block: %w", err)
 				}
+				f.Meta = append(f.Meta, &picBlock)
+				fmt.Printf("[Metadata] Cover art embedded successfully (%d bytes)\n", len(coverData))
 			}
 		} else {
 			fmt.Printf("[Metadata] Warning: Cover file does not exist: %s\n", coverPath)
@@ -238,19 +312,12 @@ func EmbedMetadataWithCoverData(filePath string, metadata Metadata, coverData []
 			}
 		}
 
-		picture, err := flacpicture.NewFromImageData(
-			flacpicture.PictureTypeFrontCover,
-			"Front Cover",
-			coverData,
-			"image/jpeg",
-		)
+		picBlock, err := buildPictureBlock("", coverData)
 		if err != nil {
-			fmt.Printf("[Metadata] Warning: Failed to create picture block: %v\n", err)
-		} else {
-			picBlock := picture.Marshal()
-			f.Meta = append(f.Meta, &picBlock)
-			fmt.Printf("[Metadata] Cover art embedded successfully (%d bytes)\n", len(coverData))
+			return fmt.Errorf("failed to create picture block: %w", err)
 		}
+		f.Meta = append(f.Meta, &picBlock)
+		fmt.Printf("[Metadata] Cover art embedded successfully (%d bytes)\n", len(coverData))
 	}
 
 	return f.Save(filePath)

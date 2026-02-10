@@ -2146,6 +2146,8 @@
   "@trackSaveLyrics": {"description": "Menu action - save lyrics as .lrc file"},
   "trackSaveLyricsSubtitle": "Fetch and save lyrics as .lrc file",
   "@trackSaveLyricsSubtitle": {"description": "Subtitle for save lyrics action"},
+  "trackSaveLyricsProgress": "Saving lyrics...",
+  "@trackSaveLyricsProgress": {"description": "Snackbar while saving lyrics to file"},
   "trackReEnrich": "Re-enrich Metadata",
   "@trackReEnrich": {"description": "Menu action - re-embed metadata into audio file"},
   "trackReEnrichSubtitle": "Re-embed metadata without re-downloading",

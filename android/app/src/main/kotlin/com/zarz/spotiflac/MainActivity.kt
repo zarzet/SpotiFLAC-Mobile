@@ -1725,7 +1725,7 @@ class MainActivity: FlutterFragmentActivity() {
                             val trackName = call.argument<String>("track_name") ?: ""
                             val artistName = call.argument<String>("artist_name") ?: ""
                             val spotifyId = call.argument<String>("spotify_id") ?: ""
-                            val durationMs = call.argument<Long>("duration_ms") ?: 0L
+                            val durationMs = call.argument<Number>("duration_ms")?.toLong() ?: 0L
                             val outputPath = call.argument<String>("output_path") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 try {

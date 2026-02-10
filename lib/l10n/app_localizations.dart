@@ -5068,6 +5068,12 @@ abstract class AppLocalizations {
   /// **'Fetch and save lyrics as .lrc file'**
   String get trackSaveLyricsSubtitle;
 
+  /// Snackbar while saving lyrics to file
+  ///
+  /// In en, this message translates to:
+  /// **'Saving lyrics...'**
+  String get trackSaveLyricsProgress;
+
   /// Menu action - re-embed metadata into audio file
   ///
   /// In en, this message translates to:
