@@ -584,14 +584,6 @@
   "@aboutSupport": {
     "description": "Section for support/donation links"
   },
-  "aboutBuyMeCoffee": "Belikan saya kopi",
-  "@aboutBuyMeCoffee": {
-    "description": "Donation link"
-  },
-  "aboutBuyMeCoffeeSubtitle": "Dukung pengembangan di Ko-fi",
-  "@aboutBuyMeCoffeeSubtitle": {
-    "description": "Subtitle for donation"
-  },
   "aboutApp": "Aplikasi",
   "@aboutApp": {
     "description": "Section for app info"
@@ -2534,6 +2526,18 @@
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
     "description": "Subtitle when Track Artist is used for folder naming"
   },
+  "downloadUsePrimaryArtistOnly": "Primary artist only for folders",
+  "@downloadUsePrimaryArtistOnly": {
+    "description": "Setting - strip featured artists from folder name"
+  },
+  "downloadUsePrimaryArtistOnlyEnabled": "Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)",
+  "@downloadUsePrimaryArtistOnlyEnabled": {
+    "description": "Subtitle when primary artist only is enabled"
+  },
+  "downloadUsePrimaryArtistOnlyDisabled": "Full artist string used for folder name",
+  "@downloadUsePrimaryArtistOnlyDisabled": {
+    "description": "Subtitle when primary artist only is disabled"
+  },
   "downloadSaveFormat": "Simpan Format",
   "@downloadSaveFormat": {
     "description": "Setting - output file format"
@@ -3742,6 +3746,10 @@
   "@trackSaveLyricsSubtitle": {
     "description": "Subtitle for save lyrics action"
   },
+  "trackSaveLyricsProgress": "Saving lyrics...",
+  "@trackSaveLyricsProgress": {
+    "description": "Snackbar while saving lyrics to file"
+  },
   "trackReEnrich": "Re-enrich Metadata",
   "@trackReEnrich": {
     "description": "Menu action - re-embed metadata into audio file"
@@ -3804,5 +3812,61 @@
         "type": "String"
       }
     }
+  },
+  "trackConvertFormat": "Convert Format",
+  "@trackConvertFormat": {
+    "description": "Menu item - convert audio format"
+  },
+  "trackConvertFormatSubtitle": "Convert to MP3 or Opus",
+  "@trackConvertFormatSubtitle": {
+    "description": "Subtitle for convert format menu item"
+  },
+  "trackConvertTitle": "Convert Audio",
+  "@trackConvertTitle": {
+    "description": "Title of convert bottom sheet"
+  },
+  "trackConvertTargetFormat": "Target Format",
+  "@trackConvertTargetFormat": {
+    "description": "Label for format selection"
+  },
+  "trackConvertBitrate": "Bitrate",
+  "@trackConvertBitrate": {
+    "description": "Label for bitrate selection"
+  },
+  "trackConvertConfirmTitle": "Confirm Conversion",
+  "@trackConvertConfirmTitle": {
+    "description": "Confirmation dialog title"
+  },
+  "trackConvertConfirmMessage": "Convert from {sourceFormat} to {targetFormat} at {bitrate}?\n\nThe original file will be deleted after conversion.",
+  "@trackConvertConfirmMessage": {
+    "description": "Confirmation dialog message",
+    "placeholders": {
+      "sourceFormat": {
+        "type": "String"
+      },
+      "targetFormat": {
+        "type": "String"
+      },
+      "bitrate": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertConverting": "Converting audio...",
+  "@trackConvertConverting": {
+    "description": "Snackbar while converting"
+  },
+  "trackConvertSuccess": "Converted to {format} successfully",
+  "@trackConvertSuccess": {
+    "description": "Snackbar after successful conversion",
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertFailed": "Conversion failed",
+  "@trackConvertFailed": {
+    "description": "Snackbar when conversion fails"
   }
 }
