@@ -1943,12 +1943,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
         metadata['TRACK'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
         metadata['DISC'] = track.discNumber.toString();
       }
@@ -2085,12 +2085,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
         metadata['TRACK'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
         metadata['DISC'] = track.discNumber.toString();
       }
@@ -2249,11 +2249,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final albumArtist = _resolveAlbumArtistForMetadata(track, settings);
       metadata['ALBUMARTIST'] = albumArtist;
 
-      if (track.trackNumber != null) {
+      if (track.trackNumber != null && track.trackNumber! > 0) {
         metadata['TRACKNUMBER'] = track.trackNumber.toString();
       }
 
-      if (track.discNumber != null) {
+      if (track.discNumber != null && track.discNumber! > 0) {
         metadata['DISCNUMBER'] = track.discNumber.toString();
       }
 
@@ -2489,6 +2489,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           await musicDir.create(recursive: true);
         }
         state = state.copyWith(outputDir: musicDir.path);
+        ref.read(settingsProvider.notifier).setDownloadDirectory(musicDir.path);
       } else if (!isValidIosWritablePath(state.outputDir)) {
         // Check for other invalid paths (like container root without Documents/)
         _log.w(
@@ -2498,6 +2499,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final correctedPath = await validateOrFixIosPath(state.outputDir);
         _log.i('Corrected path: $correctedPath');
         state = state.copyWith(outputDir: correctedPath);
+        ref.read(settingsProvider.notifier).setDownloadDirectory(correctedPath);
       }
     }
 
@@ -2898,9 +2900,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 (trackToDownload.isrc == null && deezerIsrc != null) ||
                 (!_isValidISRC(trackToDownload.isrc ?? '') &&
                     deezerIsrc != null) ||
-                (trackToDownload.trackNumber == null &&
-                    deezerTrackNum != null) ||
-                (trackToDownload.discNumber == null && deezerDiscNum != null);
+                ((trackToDownload.trackNumber == null ||
+                        trackToDownload.trackNumber! <= 0) &&
+                    deezerTrackNum != null &&
+                    deezerTrackNum > 0) ||
+                ((trackToDownload.discNumber == null ||
+                        trackToDownload.discNumber! <= 0) &&
+                    deezerDiscNum != null &&
+                    deezerDiscNum > 0);
 
             if (needsEnrich) {
               trackToDownload = Track(
@@ -2914,8 +2921,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 isrc: (deezerIsrc != null && _isValidISRC(deezerIsrc))
                     ? deezerIsrc
                     : trackToDownload.isrc,
-                trackNumber: trackToDownload.trackNumber ?? deezerTrackNum,
-                discNumber: trackToDownload.discNumber ?? deezerDiscNum,
+                trackNumber:
+                    (trackToDownload.trackNumber != null &&
+                        trackToDownload.trackNumber! > 0)
+                    ? trackToDownload.trackNumber
+                    : deezerTrackNum,
+                discNumber:
+                    (trackToDownload.discNumber != null &&
+                        trackToDownload.discNumber! > 0)
+                    ? trackToDownload.discNumber
+                    : deezerDiscNum,
                 releaseDate: trackToDownload.releaseDate ?? deezerReleaseDate,
                 deezerId: deezerTrackId,
                 availability: trackToDownload.availability,
@@ -2993,6 +3008,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
         _log.d('Output dir: $outputDir');
 
+        final normalizedTrackNumber =
+            (trackToDownload.trackNumber != null &&
+                trackToDownload.trackNumber! > 0)
+            ? trackToDownload.trackNumber!
+            : 1;
+        final normalizedDiscNumber =
+            (trackToDownload.discNumber != null &&
+                trackToDownload.discNumber! > 0)
+            ? trackToDownload.discNumber!
+            : 1;
+
         final payload = DownloadRequestPayload(
           isrc: trackToDownload.isrc ?? '',
           service: item.service,
@@ -3008,8 +3034,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           // Keep prior behavior: non-YouTube paths were implicitly true.
           embedLyrics: isYouTube ? settings.embedLyrics : true,
           embedMaxQualityCover: settings.maxQualityCover,
-          trackNumber: trackToDownload.trackNumber ?? 1,
-          discNumber: trackToDownload.discNumber ?? 1,
+          trackNumber: normalizedTrackNumber,
+          discNumber: normalizedDiscNumber,
           releaseDate: trackToDownload.releaseDate ?? '',
           itemId: item.id,
           durationMs: trackToDownload.duration,

@@ -12,6 +12,14 @@ final _iosContainerRootPattern = RegExp(
   r'^(/private)?/var/mobile/Containers/Data/Application/[A-F0-9\-]+/?$',
   caseSensitive: false,
 );
+final _iosContainerPathWithoutLeadingSlashPattern = RegExp(
+  r'^(private/)?var/mobile/Containers/Data/Application/[A-F0-9\-]+/.+',
+  caseSensitive: false,
+);
+final _iosLegacyRelativeDocumentsPattern = RegExp(
+  r'^Data/Application/[A-F0-9\-]+/Documents(?:/(.*))?$',
+  caseSensitive: false,
+);
 
 /// Checks if a path is a valid writable directory on iOS.
 /// Returns false if:
@@ -21,6 +29,7 @@ final _iosContainerRootPattern = RegExp(
 bool isValidIosWritablePath(String path) {
   if (!Platform.isIOS) return true;
   if (path.isEmpty) return false;
+  if (!path.startsWith('/')) return false;
 
   // Check if it's the container root (without Documents/, tmp/, etc.)
   if (_iosContainerRootPattern.hasMatch(path)) {
@@ -54,16 +63,64 @@ bool isValidIosWritablePath(String path) {
 
 /// Validates and potentially corrects an iOS path.
 /// Returns a valid Documents subdirectory path if the input is invalid.
-Future<String> validateOrFixIosPath(String path, {String subfolder = 'SpotiFLAC'}) async {
+Future<String> validateOrFixIosPath(
+  String path, {
+  String subfolder = 'SpotiFLAC',
+}) async {
   if (!Platform.isIOS) return path;
 
-  if (isValidIosWritablePath(path)) {
-    return path;
+  final trimmed = path.trim();
+  if (isValidIosWritablePath(trimmed)) {
+    return trimmed;
+  }
+
+  final docDir = await getApplicationDocumentsDirectory();
+  final candidates = <String>[];
+
+  if (trimmed.isNotEmpty) {
+    candidates.add(trimmed);
+  }
+
+  // Some pickers can return absolute iOS paths without the leading slash.
+  if (_iosContainerPathWithoutLeadingSlashPattern.hasMatch(trimmed)) {
+    candidates.add('/$trimmed');
+  }
+
+  // Recover legacy relative iOS path format:
+  // Data/Application/<UUID>/Documents/<subdir>
+  final legacyRelativeMatch = _iosLegacyRelativeDocumentsPattern.firstMatch(
+    trimmed,
+  );
+  if (legacyRelativeMatch != null) {
+    final suffix = (legacyRelativeMatch.group(1) ?? '').trim();
+    final normalizedSuffix = suffix.startsWith('/')
+        ? suffix.substring(1)
+        : suffix;
+    candidates.add(
+      normalizedSuffix.isEmpty
+          ? docDir.path
+          : '${docDir.path}/$normalizedSuffix',
+    );
+  }
+
+  // Generic salvage for relative paths containing `Documents/...`.
+  if (!trimmed.startsWith('/')) {
+    final documentsMarker = 'Documents/';
+    final index = trimmed.indexOf(documentsMarker);
+    if (index >= 0) {
+      final suffix = trimmed.substring(index + documentsMarker.length).trim();
+      candidates.add(suffix.isEmpty ? docDir.path : '${docDir.path}/$suffix');
+    }
+  }
+
+  for (final candidate in candidates) {
+    if (isValidIosWritablePath(candidate)) {
+      return candidate;
+    }
   }
 
   // Fall back to app Documents directory
-  final dir = await getApplicationDocumentsDirectory();
-  final musicDir = Directory('${dir.path}/$subfolder');
+  final musicDir = Directory('${docDir.path}/$subfolder');
   if (!await musicDir.exists()) {
     await musicDir.create(recursive: true);
   }
@@ -96,11 +153,20 @@ IosPathValidationResult validateIosPath(String path) {
     );
   }
 
+  if (!path.startsWith('/')) {
+    return const IosPathValidationResult(
+      isValid: false,
+      errorReason:
+          'Invalid path format. Please choose a local folder from Files.',
+    );
+  }
+
   // Check if it's the container root
   if (_iosContainerRootPattern.hasMatch(path)) {
     return const IosPathValidationResult(
       isValid: false,
-      errorReason: 'Cannot write to app container root. Please choose a subfolder like Documents.',
+      errorReason:
+          'Cannot write to app container root. Please choose a subfolder like Documents.',
     );
   }
 
@@ -110,7 +176,8 @@ IosPathValidationResult validateIosPath(String path) {
       path.contains('com~apple~CloudDocs')) {
     return const IosPathValidationResult(
       isValid: false,
-      errorReason: 'iCloud Drive is not supported. Please choose a local folder.',
+      errorReason:
+          'iCloud Drive is not supported. Please choose a local folder.',
     );
   }
 
@@ -125,7 +192,8 @@ IosPathValidationResult validateIosPath(String path) {
     if (remainingPath.isEmpty || remainingPath == '/') {
       return const IosPathValidationResult(
         isValid: false,
-        errorReason: 'Cannot write to app container root. Please use the default folder or choose a different location.',
+        errorReason:
+            'Cannot write to app container root. Please use the default folder or choose a different location.',
       );
     }
   }

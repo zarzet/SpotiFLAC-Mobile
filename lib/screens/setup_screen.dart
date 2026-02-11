@@ -68,10 +68,12 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
 
   Future<void> _checkInitialPermissions() async {
     if (Platform.isIOS) {
+      final notificationStatus = await Permission.notification.status;
       if (mounted) {
         setState(() {
           _storagePermissionGranted = true;
-          _notificationPermissionGranted = true;
+          _notificationPermissionGranted =
+              notificationStatus.isGranted || notificationStatus.isProvisional;
         });
       }
     } else if (Platform.isAndroid) {
@@ -181,7 +183,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   Future<void> _requestNotificationPermission() async {
     setState(() => _isLoading = true);
     try {
-      if (_androidSdkVersion >= 33) {
+      if (Platform.isIOS) {
+        final status = await Permission.notification.request();
+        if (status.isGranted || status.isProvisional) {
+          setState(() => _notificationPermissionGranted = true);
+        } else if (status.isPermanentlyDenied) {
+          await _showPermissionDeniedDialog('Notification');
+        }
+      } else if (_androidSdkVersion >= 33) {
         final status = await Permission.notification.request();
         if (status.isGranted) {
           setState(() => _notificationPermissionGranted = true);

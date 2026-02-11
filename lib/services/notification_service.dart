@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -9,6 +12,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
+  bool _notificationPermissionRequested = false;
 
   static const int downloadProgressId = 1;
   static const int updateDownloadId = 2;
@@ -28,8 +32,8 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
       requestSoundPermission: false,
     );
 
@@ -72,6 +76,55 @@ class NotificationService {
     _isInitialized = true;
   }
 
+  Future<bool> _ensureNotificationPermission() async {
+    if (!Platform.isIOS) return true;
+
+    final status = await Permission.notification.status;
+    if (status.isGranted || status.isProvisional) return true;
+
+    if (_notificationPermissionRequested ||
+        status.isPermanentlyDenied ||
+        status.isRestricted) {
+      return false;
+    }
+
+    _notificationPermissionRequested = true;
+    final requested = await Permission.notification.request();
+    return requested.isGranted || requested.isProvisional;
+  }
+
+  Future<void> _showSafely({
+    required int id,
+    required String title,
+    required String body,
+    required NotificationDetails details,
+  }) async {
+    if (!await _ensureNotificationPermission()) return;
+
+    try {
+      await _notifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: details,
+      );
+    } on PlatformException catch (e) {
+      final isNotificationsNotAllowed =
+          Platform.isIOS &&
+          (e.code == 'Error 1' ||
+              (e.message?.contains('UNErrorDomain error 1') ?? false) ||
+              e.toString().contains('UNErrorDomain error 1'));
+
+      if (isNotificationsNotAllowed) {
+        debugPrint(
+          'iOS notifications not allowed; skipping local notification',
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
   Future<void> showDownloadProgress({
     required String trackName,
     required String artistName,
@@ -110,11 +163,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: downloadProgressId,
       title: 'Downloading $trackName',
       body: '$artistName • $percentage%',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -153,11 +206,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: downloadProgressId,
       title: 'Finalizing $trackName',
       body: '$artistName • Embedding metadata...',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -203,11 +256,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: downloadProgressId,
       title: title,
       body: '$trackName - $artistName',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -243,11 +296,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: downloadProgressId,
       title: title,
       body: '$completedCount tracks downloaded successfully',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -300,11 +353,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: libraryScanId,
       title: 'Scanning local library',
       body: body,
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -346,11 +399,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: libraryScanId,
       title: 'Library scan complete',
       body: '$totalTracks tracks indexed$suffix',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -379,11 +432,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: libraryScanId,
       title: 'Library scan failed',
       body: message,
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -412,11 +465,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: libraryScanId,
       title: 'Library scan cancelled',
       body: 'Scan stopped before completion.',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -463,11 +516,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: updateDownloadId,
       title: 'Downloading SpotiFLAC v$version',
       body: '$receivedMB / $totalMB MB • $percentage%',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -496,11 +549,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: updateDownloadId,
       title: 'Update Ready',
       body: 'SpotiFLAC v$version downloaded. Tap to install.',
-      notificationDetails: details,
+      details: details,
     );
   }
 
@@ -528,11 +581,11 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
+    await _showSafely(
       id: updateDownloadId,
       title: 'Update Failed',
       body: 'Could not download update. Try again later.',
-      notificationDetails: details,
+      details: details,
     );
   }
 
