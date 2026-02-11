@@ -430,7 +430,7 @@
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
+  "optionsSpotifyDeprecationWarning": "Поиск Spotify устареет 3 марта 2026 года из-за изменений Spotify API. Пожалуйста, перейдите на Deezer.",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
@@ -583,14 +583,6 @@
   "aboutSupport": "Поддержка",
   "@aboutSupport": {
     "description": "Section for support/donation links"
-  },
-  "aboutBuyMeCoffee": "Купить мне кофе",
-  "@aboutBuyMeCoffee": {
-    "description": "Donation link"
-  },
-  "aboutBuyMeCoffeeSubtitle": "Поддержать разработку на Ko-fi",
-  "@aboutBuyMeCoffeeSubtitle": {
-    "description": "Subtitle for donation"
   },
   "aboutApp": "Приложение",
   "@aboutApp": {
@@ -2502,7 +2494,7 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
+  "youtubeQualityNote": "YouTube обеспечивает только звук с потерями(Lossy).",
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
   },
@@ -2522,7 +2514,7 @@
   "@downloadAlbumFolderStructure": {
     "description": "Setting - album folder organization"
   },
-  "downloadUseAlbumArtistForFolders": "Use Album Artist for folders",
+  "downloadUseAlbumArtistForFolders": "Использовать исполнителя альбома для папок",
   "@downloadUseAlbumArtistForFolders": {
     "description": "Setting - choose whether artist folders use Album Artist or Track Artist"
   },
@@ -2530,9 +2522,21 @@
   "@downloadUseAlbumArtistForFoldersAlbumSubtitle": {
     "description": "Subtitle when Album Artist is used for folder naming"
   },
-  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Artist folders use Track Artist only",
+  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Папки исполнителя используют только трек исполнителя",
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
     "description": "Subtitle when Track Artist is used for folder naming"
+  },
+  "downloadUsePrimaryArtistOnly": "Primary artist only for folders",
+  "@downloadUsePrimaryArtistOnly": {
+    "description": "Setting - strip featured artists from folder name"
+  },
+  "downloadUsePrimaryArtistOnlyEnabled": "Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)",
+  "@downloadUsePrimaryArtistOnlyEnabled": {
+    "description": "Subtitle when primary artist only is enabled"
+  },
+  "downloadUsePrimaryArtistOnlyDisabled": "Full artist string used for folder name",
+  "@downloadUsePrimaryArtistOnlyDisabled": {
+    "description": "Subtitle when primary artist only is disabled"
   },
   "downloadSaveFormat": "Формат сохранения",
   "@downloadSaveFormat": {
@@ -2836,11 +2840,11 @@
   "@recentTypePlaylist": {
     "description": "Recent access item type - playlist"
   },
-  "recentEmpty": "No recent items yet",
+  "recentEmpty": "Нет недавних элементов",
   "@recentEmpty": {
     "description": "Empty state text for recent access list"
   },
-  "recentShowAllDownloads": "Show All Downloads",
+  "recentShowAllDownloads": "Показать все загрузки",
   "@recentShowAllDownloads": {
     "description": "Button label to unhide hidden downloads in recent access"
   },
@@ -3018,11 +3022,11 @@
   "@settingsLocalLibrarySubtitle": {
     "description": "Subtitle for local library settings"
   },
-  "settingsCache": "Storage & Cache",
+  "settingsCache": "Хранилище и кэш",
   "@settingsCache": {
     "description": "Settings menu item - cache management"
   },
-  "settingsCacheSubtitle": "View size and clear cached data",
+  "settingsCacheSubtitle": "Просмотреть размер и очистить кэш",
   "@settingsCacheSubtitle": {
     "description": "Subtitle for cache management menu"
   },
@@ -3464,7 +3468,7 @@
   "@tutorialLibraryDesc": {
     "description": "Tutorial library page description"
   },
-  "tutorialLibraryTip1": "View download progress and queue in the Library tab",
+  "tutorialLibraryTip1": "Просмотр прогресса загрузки и очереди на вкладке Библиотека",
   "@tutorialLibraryTip1": {
     "description": "Tutorial library tip 1"
   },
@@ -3504,7 +3508,7 @@
   "@tutorialSettingsDesc": {
     "description": "Tutorial settings page description"
   },
-  "tutorialSettingsTip1": "Change download location and folder organization",
+  "tutorialSettingsTip1": "Изменить местоположение и организацию папок для скачивания",
   "@tutorialSettingsTip1": {
     "description": "Tutorial settings tip 1"
   },
@@ -3553,11 +3557,11 @@
   "@cleanupOrphanedDownloadsNone": {
     "description": "Snackbar when no orphans found"
   },
-  "cacheTitle": "Storage & Cache",
+  "cacheTitle": "Хранилище и кэш",
   "@cacheTitle": {
     "description": "Cache management page title"
   },
-  "cacheSummaryTitle": "Cache overview",
+  "cacheSummaryTitle": "Просмотр кэша",
   "@cacheSummaryTitle": {
     "description": "Heading for cache summary card"
   },
@@ -3574,7 +3578,7 @@
       }
     }
   },
-  "cacheSectionStorage": "Cached Data",
+  "cacheSectionStorage": "Кэшированные данные",
   "@cacheSectionStorage": {
     "description": "Section header for cache entries"
   },
@@ -3582,7 +3586,7 @@
   "@cacheSectionMaintenance": {
     "description": "Section header for cleanup actions"
   },
-  "cacheAppDirectory": "App cache directory",
+  "cacheAppDirectory": "Папка кэша приложения",
   "@cacheAppDirectory": {
     "description": "Cache item title for app cache directory"
   },
@@ -3634,11 +3638,11 @@
   "@cacheCleanupUnusedDesc": {
     "description": "Description of what cleanup unused data does"
   },
-  "cacheNoData": "No cached data",
+  "cacheNoData": "Нет кэшированных данных",
   "@cacheNoData": {
     "description": "Label when cache category has no data"
   },
-  "cacheSizeWithFiles": "{size} in {count} files",
+  "cacheSizeWithFiles": "{size} в {count} файлах",
   "@cacheSizeWithFiles": {
     "description": "Cache size and file count",
     "placeholders": {
@@ -3668,7 +3672,7 @@
       }
     }
   },
-  "cacheClearSuccess": "Cleared: {target}",
+  "cacheClearSuccess": "Очищено: {target}",
   "@cacheClearSuccess": {
     "description": "Snackbar after clearing selected cache",
     "placeholders": {
@@ -3677,7 +3681,7 @@
       }
     }
   },
-  "cacheClearConfirmTitle": "Clear cache?",
+  "cacheClearConfirmTitle": "Очистить кэш?",
   "@cacheClearConfirmTitle": {
     "description": "Dialog title before clearing one cache category"
   },
@@ -3690,19 +3694,19 @@
       }
     }
   },
-  "cacheClearAllConfirmTitle": "Clear all cache?",
+  "cacheClearAllConfirmTitle": "Очистить весь кэш?",
   "@cacheClearAllConfirmTitle": {
     "description": "Dialog title before clearing all caches"
   },
-  "cacheClearAllConfirmMessage": "This will clear all cache categories on this page. Downloaded music files will not be deleted.",
+  "cacheClearAllConfirmMessage": "Это очистит все категории кэша на этой странице. Скачанные музыкальные файлы не будут удалены.",
   "@cacheClearAllConfirmMessage": {
     "description": "Dialog message before clearing all caches"
   },
-  "cacheClearAll": "Clear all cache",
+  "cacheClearAll": "Очистить весь кэш",
   "@cacheClearAll": {
     "description": "Button label to clear all caches"
   },
-  "cacheCleanupUnused": "Cleanup unused data",
+  "cacheCleanupUnused": "Очистка неиспользуемых данных",
   "@cacheCleanupUnused": {
     "description": "Action title for cleaning unused entries"
   },
@@ -3722,25 +3726,29 @@
       }
     }
   },
-  "cacheRefreshStats": "Refresh stats",
+  "cacheRefreshStats": "Обновить статистику",
   "@cacheRefreshStats": {
     "description": "Button label to refresh cache statistics"
   },
-  "trackSaveCoverArt": "Save Cover Art",
+  "trackSaveCoverArt": "Сохранить обложку",
   "@trackSaveCoverArt": {
     "description": "Menu action - save album cover art as file"
   },
-  "trackSaveCoverArtSubtitle": "Save album art as .jpg file",
+  "trackSaveCoverArtSubtitle": "Сохранить обложку как файл .jpg",
   "@trackSaveCoverArtSubtitle": {
     "description": "Subtitle for save cover art action"
   },
-  "trackSaveLyrics": "Save Lyrics (.lrc)",
+  "trackSaveLyrics": "Сохранить текст (.lrc)",
   "@trackSaveLyrics": {
     "description": "Menu action - save lyrics as .lrc file"
   },
-  "trackSaveLyricsSubtitle": "Fetch and save lyrics as .lrc file",
+  "trackSaveLyricsSubtitle": "Получить и сохранить текст песни в формате .lrc",
   "@trackSaveLyricsSubtitle": {
     "description": "Subtitle for save lyrics action"
+  },
+  "trackSaveLyricsProgress": "Saving lyrics...",
+  "@trackSaveLyricsProgress": {
+    "description": "Snackbar while saving lyrics to file"
   },
   "trackReEnrich": "Re-enrich Metadata",
   "@trackReEnrich": {
@@ -3754,11 +3762,11 @@
   "@trackReEnrichOnlineSubtitle": {
     "description": "Subtitle for re-enrich metadata action for local items"
   },
-  "trackEditMetadata": "Edit Metadata",
+  "trackEditMetadata": "Редактировать метаданные",
   "@trackEditMetadata": {
     "description": "Menu action - edit embedded metadata"
   },
-  "trackCoverSaved": "Cover art saved to {fileName}",
+  "trackCoverSaved": "Обложка сохранена в {fileName}",
   "@trackCoverSaved": {
     "description": "Snackbar after cover art saved",
     "placeholders": {
@@ -3767,11 +3775,11 @@
       }
     }
   },
-  "trackCoverNoSource": "No cover art source available",
+  "trackCoverNoSource": "Нет доступных источников обложки",
   "@trackCoverNoSource": {
     "description": "Snackbar when no cover art URL or embedded cover"
   },
-  "trackLyricsSaved": "Lyrics saved to {fileName}",
+  "trackLyricsSaved": "Текст песни сохранен в {fileName}",
   "@trackLyricsSaved": {
     "description": "Snackbar after lyrics saved",
     "placeholders": {
@@ -3784,7 +3792,7 @@
   "@trackReEnrichProgress": {
     "description": "Snackbar while re-enriching metadata"
   },
-  "trackReEnrichSearching": "Searching metadata online...",
+  "trackReEnrichSearching": "Поиск метаданных в сети...",
   "@trackReEnrichSearching": {
     "description": "Snackbar while searching metadata from internet for local items"
   },
@@ -3792,11 +3800,11 @@
   "@trackReEnrichSuccess": {
     "description": "Snackbar after successful re-enrichment"
   },
-  "trackReEnrichFfmpegFailed": "FFmpeg metadata embed failed",
+  "trackReEnrichFfmpegFailed": "Ошибка встраивания метаданных FFmpeg",
   "@trackReEnrichFfmpegFailed": {
     "description": "Snackbar when FFmpeg embed fails for MP3/Opus"
   },
-  "trackSaveFailed": "Failed: {error}",
+  "trackSaveFailed": "Ошибка: {error}",
   "@trackSaveFailed": {
     "description": "Snackbar when save operation fails",
     "placeholders": {
@@ -3804,5 +3812,61 @@
         "type": "String"
       }
     }
+  },
+  "trackConvertFormat": "Convert Format",
+  "@trackConvertFormat": {
+    "description": "Menu item - convert audio format"
+  },
+  "trackConvertFormatSubtitle": "Convert to MP3 or Opus",
+  "@trackConvertFormatSubtitle": {
+    "description": "Subtitle for convert format menu item"
+  },
+  "trackConvertTitle": "Convert Audio",
+  "@trackConvertTitle": {
+    "description": "Title of convert bottom sheet"
+  },
+  "trackConvertTargetFormat": "Target Format",
+  "@trackConvertTargetFormat": {
+    "description": "Label for format selection"
+  },
+  "trackConvertBitrate": "Bitrate",
+  "@trackConvertBitrate": {
+    "description": "Label for bitrate selection"
+  },
+  "trackConvertConfirmTitle": "Confirm Conversion",
+  "@trackConvertConfirmTitle": {
+    "description": "Confirmation dialog title"
+  },
+  "trackConvertConfirmMessage": "Convert from {sourceFormat} to {targetFormat} at {bitrate}?\n\nThe original file will be deleted after conversion.",
+  "@trackConvertConfirmMessage": {
+    "description": "Confirmation dialog message",
+    "placeholders": {
+      "sourceFormat": {
+        "type": "String"
+      },
+      "targetFormat": {
+        "type": "String"
+      },
+      "bitrate": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertConverting": "Converting audio...",
+  "@trackConvertConverting": {
+    "description": "Snackbar while converting"
+  },
+  "trackConvertSuccess": "Converted to {format} successfully",
+  "@trackConvertSuccess": {
+    "description": "Snackbar after successful conversion",
+    "placeholders": {
+      "format": {
+        "type": "String"
+      }
+    }
+  },
+  "trackConvertFailed": "Conversion failed",
+  "@trackConvertFailed": {
+    "description": "Snackbar when conversion fails"
   }
 }
