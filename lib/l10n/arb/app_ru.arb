@@ -89,7 +89,7 @@
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historyTracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "historyTracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
     "placeholders": {
@@ -98,7 +98,7 @@
       }
     }
   },
-  "historyAlbumsCount": "{count, plural, one {{count} альбом} few {{count} альбома} many {{count} альбомов} other {{count} альбомов}}",
+  "historyAlbumsCount": "{count, plural, one {{count} альбом} few {{count} альбома} many {{count} альбомов} =1 {1 альбом} other {{count} альбомов}}",
   "@historyAlbumsCount": {
     "description": "Album count with plural form",
     "placeholders": {
@@ -320,11 +320,11 @@
   "@optionsUseExtensionProvidersOff": {
     "description": "Status when extension providers disabled"
   },
-  "optionsEmbedLyrics": "Вставить текст песни",
+  "optionsEmbedLyrics": "Вписать текст песни",
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Вставить синхронизированные тексты в FLAC файлы",
+  "optionsEmbedLyricsSubtitle": "Вписать синхронизированные тексты во FLAC файлы",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
@@ -592,7 +592,7 @@
   "@aboutVersion": {
     "description": "Version info label"
   },
-  "aboutBinimumDesc": "Создатель QQDL & HiFi API. Без этого API загрузки Tidal не существовали бы!",
+  "aboutBinimumDesc": "Создатель QQDL & HiFi API. Без него API загрузки Tidal не существовали бы!",
   "@aboutBinimumDesc": {
     "description": "Credit description for binimum"
   },
@@ -636,7 +636,7 @@
   "@albumTitle": {
     "description": "Album screen title"
   },
-  "albumTracks": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "albumTracks": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@albumTracks": {
     "description": "Album track count",
     "placeholders": {
@@ -673,7 +673,7 @@
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistReleases": "{count, plural, one {{count} релиз} few {{count} релиза} many {{count} релизов} other {{count} релизов}}",
+  "artistReleases": "{count, plural, one {{count} релиз} few {{count} релиза} many {{count} релизов} =1 {1 релиз} other {{count} релизов}}",
   "@artistReleases": {
     "description": "Artist release count",
     "placeholders": {
@@ -1152,7 +1152,7 @@
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
-  "dialogDeleteSelectedMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other {треков}} из истории?\n\nЭто также удалит файлы из хранилища.",
+  "dialogDeleteSelectedMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из истории?\n\nЭто также удалит файлы из хранилища.",
   "@dialogDeleteSelectedMessage": {
     "description": "Dialog message - delete selected tracks",
     "placeholders": {
@@ -1166,7 +1166,7 @@
     "description": "Dialog title - import CSV playlist"
   },
   "dialogImportPlaylistMessage": "Найдено {count} треков в CSV. Добавить их в очередь загрузки?",
-  "csvImportTracks": "{count} треков из CSV",
+  "csvImportTracks": "{count} трек(-ов) из CSV",
   "@csvImportTracks": {
     "description": "Label shown in quality picker for CSV import",
     "placeholders": {
@@ -1231,7 +1231,7 @@
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "Удалено {count} {count, plural, one {трек} few {трека} many {треков} other {треков}}",
+  "snackbarDeletedTracks": "Удалено {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -1438,7 +1438,7 @@
   "@selectionTapToSelect": {
     "description": "Hint - how to select items"
   },
-  "selectionDeleteTracks": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other {треков}}",
+  "selectionDeleteTracks": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@selectionDeleteTracks": {
     "description": "Delete button with count",
     "placeholders": {
@@ -1925,7 +1925,7 @@
   "@lyricsModeDescription": {
     "description": "Lyrics mode picker description"
   },
-  "lyricsModeEmbed": "Вставить в файл",
+  "lyricsModeEmbed": "Вписать в файл",
   "@lyricsModeEmbed": {
     "description": "Lyrics mode option - embed in audio file"
   },
@@ -1945,7 +1945,7 @@
   "@lyricsModeBoth": {
     "description": "Lyrics mode option - embed and external"
   },
-  "lyricsModeBothSubtitle": "Вставить и сохранить файл .lrc",
+  "lyricsModeBothSubtitle": "Вписать и сохранить .lrc файл",
   "@lyricsModeBothSubtitle": {
     "description": "Subtitle for both option"
   },
@@ -2014,7 +2014,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} other {{count} треков}}",
+  "tracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {
@@ -2127,7 +2127,7 @@
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
-  "trackEmbedLyrics": "Вставить текст песни",
+  "trackEmbedLyrics": "Вписать текст песни",
   "@trackEmbedLyrics": {
     "description": "Action - embed lyrics into audio file"
   },
@@ -2482,7 +2482,7 @@
   "@lossyFormatDescription": {
     "description": "Description for lossy format picker"
   },
-  "lossyFormatMp3Subtitle": "320Кбит/с, лучшая совместимость",
+  "lossyFormatMp3Subtitle": "320 кбит/с, лучшая совместимость",
   "@lossyFormatMp3Subtitle": {
     "description": "MP3 format description"
   },
@@ -2518,7 +2518,7 @@
   "@downloadUseAlbumArtistForFolders": {
     "description": "Setting - choose whether artist folders use Album Artist or Track Artist"
   },
-  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Artist folders use Album Artist when available",
+  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Для папок исполнителей используется исполнитель альбома, если он указан",
   "@downloadUseAlbumArtistForFoldersAlbumSubtitle": {
     "description": "Subtitle when Album Artist is used for folder naming"
   },
@@ -2534,7 +2534,7 @@
   "@downloadUsePrimaryArtistOnlyEnabled": {
     "description": "Subtitle when primary artist only is enabled"
   },
-  "downloadUsePrimaryArtistOnlyDisabled": "Full artist string used for folder name",
+  "downloadUsePrimaryArtistOnlyDisabled": "Полная строка исполнителя, используемая для имени папки",
   "@downloadUsePrimaryArtistOnlyDisabled": {
     "description": "Subtitle when primary artist only is disabled"
   },
@@ -2670,7 +2670,7 @@
   "@settingsDownloadNetwork": {
     "description": "Setting for network type preference"
   },
-  "settingsDownloadNetworkAny": "WiFi и мобильная сеть",
+  "settingsDownloadNetworkAny": "WiFi и Мобильная сеть",
   "@settingsDownloadNetworkAny": {
     "description": "Network option - use any connection"
   },
@@ -2758,7 +2758,7 @@
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
-  "downloadedAlbumDeleteMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other {треков}} из этого альбома?\n\nЭто также удалит файлы из хранилища.",
+  "downloadedAlbumDeleteMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из этого альбома?\n\nЭто также удалит файлы из хранилища.",
   "@downloadedAlbumDeleteMessage": {
     "description": "Delete confirmation with count",
     "placeholders": {
@@ -2797,7 +2797,7 @@
   "@downloadedAlbumTapToSelect": {
     "description": "Selection hint"
   },
-  "downloadedAlbumDeleteCount": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} other {треков}}",
+  "downloadedAlbumDeleteCount": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@downloadedAlbumDeleteCount": {
     "description": "Delete button text with count",
     "placeholders": {
@@ -3114,7 +3114,7 @@
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
-  "libraryTracksCount": "{count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
+  "libraryTracksCount": "{count} {count, plural, one {Трек} few {Трека} many {Треков} other{Треков}}",
   "@libraryTracksCount": {
     "description": "Track count in library",
     "placeholders": {
@@ -3156,7 +3156,7 @@
   "@libraryInLibrary": {
     "description": "Badge shown on tracks that exist in local library"
   },
-  "libraryRemovedMissingFiles": "Удалено {count} {count, plural, one {отсутствующий файл} few {трека} many {отсутствующих файлов} =1{отсутствующий файл} other{отсутствующих файлов}} в библиотеке",
+  "libraryRemovedMissingFiles": "Удалено {count} {count, plural, one {отсутствующий файл} few {трека} many {отсутствующих файлов} other{отсутствующих файлов}} в библиотеке",
   "@libraryRemovedMissingFiles": {
     "description": "Snackbar after cleanup",
     "placeholders": {
@@ -3229,7 +3229,7 @@
   "@libraryFilterQualityCD": {
     "description": "Filter option - CD quality audio"
   },
-  "libraryFilterQualityLossy": "С потерями",
+  "libraryFilterQualityLossy": "Lossy",
   "@libraryFilterQualityLossy": {
     "description": "Filter option - lossy compressed audio"
   },
@@ -3496,7 +3496,7 @@
   "@tutorialExtensionsTip2": {
     "description": "Tutorial extensions tip 2"
   },
-  "tutorialExtensionsTip3": "Get lyrics, enhanced metadata, and more features",
+  "tutorialExtensionsTip3": "Получайте тексты песен, улучшенные метаданные и другие возможности",
   "@tutorialExtensionsTip3": {
     "description": "Tutorial extensions tip 3"
   },
@@ -3504,7 +3504,7 @@
   "@tutorialSettingsTitle": {
     "description": "Tutorial settings page title"
   },
-  "tutorialSettingsDesc": "Personalize the app in Settings to match your preferences.",
+  "tutorialSettingsDesc": "Персонализируйте приложение в Настройках, чтобы оно соответствовало вашим предпочтениям.",
   "@tutorialSettingsDesc": {
     "description": "Tutorial settings page description"
   },
@@ -3536,11 +3536,11 @@
   "@libraryForceFullScanSubtitle": {
     "description": "Subtitle for force full scan button"
   },
-  "cleanupOrphanedDownloads": "Cleanup Orphaned Downloads",
+  "cleanupOrphanedDownloads": "Очистка отложенных скачиваний",
   "@cleanupOrphanedDownloads": {
     "description": "Button to remove history entries for deleted files"
   },
-  "cleanupOrphanedDownloadsSubtitle": "Remove history entries for files that no longer exist",
+  "cleanupOrphanedDownloadsSubtitle": "Удалить историю записи для файлов, которых больше не существует",
   "@cleanupOrphanedDownloadsSubtitle": {
     "description": "Subtitle for orphaned cleanup button"
   },
@@ -3553,7 +3553,7 @@
       }
     }
   },
-  "cleanupOrphanedDownloadsNone": "No orphaned entries found",
+  "cleanupOrphanedDownloadsNone": "Записей без описания не найдено",
   "@cleanupOrphanedDownloadsNone": {
     "description": "Snackbar when no orphans found"
   },
@@ -3565,11 +3565,11 @@
   "@cacheSummaryTitle": {
     "description": "Heading for cache summary card"
   },
-  "cacheSummarySubtitle": "Clearing cache will not remove downloaded music files.",
+  "cacheSummarySubtitle": "Очистка кэша не приведет к удалению загруженных музыкальных файлов.",
   "@cacheSummarySubtitle": {
     "description": "Helper text for cache summary card"
   },
-  "cacheEstimatedTotal": "Estimated cache usage: {size}",
+  "cacheEstimatedTotal": "Приблизительное использование кэша: {size}",
   "@cacheEstimatedTotal": {
     "description": "Total cache size shown in summary",
     "placeholders": {
@@ -3594,19 +3594,19 @@
   "@cacheAppDirectoryDesc": {
     "description": "Description of what app cache directory contains"
   },
-  "cacheTempDirectory": "Temporary directory",
+  "cacheTempDirectory": "Временная директория",
   "@cacheTempDirectory": {
     "description": "Cache item title for temporary files directory"
   },
-  "cacheTempDirectoryDesc": "Temporary files from downloads and audio conversion.",
+  "cacheTempDirectoryDesc": "Временные файлы из загрузок и аудио конвертации.",
   "@cacheTempDirectoryDesc": {
     "description": "Description of what temporary directory contains"
   },
-  "cacheCoverImage": "Cover image cache",
+  "cacheCoverImage": "Кэш обложек",
   "@cacheCoverImage": {
     "description": "Cache item title for persistent cover images"
   },
-  "cacheCoverImageDesc": "Downloaded album and track cover art. Will re-download when viewed.",
+  "cacheCoverImageDesc": "Скачанный альбом и трек обложки. Будет заново скачан после просмотра.",
   "@cacheCoverImageDesc": {
     "description": "Description of what cover image cache contains"
   },
@@ -3614,11 +3614,11 @@
   "@cacheLibraryCover": {
     "description": "Cache item title for local library cover art images"
   },
-  "cacheLibraryCoverDesc": "Cover art extracted from local music files. Will re-extract on next scan.",
+  "cacheLibraryCoverDesc": "Обложка извлечена из локальных музыкальных файлов. Будет повторно извлечено при следующем сканировании.",
   "@cacheLibraryCoverDesc": {
     "description": "Description of what library cover cache contains"
   },
-  "cacheExploreFeed": "Explore feed cache",
+  "cacheExploreFeed": "Просмотреть кэш ленты",
   "@cacheExploreFeed": {
     "description": "Cache item title for explore home feed cache"
   },
@@ -3626,7 +3626,7 @@
   "@cacheExploreFeedDesc": {
     "description": "Description of what explore feed cache contains"
   },
-  "cacheTrackLookup": "Track lookup cache",
+  "cacheTrackLookup": "Отслеживать кэш поиска",
   "@cacheTrackLookup": {
     "description": "Cache item title for track ID lookup cache"
   },
@@ -3663,7 +3663,7 @@
       }
     }
   },
-  "cacheEntries": "{count} entries",
+  "cacheEntries": "{count} записей",
   "@cacheEntries": {
     "description": "Track cache entry count",
     "placeholders": {
@@ -3714,7 +3714,7 @@
   "@cacheCleanupUnusedSubtitle": {
     "description": "Subtitle for cleanup unused data action"
   },
-  "cacheCleanupResult": "Cleanup completed: {downloadCount} orphaned downloads, {libraryCount} missing library entries",
+  "cacheCleanupResult": "Очистка завершена: {downloadCount} потерянных загрузок, {libraryCount} отсутствующих записей в библиотеке",
   "@cacheCleanupResult": {
     "description": "Snackbar after unused data cleanup",
     "placeholders": {
@@ -3746,7 +3746,7 @@
   "@trackSaveLyricsSubtitle": {
     "description": "Subtitle for save lyrics action"
   },
-  "trackSaveLyricsProgress": "Saving lyrics...",
+  "trackSaveLyricsProgress": "Сохранение текста...",
   "@trackSaveLyricsProgress": {
     "description": "Snackbar while saving lyrics to file"
   },
@@ -3813,31 +3813,31 @@
       }
     }
   },
-  "trackConvertFormat": "Convert Format",
+  "trackConvertFormat": "Переконвертировать формат",
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Convert to MP3 or Opus",
+  "trackConvertFormatSubtitle": "Конвертировать в MP3 или Opus",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
-  "trackConvertTitle": "Convert Audio",
+  "trackConvertTitle": "Конвертировать аудио",
   "@trackConvertTitle": {
     "description": "Title of convert bottom sheet"
   },
-  "trackConvertTargetFormat": "Target Format",
+  "trackConvertTargetFormat": "Целевой формат",
   "@trackConvertTargetFormat": {
     "description": "Label for format selection"
   },
-  "trackConvertBitrate": "Bitrate",
+  "trackConvertBitrate": "Битрейт",
   "@trackConvertBitrate": {
     "description": "Label for bitrate selection"
   },
-  "trackConvertConfirmTitle": "Confirm Conversion",
+  "trackConvertConfirmTitle": "Подтвердить конвертацию",
   "@trackConvertConfirmTitle": {
     "description": "Confirmation dialog title"
   },
-  "trackConvertConfirmMessage": "Convert from {sourceFormat} to {targetFormat} at {bitrate}?\n\nThe original file will be deleted after conversion.",
+  "trackConvertConfirmMessage": "Конвертировать из {sourceFormat} в {targetFormat} {bitrate}?\n\nОригинальный файл будет удален после конвертации.",
   "@trackConvertConfirmMessage": {
     "description": "Confirmation dialog message",
     "placeholders": {
@@ -3852,11 +3852,11 @@
       }
     }
   },
-  "trackConvertConverting": "Converting audio...",
+  "trackConvertConverting": "Конвертация аудио...",
   "@trackConvertConverting": {
     "description": "Snackbar while converting"
   },
-  "trackConvertSuccess": "Converted to {format} successfully",
+  "trackConvertSuccess": "Успешно конвертировано в {format}",
   "@trackConvertSuccess": {
     "description": "Snackbar after successful conversion",
     "placeholders": {
@@ -3865,7 +3865,7 @@
       }
     }
   },
-  "trackConvertFailed": "Conversion failed",
+  "trackConvertFailed": "Ошибка конвертации",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
   }
