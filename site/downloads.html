@@ -32,7 +32,11 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: #333 transparent; }
+    html::-webkit-scrollbar { width: 8px; }
+    html::-webkit-scrollbar-track { background: transparent; }
+    html::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    html::-webkit-scrollbar-thumb:hover { background: #555; }
 
     body {
       font-family: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -51,13 +55,13 @@
       -webkit-backdrop-filter: blur(20px);
     }
     .nav-inner {
-      max-width: var(--max-w); margin: auto;
+      max-width: 1100px; margin: auto;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; height: 64px;
     }
     .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); }
     .nav-brand img { width: 32px; height: 32px; border-radius: 50%; }
-    .nav-links { display: flex; gap: 24px; list-style: none; }
+    .nav-links { display: flex; align-items: center; gap: 24px; list-style: none; }
     .nav-links a { color: var(--text-dim); font-size: .9rem; transition: color .2s; }
     .nav-links a:hover { color: var(--text); text-decoration: none; }
     .nav-links a.active { color: var(--text); font-weight: 600; }
@@ -65,6 +69,21 @@
     .nav-links .nav-icon:hover { opacity: 1; }
     .nav-links .nav-icon svg { width: 24px; height: 24px; fill: currentColor; }
     .nav-links .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,.15); margin-left: -4px; }
+    .search-trigger {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px; padding: 6px 12px;
+      color: var(--text-dim); font-size: .85rem; cursor: pointer;
+      font-family: inherit; transition: color .2s, border-color .2s, background .2s;
+      white-space: nowrap; text-decoration: none;
+    }
+    .search-trigger:hover { color: var(--text); border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.1); text-decoration: none; }
+    .search-trigger svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+    .search-trigger kbd {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 4px; padding: 0px 4px; font-size: .65rem;
+      font-family: inherit; color: #555; line-height: 1.4; margin-left: 2px;
+    }
 
     /* ── PAGE HEADER ── */
     .page-header {
@@ -179,7 +198,7 @@
       background: var(--surface);
       padding: 40px 24px; text-align: center;
     }
-    .footer-inner { max-width: var(--max-w); margin: auto; }
+    .footer-inner { max-width: 1100px; margin: auto; }
     .footer-links { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
     .footer-links a { color: var(--text-dim); font-size: .9rem; }
     .footer-links a:hover { color: var(--text); }
@@ -282,23 +301,98 @@
     }
 
     .icon-svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* ── SEARCH MODAL ── */
+    .search-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      z-index: 300; opacity: 0; pointer-events: none;
+      transition: opacity .2s cubic-bezier(.4,0,.2,1);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: min(20vh, 140px);
+    }
+    .search-overlay.open { opacity: 1; pointer-events: auto; }
+    .search-modal {
+      background: var(--surface); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px; width: 580px; max-width: calc(100vw - 32px);
+      max-height: min(70vh, 520px); display: flex; flex-direction: column;
+      box-shadow: 0 16px 70px rgba(0,0,0,.6);
+      transform: translateY(-12px) scale(.97); opacity: 0;
+      transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .2s;
+    }
+    .search-overlay.open .search-modal { transform: translateY(0) scale(1); opacity: 1; }
+    .search-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .search-header svg { width: 18px; height: 18px; fill: var(--text-dim); flex-shrink: 0; }
+    .search-input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: .95rem; font-family: inherit;
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+    .search-esc {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 4px; padding: 2px 7px; font-size: .72rem;
+      color: var(--text-dim); font-family: inherit; cursor: pointer;
+    }
+    .search-esc:hover { background: rgba(255,255,255,.14); }
+    .search-body { overflow-y: auto; padding: 8px; scrollbar-width: thin; scrollbar-color: #333 transparent; }
+    .search-body::-webkit-scrollbar { width: 6px; }
+    .search-body::-webkit-scrollbar-track { background: transparent; }
+    .search-body::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    .search-group-label {
+      padding: 8px 10px 4px; font-size: .72rem; font-weight: 600;
+      color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em;
+    }
+    .search-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      color: var(--text); font-size: .88rem; transition: background .15s;
+    }
+    .search-item:hover, .search-item.active { background: rgba(255,255,255,.07); }
+    .search-item svg { width: 16px; height: 16px; fill: var(--text-dim); flex-shrink: 0; }
+    .search-item-text { flex: 1; min-width: 0; }
+    .search-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-item-section { font-size: .78rem; color: var(--text-dim); margin-top: 1px; }
+    .search-item mark { background: rgba(29,185,84,.25); color: var(--text); border-radius: 2px; padding: 0 1px; }
+    .search-item .search-enter { color: var(--text-dim); font-size: .72rem; opacity: 0; transition: opacity .15s; }
+    .search-item.active .search-enter { opacity: 1; }
+    .search-empty { padding: 32px 16px; text-align: center; color: var(--text-dim); font-size: .9rem; }
+    .search-footer {
+      padding: 10px 16px; border-top: 1px solid rgba(255,255,255,.06);
+      display: flex; align-items: center; gap: 16px; font-size: .72rem; color: #555;
+    }
+    .search-footer kbd {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 3px; padding: 1px 4px; font-family: inherit; font-size: .68rem;
+    }
+    @media (max-width: 640px) {
+      .search-trigger kbd { display: none; }
+      .search-overlay { padding-top: 16px; }
+      .search-modal { max-height: 80vh; border-radius: 14px; }
+    }
   </style>
 </head>
 <body>
 
 <nav>
   <div class="nav-inner">
-    <a class="nav-brand" href="index.html">
+    <a class="nav-brand" href="index">
       <img src="icon.png" alt="SpotiFLAC">
-      SpotiFLAC
+      SpotiFLAC Mobile
     </a>
     <ul class="nav-links">
-      <li><a href="index.html#features">Features</a></li>
-      <li><a href="downloads.html" class="active">Downloads</a></li>
-      <li><a href="index.html#faq">FAQ</a></li>
-      <li><a href="partners.html">Partners</a></li>
-      <li><a href="https://zarz.moe/docs" target="_blank">Docs</a></li>
+      <li><a href="index#features">Features</a></li>
+      <li><a href="downloads" class="active">Downloads</a></li>
+      <li><a href="index#faq">FAQ</a></li>
+      <li><a href="partners">Partners</a></li>
+      <li><a href="docs">Docs</a></li>
       <li class="nav-divider"></li>
+      <li><button class="search-trigger" onclick="openSearch()" aria-label="Search documentation">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        Search
+        <kbd id="searchShortcutHint">Ctrl K</kbd>
+      </button></li>
       <li><a href="https://github.com/zarzet/SpotiFLAC-Mobile" target="_blank" class="nav-icon" aria-label="GitHub"><svg viewBox="0 0 24 24"><path d="M12 .3a12 12 0 0 0-3.8 23.38c.6.12.82-.26.82-.57L9 20.86c-3.34.72-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .1-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22l-.01 3.29c0 .31.21.69.82.57A12 12 0 0 0 12 .3"/></svg></a></li>
       <li><a href="https://t.me/spotiflac" target="_blank" class="nav-icon" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M11.94 24c6.6 0 12-5.4 12-12s-5.4-12-12-12-12 5.4-12 12 5.4 12 12 12zm-3.2-8.69l-.37-3.04 8.52-5.18c.38-.23.73.09.45.35l-6.96 6.4-.29 2.97c-.04.35-.48.43-.64.12l-1.64-3.33-3.6-1.17c-.78-.24-.8-.78-.02-1.14l14.04-5.4c.65-.25 1.25.15 1.04.83l-2.39 11.28c-.18.81-.7 1.01-1.42.63l-3.92-2.89-1.89 1.82c-.21.2-.39.38-.65.38l.28-3.06z"/></svg></a></li>
     </ul>
@@ -311,11 +405,12 @@
 <!-- MOBILE MENU -->
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMenu()"></div>
 <div class="mobile-menu" id="mobileMenu">
-  <a href="index.html#features">Features</a>
-  <a href="downloads.html" class="active">Downloads</a>
-  <a href="index.html#faq">FAQ</a>
-  <a href="partners.html">Partners</a>
-  <a href="https://zarz.moe/docs" target="_blank">Docs</a>
+  <a href="index#features">Features</a>
+  <a href="downloads" class="active">Downloads</a>
+  <a href="index#faq">FAQ</a>
+  <a href="partners">Partners</a>
+  <a href="docs">Docs</a>
+  <a href="javascript:void(0)" onclick="toggleMenu();openSearch()" style="display:flex;align-items:center;gap:6px;color:var(--text-dim)"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>Search Docs</a>
   <div class="mobile-divider"></div>
   <div class="mobile-icons">
     <a href="https://github.com/zarzet/SpotiFLAC-Mobile" target="_blank" aria-label="GitHub">
@@ -347,11 +442,30 @@
   </a>
 </div>
 
+<!-- SEARCH MODAL -->
+<div class="search-overlay" id="searchOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="search-modal">
+    <div class="search-header">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search documentation..." autocomplete="off" spellcheck="false">
+      <button class="search-esc" onclick="closeSearch()">Esc</button>
+    </div>
+    <div class="search-body" id="searchBody">
+      <div class="search-empty">Type to search across all documentation sections</div>
+    </div>
+    <div class="search-footer">
+      <span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> to navigate</span>
+      <span><kbd>Enter</kbd> to select</span>
+      <span><kbd>Esc</kbd> to close</span>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="footer-inner">
     <div class="footer-links">
-      <a href="index.html">Home</a>
-      <a href="https://zarz.moe/docs" target="_blank">Documentation</a>
+      <a href="index">Home</a>
+      <a href="docs">Documentation</a>
       <a href="https://github.com/zarzet/SpotiFLAC-Mobile" target="_blank">GitHub</a>
       <a href="https://t.me/spotiflac" target="_blank">Telegram</a>
       <a href="https://ko-fi.com/zarzet" target="_blank">Support / Ko-fi</a>
@@ -479,6 +593,145 @@ function toggleMenu() {
 document.getElementById('mobileMenu').addEventListener('click', function(e) {
   if (e.target.closest('a')) toggleMenu();
 });
+</script>
+<script>
+/* ── DOCS SEARCH ── */
+(function() {
+  var overlay = document.getElementById('searchOverlay');
+  var input = document.getElementById('searchInput');
+  var body = document.getElementById('searchBody');
+  var hintEl = document.getElementById('searchShortcutHint');
+  var activeIdx = -1;
+  var results = [];
+
+  if (navigator.platform && navigator.platform.indexOf('Mac') > -1) {
+    if (hintEl) hintEl.textContent = '\u2318 K';
+  }
+
+  var searchIndex = [{"id":"table-of-contents","title":"Table of Contents","level":2,"section":"Table of Contents"},{"id":"introduction","title":"Introduction","level":2,"section":"Introduction"},{"id":"requirements","title":"Requirements","level":3,"section":"Introduction"},{"id":"extension-structure","title":"Extension Structure","level":2,"section":"Extension Structure"},{"id":"manifest-file","title":"Manifest File","level":2,"section":"Manifest File"},{"id":"complete-manifest-example","title":"Complete Manifest Example","level":3,"section":"Manifest File"},{"id":"manifest-fields","title":"Manifest Fields","level":3,"section":"Manifest File"},{"id":"quality-options","title":"Quality Options","level":3,"section":"Manifest File"},{"id":"quality-specific-settings","title":"Quality-Specific Settings","level":3,"section":"Manifest File"},{"id":"permissions","title":"Permissions","level":3,"section":"Manifest File"},{"id":"extension-types","title":"Extension Types","level":3,"section":"Manifest File"},{"id":"settings","title":"Settings","level":3,"section":"Manifest File"},{"id":"button-setting-type","title":"Button Setting Type","level":3,"section":"Manifest File"},{"id":"custom-search-behavior","title":"Custom Search Behavior","level":3,"section":"Manifest File"},{"id":"thumbnail-ratio-presets","title":"Thumbnail Ratio Presets","level":4,"section":"Manifest File"},{"id":"custom-url-handler","title":"Custom URL Handler","level":3,"section":"Manifest File"},{"id":"album--playlist-functions-v301","title":"Album & Playlist Functions (v3.0.1+)","level":3,"section":"Manifest File"},{"id":"artist-support","title":"Artist Support","level":3,"section":"Manifest File"},{"id":"home-feed-support","title":"Home Feed Support","level":3,"section":"Manifest File"},{"id":"track-enrichment","title":"Track Enrichment","level":3,"section":"Manifest File"},{"id":"custom-track-matching","title":"Custom Track Matching","level":3,"section":"Manifest File"},{"id":"post-processing-hooks","title":"Post-Processing Hooks","level":3,"section":"Manifest File"},{"id":"post-process-api-v2-recommended","title":"Post-Process API v2 (Recommended)","level":4,"section":"Manifest File"},{"id":"main-script","title":"Main Script","level":2,"section":"Main Script"},{"id":"basic-structure","title":"Basic Structure","level":3,"section":"Main Script"},{"id":"important-registerextension","title":"Important: registerExtension()","level":3,"section":"Main Script"},{"id":"api-reference","title":"API Reference","level":2,"section":"API Reference"},{"id":"http-api","title":"HTTP API","level":3,"section":"API Reference"},{"id":"request-headers","title":"Request Headers","level":4,"section":"API Reference"},{"id":"response-object","title":"Response Object","level":4,"section":"API Reference"},{"id":"form-encoded-post-applicationx-www-form-urlencoded","title":"Form-Encoded POST (application/x-www-form-urlencoded)","level":4,"section":"API Reference"},{"id":"cookie-jar","title":"Cookie Jar","level":4,"section":"API Reference"},{"id":"youtube-music--innertube-api-example","title":"YouTube Music / Innertube API Example","level":4,"section":"API Reference"},{"id":"browser-like-polyfills","title":"Browser-like Polyfills","level":3,"section":"API Reference"},{"id":"fetch-api","title":"fetch() API","level":4,"section":"API Reference"},{"id":"atob--btoa","title":"atob() / btoa()","level":4,"section":"API Reference"},{"id":"textencoder--textdecoder","title":"TextEncoder / TextDecoder","level":4,"section":"API Reference"},{"id":"url--urlsearchparams","title":"URL / URLSearchParams","level":4,"section":"API Reference"},{"id":"porting-browser-libraries","title":"Porting Browser Libraries","level":4,"section":"API Reference"},{"id":"storage-api","title":"Storage API","level":3,"section":"API Reference"},{"id":"file-api","title":"File API","level":3,"section":"API Reference"},{"id":"logging-api","title":"Logging API","level":3,"section":"API Reference"},{"id":"utility-api","title":"Utility API","level":3,"section":"API Reference"},{"id":"hmac-sha1-for-totp","title":"HMAC-SHA1 for TOTP","level":4,"section":"API Reference"},{"id":"hmac-sha256-example-api-signing","title":"HMAC-SHA256 Example (API Signing)","level":4,"section":"API Reference"},{"id":"go-backend-api","title":"Go Backend API","level":3,"section":"API Reference"},{"id":"using-getlocaltime-for-time-based-greeting","title":"Using getLocalTime() for Time-Based Greeting","level":4,"section":"API Reference"},{"id":"using-getlocaltime-for-timezone-in-api-calls","title":"Using getLocalTime() for Timezone in API Calls","level":4,"section":"API Reference"},{"id":"credentials-api-encrypted","title":"Credentials API (Encrypted)","level":3,"section":"API Reference"},{"id":"auth-api-oauth-support","title":"Auth API (OAuth Support)","level":3,"section":"API Reference"},{"id":"pkce-oauth-flow-recommended","title":"PKCE OAuth Flow (Recommended)","level":3,"section":"API Reference"},{"id":"quick-start-high-level-api","title":"Quick Start (High-Level API)","level":4,"section":"API Reference"},{"id":"low-level-api-manual-control","title":"Low-Level API (Manual Control)","level":4,"section":"API Reference"},{"id":"pkce-api-reference","title":"PKCE API Reference","level":4,"section":"API Reference"},{"id":"complete-oauth-example","title":"Complete OAuth Example","level":4,"section":"API Reference"},{"id":"crypto-utilities","title":"Crypto Utilities","level":3,"section":"API Reference"},{"id":"ffmpeg-api-post-processing","title":"FFmpeg API (Post-Processing)","level":3,"section":"API Reference"},{"id":"track-matching-api","title":"Track Matching API","level":3,"section":"API Reference"},{"id":"extension-examples","title":"Extension Examples","level":2,"section":"Extension Examples"},{"id":"example-1-simple-metadata-provider","title":"Example 1: Simple Metadata Provider","level":3,"section":"Extension Examples"},{"id":"example-2-download-provider-with-auth","title":"Example 2: Download Provider with Auth","level":3,"section":"Extension Examples"},{"id":"packaging--distribution","title":"Packaging & Distribution","level":2,"section":"Packaging & Distribution"},{"id":"project-structure","title":"Project Structure","level":3,"section":"Packaging & Distribution"},{"id":"module-system-limitation","title":"Module System Limitation","level":3,"section":"Packaging & Distribution"},{"id":"creating-extension-file","title":"Creating Extension File","level":3,"section":"Packaging & Distribution"},{"id":"installing-extension","title":"Installing Extension","level":3,"section":"Packaging & Distribution"},{"id":"upgrading-extension","title":"Upgrading Extension","level":3,"section":"Packaging & Distribution"},{"id":"troubleshooting","title":"Troubleshooting","level":2,"section":"Troubleshooting"},{"id":"error-extension-did-not-call-registerextension","title":"Error: extension did not call registerExtension()","level":3,"section":"Troubleshooting"},{"id":"error-permission-denied-for-domain-x--network-access-denied","title":"Error: Permission denied for domain X / network access denied","level":3,"section":"Troubleshooting"},{"id":"error-post-body-is-object-object","title":"Error: POST body is [object Object]","level":3,"section":"Troubleshooting"},{"id":"error-function-x-is-not-defined","title":"Error: Function X is not defined","level":3,"section":"Troubleshooting"},{"id":"error-invalid-manifest","title":"Error: Invalid manifest","level":3,"section":"Troubleshooting"},{"id":"extension-doesnt-appear-after-install","title":"Extension doesn't appear after install","level":3,"section":"Troubleshooting"},{"id":"http-request-fails","title":"HTTP request fails","level":3,"section":"Troubleshooting"},{"id":"download-fails","title":"Download fails","level":3,"section":"Troubleshooting"},{"id":"error-file-access-denied-extension-does-not-have-file-permission","title":"Error: file access denied: extension does not have file permission","level":3,"section":"Troubleshooting"},{"id":"error-file-access-denied-absolute-paths-are-not-allowed","title":"Error: file access denied: absolute paths are not allowed","level":3,"section":"Troubleshooting"},{"id":"error-file-access-denied-path-x-is-outside-sandbox","title":"Error: file access denied: path X is outside sandbox","level":3,"section":"Troubleshooting"},{"id":"error-cannot-downgrade-extension","title":"Error: Cannot downgrade extension","level":3,"section":"Troubleshooting"},{"id":"error-extension-is-already-installed","title":"Error: Extension is already installed","level":3,"section":"Troubleshooting"},{"id":"error-timeout-extension-took-too-long-to-respond","title":"Error: timeout: extension took too long to respond","level":3,"section":"Troubleshooting"},{"id":"thumbnails-not-showing-correctly-in-search-results","title":"Thumbnails not showing correctly in search results","level":3,"section":"Troubleshooting"},{"id":"technical-details--behavior","title":"Technical Details & Behavior","level":2,"section":"Technical Details & Behavior"},{"id":"token-refresh-handling","title":"Token Refresh Handling","level":3,"section":"Technical Details & Behavior"},{"id":"storage-limits","title":"Storage Limits","level":3,"section":"Technical Details & Behavior"},{"id":"file-api-path-resolution","title":"File API Path Resolution","level":3,"section":"Technical Details & Behavior"},{"id":"http-redirect-handling","title":"HTTP Redirect Handling","level":3,"section":"Technical Details & Behavior"},{"id":"standard-error-types","title":"Standard Error Types","level":3,"section":"Technical Details & Behavior"},{"id":"http-timeout","title":"HTTP Timeout","level":3,"section":"Technical Details & Behavior"},{"id":"tips--best-practices","title":"Tips & Best Practices","level":2,"section":"Tips & Best Practices"},{"id":"authentication-api","title":"Authentication API","level":2,"section":"Authentication API"},{"id":"auth-api-reference","title":"Auth API Reference","level":3,"section":"Authentication API"},{"id":"credentials-api-encrypted-storage","title":"Credentials API (Encrypted Storage)","level":3,"section":"Authentication API"},{"id":"crypto-utilities-1","title":"Crypto Utilities","level":3,"section":"Authentication API"},{"id":"oauth-flow-example","title":"OAuth Flow Example","level":3,"section":"Authentication API"},{"id":"data-schema-reference","title":"Data Schema Reference","level":2,"section":"Data Schema Reference"},{"id":"track-object","title":"Track Object","level":3,"section":"Data Schema Reference"},{"id":"album-object","title":"Album Object","level":3,"section":"Data Schema Reference"},{"id":"artist-object","title":"Artist Object","level":3,"section":"Data Schema Reference"},{"id":"download-result-object","title":"Download Result Object","level":3,"section":"Data Schema Reference"},{"id":"skip-metadata-enrichment","title":"Skip Metadata Enrichment","level":3,"section":"Data Schema Reference"},{"id":"changelog","title":"Changelog","level":2,"section":"Changelog"},{"id":"support","title":"Support","level":2,"section":"Support"}];
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlight(text, query) {
+    if (!query) return escHtml(text);
+    var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var re = new RegExp('(' + escaped + ')', 'gi');
+    return escHtml(text).replace(re, '<mark>$1</mark>');
+  }
+
+  function doSearch(query) {
+    query = query.trim().toLowerCase();
+    if (!query) {
+      body.innerHTML = '<div class="search-empty">Type to search across all documentation sections</div>';
+      results = []; activeIdx = -1; return;
+    }
+    var tokens = query.split(/\s+/).filter(Boolean);
+    var scored = [];
+    searchIndex.forEach(function(item) {
+      var titleLow = item.title.toLowerCase();
+      var sectionLow = item.section.toLowerCase();
+      var score = 0;
+      for (var i = 0; i < tokens.length; i++) {
+        var t = tokens[i];
+        if (titleLow.includes(t)) {
+          score += titleLow === t ? 100 : titleLow.startsWith(t) ? 60 : 30;
+        } else if (sectionLow.includes(t)) {
+          score += 10;
+        }
+      }
+      if (score > 0 && item.level === 2) score += 8;
+      if (score > 0 && item.level === 1) score += 15;
+      if (score > 0) scored.push({ item: item, score: score });
+    });
+    scored.sort(function(a, b) { return b.score - a.score; });
+    results = scored.slice(0, 20);
+    activeIdx = results.length > 0 ? 0 : -1;
+    if (!results.length) {
+      body.innerHTML = '<div class="search-empty">No results found for "' + escHtml(query) + '"</div>';
+      return;
+    }
+    var hashIcon = '<svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>';
+    var html = '';
+    results.forEach(function(r, i) {
+      var cls = i === activeIdx ? ' active' : '';
+      var sectionHint = r.item.section && r.item.section !== r.item.title ? r.item.section : '';
+      html += '<div class="search-item' + cls + '" data-idx="' + i + '" data-id="' + r.item.id + '">' +
+        hashIcon +
+        '<div class="search-item-text">' +
+          '<div class="search-item-title">' + highlight(r.item.title, query) + '</div>' +
+          (sectionHint ? '<div class="search-item-section">' + escHtml(sectionHint) + '</div>' : '') +
+        '</div>' +
+        '<span class="search-enter">\u21B5</span>' +
+      '</div>';
+    });
+    body.innerHTML = html;
+    body.querySelectorAll('.search-item').forEach(function(el) {
+      el.addEventListener('click', function() { navigateTo(el.dataset.id); });
+      el.addEventListener('mouseenter', function() { setActive(parseInt(el.dataset.idx)); });
+    });
+  }
+
+  function setActive(idx) {
+    if (idx === activeIdx) return;
+    var items = body.querySelectorAll('.search-item');
+    if (items[activeIdx]) items[activeIdx].classList.remove('active');
+    activeIdx = idx;
+    if (items[activeIdx]) {
+      items[activeIdx].classList.add('active');
+      items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function navigateTo(id) {
+    closeSearch();
+    window.location.href = 'docs#' + id;
+  }
+
+  window.openSearch = function() {
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    input.value = '';
+    doSearch('');
+    setTimeout(function() { input.focus(); }, 50);
+  };
+
+  window.closeSearch = function() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    activeIdx = -1;
+  };
+
+  input.addEventListener('input', function() { doSearch(input.value); });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (results.length) setActive(Math.min(activeIdx + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (results.length) setActive(Math.max(activeIdx - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (results[activeIdx]) navigateTo(results[activeIdx].item.id);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSearch();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      if (overlay.classList.contains('open')) { closeSearch(); } else { openSearch(); }
+    }
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+})();
 </script>
 
 </body>
