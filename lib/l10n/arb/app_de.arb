@@ -2490,11 +2490,11 @@
   "@lossyFormatOpusSubtitle": {
     "description": "Opus format description"
   },
-  "qualityNote": "Actual quality depends on track availability from the service",
+  "qualityNote": "Die eigentliche Qualität hängt von der Verfügbarkeit des Dienstes ab",
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
+  "youtubeQualityNote": "YouTube bietet nur verlustbehaftete Audioqualität. Deswegen ist es kein Teil des verlustfreien Fallbacks.",
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
   },
@@ -3010,7 +3010,7 @@
   "@allFilesAccessDeniedMessage": {
     "description": "Message when permission is permanently denied"
   },
-  "allFilesAccessDisabledMessage": "All Files Access disabled. The app will use limited storage access.",
+  "allFilesAccessDisabledMessage": "Zugriff auf alle Dateien ist deaktiviert. Die App verwendet nur begrenzten Zugriff auf den Speicher.",
   "@allFilesAccessDisabledMessage": {
     "description": "Snackbar message when user disables all files access"
   },
@@ -3282,7 +3282,7 @@
   "@timeJustNow": {
     "description": "Relative time - less than a minute ago"
   },
-  "timeMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "timeMinutesAgo": "{count, plural, one {}=1{vor 1 Minute} other{vor {count} Minuten}}",
   "@timeMinutesAgo": {
     "description": "Relative time - minutes ago",
     "placeholders": {
@@ -3408,7 +3408,7 @@
   "@tutorialWelcomeDesc": {
     "description": "Tutorial welcome page description"
   },
-  "tutorialWelcomeTip1": "Download music from Spotify, Deezer, or paste any supported URL",
+  "tutorialWelcomeTip1": "Lade Musik von Spotify, Deezer herunter oder jeden unterstützten Link einfügen",
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
@@ -3424,7 +3424,7 @@
   "@tutorialSearchTitle": {
     "description": "Tutorial search page title"
   },
-  "tutorialSearchDesc": "There are two easy ways to find music you want to download.",
+  "tutorialSearchDesc": "Es gibt zwei einfache Möglichkeiten, Musik zu finden, die du herunterladen möchtest.",
   "@tutorialSearchDesc": {
     "description": "Tutorial search page description"
   },
@@ -3448,7 +3448,7 @@
   "@tutorialDownloadDesc": {
     "description": "Tutorial download page description"
   },
-  "tutorialDownloadTip1": "Tap the download button next to any track to start downloading",
+  "tutorialDownloadTip1": "Tippe auf den Download-Button neben einem Titel, um mit dem Download zu beginnen",
   "@tutorialDownloadTip1": {
     "description": "Tutorial download tip 1"
   },
@@ -3590,7 +3590,7 @@
   "@cacheAppDirectory": {
     "description": "Cache item title for app cache directory"
   },
-  "cacheAppDirectoryDesc": "HTTP responses, WebView data, and other temporary app data.",
+  "cacheAppDirectoryDesc": "HTTP-Antworten, WebView Daten und andere temporäre App-Daten.",
   "@cacheAppDirectoryDesc": {
     "description": "Description of what app cache directory contains"
   },
@@ -3606,7 +3606,7 @@
   "@cacheCoverImage": {
     "description": "Cache item title for persistent cover images"
   },
-  "cacheCoverImageDesc": "Downloaded album and track cover art. Will re-download when viewed.",
+  "cacheCoverImageDesc": "Album- und Titelcover heruntergeladen. Werden erneut heruntergeladen.",
   "@cacheCoverImageDesc": {
     "description": "Description of what cover image cache contains"
   },
@@ -3710,7 +3710,7 @@
   "@cacheCleanupUnused": {
     "description": "Action title for cleaning unused entries"
   },
-  "cacheCleanupUnusedSubtitle": "Remove orphaned download history and missing library entries",
+  "cacheCleanupUnusedSubtitle": "Verwaisten Downloadverlauf und fehlende Bibliothekseinträge löschen",
   "@cacheCleanupUnusedSubtitle": {
     "description": "Subtitle for cleanup unused data action"
   },
