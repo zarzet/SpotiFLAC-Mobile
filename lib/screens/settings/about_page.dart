@@ -141,6 +141,14 @@ class AboutPage extends StatelessWidget {
                     title: context.l10n.aboutSpotiSaver,
                     subtitle: context.l10n.aboutSpotiSaverDesc,
                     onTap: () => _launchUrl('https://spotisaver.net'),
+                    showDivider: true,
+                  ),
+                  _AboutSettingsItem(
+                    icon: Icons.lyrics_outlined,
+                    title: 'Paxsenix',
+                    subtitle:
+                        'Partner lyrics proxy for Apple Music and QQ Music sources',
+                    onTap: () => _launchUrl('https://lyrics.paxsenix.org'),
                     showDivider: false,
                   ),
                 ],

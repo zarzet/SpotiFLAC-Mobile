@@ -289,7 +289,7 @@ func formatPaxContent(lyricsType string, content []paxLyrics, multiPersonWordByW
 
 		timestamp := msToLRCTimestamp(int64(line.Timestamp))
 
-		if lyricsType == "Syllable" {
+		if strings.EqualFold(lyricsType, "Syllable") {
 			sb.WriteString(timestamp)
 			if multiPersonWordByWord {
 				if line.OppositeTurn {

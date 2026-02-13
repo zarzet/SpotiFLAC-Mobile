@@ -608,6 +608,13 @@ func parseSyncedLyrics(syncedLyrics string) []LyricsLine {
 			continue
 		}
 
+		// Preserve Apple/QQ background vocal tags by attaching them to
+		// the previous timed line. This keeps [bg:...] in final exported LRC.
+		if strings.HasPrefix(line, "[bg:") && len(lines) > 0 {
+			lines[len(lines)-1].Words = strings.TrimSpace(lines[len(lines)-1].Words + "\n" + line)
+			continue
+		}
+
 		matches := lrcPattern.FindStringSubmatch(line)
 		if len(matches) == 5 {
 			startMs := lrcTimestampToMs(matches[1], matches[2], matches[3])

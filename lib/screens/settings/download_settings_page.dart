@@ -11,6 +11,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
+import 'package:spotiflac_android/screens/settings/lyrics_provider_priority_page.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class DownloadSettingsPage extends ConsumerStatefulWidget {
@@ -284,10 +285,11 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     icon: Icons.source_outlined,
                     title: 'Lyrics Providers',
                     subtitle: _getLyricsProvidersSubtitle(settings.lyricsProviders),
-                    onTap: () => _showLyricsProvidersPicker(
+                    onTap: () => Navigator.push(
                       context,
-                      ref,
-                      settings.lyricsProviders,
+                      MaterialPageRoute(
+                        builder: (_) => const LyricsProviderPriorityPage(),
+                      ),
                     ),
                   ),
                   SettingsSwitchItem(
@@ -1246,178 +1248,11 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     'qqmusic': 'QQ Music',
   };
 
-  static const _providerDescriptions = <String, String>{
-    'lrclib': 'Open-source synced lyrics database',
-    'netease': 'NetEase Cloud Music (good for Asian songs)',
-    'musixmatch': 'Largest lyrics database (multi-language)',
-    'apple_music': 'Word-by-word synced lyrics (via proxy)',
-    'qqmusic': 'QQ Music (good for Chinese songs, via proxy)',
-  };
-
   String _getLyricsProvidersSubtitle(List<String> providers) {
     if (providers.isEmpty) return 'None enabled';
     return providers
         .map((p) => _providerDisplayNames[p] ?? p)
         .join(' > ');
-  }
-
-  void _showLyricsProvidersPicker(
-    BuildContext context,
-    WidgetRef ref,
-    List<String> currentProviders,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final allProviders = ['lrclib', 'netease', 'musixmatch', 'apple_music', 'qqmusic'];
-
-    // Work with a mutable copy
-    final selectedProviders = List<String>.from(currentProviders);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setLocalState) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                child: Text(
-                  'Lyrics Providers',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: Text(
-                  'Enable/disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              // Reorderable list of providers
-              ...allProviders.map((providerId) {
-                final isEnabled = selectedProviders.contains(providerId);
-                final displayName = _providerDisplayNames[providerId] ?? providerId;
-                final description = _providerDescriptions[providerId] ?? '';
-                final orderIndex = selectedProviders.indexOf(providerId);
-
-                return CheckboxListTile(
-                  title: Row(
-                    children: [
-                      if (isEnabled)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: CircleAvatar(
-                            radius: 12,
-                            backgroundColor: colorScheme.primaryContainer,
-                            child: Text(
-                              '${orderIndex + 1}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                        ),
-                      Text(displayName),
-                    ],
-                  ),
-                  subtitle: Text(description),
-                  value: isEnabled,
-                  onChanged: (bool? value) {
-                    setLocalState(() {
-                      if (value == true) {
-                        selectedProviders.add(providerId);
-                      } else {
-                        selectedProviders.remove(providerId);
-                      }
-                    });
-                    ref.read(settingsProvider.notifier).setLyricsProviders(
-                      List<String>.from(selectedProviders),
-                    );
-                  },
-                );
-              }),
-              // Move up/down hint
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
-                child: Text(
-                  'Priority order (tap to move):',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              // Show enabled providers with move controls
-              ...selectedProviders.asMap().entries.map((entry) {
-                final index = entry.key;
-                final providerId = entry.value;
-                final displayName = _providerDisplayNames[providerId] ?? providerId;
-
-                return ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: colorScheme.primary,
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                  title: Text(displayName),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (index > 0)
-                        IconButton(
-                          icon: const Icon(Icons.arrow_upward, size: 20),
-                          onPressed: () {
-                            setLocalState(() {
-                              selectedProviders.removeAt(index);
-                              selectedProviders.insert(index - 1, providerId);
-                            });
-                            ref.read(settingsProvider.notifier).setLyricsProviders(
-                              List<String>.from(selectedProviders),
-                            );
-                          },
-                        ),
-                      if (index < selectedProviders.length - 1)
-                        IconButton(
-                          icon: const Icon(Icons.arrow_downward, size: 20),
-                          onPressed: () {
-                            setLocalState(() {
-                              selectedProviders.removeAt(index);
-                              selectedProviders.insert(index + 1, providerId);
-                            });
-                            ref.read(settingsProvider.notifier).setLyricsProviders(
-                              List<String>.from(selectedProviders),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   String _normalizeMusixmatchLanguage(String value) {
