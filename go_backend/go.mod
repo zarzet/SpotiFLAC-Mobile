@@ -10,7 +10,7 @@ require (
 	github.com/go-flac/flacvorbis/v2 v2.0.2
 	github.com/go-flac/go-flac/v2 v2.0.4
 	github.com/refraction-networking/utls v1.8.2
-	golang.org/x/mobile v0.0.0-20260209203831-923679eb55af
+	golang.org/x/mobile v0.0.0-20260211191516-dcd2a3258864
 	golang.org/x/net v0.50.0
 )
 
