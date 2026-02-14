@@ -1532,6 +1532,14 @@
   "@filenameHint": {
     "description": "Default filename format hint"
   },
+  "filenameShowAdvancedTags": "Show advanced tags",
+  "@filenameShowAdvancedTags": {
+    "description": "Toggle label for showing advanced filename tags"
+  },
+  "filenameShowAdvancedTagsDescription": "Enable formatted tags for track padding and date patterns",
+  "@filenameShowAdvancedTagsDescription": {
+    "description": "Description for advanced filename tag toggle"
+  },
   "folderOrganization": "Ordnerstruktur",
   "@folderOrganization": {
     "description": "Setting title - folder structure"
@@ -2147,7 +2155,7 @@
   "@trackDeleteConfirmTitle": {
     "description": "Delete confirmation title"
   },
-  "trackDeleteConfirmMessage": "This will permanently delete the downloaded file and remove it from your history.",
+  "trackDeleteConfirmMessage": "Dies wird die heruntergeladene Datei dauerhaft löschen und sie aus deinem Verlauf entfernen.",
   "@trackDeleteConfirmMessage": {
     "description": "Delete confirmation message"
   },
@@ -2374,7 +2382,7 @@
   "@extensionsInstallButton": {
     "description": "Button to install extension from file"
   },
-  "extensionsInfoTip": "Extensions can add new metadata and download providers. Only install extensions from trusted sources.",
+  "extensionsInfoTip": "Erweiterungen können neue Metadaten und Download-Anbieter hinzufügen. Installiere nur Erweiterungen von vertrauenswürdigen Quellen.",
   "@extensionsInfoTip": {
     "description": "Security warning about extensions"
   },
@@ -2530,7 +2538,7 @@
   "@downloadUsePrimaryArtistOnly": {
     "description": "Setting - strip featured artists from folder name"
   },
-  "downloadUsePrimaryArtistOnlyEnabled": "Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)",
+  "downloadUsePrimaryArtistOnlyEnabled": "Vorgestellte Künstler aus dem Ordnernamen entfernt (z.B. Justin Bieber, Quavo → Justin Bieber)",
   "@downloadUsePrimaryArtistOnlyEnabled": {
     "description": "Subtitle when primary artist only is enabled"
   },
@@ -2758,7 +2766,7 @@
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
-  "downloadedAlbumDeleteMessage": "Delete {count} {count, plural, =1{track} other{tracks}} from this album?\n\nThis will also delete the files from storage.",
+  "downloadedAlbumDeleteMessage": "{count} {count, plural, one {}=1{Titel} other{Titel}} aus diesem Album löschen?\n\nDadurch werden auch die Dateien aus dem Speicher gelöscht.",
   "@downloadedAlbumDeleteMessage": {
     "description": "Delete confirmation with count",
     "placeholders": {
@@ -3006,7 +3014,7 @@
   "@allFilesAccessDescription": {
     "description": "Description explaining when to enable all files access"
   },
-  "allFilesAccessDeniedMessage": "Permission was denied. Please enable 'All files access' manually in system settings.",
+  "allFilesAccessDeniedMessage": "Zugriff verweigert. Bitte aktiviere \"Zugriff auf alle Dateien\" manuell in den Systemeinstellungen.",
   "@allFilesAccessDeniedMessage": {
     "description": "Message when permission is permanently denied"
   },
@@ -3102,7 +3110,7 @@
   "@libraryClearConfirmTitle": {
     "description": "Dialog title for clear confirmation"
   },
-  "libraryClearConfirmMessage": "This will remove all scanned tracks from your library. Your actual music files will not be deleted.",
+  "libraryClearConfirmMessage": "Dadurch werden alle gescannten Titel aus Ihrer Bibliothek entfernt. Ihre eigentlichen Musikdateien werden nicht gelöscht.",
   "@libraryClearConfirmMessage": {
     "description": "Dialog message for clear confirmation"
   },
@@ -3110,7 +3118,7 @@
   "@libraryAbout": {
     "description": "Section header for about info"
   },
-  "libraryAboutDescription": "Scans your existing music collection to detect duplicates when downloading. Supports FLAC, M4A, MP3, Opus, and OGG formats. Metadata is read from file tags when available.",
+  "libraryAboutDescription": "Durchsucht deine bestehende Musiksammlung, um Duplikate beim Herunterladen zu erkennen. Unterstützt die Formate FLAC, M4A, MP3, Opus und OGG. Metadaten werden, sofern verfügbar, aus den Dateitags gelesen.",
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
@@ -3173,7 +3181,7 @@
   "@libraryStorageAccessRequired": {
     "description": "Dialog title for storage permission"
   },
-  "libraryStorageAccessMessage": "SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.",
+  "libraryStorageAccessMessage": "SpotiFLAC benötigt Speicherzugriff, um deine Musikbibliothek zu scannen. Bitte erteile die Berechtigung in den Einstellungen.",
   "@libraryStorageAccessMessage": {
     "description": "Dialog message for storage permission"
   },
@@ -3404,7 +3412,7 @@
   "@tutorialWelcomeTitle": {
     "description": "Tutorial welcome page title"
   },
-  "tutorialWelcomeDesc": "Let's learn how to download your favorite music in lossless quality. This quick tutorial will show you the basics.",
+  "tutorialWelcomeDesc": "Lass uns lernen, wie du deine Lieblingsmusik in verlustfreier Qualität herunterlädst. Dieses schnelle Tutorial zeigt dir die Grundlagen.",
   "@tutorialWelcomeDesc": {
     "description": "Tutorial welcome page description"
   },
@@ -3504,7 +3512,7 @@
   "@tutorialSettingsTitle": {
     "description": "Tutorial settings page title"
   },
-  "tutorialSettingsDesc": "Personalize the app in Settings to match your preferences.",
+  "tutorialSettingsDesc": "Personalisiere die App in den Einstellungen nach deiner Präferenz.",
   "@tutorialSettingsDesc": {
     "description": "Tutorial settings page description"
   },
@@ -3520,7 +3528,7 @@
   "@tutorialSettingsTip3": {
     "description": "Tutorial settings tip 3"
   },
-  "tutorialReadyMessage": "You're all set! Start downloading your favorite music now.",
+  "tutorialReadyMessage": "Das ist alles! Lade jetzt deine Lieblingsmusik herunter.",
   "@tutorialReadyMessage": {
     "description": "Tutorial completion message"
   },
@@ -3614,7 +3622,7 @@
   "@cacheLibraryCover": {
     "description": "Cache item title for local library cover art images"
   },
-  "cacheLibraryCoverDesc": "Cover art extracted from local music files. Will re-extract on next scan.",
+  "cacheLibraryCoverDesc": "Cover aus lokalen Musikdateien extrahiert. Wird beim nächsten Scannen neu extrahiert.",
   "@cacheLibraryCoverDesc": {
     "description": "Description of what library cover cache contains"
   },
@@ -3622,7 +3630,7 @@
   "@cacheExploreFeed": {
     "description": "Cache item title for explore home feed cache"
   },
-  "cacheExploreFeedDesc": "Explore tab content (new releases, trending). Will refresh on next visit.",
+  "cacheExploreFeedDesc": "Startseiten-Inhalt (neue Releases, Trends). Wird bei einem Neustart aktualisiert.",
   "@cacheExploreFeedDesc": {
     "description": "Description of what explore feed cache contains"
   },
@@ -3630,11 +3638,11 @@
   "@cacheTrackLookup": {
     "description": "Cache item title for track ID lookup cache"
   },
-  "cacheTrackLookupDesc": "Spotify/Deezer track ID lookups. Clearing may slow next few searches.",
+  "cacheTrackLookupDesc": "Spotify/Deezer Track-ID-Lookups. Das Löschen kann die nächsten Suchergebnisse verlangsamen.",
   "@cacheTrackLookupDesc": {
     "description": "Description of what track lookup cache contains"
   },
-  "cacheCleanupUnusedDesc": "Remove orphaned download history and library entries for missing files.",
+  "cacheCleanupUnusedDesc": "Verwaisten Downloadverlauf und Bibliothekseinträge für fehlende Dateien entfernen.",
   "@cacheCleanupUnusedDesc": {
     "description": "Description of what cleanup unused data does"
   },
@@ -3685,7 +3693,7 @@
   "@cacheClearConfirmTitle": {
     "description": "Dialog title before clearing one cache category"
   },
-  "cacheClearConfirmMessage": "This will clear cached data for {target}. Downloaded music files will not be deleted.",
+  "cacheClearConfirmMessage": "Dies löscht zwischengespeicherte Daten in {target}. Die Musikdateien werden nicht gelöscht.",
   "@cacheClearConfirmMessage": {
     "description": "Dialog message before clearing selected cache",
     "placeholders": {
@@ -3698,7 +3706,7 @@
   "@cacheClearAllConfirmTitle": {
     "description": "Dialog title before clearing all caches"
   },
-  "cacheClearAllConfirmMessage": "This will clear all cache categories on this page. Downloaded music files will not be deleted.",
+  "cacheClearAllConfirmMessage": "Dadurch werden alle Cache-Kategorien auf dieser Seite gelöscht. Heruntergeladene Musikdateien werden nicht gelöscht.",
   "@cacheClearAllConfirmMessage": {
     "description": "Dialog message before clearing all caches"
   },
@@ -3714,7 +3722,7 @@
   "@cacheCleanupUnusedSubtitle": {
     "description": "Subtitle for cleanup unused data action"
   },
-  "cacheCleanupResult": "Cleanup completed: {downloadCount} orphaned downloads, {libraryCount} missing library entries",
+  "cacheCleanupResult": "Bereinigung: {downloadCount} verwaiste Downloads, {libraryCount} fehlende Bibliothekseinträge",
   "@cacheCleanupResult": {
     "description": "Snackbar after unused data cleanup",
     "placeholders": {
@@ -3837,7 +3845,7 @@
   "@trackConvertConfirmTitle": {
     "description": "Confirmation dialog title"
   },
-  "trackConvertConfirmMessage": "Convert from {sourceFormat} to {targetFormat} at {bitrate}?\n\nThe original file will be deleted after conversion.",
+  "trackConvertConfirmMessage": "Konvertieren von {sourceFormat} in {targetFormat} bei {bitrate}?\n\nDie Originaldatei wird nach der Konvertierung gelöscht.",
   "@trackConvertConfirmMessage": {
     "description": "Confirmation dialog message",
     "placeholders": {
