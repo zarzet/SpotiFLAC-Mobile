@@ -1,5 +1,5 @@
 {
-  "@@locale": "zh_CN",
+  "@@locale": "zh-CN",
   "@@last_modified": "2026-01-16",
   "appName": "SpotiFLAC",
   "@appName": {
@@ -1531,6 +1531,14 @@
   "filenameHint": "{artist} - {title}",
   "@filenameHint": {
     "description": "Default filename format hint"
+  },
+  "filenameShowAdvancedTags": "Show advanced tags",
+  "@filenameShowAdvancedTags": {
+    "description": "Toggle label for showing advanced filename tags"
+  },
+  "filenameShowAdvancedTagsDescription": "Enable formatted tags for track padding and date patterns",
+  "@filenameShowAdvancedTagsDescription": {
+    "description": "Description for advanced filename tag toggle"
   },
   "folderOrganization": "Folder Organization",
   "@folderOrganization": {
