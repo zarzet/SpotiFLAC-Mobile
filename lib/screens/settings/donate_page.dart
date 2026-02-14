@@ -68,7 +68,9 @@ class DonatePage extends StatelessWidget {
                   // Combined notice card
                   Card(
                     elevation: 0,
-                    color: colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                    color: colorScheme.secondaryContainer.withValues(
+                      alpha: 0.3,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -98,7 +100,8 @@ class DonatePage extends StatelessWidget {
                           const SizedBox(height: 10),
                           _NoticeLine(
                             icon: Icons.block,
-                            text: 'Not selling early access, premium features, or paywalls',
+                            text:
+                                'Not selling early access, premium features, or paywalls',
                             colorScheme: colorScheme,
                           ),
                           const SizedBox(height: 6),
@@ -110,36 +113,40 @@ class DonatePage extends StatelessWidget {
                           const SizedBox(height: 6),
                           _NoticeLine(
                             icon: Icons.favorite_border,
-                            text: 'Your support is the only way to keep this project alive',
+                            text:
+                                'Your support is the only way to keep this project alive',
                             colorScheme: colorScheme,
                           ),
                           Divider(
                             height: 24,
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                            color: colorScheme.outlineVariant.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                           _NoticeLine(
                             icon: Icons.history,
-                            text: 'Your name stays permanently in every version it was included in',
+                            text:
+                                'Your name stays permanently in every version it was included in',
                             colorScheme: colorScheme,
                           ),
                           const SizedBox(height: 6),
                           _NoticeLine(
                             icon: Icons.update,
-                            text: 'Supporter list is updated monthly and embedded in the app',
+                            text:
+                                'Supporter list is updated monthly and embedded in the app',
                             colorScheme: colorScheme,
                           ),
                           const SizedBox(height: 6),
                           _NoticeLine(
                             icon: Icons.cloud_off,
-                            text: 'No remote server -- everything is stored locally',
+                            text:
+                                'No remote server -- everything is stored locally',
                             colorScheme: colorScheme,
                           ),
                         ],
                       ),
                     ),
                   ),
-
-
                 ],
               ),
             ),
@@ -205,6 +212,7 @@ class _RecentDonorsCard extends StatelessWidget {
             _DonorTile(name: 'matt_3050', colorScheme: colorScheme),
             _DonorTile(name: 'Daniel', colorScheme: colorScheme),
             _DonorTile(name: '283Fabio', colorScheme: colorScheme),
+            _DonorTile(name: 'laflame', colorScheme: colorScheme),
             _DonorTile(
               name: 'Elias el Autentico',
               colorScheme: colorScheme,
@@ -414,9 +422,9 @@ class _NoticeLine extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
           ),
         ),
       ],

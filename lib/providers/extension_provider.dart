@@ -26,6 +26,7 @@ class Extension {
   final List<QualityOption> qualityOptions;
   final bool hasMetadataProvider;
   final bool hasDownloadProvider;
+  final bool hasLyricsProvider;
   final bool skipMetadataEnrichment; // If true, use metadata from extension instead of enriching
   final SearchBehavior? searchBehavior;
   final URLHandler? urlHandler;
@@ -49,6 +50,7 @@ class Extension {
     this.qualityOptions = const [],
     this.hasMetadataProvider = false,
     this.hasDownloadProvider = false,
+    this.hasLyricsProvider = false,
     this.skipMetadataEnrichment = false,
     this.searchBehavior,
     this.urlHandler,
@@ -78,6 +80,7 @@ class Extension {
           .toList() ?? [],
       hasMetadataProvider: json['has_metadata_provider'] as bool? ?? false,
       hasDownloadProvider: json['has_download_provider'] as bool? ?? false,
+      hasLyricsProvider: json['has_lyrics_provider'] as bool? ?? false,
       skipMetadataEnrichment: json['skip_metadata_enrichment'] as bool? ?? false,
       searchBehavior: json['search_behavior'] != null 
           ? SearchBehavior.fromJson(json['search_behavior'] as Map<String, dynamic>)
@@ -111,6 +114,7 @@ class Extension {
     List<QualityOption>? qualityOptions,
     bool? hasMetadataProvider,
     bool? hasDownloadProvider,
+    bool? hasLyricsProvider,
     bool? skipMetadataEnrichment,
     SearchBehavior? searchBehavior,
     URLHandler? urlHandler,
@@ -134,6 +138,7 @@ class Extension {
       qualityOptions: qualityOptions ?? this.qualityOptions,
       hasMetadataProvider: hasMetadataProvider ?? this.hasMetadataProvider,
       hasDownloadProvider: hasDownloadProvider ?? this.hasDownloadProvider,
+      hasLyricsProvider: hasLyricsProvider ?? this.hasLyricsProvider,
       skipMetadataEnrichment: skipMetadataEnrichment ?? this.skipMetadataEnrichment,
       searchBehavior: searchBehavior ?? this.searchBehavior,
       urlHandler: urlHandler ?? this.urlHandler,

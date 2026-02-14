@@ -97,7 +97,7 @@ The software is provided "as is", without warranty of any kind. The author assum
 - **Tidal**: [hifi-api](https://github.com/binimum/hifi-api), [music.binimum.org](https://music.binimum.org), [qqdl.site](https://qqdl.site), [squid.wtf](https://squid.wtf), [spotisaver.net](https://spotisaver.net)
 - **Qobuz**: [dabmusic.xyz](https://dabmusic.xyz), [squid.wtf](https://squid.wtf), [jumo-dl](https://jumo-dl.pages.dev)
 - **Amazon**: [AfkarXYZ](https://github.com/afkarxyz)
-- **Lyrics**: [LRCLib](https://lrclib.net)
+- **Lyrics**: [LRCLib](https://lrclib.net), [Paxsenix](https://lyrics.paxsenix.org) (Apple Music/QQ Music lyrics proxy)
 - **YouTube Audio**: [Cobalt](https://cobalt.tools) via [qwkuns.me](https://qwkuns.me), [SpotubeDL](https://spotubedl.com)
 - **Track Linking**: [SongLink / Odesli](https://odesli.co), [IDHS](https://github.com/sjdonado/idonthavespotify)
 

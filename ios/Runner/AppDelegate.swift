@@ -191,6 +191,17 @@ import Gobackend  // Import Go framework
             let response = GobackendGetLyricsLRC(spotifyId, trackName, artistName, filePath, durationMs, &error)
             if let error = error { throw error }
             return response
+
+        case "getLyricsLRCWithSource":
+            let args = call.arguments as! [String: Any]
+            let spotifyId = args["spotify_id"] as! String
+            let trackName = args["track_name"] as! String
+            let artistName = args["artist_name"] as! String
+            let filePath = args["file_path"] as? String ?? ""
+            let durationMs = args["duration_ms"] as? Int64 ?? 0
+            let response = GobackendGetLyricsLRCWithSource(spotifyId, trackName, artistName, filePath, durationMs, &error)
+            if let error = error { throw error }
+            return response
             
         case "embedLyricsToFile":
             let args = call.arguments as! [String: Any]
@@ -780,6 +791,36 @@ import Gobackend  // Import Go framework
             let args = call.arguments as! [String: Any]
             let filePath = args["file_path"] as! String
             let response = GobackendReadAudioMetadataJSON(filePath, &error)
+            if let error = error { throw error }
+            return response
+            
+        // Lyrics Provider Settings
+        case "setLyricsProviders":
+            let args = call.arguments as! [String: Any]
+            let providersJson = args["providers_json"] as? String ?? "[]"
+            GobackendSetLyricsProvidersJSON(providersJson, &error)
+            if let error = error { throw error }
+            return "{\"success\":true}"
+            
+        case "getLyricsProviders":
+            let response = GobackendGetLyricsProvidersJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "getAvailableLyricsProviders":
+            let response = GobackendGetAvailableLyricsProvidersJSON(&error)
+            if let error = error { throw error }
+            return response
+            
+        case "setLyricsFetchOptions":
+            let args = call.arguments as! [String: Any]
+            let optionsJson = args["options_json"] as? String ?? "{}"
+            GobackendSetLyricsFetchOptionsJSON(optionsJson, &error)
+            if let error = error { throw error }
+            return "{\"success\":true}"
+            
+        case "getLyricsFetchOptions":
+            let response = GobackendGetLyricsFetchOptionsJSON(&error)
             if let error = error { throw error }
             return response
             

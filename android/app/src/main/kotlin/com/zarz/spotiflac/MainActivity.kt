@@ -1582,6 +1582,32 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
+                        "getLyricsLRCWithSource" -> {
+                            val spotifyId = call.argument<String>("spotify_id") ?: ""
+                            val trackName = call.argument<String>("track_name") ?: ""
+                            val artistName = call.argument<String>("artist_name") ?: ""
+                            val filePath = call.argument<String>("file_path") ?: ""
+                            val durationMs = call.argument<Int>("duration_ms")?.toLong() ?: 0L
+                            val response = withContext(Dispatchers.IO) {
+                                if (filePath.startsWith("content://")) {
+                                    val tempPath = copyUriToTemp(Uri.parse(filePath))
+                                    if (tempPath == null) {
+                                        """{"lyrics":"","source":"","sync_type":"","instrumental":false}"""
+                                    } else {
+                                        try {
+                                            Gobackend.getLyricsLRCWithSource(spotifyId, trackName, artistName, tempPath, durationMs)
+                                        } finally {
+                                            try {
+                                                File(tempPath).delete()
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                } else {
+                                    Gobackend.getLyricsLRCWithSource(spotifyId, trackName, artistName, filePath, durationMs)
+                                }
+                            }
+                            result.success(response)
+                        }
                         "embedLyricsToFile" -> {
                             val filePath = call.argument<String>("file_path") ?: ""
                             val lyrics = call.argument<String>("lyrics") ?: ""
@@ -1752,6 +1778,60 @@ class MainActivity: FlutterFragmentActivity() {
                                     """{"success":true}"""
                                 } catch (e: Exception) {
                                     """{"success":false,"error":"${e.message?.replace("\"", "'")}"}"""
+                                }
+                            }
+                            result.success(response)
+                        }
+                        "setLyricsProviders" -> {
+                            val providersJson = call.argument<String>("providers_json") ?: "[]"
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    Gobackend.setLyricsProvidersJSON(providersJson)
+                                    """{"success":true}"""
+                                } catch (e: Exception) {
+                                    """{"success":false,"error":"${e.message?.replace("\"", "'")}"}"""
+                                }
+                            }
+                            result.success(response)
+                        }
+                        "getLyricsProviders" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    Gobackend.getLyricsProvidersJSON()
+                                } catch (e: Exception) {
+                                    "[]"
+                                }
+                            }
+                            result.success(response)
+                        }
+                        "getAvailableLyricsProviders" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    Gobackend.getAvailableLyricsProvidersJSON()
+                                } catch (e: Exception) {
+                                    "[]"
+                                }
+                            }
+                            result.success(response)
+                        }
+                        "setLyricsFetchOptions" -> {
+                            val optionsJson = call.argument<String>("options_json") ?: "{}"
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    Gobackend.setLyricsFetchOptionsJSON(optionsJson)
+                                    """{"success":true}"""
+                                } catch (e: Exception) {
+                                    """{"success":false,"error":"${e.message?.replace("\"", "'")}"}"""
+                                }
+                            }
+                            result.success(response)
+                        }
+                        "getLyricsFetchOptions" -> {
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    Gobackend.getLyricsFetchOptionsJSON()
+                                } catch (e: Exception) {
+                                    "{}"
                                 }
                             }
                             result.success(response)

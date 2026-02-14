@@ -12,6 +12,7 @@ type ExtensionType string
 const (
 	ExtensionTypeMetadataProvider ExtensionType = "metadata_provider"
 	ExtensionTypeDownloadProvider ExtensionType = "download_provider"
+	ExtensionTypeLyricsProvider   ExtensionType = "lyrics_provider"
 )
 
 type SettingType string
@@ -167,10 +168,10 @@ func (m *ExtensionManifest) Validate() error {
 	}
 
 	for _, t := range m.Types {
-		if t != ExtensionTypeMetadataProvider && t != ExtensionTypeDownloadProvider {
+		if t != ExtensionTypeMetadataProvider && t != ExtensionTypeDownloadProvider && t != ExtensionTypeLyricsProvider {
 			return &ManifestValidationError{
 				Field:   "type",
-				Message: fmt.Sprintf("invalid extension type: %s (must be 'metadata_provider' or 'download_provider')", t),
+				Message: fmt.Sprintf("invalid extension type: %s (must be 'metadata_provider', 'download_provider', or 'lyrics_provider')", t),
 			}
 		}
 	}
@@ -224,6 +225,10 @@ func (m *ExtensionManifest) IsMetadataProvider() bool {
 
 func (m *ExtensionManifest) IsDownloadProvider() bool {
 	return m.HasType(ExtensionTypeDownloadProvider)
+}
+
+func (m *ExtensionManifest) IsLyricsProvider() bool {
+	return m.HasType(ExtensionTypeLyricsProvider)
 }
 
 func (m *ExtensionManifest) IsDomainAllowed(domain string) bool {

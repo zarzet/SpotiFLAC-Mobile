@@ -219,6 +219,11 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
                   enabled: extension.hasDownloadProvider,
                 ),
                 _CapabilityItem(
+                  icon: Icons.lyrics,
+                  title: context.l10n.extensionLyricsProvider,
+                  enabled: extension.hasLyricsProvider,
+                ),
+                _CapabilityItem(
                   icon: Icons.manage_search,
                   title: context.l10n.extensionsSearchProvider,
                   enabled: extension.hasCustomSearch,

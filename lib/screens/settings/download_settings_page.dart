@@ -11,6 +11,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
+import 'package:spotiflac_android/screens/settings/lyrics_provider_priority_page.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class DownloadSettingsPage extends ConsumerStatefulWidget {
@@ -278,6 +279,62 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       context,
                       ref,
                       settings.lyricsMode,
+                    ),
+                  ),
+                  SettingsItem(
+                    icon: Icons.source_outlined,
+                    title: 'Lyrics Providers',
+                    subtitle: _getLyricsProvidersSubtitle(settings.lyricsProviders),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LyricsProviderPriorityPage(),
+                      ),
+                    ),
+                  ),
+                  SettingsSwitchItem(
+                    icon: Icons.translate_outlined,
+                    title: 'Netease: Include Translation',
+                    subtitle: settings.lyricsIncludeTranslationNetease
+                        ? 'Append translated lyrics when available'
+                        : 'Use original lyrics only',
+                    value: settings.lyricsIncludeTranslationNetease,
+                    onChanged: (value) => ref
+                        .read(settingsProvider.notifier)
+                        .setLyricsIncludeTranslationNetease(value),
+                  ),
+                  SettingsSwitchItem(
+                    icon: Icons.text_fields_outlined,
+                    title: 'Netease: Include Romanization',
+                    subtitle: settings.lyricsIncludeRomanizationNetease
+                        ? 'Append romanized lyrics when available'
+                        : 'Disabled',
+                    value: settings.lyricsIncludeRomanizationNetease,
+                    onChanged: (value) => ref
+                        .read(settingsProvider.notifier)
+                        .setLyricsIncludeRomanizationNetease(value),
+                  ),
+                  SettingsSwitchItem(
+                    icon: Icons.record_voice_over_outlined,
+                    title: 'Apple/QQ Multi-Person Word-by-Word',
+                    subtitle: settings.lyricsMultiPersonWordByWord
+                        ? 'Enable v1/v2 speaker and [bg:] tags'
+                        : 'Simplified word-by-word formatting',
+                    value: settings.lyricsMultiPersonWordByWord,
+                    onChanged: (value) => ref
+                        .read(settingsProvider.notifier)
+                        .setLyricsMultiPersonWordByWord(value),
+                  ),
+                  SettingsItem(
+                    icon: Icons.language_outlined,
+                    title: 'Musixmatch Language',
+                    subtitle: settings.musixmatchLanguage.isEmpty
+                        ? 'Auto (original)'
+                        : settings.musixmatchLanguage.toUpperCase(),
+                    onTap: () => _showMusixmatchLanguagePicker(
+                      context,
+                      ref,
+                      settings.musixmatchLanguage,
                     ),
                     showDivider: false,
                   ),
@@ -1189,6 +1246,111 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
               },
             ),
             const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _providerDisplayNames = <String, String>{
+    'lrclib': 'LRCLIB',
+    'netease': 'Netease',
+    'musixmatch': 'Musixmatch',
+    'apple_music': 'Apple Music',
+    'qqmusic': 'QQ Music',
+  };
+
+  String _getLyricsProvidersSubtitle(List<String> providers) {
+    if (providers.isEmpty) return 'None enabled';
+    return providers
+        .map((p) => _providerDisplayNames[p] ?? p)
+        .join(' > ');
+  }
+
+  String _normalizeMusixmatchLanguage(String value) {
+    final normalized = value.trim().toLowerCase();
+    return normalized.replaceAll(RegExp(r'[^a-z0-9\-_]'), '');
+  }
+
+  void _showMusixmatchLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    String currentLanguage,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final controller = TextEditingController(text: currentLanguage);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Musixmatch Language',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Set preferred language code (example: en, es, ja). Leave empty for auto.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'Language code',
+                hintText: 'auto / en / es / ja',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(context.l10n.dialogCancel),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () {
+                    ref.read(settingsProvider.notifier).setMusixmatchLanguage('');
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Auto'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () {
+                    final normalized = _normalizeMusixmatchLanguage(
+                      controller.text,
+                    );
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setMusixmatchLanguage(normalized);
+                    Navigator.pop(context);
+                  },
+                  child: Text(context.l10n.dialogSave),
+                ),
+              ],
+            ),
           ],
         ),
       ),

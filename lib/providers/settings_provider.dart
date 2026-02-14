@@ -39,6 +39,23 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _applySpotifyCredentials();
 
     LogBuffer.loggingEnabled = state.enableLogging;
+
+    _syncLyricsSettingsToBackend();
+  }
+
+  void _syncLyricsSettingsToBackend() {
+    PlatformBridge.setLyricsProviders(state.lyricsProviders).catchError((e) {
+      _log.w('Failed to sync lyrics providers to backend: $e');
+    });
+
+    PlatformBridge.setLyricsFetchOptions({
+      'include_translation_netease': state.lyricsIncludeTranslationNetease,
+      'include_romanization_netease': state.lyricsIncludeRomanizationNetease,
+      'multi_person_word_by_word': state.lyricsMultiPersonWordByWord,
+      'musixmatch_language': state.musixmatchLanguage,
+    }).catchError((e) {
+      _log.w('Failed to sync lyrics fetch options to backend: $e');
+    });
   }
 
   Future<void> _runMigrations(SharedPreferences prefs) async {
@@ -186,6 +203,36 @@ class SettingsNotifier extends Notifier<AppSettings> {
       state = state.copyWith(lyricsMode: mode);
       _saveSettings();
     }
+  }
+
+  void setLyricsProviders(List<String> providers) {
+    state = state.copyWith(lyricsProviders: providers);
+    _saveSettings();
+    _syncLyricsSettingsToBackend();
+  }
+
+  void setLyricsIncludeTranslationNetease(bool enabled) {
+    state = state.copyWith(lyricsIncludeTranslationNetease: enabled);
+    _saveSettings();
+    _syncLyricsSettingsToBackend();
+  }
+
+  void setLyricsIncludeRomanizationNetease(bool enabled) {
+    state = state.copyWith(lyricsIncludeRomanizationNetease: enabled);
+    _saveSettings();
+    _syncLyricsSettingsToBackend();
+  }
+
+  void setLyricsMultiPersonWordByWord(bool enabled) {
+    state = state.copyWith(lyricsMultiPersonWordByWord: enabled);
+    _saveSettings();
+    _syncLyricsSettingsToBackend();
+  }
+
+  void setMusixmatchLanguage(String languageCode) {
+    state = state.copyWith(musixmatchLanguage: languageCode.trim().toLowerCase());
+    _saveSettings();
+    _syncLyricsSettingsToBackend();
   }
 
   void setMaxQualityCover(bool enabled) {

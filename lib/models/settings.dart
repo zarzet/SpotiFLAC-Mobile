@@ -56,6 +56,18 @@ class AppSettings {
   final bool
   hasCompletedTutorial; // Track if user has completed the app tutorial
 
+  // Lyrics Provider Settings
+  final List<String>
+  lyricsProviders; // Ordered list of enabled lyrics provider IDs
+  final bool
+  lyricsIncludeTranslationNetease; // Append translated lyrics (Netease)
+  final bool
+  lyricsIncludeRomanizationNetease; // Append romanized lyrics (Netease)
+  final bool
+  lyricsMultiPersonWordByWord; // Enable v1/v2 + [bg:] tags for Apple/QQ syllable lyrics
+  final String
+  musixmatchLanguage; // Optional ISO language code for Musixmatch localized lyrics
+
   const AppSettings({
     this.defaultService = 'tidal',
     this.audioQuality = 'LOSSLESS',
@@ -100,6 +112,12 @@ class AppSettings {
     this.localLibraryShowDuplicates = true,
     // Tutorial default
     this.hasCompletedTutorial = false,
+    // Lyrics providers default order
+    this.lyricsProviders = const ['lrclib', 'musixmatch', 'netease', 'apple_music', 'qqmusic'],
+    this.lyricsIncludeTranslationNetease = false,
+    this.lyricsIncludeRomanizationNetease = false,
+    this.lyricsMultiPersonWordByWord = true,
+    this.musixmatchLanguage = '',
   });
 
   AppSettings copyWith({
@@ -147,6 +165,12 @@ class AppSettings {
     bool? localLibraryShowDuplicates,
     // Tutorial
     bool? hasCompletedTutorial,
+    // Lyrics providers
+    List<String>? lyricsProviders,
+    bool? lyricsIncludeTranslationNetease,
+    bool? lyricsIncludeRomanizationNetease,
+    bool? lyricsMultiPersonWordByWord,
+    String? musixmatchLanguage,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -202,6 +226,15 @@ class AppSettings {
           localLibraryShowDuplicates ?? this.localLibraryShowDuplicates,
       // Tutorial
       hasCompletedTutorial: hasCompletedTutorial ?? this.hasCompletedTutorial,
+      // Lyrics providers
+      lyricsProviders: lyricsProviders ?? this.lyricsProviders,
+      lyricsIncludeTranslationNetease:
+          lyricsIncludeTranslationNetease ?? this.lyricsIncludeTranslationNetease,
+      lyricsIncludeRomanizationNetease:
+          lyricsIncludeRomanizationNetease ?? this.lyricsIncludeRomanizationNetease,
+      lyricsMultiPersonWordByWord:
+          lyricsMultiPersonWordByWord ?? this.lyricsMultiPersonWordByWord,
+      musixmatchLanguage: musixmatchLanguage ?? this.musixmatchLanguage,
     );
   }
 

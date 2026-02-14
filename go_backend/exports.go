@@ -1008,6 +1008,64 @@ func GetLyricsLRC(spotifyID, trackName, artistName string, filePath string, dura
 	return lrcContent, nil
 }
 
+func GetLyricsLRCWithSource(spotifyID, trackName, artistName string, filePath string, durationMs int64) (string, error) {
+	if filePath != "" {
+		lyrics, err := ExtractLyrics(filePath)
+		if err == nil && lyrics != "" {
+			result := map[string]interface{}{
+				"lyrics":       lyrics,
+				"source":       "Embedded",
+				"sync_type":    "EMBEDDED",
+				"instrumental": false,
+			}
+			jsonBytes, err := json.Marshal(result)
+			if err != nil {
+				return "", err
+			}
+			return string(jsonBytes), nil
+		}
+
+		result := map[string]interface{}{
+			"lyrics":       "",
+			"source":       "",
+			"sync_type":    "",
+			"instrumental": false,
+		}
+		jsonBytes, err := json.Marshal(result)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonBytes), nil
+	}
+
+	client := NewLyricsClient()
+	durationSec := float64(durationMs) / 1000.0
+	lyricsData, err := client.FetchLyricsAllSources(spotifyID, trackName, artistName, durationSec)
+	if err != nil {
+		return "", err
+	}
+
+	lrcContent := ""
+	if lyricsData.Instrumental {
+		lrcContent = "[instrumental:true]"
+	} else {
+		lrcContent = convertToLRCWithMetadata(lyricsData, trackName, artistName)
+	}
+
+	result := map[string]interface{}{
+		"lyrics":       lrcContent,
+		"source":       lyricsData.Source,
+		"sync_type":    lyricsData.SyncType,
+		"instrumental": lyricsData.Instrumental,
+	}
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
 func EmbedLyricsToFile(filePath, lyrics string) (string, error) {
 	err := EmbedLyrics(filePath, lyrics)
 	if err != nil {
@@ -1597,6 +1655,62 @@ func FetchAndSaveLyrics(trackName, artistName, spotifyID string, durationMs int6
 
 	GoLog("[Lyrics] Saved LRC to: %s (%d lines)\n", outputPath, len(lyrics.Lines))
 	return nil
+}
+
+// ==================== LYRICS PROVIDER SETTINGS ====================
+
+// SetLyricsProvidersJSON sets the lyrics provider order from a JSON array of provider IDs.
+func SetLyricsProvidersJSON(providersJSON string) error {
+	var providers []string
+	if err := json.Unmarshal([]byte(providersJSON), &providers); err != nil {
+		return err
+	}
+
+	SetLyricsProviderOrder(providers)
+	return nil
+}
+
+// GetLyricsProvidersJSON returns the current lyrics provider order as JSON.
+func GetLyricsProvidersJSON() (string, error) {
+	providers := GetLyricsProviderOrder()
+	jsonBytes, err := json.Marshal(providers)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// GetAvailableLyricsProvidersJSON returns metadata about all available lyrics providers.
+func GetAvailableLyricsProvidersJSON() (string, error) {
+	providers := GetAvailableLyricsProviders()
+	jsonBytes, err := json.Marshal(providers)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// SetLyricsFetchOptionsJSON sets lyrics provider fetch options.
+func SetLyricsFetchOptionsJSON(optionsJSON string) error {
+	opts := GetLyricsFetchOptions()
+	if strings.TrimSpace(optionsJSON) != "" {
+		if err := json.Unmarshal([]byte(optionsJSON), &opts); err != nil {
+			return err
+		}
+	}
+
+	SetLyricsFetchOptions(opts)
+	return nil
+}
+
+// GetLyricsFetchOptionsJSON returns current lyrics provider fetch options.
+func GetLyricsFetchOptionsJSON() (string, error) {
+	opts := GetLyricsFetchOptions()
+	jsonBytes, err := json.Marshal(opts)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
 }
 
 // ReEnrichFile re-embeds metadata, cover art, and lyrics into an existing audio file.

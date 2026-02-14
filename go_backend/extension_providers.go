@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -1698,4 +1699,141 @@ func (m *ExtensionManager) RunPostProcessingV2(input PostProcessInput, metadata 
 	}
 
 	return &PostProcessResult{Success: true, NewFilePath: currentInput.Path, NewFileURI: currentInput.URI}, nil
+}
+
+// ==================== Lyrics Provider ====================
+
+// ExtLyricsResult represents lyrics data returned from an extension
+type ExtLyricsResult struct {
+	Lines        []ExtLyricsLine `json:"lines"`
+	SyncType     string          `json:"syncType"`
+	Instrumental bool            `json:"instrumental"`
+	PlainLyrics  string          `json:"plainLyrics"`
+	Provider     string          `json:"provider"`
+}
+
+type ExtLyricsLine struct {
+	StartTimeMs int64  `json:"startTimeMs"`
+	Words       string `json:"words"`
+	EndTimeMs   int64  `json:"endTimeMs"`
+}
+
+// FetchLyrics calls the extension's fetchLyrics function
+func (p *ExtensionProviderWrapper) FetchLyrics(trackName, artistName, albumName string, durationSec float64) (*LyricsResponse, error) {
+	if !p.extension.Manifest.IsLyricsProvider() {
+		return nil, fmt.Errorf("extension '%s' is not a lyrics provider", p.extension.ID)
+	}
+
+	if !p.extension.Enabled {
+		return nil, fmt.Errorf("extension '%s' is disabled", p.extension.ID)
+	}
+
+	p.extension.VMMu.Lock()
+	defer p.extension.VMMu.Unlock()
+
+	// Use global variables to avoid JS injection issues with special characters in track/artist names
+	const trackVar = "__sf_lyrics_track"
+	const artistVar = "__sf_lyrics_artist"
+	const albumVar = "__sf_lyrics_album"
+	const durationVar = "__sf_lyrics_duration"
+	global := p.vm.GlobalObject()
+	_ = global.Set(trackVar, trackName)
+	_ = global.Set(artistVar, artistName)
+	_ = global.Set(albumVar, albumName)
+	_ = global.Set(durationVar, durationSec)
+	defer func() {
+		global.Delete(trackVar)
+		global.Delete(artistVar)
+		global.Delete(albumVar)
+		global.Delete(durationVar)
+	}()
+
+	const script = `
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.fetchLyrics === 'function') {
+				return extension.fetchLyrics(__sf_lyrics_track, __sf_lyrics_artist, __sf_lyrics_album, __sf_lyrics_duration);
+			}
+			return null;
+		})()
+	`
+
+	result, err := RunWithTimeoutAndRecover(p.vm, script, DefaultJSTimeout)
+	if err != nil {
+		if IsTimeoutError(err) {
+			return nil, fmt.Errorf("fetchLyrics timeout: extension took too long to respond")
+		}
+		return nil, fmt.Errorf("fetchLyrics failed: %w", err)
+	}
+
+	if result == nil || goja.IsUndefined(result) || goja.IsNull(result) {
+		return nil, fmt.Errorf("fetchLyrics returned null")
+	}
+
+	exported := result.Export()
+	jsonBytes, err := json.Marshal(exported)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal lyrics result: %w", err)
+	}
+
+	var extResult ExtLyricsResult
+	if err := json.Unmarshal(jsonBytes, &extResult); err != nil {
+		return nil, fmt.Errorf("failed to parse lyrics result: %w", err)
+	}
+
+	// Convert ExtLyricsResult to LyricsResponse
+	response := &LyricsResponse{
+		SyncType:     extResult.SyncType,
+		Instrumental: extResult.Instrumental,
+		PlainLyrics:  extResult.PlainLyrics,
+		Provider:     extResult.Provider,
+		Source:       "Extension: " + p.extension.ID,
+	}
+
+	if response.Provider == "" {
+		response.Provider = p.extension.Manifest.DisplayName
+	}
+
+	for _, line := range extResult.Lines {
+		response.Lines = append(response.Lines, LyricsLine{
+			StartTimeMs: line.StartTimeMs,
+			Words:       line.Words,
+			EndTimeMs:   line.EndTimeMs,
+		})
+	}
+
+	// If the extension provided plainLyrics but no lines, parse them as unsynced
+	if len(response.Lines) == 0 && response.PlainLyrics != "" && !response.Instrumental {
+		response.SyncType = "UNSYNCED"
+		for _, line := range strings.Split(response.PlainLyrics, "\n") {
+			if strings.TrimSpace(line) != "" {
+				response.Lines = append(response.Lines, LyricsLine{
+					StartTimeMs: 0,
+					Words:       line,
+					EndTimeMs:   0,
+				})
+			}
+		}
+	}
+
+	return response, nil
+}
+
+// GetLyricsProviders returns all enabled extensions that provide lyrics
+func (m *ExtensionManager) GetLyricsProviders() []*ExtensionProviderWrapper {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var providers []*ExtensionProviderWrapper
+	for _, ext := range m.extensions {
+		if ext.Enabled && ext.Manifest.IsLyricsProvider() && ext.Error == "" {
+			providers = append(providers, NewExtensionProviderWrapper(ext))
+		}
+	}
+
+	// Keep a deterministic order so provider selection is stable across runs.
+	sort.Slice(providers, func(i, j int) bool {
+		return providers[i].extension.ID < providers[j].extension.ID
+	})
+
+	return providers
 }

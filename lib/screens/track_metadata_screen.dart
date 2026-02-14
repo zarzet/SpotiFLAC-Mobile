@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -56,6 +57,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   String? _rawLyrics; // Raw LRC with timestamps for embedding
   bool _lyricsLoading = false;
   String? _lyricsError;
+  String? _lyricsSource;
   bool _showTitleInAppBar = false;
   bool _lyricsEmbedded = false; // Track if lyrics are embedded in file
   bool _isEmbedding = false; // Track embed operation in progress
@@ -69,6 +71,11 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     r'^\[\d{2}:\d{2}\.\d{2,3}\]',
   );
   static final RegExp _lrcMetadataPattern = RegExp(r'^\[[a-zA-Z]+:.*\]$');
+  static final RegExp _lrcInlineTimestampPattern = RegExp(
+    r'<\d{2}:\d{2}\.\d{2,3}>',
+  );
+  static final RegExp _lrcSpeakerPrefixPattern = RegExp(r'^(v1|v2):\s*');
+  static final RegExp _lrcBackgroundLinePattern = RegExp(r'^\[bg:(.*)\]$');
   static const List<String> _months = [
     'Jan',
     'Feb',
@@ -1339,6 +1346,16 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   ),
               ],
             ),
+            if (_lyricsSource != null && _lyricsSource!.trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Source: ${_lyricsSource!}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             const SizedBox(height: 12),
 
             if (_lyricsLoading)
@@ -1460,6 +1477,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       _lyricsLoading = true;
       _lyricsError = null;
       _isInstrumental = false;
+      _lyricsSource = null;
     });
 
     try {
@@ -1468,20 +1486,31 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
       // First, check if lyrics are embedded in the file
       if (_fileExists) {
-        final embeddedResult = await PlatformBridge.getLyricsLRC(
-          '',
-          trackName,
-          artistName,
-          filePath: cleanFilePath,
-          durationMs: 0,
-        ).timeout(const Duration(seconds: 5), onTimeout: () => '');
+        final embeddedResult =
+            await PlatformBridge.getLyricsLRCWithSource(
+              '',
+              trackName,
+              artistName,
+              filePath: cleanFilePath,
+              durationMs: 0,
+            ).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => <String, dynamic>{'lyrics': '', 'source': ''},
+            );
 
-        if (embeddedResult.isNotEmpty) {
+        final embeddedLyrics = embeddedResult['lyrics']?.toString() ?? '';
+        final embeddedSource = embeddedResult['source']?.toString() ?? '';
+
+        if (embeddedLyrics.isNotEmpty) {
           // Lyrics found in file
           if (mounted) {
-            final cleanLyrics = _cleanLrcForDisplay(embeddedResult);
+            final cleanLyrics = _cleanLrcForDisplay(embeddedLyrics);
             setState(() {
               _lyrics = cleanLyrics;
+              _rawLyrics = embeddedLyrics;
+              _lyricsSource = embeddedSource.isNotEmpty
+                  ? embeddedSource
+                  : 'Embedded';
               _lyricsEmbedded = true;
               _lyricsLoading = false;
             });
@@ -1491,43 +1520,55 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       }
 
       // No embedded lyrics, fetch from online
-      final result = await PlatformBridge.getLyricsLRC(
+      final result = await PlatformBridge.getLyricsLRCWithSource(
         _spotifyId ?? '',
         trackName,
         artistName,
         filePath: null, // Don't check file again
         durationMs: durationMs,
-      ).timeout(const Duration(seconds: 20), onTimeout: () => '');
+      ).timeout(const Duration(seconds: 20));
+
+      final lrcText = result['lyrics']?.toString() ?? '';
+      final source = result['source']?.toString() ?? '';
+      final instrumental =
+          (result['instrumental'] as bool? ?? false) ||
+          lrcText == '[instrumental:true]';
 
       if (mounted) {
         // Check for instrumental marker
-        if (result == '[instrumental:true]') {
+        if (instrumental) {
           setState(() {
             _isInstrumental = true;
+            _lyricsSource = source.isNotEmpty ? source : null;
             _lyricsLoading = false;
           });
-        } else if (result.isEmpty) {
+        } else if (lrcText.isEmpty) {
           setState(() {
             _lyricsError = context.l10n.trackLyricsNotAvailable;
             _lyricsLoading = false;
           });
         } else {
-          final cleanLyrics = _cleanLrcForDisplay(result);
+          final cleanLyrics = _cleanLrcForDisplay(lrcText);
           setState(() {
             _lyrics = cleanLyrics;
-            _rawLyrics = result; // Keep raw LRC with timestamps for embedding
+            _rawLyrics = lrcText; // Keep raw LRC with timestamps for embedding
+            _lyricsSource = source.isNotEmpty ? source : null;
             _lyricsEmbedded = false; // Lyrics from online, not embedded
             _lyricsLoading = false;
           });
         }
       }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _lyricsError = context.l10n.trackLyricsTimeout;
+          _lyricsLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
-        final errorMsg = e.toString().contains('TimeoutException')
-            ? context.l10n.trackLyricsTimeout
-            : context.l10n.trackLyricsLoadFailed;
         setState(() {
-          _lyricsError = errorMsg;
+          _lyricsError = context.l10n.trackLyricsLoadFailed;
           _lyricsLoading = false;
         });
       }
@@ -2213,17 +2254,28 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     final cleanLines = <String>[];
 
     for (final line in lines) {
-      final trimmedLine = line.trim();
+      var cleaned = line.trim();
 
       // Skip metadata tags
-      if (_lrcMetadataPattern.hasMatch(trimmedLine)) {
+      if (_lrcMetadataPattern.hasMatch(cleaned) &&
+          !_lrcBackgroundLinePattern.hasMatch(cleaned)) {
         continue;
       }
 
-      // Remove timestamp and clean up
-      final cleanLine = trimmedLine.replaceAll(_lrcTimestampPattern, '').trim();
-      if (cleanLine.isNotEmpty) {
-        cleanLines.add(cleanLine);
+      // Convert [bg:...] wrapper to a plain secondary vocal line.
+      final bgMatch = _lrcBackgroundLinePattern.firstMatch(cleaned);
+      if (bgMatch != null) {
+        cleaned = bgMatch.group(1)?.trim() ?? '';
+      }
+
+      // Remove line timestamp, inline word-by-word timestamps, and speaker prefix.
+      cleaned = cleaned.replaceAll(_lrcTimestampPattern, '').trim();
+      cleaned = cleaned.replaceAll(_lrcInlineTimestampPattern, '');
+      cleaned = cleaned.replaceFirst(_lrcSpeakerPrefixPattern, '');
+      cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+      if (cleaned.isNotEmpty) {
+        cleanLines.add(cleaned);
       }
     }
 

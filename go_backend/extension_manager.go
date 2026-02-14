@@ -713,6 +713,7 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 		Permissions            []string               `json:"permissions"`
 		HasMetadataProvider    bool                   `json:"has_metadata_provider"`
 		HasDownloadProvider    bool                   `json:"has_download_provider"`
+		HasLyricsProvider      bool                   `json:"has_lyrics_provider"`
 		SkipMetadataEnrichment bool                   `json:"skip_metadata_enrichment"`
 		SearchBehavior         *SearchBehaviorConfig  `json:"search_behavior,omitempty"`
 		TrackMatching          *TrackMatchingConfig   `json:"track_matching,omitempty"`
@@ -770,6 +771,7 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 			Permissions:            permissions,
 			HasMetadataProvider:    ext.Manifest.IsMetadataProvider(),
 			HasDownloadProvider:    ext.Manifest.IsDownloadProvider(),
+			HasLyricsProvider:      ext.Manifest.IsLyricsProvider(),
 			SkipMetadataEnrichment: ext.Manifest.SkipMetadataEnrichment,
 			SearchBehavior:         ext.Manifest.SearchBehavior,
 			TrackMatching:          ext.Manifest.TrackMatching,
