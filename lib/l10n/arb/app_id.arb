@@ -13,7 +13,7 @@
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "Pustaka",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
@@ -131,7 +131,7 @@
   "@historyNoSinglesSubtitle": {
     "description": "Empty state subtitle for singles filter"
   },
-  "historySearchHint": "Search history...",
+  "historySearchHint": "Cari riwayat...",
   "@historySearchHint": {
     "description": "Search bar placeholder in history"
   },
@@ -267,7 +267,7 @@
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
-  "appearanceHistoryViewGrid": "Grid",
+  "appearanceHistoryViewGrid": "Kisi",
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
@@ -430,7 +430,7 @@
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
+  "optionsSpotifyDeprecationWarning": "Pencarian Spotify akan dihentikan pada 3 Maret 2026 karena perubahan API Spotify. Silakan beralih ke Deezer.",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
@@ -524,7 +524,7 @@
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutTranslators": "Translators",
+  "aboutTranslators": "Penerjemah",
   "@aboutTranslators": {
     "description": "Section for translators"
   },
@@ -560,23 +560,23 @@
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
-  "aboutTelegramChannel": "Telegram Channel",
+  "aboutTelegramChannel": "Saluran Telegram",
   "@aboutTelegramChannel": {
     "description": "Link to Telegram channel"
   },
-  "aboutTelegramChannelSubtitle": "Announcements and updates",
+  "aboutTelegramChannelSubtitle": "Pengumuman dan pembaruan",
   "@aboutTelegramChannelSubtitle": {
     "description": "Subtitle for Telegram channel"
   },
-  "aboutTelegramChat": "Telegram Community",
+  "aboutTelegramChat": "Komunitas Telegram",
   "@aboutTelegramChat": {
     "description": "Link to Telegram chat group"
   },
-  "aboutTelegramChatSubtitle": "Chat with other users",
+  "aboutTelegramChatSubtitle": "Berbincang dengan pengguna lain",
   "@aboutTelegramChatSubtitle": {
     "description": "Subtitle for Telegram chat"
   },
-  "aboutSocial": "Social",
+  "aboutSocial": "Sosial",
   "@aboutSocial": {
     "description": "Section for social links"
   },
@@ -624,7 +624,7 @@
   "@aboutSpotiSaver": {
     "description": "Name of SpotiSaver API service - DO NOT TRANSLATE"
   },
-  "aboutSpotiSaverDesc": "Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!",
+  "aboutSpotiSaverDesc": "Tidal perangkat streaming FLAC resolusi tinggi. Bagian penting dari teka-teki tanpa kehilangan kualitas!",
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
@@ -653,7 +653,7 @@
   "@albumDownloadRemaining": {
     "description": "Button to download remaining tracks"
   },
-  "playlistTitle": "Playlist",
+  "playlistTitle": "Daftar putar",
   "@playlistTitle": {
     "description": "Playlist screen title"
   },
@@ -875,7 +875,7 @@
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
-  "setupIcloudNotSupported": "iCloud Drive is not supported. Please use the app Documents folder.",
+  "setupIcloudNotSupported": "iCloud Drive tidak didukung. Silakan gunakan folder Dokumen di aplikasi.",
   "@setupIcloudNotSupported": {
     "description": "Error when user selects iCloud Drive on iOS"
   },
@@ -1027,7 +1027,7 @@
   "@dialogCancel": {
     "description": "Dialog button - cancel action"
   },
-  "dialogOk": "OK",
+  "dialogOk": "OKE",
   "@dialogOk": {
     "description": "Dialog button - confirm/acknowledge"
   },
