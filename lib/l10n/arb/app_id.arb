@@ -2506,6 +2506,57 @@
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
   },
+  "youtubeOpusBitrateTitle": "Bitrate Opus YouTube",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "Bitrate MP3 YouTube",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
+  },
+  "youtubeBitrateSubtitle": "{bitrate}kbps ({min}-{max})",
+  "@youtubeBitrateSubtitle": {
+    "description": "Subtitle showing current bitrate and valid range",
+    "placeholders": {
+      "bitrate": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateInputHelp": "Masukkan bitrate manual ({min}-{max} kbps)",
+  "@youtubeBitrateInputHelp": {
+    "description": "Helper text for manual YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateFieldLabel": "Bitrate (kbps)",
+  "@youtubeBitrateFieldLabel": {
+    "description": "Label for YouTube bitrate input field"
+  },
+  "youtubeBitrateValidationError": "Bitrate harus antara {min} dan {max} kbps",
+  "@youtubeBitrateValidationError": {
+    "description": "Validation error for invalid YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "downloadAskBeforeDownload": "Tanya Sebelum Unduh",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"

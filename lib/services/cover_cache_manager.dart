@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -41,17 +42,7 @@ class CoverCacheManager {
       
       debugPrint('CoverCacheManager: Initializing at $_cachePath');
 
-      _instance = CacheManager(
-        Config(
-          _cacheKey,
-          stalePeriod: _maxCacheAge,
-          maxNrOfCacheObjects: _maxCacheObjects,
-          // Use path only (not databaseName) to store database in persistent directory
-          repo: JsonCacheInfoRepository(path: _cachePath),
-          fileSystem: IOFileSystem(_cachePath!),
-          fileService: HttpFileService(),
-        ),
-      );
+      _instance = _createManager(_cachePath!);
       
       _initialized = true;
       debugPrint('CoverCacheManager: Initialized successfully');
@@ -62,12 +53,47 @@ class CoverCacheManager {
   }
 
   static Future<void> clearCache() async {
-    if (!_initialized || _instance == null) return;
-    await _instance!.emptyCache();
+    if (!_initialized || _instance == null || _cachePath == null) {
+      await initialize();
+    }
+
+    final instance = _instance;
+    final cachePath = _cachePath;
+
+    if (instance == null || cachePath == null) return;
+
+    // Ask cache manager to clear indexed entries first.
+    try {
+      await instance.emptyCache();
+    } catch (e) {
+      debugPrint('CoverCacheManager: emptyCache failed, fallback to wipe: $e');
+    }
+
+    // Then wipe the directory to remove orphaned files/metadata leftovers.
+    await _wipeDirectory(cachePath);
+
+    // Clear in-memory image cache so cleared covers are not retained in RAM.
+    final imageCache = PaintingBinding.instance.imageCache;
+    imageCache.clear();
+    imageCache.clearLiveImages();
+
+    // Reset manager memory/index state after on-disk wipe.
+    instance.store.emptyMemoryCache();
+    _instance = _createManager(cachePath);
+    _initialized = true;
   }
 
   static Future<CacheStats> getStats() async {
-    if (!_initialized || _cachePath == null) {
+    if (_cachePath == null) {
+      try {
+        final appDir = await getApplicationSupportDirectory();
+        _cachePath = p.join(appDir.path, 'cover_cache');
+      } catch (_) {
+        return const CacheStats(fileCount: 0, totalSizeBytes: 0);
+      }
+    }
+
+    if (_cachePath == null) {
       return const CacheStats(fileCount: 0, totalSizeBytes: 0);
     }
 
@@ -92,6 +118,45 @@ class CoverCacheManager {
     }
 
     return CacheStats(fileCount: fileCount, totalSizeBytes: totalSize);
+  }
+
+  static CacheManager _createManager(String cachePath) {
+    return CacheManager(
+      Config(
+        _cacheKey,
+        stalePeriod: _maxCacheAge,
+        maxNrOfCacheObjects: _maxCacheObjects,
+        // Use path only (not databaseName) to store database in persistent directory
+        repo: JsonCacheInfoRepository(path: cachePath),
+        fileSystem: IOFileSystem(cachePath),
+        fileService: HttpFileService(),
+      ),
+    );
+  }
+
+  static Future<void> _wipeDirectory(String path) async {
+    final directory = Directory(path);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+      return;
+    }
+
+    try {
+      final entities = <FileSystemEntity>[];
+      await for (final entity in directory.list(followLinks: false)) {
+        entities.add(entity);
+      }
+
+      for (final entity in entities) {
+        try {
+          await entity.delete(recursive: true);
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    try {
+      await directory.create(recursive: true);
+    } catch (_) {}
   }
 }
 

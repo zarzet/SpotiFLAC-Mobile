@@ -1936,6 +1936,30 @@ class AppLocalizationsId extends AppLocalizations {
       'YouTube provides lossy audio only. Not part of lossless fallback.';
 
   @override
+  String get youtubeOpusBitrateTitle => 'Bitrate Opus YouTube';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'Bitrate MP3 YouTube';
+
+  @override
+  String youtubeBitrateSubtitle(int bitrate, int min, int max) {
+    return '${bitrate}kbps ($min-$max)';
+  }
+
+  @override
+  String youtubeBitrateInputHelp(int min, int max) {
+    return 'Masukkan bitrate manual ($min-$max kbps)';
+  }
+
+  @override
+  String get youtubeBitrateFieldLabel => 'Bitrate (kbps)';
+
+  @override
+  String youtubeBitrateValidationError(int min, int max) {
+    return 'Bitrate harus antara $min dan $max kbps';
+  }
+
+  @override
   String get downloadAskBeforeDownload => 'Tanya Sebelum Unduh';
 
   @override

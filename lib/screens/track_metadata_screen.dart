@@ -76,6 +76,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   );
   static final RegExp _lrcSpeakerPrefixPattern = RegExp(r'^(v1|v2):\s*');
   static final RegExp _lrcBackgroundLinePattern = RegExp(r'^\[bg:(.*)\]$');
+  static final RegExp _invalidFileNameChars = RegExp(r'[<>:"/\\|?*\x00-\x1f]');
+  static final RegExp _multiUnderscore = RegExp(r'_+');
+  static final RegExp _leadingOrTrailingDots = RegExp(r'^\.+|\.+$');
   static const List<String> _months = [
     'Jan',
     'Feb',
@@ -1722,9 +1725,19 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
   }
 
+  String _sanitizeFileNameSegment(String value) {
+    var sanitized = value.replaceAll(_invalidFileNameChars, '_').trim();
+    sanitized = sanitized.replaceAll(_leadingOrTrailingDots, '');
+    sanitized = sanitized.replaceAll(_multiUnderscore, '_');
+    if (sanitized.isEmpty) {
+      return 'untitled';
+    }
+    return sanitized;
+  }
+
   String _buildSaveBaseName() {
-    final artist = artistName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-    final track = trackName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+    final artist = _sanitizeFileNameSegment(artistName);
+    final track = _sanitizeFileNameSegment(trackName);
     return '$artist - $track';
   }
 

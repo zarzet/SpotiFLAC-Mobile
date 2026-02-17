@@ -3508,6 +3508,42 @@ abstract class AppLocalizations {
   /// **'YouTube provides lossy audio only. Not part of lossless fallback.'**
   String get youtubeQualityNote;
 
+  /// Title for YouTube Opus bitrate setting
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube Opus Bitrate'**
+  String get youtubeOpusBitrateTitle;
+
+  /// Title for YouTube MP3 bitrate setting
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube MP3 Bitrate'**
+  String get youtubeMp3BitrateTitle;
+
+  /// Subtitle showing current bitrate and valid range
+  ///
+  /// In en, this message translates to:
+  /// **'{bitrate}kbps ({min}-{max})'**
+  String youtubeBitrateSubtitle(int bitrate, int min, int max);
+
+  /// Helper text for manual YouTube bitrate input
+  ///
+  /// In en, this message translates to:
+  /// **'Enter custom bitrate ({min}-{max} kbps)'**
+  String youtubeBitrateInputHelp(int min, int max);
+
+  /// Label for YouTube bitrate input field
+  ///
+  /// In en, this message translates to:
+  /// **'Bitrate (kbps)'**
+  String get youtubeBitrateFieldLabel;
+
+  /// Validation error for invalid YouTube bitrate input
+  ///
+  /// In en, this message translates to:
+  /// **'Bitrate must be between {min} and {max} kbps'**
+  String youtubeBitrateValidationError(int min, int max);
+
   /// Setting - show quality picker
   ///
   /// In en, this message translates to:

@@ -790,8 +790,18 @@ func simplifyTrackName(name string) string {
 		re := regexp.MustCompile("(?i)" + pattern)
 		result = re.ReplaceAllString(result, "")
 	}
+	result = strings.TrimSpace(result)
+	if result == "" {
+		return result
+	}
 
-	return strings.TrimSpace(result)
+	// Add a loose fallback form for provider queries where punctuation
+	// and separators differ (e.g. "/" vs "_" vs spaces).
+	if loose := normalizeLooseTitle(result); loose != "" {
+		return loose
+	}
+
+	return result
 }
 
 func normalizeArtistName(name string) string {

@@ -174,6 +174,26 @@ func qobuzTitlesMatch(expectedTitle, foundTitle string) bool {
 		return true
 	}
 
+	looseExpected := normalizeLooseTitle(normExpected)
+	looseFound := normalizeLooseTitle(normFound)
+	if looseExpected != "" && looseFound != "" {
+		if looseExpected == looseFound {
+			return true
+		}
+		if strings.Contains(looseExpected, looseFound) || strings.Contains(looseFound, looseExpected) {
+			return true
+		}
+	}
+
+	// Some tracks are symbol/emoji-heavy and providers can return textual
+	// aliases. If artist/duration already matched upstream, avoid false rejects.
+	if (!hasAlphaNumericRunes(expectedTitle) || !hasAlphaNumericRunes(foundTitle)) &&
+		strings.TrimSpace(expectedTitle) != "" &&
+		strings.TrimSpace(foundTitle) != "" {
+		GoLog("[Qobuz] Symbol-heavy title detected, relaxing match: '%s' vs '%s'\n", expectedTitle, foundTitle)
+		return true
+	}
+
 	expectedLatin := qobuzIsLatinScript(expectedTitle)
 	foundLatin := qobuzIsLatinScript(foundTitle)
 	if expectedLatin != foundLatin {

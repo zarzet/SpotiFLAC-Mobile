@@ -1521,7 +1521,7 @@ func errorResponse(msg string) (string, error) {
 // ==================== YOUTUBE PROVIDER (LOSSY ONLY) ====================
 
 // DownloadFromYouTube downloads a track from YouTube via Cobalt API
-// This is a lossy-only provider (Opus 256kbps or MP3 320kbps)
+// This is a lossy-only provider (Opus/MP3 with configurable bitrate)
 // It does NOT participate in the lossless fallback chain
 func DownloadFromYouTube(requestJSON string) (string, error) {
 	var req DownloadRequest

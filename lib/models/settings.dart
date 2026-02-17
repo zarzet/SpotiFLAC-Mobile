@@ -39,6 +39,10 @@ class AppSettings {
   final String lyricsMode;
   final String
   tidalHighFormat; // Format for Tidal HIGH quality: 'mp3_320', 'opus_256', or 'opus_128'
+  final int
+  youtubeOpusBitrate; // YouTube Opus bitrate (supported: 128/256 kbps)
+  final int
+  youtubeMp3Bitrate; // YouTube MP3 bitrate (supported: 128/256/320 kbps)
   final bool
   useAllFilesAccess; // Android 13+ only: enable MANAGE_EXTERNAL_STORAGE
   final bool
@@ -103,6 +107,8 @@ class AppSettings {
     this.locale = 'system',
     this.lyricsMode = 'embed',
     this.tidalHighFormat = 'mp3_320',
+    this.youtubeOpusBitrate = 256,
+    this.youtubeMp3Bitrate = 320,
     this.useAllFilesAccess = false,
     this.autoExportFailedDownloads = false,
     this.downloadNetworkMode = 'any',
@@ -113,10 +119,16 @@ class AppSettings {
     // Tutorial default
     this.hasCompletedTutorial = false,
     // Lyrics providers default order
-    this.lyricsProviders = const ['lrclib', 'musixmatch', 'netease', 'apple_music', 'qqmusic'],
+    this.lyricsProviders = const [
+      'lrclib',
+      'musixmatch',
+      'netease',
+      'apple_music',
+      'qqmusic',
+    ],
     this.lyricsIncludeTranslationNetease = false,
     this.lyricsIncludeRomanizationNetease = false,
-    this.lyricsMultiPersonWordByWord = true,
+    this.lyricsMultiPersonWordByWord = false,
     this.musixmatchLanguage = '',
   });
 
@@ -156,6 +168,8 @@ class AppSettings {
     String? locale,
     String? lyricsMode,
     String? tidalHighFormat,
+    int? youtubeOpusBitrate,
+    int? youtubeMp3Bitrate,
     bool? useAllFilesAccess,
     bool? autoExportFailedDownloads,
     String? downloadNetworkMode,
@@ -215,6 +229,8 @@ class AppSettings {
       locale: locale ?? this.locale,
       lyricsMode: lyricsMode ?? this.lyricsMode,
       tidalHighFormat: tidalHighFormat ?? this.tidalHighFormat,
+      youtubeOpusBitrate: youtubeOpusBitrate ?? this.youtubeOpusBitrate,
+      youtubeMp3Bitrate: youtubeMp3Bitrate ?? this.youtubeMp3Bitrate,
       useAllFilesAccess: useAllFilesAccess ?? this.useAllFilesAccess,
       autoExportFailedDownloads:
           autoExportFailedDownloads ?? this.autoExportFailedDownloads,
@@ -229,9 +245,11 @@ class AppSettings {
       // Lyrics providers
       lyricsProviders: lyricsProviders ?? this.lyricsProviders,
       lyricsIncludeTranslationNetease:
-          lyricsIncludeTranslationNetease ?? this.lyricsIncludeTranslationNetease,
+          lyricsIncludeTranslationNetease ??
+          this.lyricsIncludeTranslationNetease,
       lyricsIncludeRomanizationNetease:
-          lyricsIncludeRomanizationNetease ?? this.lyricsIncludeRomanizationNetease,
+          lyricsIncludeRomanizationNetease ??
+          this.lyricsIncludeRomanizationNetease,
       lyricsMultiPersonWordByWord:
           lyricsMultiPersonWordByWord ?? this.lyricsMultiPersonWordByWord,
       musixmatchLanguage: musixmatchLanguage ?? this.musixmatchLanguage,

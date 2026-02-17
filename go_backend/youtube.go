@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,8 @@ type YouTubeDownloader struct {
 	mu     sync.Mutex
 }
 
+const spotubeBaseURL = "https://spotubedl.com"
+
 var (
 	globalYouTubeDownloader *YouTubeDownloader
 	youtubeDownloaderOnce   sync.Once
@@ -29,7 +32,15 @@ type YouTubeQuality string
 
 const (
 	YouTubeQualityOpus256 YouTubeQuality = "opus_256"
+	YouTubeQualityOpus128 YouTubeQuality = "opus_128"
+	YouTubeQualityMP3128  YouTubeQuality = "mp3_128"
+	YouTubeQualityMP3256  YouTubeQuality = "mp3_256"
 	YouTubeQualityMP3320  YouTubeQuality = "mp3_320"
+)
+
+var (
+	youtubeOpusSupportedBitrates = []int{128, 256}
+	youtubeMp3SupportedBitrates  = []int{128, 256, 320}
 )
 
 type CobaltRequest struct {
@@ -79,6 +90,77 @@ func NewYouTubeDownloader() *YouTubeDownloader {
 	return globalYouTubeDownloader
 }
 
+func extractBitrateFromQuality(raw string, defaultBitrate int) int {
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return (r < '0' || r > '9')
+	})
+	for i := len(parts) - 1; i >= 0; i-- {
+		part := parts[i]
+		if part == "" {
+			continue
+		}
+		if parsed, err := strconv.Atoi(part); err == nil {
+			return parsed
+		}
+	}
+	return defaultBitrate
+}
+
+func nearestSupportedBitrate(value int, supported []int) int {
+	nearest := supported[0]
+	nearestDistance := absInt(value - nearest)
+
+	for _, option := range supported[1:] {
+		distance := absInt(value - option)
+		// On tie prefer higher quality.
+		if distance < nearestDistance || (distance == nearestDistance && option > nearest) {
+			nearest = option
+			nearestDistance = distance
+		}
+	}
+
+	return nearest
+}
+
+func absInt(value int) int {
+	if value < 0 {
+		return -value
+	}
+	return value
+}
+
+func parseYouTubeQualityInput(raw string) (format string, bitrate int, normalized YouTubeQuality) {
+	normalizedRaw := strings.ToLower(strings.TrimSpace(raw))
+
+	if strings.HasPrefix(normalizedRaw, "opus") {
+		parsed := extractBitrateFromQuality(normalizedRaw, 256)
+		finalBitrate := nearestSupportedBitrate(parsed, youtubeOpusSupportedBitrates)
+		return "opus", finalBitrate, YouTubeQuality(fmt.Sprintf("opus_%d", finalBitrate))
+	}
+
+	if strings.HasPrefix(normalizedRaw, "mp3") {
+		parsed := extractBitrateFromQuality(normalizedRaw, 320)
+		finalBitrate := nearestSupportedBitrate(parsed, youtubeMp3SupportedBitrates)
+		return "mp3", finalBitrate, YouTubeQuality(fmt.Sprintf("mp3_%d", finalBitrate))
+	}
+
+	// Backward compatibility for legacy symbolic values.
+	switch normalizedRaw {
+	case "opus_256", "opus256", "opus":
+		return "opus", 256, YouTubeQualityOpus256
+	case "opus_128", "opus128":
+		return "opus", 128, YouTubeQualityOpus128
+	case "mp3_320", "mp3320", "mp3", "":
+		return "mp3", 320, YouTubeQualityMP3320
+	case "mp3_256", "mp3256":
+		return "mp3", 256, YouTubeQualityMP3256
+	case "mp3_128", "mp3128":
+		return "mp3", 128, YouTubeQualityMP3128
+	default:
+		return "mp3", 320, YouTubeQualityMP3320
+	}
+}
+
 // SearchYouTube returns a YouTube Music search URL for the given track
 func (y *YouTubeDownloader) SearchYouTube(trackName, artistName string) (string, error) {
 	query := fmt.Sprintf("%s %s", artistName, trackName)
@@ -95,22 +177,11 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 	y.mu.Lock()
 	defer y.mu.Unlock()
 
-	var audioFormat string
-	var audioBitrate string
-
-	switch quality {
-	case YouTubeQualityOpus256:
-		audioFormat = "opus"
-		audioBitrate = "256"
-	case YouTubeQualityMP3320:
-		audioFormat = "mp3"
-		audioBitrate = "320"
-	default:
-		audioFormat = "mp3"
-		audioBitrate = "320"
-	}
+	audioFormat, bitrate, _ := parseYouTubeQualityInput(string(quality))
+	audioBitrate := strconv.Itoa(bitrate)
 
 	// Try SpotubeDL first (primary)
+	var spotubeErr error
 	videoID, extractErr := ExtractYouTubeVideoID(youtubeURL)
 	if extractErr == nil {
 		GoLog("[YouTube] Requesting from SpotubeDL: videoID=%s (format: %s, bitrate: %s)\n",
@@ -120,6 +191,7 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 		if err == nil {
 			return resp, nil
 		}
+		spotubeErr = err
 		GoLog("[YouTube] SpotubeDL failed: %v, trying Cobalt fallback...\n", err)
 	} else {
 		GoLog("[YouTube] Could not extract video ID: %v, skipping SpotubeDL\n", extractErr)
@@ -132,6 +204,9 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 
 	resp, err := y.requestCobaltDirect(cobaltURL, audioFormat, audioBitrate)
 	if err != nil {
+		if spotubeErr != nil {
+			return nil, fmt.Errorf("all download methods failed: spotubedl: %v, cobalt: %v", spotubeErr, err)
+		}
 		return nil, fmt.Errorf("all download methods failed: spotubedl: extractErr=%v, cobalt: %v", extractErr, err)
 	}
 
@@ -201,11 +276,34 @@ func (y *YouTubeDownloader) requestCobaltDirect(videoURL, audioFormat, audioBitr
 }
 
 // requestSpotubeDL uses SpotubeDL as a Cobalt proxy (they handle auth to yt-dl.click instances).
+// Note: engine v2 currently serves MP3-oriented outputs, so we only use v2 for MP3 requests.
 func (y *YouTubeDownloader) requestSpotubeDL(videoID, audioFormat, audioBitrate string) (*CobaltResponse, error) {
-	apiURL := fmt.Sprintf("https://spotubedl.com/api/download/%s?engine=v1&format=%s&quality=%s",
-		videoID, audioFormat, audioBitrate)
+	engines := []string{"v1"}
+	if strings.EqualFold(audioFormat, "mp3") {
+		engines = append(engines, "v2")
+	}
+	var lastErr error
 
-	GoLog("[YouTube] Requesting from SpotubeDL: %s\n", apiURL)
+	for _, engine := range engines {
+		resp, err := y.requestSpotubeDLEngine(videoID, audioFormat, audioBitrate, engine)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		GoLog("[YouTube] SpotubeDL (%s) failed: %v\n", engine, err)
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("no SpotubeDL engine available")
+	}
+	return nil, lastErr
+}
+
+func (y *YouTubeDownloader) requestSpotubeDLEngine(videoID, audioFormat, audioBitrate, engine string) (*CobaltResponse, error) {
+	apiURL := fmt.Sprintf("%s/api/download/%s?engine=%s&format=%s&quality=%s",
+		spotubeBaseURL, videoID, url.QueryEscape(engine), url.QueryEscape(audioFormat), url.QueryEscape(audioBitrate))
+
+	GoLog("[YouTube] Requesting from SpotubeDL (%s): %s\n", engine, apiURL)
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -225,27 +323,60 @@ func (y *YouTubeDownloader) requestSpotubeDL(videoID, audioFormat, audioBitrate 
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	GoLog("[YouTube] SpotubeDL response status: %d\n", resp.StatusCode)
+	GoLog("[YouTube] SpotubeDL (%s) response status: %d\n", engine, resp.StatusCode)
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("spotubedl returned status %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("spotubedl(%s) returned status %d: %s", engine, resp.StatusCode, string(body))
 	}
 
 	var result struct {
-		URL string `json:"url"`
+		URL      string `json:"url"`
+		Status   string `json:"status"`
+		Error    string `json:"error"`
+		Message  string `json:"message"`
+		Filename string `json:"filename"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse spotubedl response: %w", err)
 	}
 
-	if result.URL == "" {
-		return nil, fmt.Errorf("no download URL from spotubedl")
+	downloadURL := strings.TrimSpace(result.URL)
+	if downloadURL == "" {
+		if result.Error != "" {
+			return nil, fmt.Errorf("spotubedl(%s) error: %s", engine, result.Error)
+		}
+		if result.Message != "" {
+			return nil, fmt.Errorf("spotubedl(%s) message: %s", engine, result.Message)
+		}
+		return nil, fmt.Errorf("no download URL from spotubedl(%s)", engine)
 	}
 
-	GoLog("[YouTube] Got download URL from SpotubeDL\n")
+	if strings.HasPrefix(downloadURL, "/") {
+		downloadURL = spotubeBaseURL + downloadURL
+	}
+
+	if !strings.HasPrefix(downloadURL, "http://") && !strings.HasPrefix(downloadURL, "https://") {
+		return nil, fmt.Errorf("invalid download URL from spotubedl(%s): %s", engine, downloadURL)
+	}
+
+	filename := strings.TrimSpace(result.Filename)
+	if filename == "" {
+		if parsedURL, parseErr := url.Parse(downloadURL); parseErr == nil {
+			if queryFilename := strings.TrimSpace(parsedURL.Query().Get("filename")); queryFilename != "" {
+				if decodedFilename, decodeErr := url.QueryUnescape(queryFilename); decodeErr == nil {
+					filename = decodedFilename
+				} else {
+					filename = queryFilename
+				}
+			}
+		}
+	}
+
+	GoLog("[YouTube] Got download URL from SpotubeDL (%s)\n", engine)
 	return &CobaltResponse{
-		Status: "tunnel",
-		URL:    result.URL,
+		Status:   "tunnel",
+		URL:      downloadURL,
+		Filename: filename,
 	}, nil
 }
 
@@ -411,15 +542,7 @@ func ExtractYouTubeVideoID(urlStr string) (string, error) {
 func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 	downloader := NewYouTubeDownloader()
 
-	var quality YouTubeQuality
-	switch strings.ToLower(req.Quality) {
-	case "opus_256", "opus256", "opus":
-		quality = YouTubeQualityOpus256
-	case "mp3_320", "mp3320", "mp3":
-		quality = YouTubeQualityMP3320
-	default:
-		quality = YouTubeQualityMP3320 // Default to MP3 320kbps
-	}
+	format, bitrate, quality := parseYouTubeQualityInput(req.Quality)
 
 	// URL lookup priority: YouTube video ID > Spotify ID > Deezer ID > ISRC
 	var youtubeURL string
@@ -480,18 +603,23 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 		return YouTubeDownloadResult{}, fmt.Errorf("failed to get download URL: %w", err)
 	}
 
-	var ext string
-	var format string
-	var bitrate int
-	switch quality {
-	case YouTubeQualityOpus256:
+	ext := ".mp3"
+	if format == "opus" {
 		ext = ".opus"
-		format = "opus"
-		bitrate = 256
-	case YouTubeQualityMP3320:
-		ext = ".mp3"
-		format = "mp3"
-		bitrate = 320
+	}
+
+	// Some SpotubeDL engines may return a different output container than requested.
+	// Respect the provider-reported filename to avoid saving MP3 bytes with .opus extension.
+	if cobaltResp != nil && cobaltResp.Filename != "" {
+		lowerName := strings.ToLower(strings.TrimSpace(cobaltResp.Filename))
+		switch {
+		case strings.HasSuffix(lowerName, ".mp3"):
+			ext = ".mp3"
+			format = "mp3"
+		case strings.HasSuffix(lowerName, ".opus"), strings.HasSuffix(lowerName, ".ogg"):
+			ext = ".opus"
+			format = "opus"
+		}
 	}
 
 	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]any{

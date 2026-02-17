@@ -2771,7 +2771,29 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         settings,
       );
 
-      final quality = item.qualityOverride ?? state.audioQuality;
+      var quality = item.qualityOverride ?? state.audioQuality;
+      if (item.service.toLowerCase() == 'youtube') {
+        final normalized = quality.toLowerCase();
+        final isYoutubeQuality =
+            normalized.startsWith('mp3_') || normalized.startsWith('opus_');
+        if (!isYoutubeQuality) {
+          final mp3Bitrate = (() {
+            const supported = [128, 256, 320];
+            var nearest = supported.first;
+            var nearestDistance = (settings.youtubeMp3Bitrate - nearest).abs();
+            for (final option in supported.skip(1)) {
+              final distance = (settings.youtubeMp3Bitrate - option).abs();
+              if (distance < nearestDistance ||
+                  (distance == nearestDistance && option > nearest)) {
+                nearest = option;
+                nearestDistance = distance;
+              }
+            }
+            return nearest;
+          })();
+          quality = 'mp3_$mp3Bitrate';
+        }
+      }
       final isSafMode = _isSafMode(settings);
       final relativeOutputDir = isSafMode
           ? await _buildRelativeOutputDir(
@@ -3032,8 +3054,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           outputDir: outputDir,
           filenameFormat: state.filenameFormat,
           quality: quality,
-          // Keep prior behavior: non-YouTube paths were implicitly true.
-          embedLyrics: isYouTube ? settings.embedLyrics : true,
+          embedLyrics: settings.embedLyrics,
           embedMaxQualityCover: settings.maxQualityCover,
           trackNumber: normalizedTrackNumber,
           discNumber: normalizedDiscNumber,

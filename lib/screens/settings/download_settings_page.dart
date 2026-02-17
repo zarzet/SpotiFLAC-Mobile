@@ -261,6 +261,33 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       ),
                     ),
                   ],
+                  SettingsItem(
+                    title: context.l10n.youtubeOpusBitrateTitle,
+                    subtitle: '${settings.youtubeOpusBitrate}kbps (128/256)',
+                    onTap: () => _showYoutubeBitratePicker(
+                      context: context,
+                      title: context.l10n.youtubeOpusBitrateTitle,
+                      currentValue: settings.youtubeOpusBitrate,
+                      options: const [128, 256],
+                      onSave: (value) => ref
+                          .read(settingsProvider.notifier)
+                          .setYoutubeOpusBitrate(value),
+                    ),
+                  ),
+                  SettingsItem(
+                    title: context.l10n.youtubeMp3BitrateTitle,
+                    subtitle: '${settings.youtubeMp3Bitrate}kbps (128/256/320)',
+                    onTap: () => _showYoutubeBitratePicker(
+                      context: context,
+                      title: context.l10n.youtubeMp3BitrateTitle,
+                      currentValue: settings.youtubeMp3Bitrate,
+                      options: const [128, 256, 320],
+                      onSave: (value) => ref
+                          .read(settingsProvider.notifier)
+                          .setYoutubeMp3Bitrate(value),
+                    ),
+                    showDivider: false,
+                  ),
                 ],
               ),
             ),
@@ -271,20 +298,35 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
+                  SettingsSwitchItem(
+                    icon: Icons.subtitles_outlined,
+                    title: context.l10n.optionsEmbedLyrics,
+                    subtitle: context.l10n.optionsEmbedLyricsSubtitle,
+                    value: settings.embedLyrics,
+                    onChanged: (value) => ref
+                        .read(settingsProvider.notifier)
+                        .setEmbedLyrics(value),
+                  ),
                   SettingsItem(
                     icon: Icons.lyrics_outlined,
                     title: context.l10n.lyricsMode,
-                    subtitle: _getLyricsModeLabel(context, settings.lyricsMode),
-                    onTap: () => _showLyricsModePicker(
-                      context,
-                      ref,
-                      settings.lyricsMode,
-                    ),
+                    subtitle: settings.embedLyrics
+                        ? _getLyricsModeLabel(context, settings.lyricsMode)
+                        : context.l10n.extensionsDisabled,
+                    onTap: settings.embedLyrics
+                        ? () => _showLyricsModePicker(
+                            context,
+                            ref,
+                            settings.lyricsMode,
+                          )
+                        : null,
                   ),
                   SettingsItem(
                     icon: Icons.source_outlined,
                     title: 'Lyrics Providers',
-                    subtitle: _getLyricsProvidersSubtitle(settings.lyricsProviders),
+                    subtitle: _getLyricsProvidersSubtitle(
+                      settings.lyricsProviders,
+                    ),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1250,14 +1292,73 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
 
   String _getLyricsProvidersSubtitle(List<String> providers) {
     if (providers.isEmpty) return 'None enabled';
-    return providers
-        .map((p) => _providerDisplayNames[p] ?? p)
-        .join(' > ');
+    return providers.map((p) => _providerDisplayNames[p] ?? p).join(' > ');
   }
 
   String _normalizeMusixmatchLanguage(String value) {
     final normalized = value.trim().toLowerCase();
     return normalized.replaceAll(RegExp(r'[^a-z0-9\-_]'), '');
+  }
+
+  void _showYoutubeBitratePicker({
+    required BuildContext context,
+    required String title,
+    required int currentValue,
+    required List<int> options,
+    required void Function(int value) onSave,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(sheetContext).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            for (final bitrate in options)
+              ListTile(
+                title: Text('$bitrate kbps'),
+                trailing: bitrate == currentValue
+                    ? Icon(Icons.check, color: colorScheme.primary)
+                    : null,
+                onTap: () {
+                  onSave(bitrate);
+                  Navigator.pop(sheetContext);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showMusixmatchLanguagePicker(
@@ -1288,9 +1389,9 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
           children: [
             Text(
               'Musixmatch Language',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1319,7 +1420,9 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: () {
-                    ref.read(settingsProvider.notifier).setMusixmatchLanguage('');
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setMusixmatchLanguage('');
                     Navigator.pop(context);
                   },
                   child: const Text('Auto'),

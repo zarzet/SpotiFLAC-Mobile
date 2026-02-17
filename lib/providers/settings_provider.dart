@@ -13,6 +13,9 @@ const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
 class SettingsNotifier extends Notifier<AppSettings> {
+  static const List<int> _youtubeOpusSupportedBitrates = [128, 256];
+  static const List<int> _youtubeMp3SupportedBitrates = [128, 256, 320];
+
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _isSavingSettings = false;
@@ -32,6 +35,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       state = AppSettings.fromJson(jsonDecode(json));
 
       await _runMigrations(prefs);
+      await _normalizeYouTubeBitratesIfNeeded();
     }
 
     await _loadSpotifyClientSecret(prefs);
@@ -105,6 +109,49 @@ class SettingsNotifier extends Notifier<AppSettings> {
     } finally {
       _isSavingSettings = false;
     }
+  }
+
+  int _nearestSupportedBitrate(int value, List<int> supported) {
+    var nearest = supported.first;
+    var nearestDistance = (value - nearest).abs();
+
+    for (final option in supported.skip(1)) {
+      final distance = (value - option).abs();
+      // On tie, prefer higher quality bitrate.
+      if (distance < nearestDistance ||
+          (distance == nearestDistance && option > nearest)) {
+        nearest = option;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest;
+  }
+
+  int _normalizeYouTubeOpusBitrate(int bitrate) {
+    return _nearestSupportedBitrate(bitrate, _youtubeOpusSupportedBitrates);
+  }
+
+  int _normalizeYouTubeMp3Bitrate(int bitrate) {
+    return _nearestSupportedBitrate(bitrate, _youtubeMp3SupportedBitrates);
+  }
+
+  Future<void> _normalizeYouTubeBitratesIfNeeded() async {
+    final normalizedOpus = _normalizeYouTubeOpusBitrate(
+      state.youtubeOpusBitrate,
+    );
+    final normalizedMp3 = _normalizeYouTubeMp3Bitrate(state.youtubeMp3Bitrate);
+
+    if (normalizedOpus == state.youtubeOpusBitrate &&
+        normalizedMp3 == state.youtubeMp3Bitrate) {
+      return;
+    }
+
+    state = state.copyWith(
+      youtubeOpusBitrate: normalizedOpus,
+      youtubeMp3Bitrate: normalizedMp3,
+    );
+    await _saveSettings();
   }
 
   Future<void> _loadSpotifyClientSecret(SharedPreferences prefs) async {
@@ -230,7 +277,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   void setMusixmatchLanguage(String languageCode) {
-    state = state.copyWith(musixmatchLanguage: languageCode.trim().toLowerCase());
+    state = state.copyWith(
+      musixmatchLanguage: languageCode.trim().toLowerCase(),
+    );
     _saveSettings();
     _syncLyricsSettingsToBackend();
   }
@@ -387,6 +436,18 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setTidalHighFormat(String format) {
     state = state.copyWith(tidalHighFormat: format);
+    _saveSettings();
+  }
+
+  void setYoutubeOpusBitrate(int bitrate) {
+    final normalized = _normalizeYouTubeOpusBitrate(bitrate);
+    state = state.copyWith(youtubeOpusBitrate: normalized);
+    _saveSettings();
+  }
+
+  void setYoutubeMp3Bitrate(int bitrate) {
+    final normalized = _normalizeYouTubeMp3Bitrate(bitrate);
+    state = state.copyWith(youtubeMp3Bitrate: normalized);
     _saveSettings();
   }
 

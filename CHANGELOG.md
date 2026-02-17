@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.6.9] - 2026-02-17
+
+### Added
+
+- **YouTube Bitrate Presets**: YouTube bitrate selection now uses supported presets only
+  - Opus: 128 / 256 kbps
+  - MP3: 128 / 256 / 320 kbps
+- **Go Test Coverage for YouTube Quality Parsing**: Added tests for supported-bitrate normalization behavior
+- **Localization for YouTube Bitrate UI**: Added localized strings (EN/ID) for YouTube bitrate titles and labels
+
+### Fixed
+
+- **Cover Image Cache Clear Not Working**: Clearing "Cover image cache" now performs a full on-disk wipe, clears in-memory image cache, and reinitializes cache manager state
+  - Prevents stale/orphaned cache files from keeping the same storage usage after clear
+- **YouTube Queue Fallback Quality Mismatch**: Queue fallback now normalizes YouTube quality IDs so conversion paths use valid bitrate format IDs
+
+### Changed
+
+- **Default Lyrics Behavior**: `Apple/QQ Multi-Person Word-by-Word` is now OFF by default for new installs
+- **Removed Dynamic YouTube Bitrate Mode**: Arbitrary values are now normalized to nearest supported Spotube preset across settings, picker, queue fallback, and Go backend parser
+- **Lyrics Embedding Control**: Users can now disable the embedded-lyrics process from settings (`Embed Lyrics` off)
+
+---
+
 ## [3.6.8] - 2026-02-14
 
 ### Added
