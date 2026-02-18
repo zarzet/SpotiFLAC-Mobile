@@ -2506,6 +2506,57 @@
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
   },
+  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
+  },
+  "youtubeBitrateSubtitle": "{bitrate}kbps ({min}-{max})",
+  "@youtubeBitrateSubtitle": {
+    "description": "Subtitle showing current bitrate and valid range",
+    "placeholders": {
+      "bitrate": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateInputHelp": "Enter custom bitrate ({min}-{max} kbps)",
+  "@youtubeBitrateInputHelp": {
+    "description": "Helper text for manual YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateFieldLabel": "Bitrate (kbps)",
+  "@youtubeBitrateFieldLabel": {
+    "description": "Label for YouTube bitrate input field"
+  },
+  "youtubeBitrateValidationError": "Bitrate must be between {min} and {max} kbps",
+  "@youtubeBitrateValidationError": {
+    "description": "Validation error for invalid YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "downloadAskBeforeDownload": "Ask Before Download",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
