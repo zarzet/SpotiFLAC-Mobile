@@ -13,7 +13,7 @@
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "ライブラリ",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
@@ -344,7 +344,7 @@
   "@optionsConcurrentSequential": {
     "description": "Download one at a time"
   },
-  "optionsConcurrentParallel": "{count} parallel downloads",
+  "optionsConcurrentParallel": "{count} 件の分割ダウンロード",
   "@optionsConcurrentParallel": {
     "description": "Multiple parallel downloads",
     "placeholders": {
@@ -2135,7 +2135,7 @@
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
-  "trackEmbedLyrics": "Embed Lyrics",
+  "trackEmbedLyrics": "歌詞を埋め込む",
   "@trackEmbedLyrics": {
     "description": "Action - embed lyrics into audio file"
   },
@@ -2462,11 +2462,11 @@
   "@qualityLossy": {
     "description": "Quality option - lossy format (MP3/Opus)"
   },
-  "qualityLossyMp3Subtitle": "MP3 320kbps (converted from FLAC)",
+  "qualityLossyMp3Subtitle": "MP3 320kbps (FLAC から変換)",
   "@qualityLossyMp3Subtitle": {
     "description": "Technical spec for lossy MP3"
   },
-  "qualityLossyOpusSubtitle": "Opus 128kbps (converted from FLAC)",
+  "qualityLossyOpusSubtitle": "Opus 128kbps (FLAC から変換)",
   "@qualityLossyOpusSubtitle": {
     "description": "Technical spec for lossy Opus"
   },
@@ -2505,6 +2505,57 @@
   "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
+  },
+  "youtubeOpusBitrateTitle": "YouTube Opus のビットレート",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "YouTube MP3 のビットレート",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
+  },
+  "youtubeBitrateSubtitle": "{bitrate}kbps ({min}-{max})",
+  "@youtubeBitrateSubtitle": {
+    "description": "Subtitle showing current bitrate and valid range",
+    "placeholders": {
+      "bitrate": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateInputHelp": "Enter custom bitrate ({min}-{max} kbps)",
+  "@youtubeBitrateInputHelp": {
+    "description": "Helper text for manual YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "youtubeBitrateFieldLabel": "ビットレート (kbps)",
+  "@youtubeBitrateFieldLabel": {
+    "description": "Label for YouTube bitrate input field"
+  },
+  "youtubeBitrateValidationError": "Bitrate must be between {min} and {max} kbps",
+  "@youtubeBitrateValidationError": {
+    "description": "Validation error for invalid YouTube bitrate input",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "downloadAskBeforeDownload": "ダウンロード前に確認する",
   "@downloadAskBeforeDownload": {
@@ -2650,7 +2701,7 @@
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "queueExportFailed": "Export",
+  "queueExportFailed": "エクスポート",
   "@queueExportFailed": {
     "description": "Button - export failed downloads to TXT"
   },
@@ -2658,15 +2709,15 @@
   "@queueExportFailedSuccess": {
     "description": "Success message after exporting failed downloads"
   },
-  "queueExportFailedClear": "Clear Failed",
+  "queueExportFailedClear": "消去に失敗しました",
   "@queueExportFailedClear": {
     "description": "Action to clear failed downloads after export"
   },
-  "queueExportFailedError": "Failed to export downloads",
+  "queueExportFailedError": "ダウンロードのエクスポートに失敗しました",
   "@queueExportFailedError": {
     "description": "Error message when export fails"
   },
-  "settingsAutoExportFailed": "Auto-export failed downloads",
+  "settingsAutoExportFailed": "ダウンロードの自動エクスポートに失敗しました",
   "@settingsAutoExportFailed": {
     "description": "Setting toggle for auto-export"
   },
@@ -2674,15 +2725,15 @@
   "@settingsAutoExportFailedSubtitle": {
     "description": "Subtitle for auto-export setting"
   },
-  "settingsDownloadNetwork": "Download Network",
+  "settingsDownloadNetwork": "ダウンロードネットワーク",
   "@settingsDownloadNetwork": {
     "description": "Setting for network type preference"
   },
-  "settingsDownloadNetworkAny": "WiFi + Mobile Data",
+  "settingsDownloadNetworkAny": "Wi-Fi + モバイルデータ",
   "@settingsDownloadNetworkAny": {
     "description": "Network option - use any connection"
   },
-  "settingsDownloadNetworkWifiOnly": "WiFi Only",
+  "settingsDownloadNetworkWifiOnly": "Wi-Fi のみ",
   "@settingsDownloadNetworkWifiOnly": {
     "description": "Network option - only use WiFi"
   },
@@ -2754,7 +2805,7 @@
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistAlbumSingles": "Artist / Album + Singles",
+  "albumFolderArtistAlbumSingles": "アーティスト / アルバム + シングル",
   "@albumFolderArtistAlbumSingles": {
     "description": "Album folder option with singles inside artist"
   },
@@ -2852,7 +2903,7 @@
   "@recentEmpty": {
     "description": "Empty state text for recent access list"
   },
-  "recentShowAllDownloads": "Show All Downloads",
+  "recentShowAllDownloads": "すべてのダウンロードを表示",
   "@recentShowAllDownloads": {
     "description": "Button label to unhide hidden downloads in recent access"
   },
@@ -2994,11 +3045,11 @@
   "@discographyFailedToFetch": {
     "description": "Error - some albums failed to load"
   },
-  "sectionStorageAccess": "Storage Access",
+  "sectionStorageAccess": "ストレージアクセス",
   "@sectionStorageAccess": {
     "description": "Section header for storage access settings"
   },
-  "allFilesAccess": "All Files Access",
+  "allFilesAccess": "すべてのファイルへのアクセス",
   "@allFilesAccess": {
     "description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"
   },
@@ -3022,7 +3073,7 @@
   "@allFilesAccessDisabledMessage": {
     "description": "Snackbar message when user disables all files access"
   },
-  "settingsLocalLibrary": "Local Library",
+  "settingsLocalLibrary": "ローカルライブラリ",
   "@settingsLocalLibrary": {
     "description": "Settings menu item - local library"
   },
@@ -3030,7 +3081,7 @@
   "@settingsLocalLibrarySubtitle": {
     "description": "Subtitle for local library settings"
   },
-  "settingsCache": "Storage & Cache",
+  "settingsCache": "ストレージとキャッシュ",
   "@settingsCache": {
     "description": "Settings menu item - cache management"
   },
@@ -3038,19 +3089,19 @@
   "@settingsCacheSubtitle": {
     "description": "Subtitle for cache management menu"
   },
-  "libraryTitle": "Local Library",
+  "libraryTitle": "ローカルライブラリ",
   "@libraryTitle": {
     "description": "Library settings page title"
   },
-  "libraryStatus": "Library Status",
+  "libraryStatus": "ライブラリの状態",
   "@libraryStatus": {
     "description": "Section header for library status"
   },
-  "libraryScanSettings": "Scan Settings",
+  "libraryScanSettings": "スキャン設定",
   "@libraryScanSettings": {
     "description": "Section header for scan settings"
   },
-  "libraryEnableLocalLibrary": "Enable Local Library",
+  "libraryEnableLocalLibrary": "ローカルライブラリを有効",
   "@libraryEnableLocalLibrary": {
     "description": "Toggle to enable library scanning"
   },
@@ -3058,11 +3109,11 @@
   "@libraryEnableLocalLibrarySubtitle": {
     "description": "Subtitle for enable toggle"
   },
-  "libraryFolder": "Library Folder",
+  "libraryFolder": "ライブラリのフォルダ",
   "@libraryFolder": {
     "description": "Folder selection setting"
   },
-  "libraryFolderHint": "Tap to select folder",
+  "libraryFolderHint": "タップでフォルダを選択",
   "@libraryFolderHint": {
     "description": "Placeholder when no folder selected"
   },
@@ -3074,15 +3125,15 @@
   "@libraryShowDuplicateIndicatorSubtitle": {
     "description": "Subtitle for duplicate indicator toggle"
   },
-  "libraryActions": "Actions",
+  "libraryActions": "アクション",
   "@libraryActions": {
     "description": "Section header for library actions"
   },
-  "libraryScan": "Scan Library",
+  "libraryScan": "ライブラリをスキャン",
   "@libraryScan": {
     "description": "Button to start library scan"
   },
-  "libraryScanSubtitle": "Scan for audio files",
+  "libraryScanSubtitle": "オーディオファイルをスキャン",
   "@libraryScanSubtitle": {
     "description": "Subtitle for scan button"
   },
@@ -3098,7 +3149,7 @@
   "@libraryCleanupMissingFilesSubtitle": {
     "description": "Subtitle for cleanup button"
   },
-  "libraryClear": "Clear Library",
+  "libraryClear": "ライブラリを消去",
   "@libraryClear": {
     "description": "Button to clear all library entries"
   },
@@ -3106,7 +3157,7 @@
   "@libraryClearSubtitle": {
     "description": "Subtitle for clear button"
   },
-  "libraryClearConfirmTitle": "Clear Library",
+  "libraryClearConfirmTitle": "ライブラリを消去",
   "@libraryClearConfirmTitle": {
     "description": "Dialog title for clear confirmation"
   },
@@ -3114,7 +3165,7 @@
   "@libraryClearConfirmMessage": {
     "description": "Dialog message for clear confirmation"
   },
-  "libraryAbout": "About Local Library",
+  "libraryAbout": "ローカルライブラリについて",
   "@libraryAbout": {
     "description": "Section header for about info"
   },
@@ -3122,7 +3173,7 @@
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
-  "libraryTracksCount": "{count} tracks",
+  "libraryTracksCount": "{count} 個のトラック",
   "@libraryTracksCount": {
     "description": "Track count in library",
     "placeholders": {
@@ -3131,7 +3182,7 @@
       }
     }
   },
-  "libraryLastScanned": "Last scanned: {time}",
+  "libraryLastScanned": "最終スキャン: {time}",
   "@libraryLastScanned": {
     "description": "Last scan time display",
     "placeholders": {
@@ -3144,7 +3195,7 @@
   "@libraryLastScannedNever": {
     "description": "Shown when library has never been scanned"
   },
-  "libraryScanning": "Scanning...",
+  "libraryScanning": "スキャン中...",
   "@libraryScanning": {
     "description": "Status during scan"
   },
@@ -3160,7 +3211,7 @@
       }
     }
   },
-  "libraryInLibrary": "In Library",
+  "libraryInLibrary": "ライブラリ内",
   "@libraryInLibrary": {
     "description": "Badge shown on tracks that exist in local library"
   },
@@ -3177,7 +3228,7 @@
   "@libraryCleared": {
     "description": "Snackbar after clearing library"
   },
-  "libraryStorageAccessRequired": "Storage Access Required",
+  "libraryStorageAccessRequired": "ストレージアクセスが必要です",
   "@libraryStorageAccessRequired": {
     "description": "Dialog title for storage permission"
   },
@@ -3189,47 +3240,47 @@
   "@libraryFolderNotExist": {
     "description": "Error when folder doesn't exist"
   },
-  "librarySourceDownloaded": "Downloaded",
+  "librarySourceDownloaded": "ダウンロード済み",
   "@librarySourceDownloaded": {
     "description": "Badge for tracks downloaded via SpotiFLAC"
   },
-  "librarySourceLocal": "Local",
+  "librarySourceLocal": "ローカル",
   "@librarySourceLocal": {
     "description": "Badge for tracks from local library scan"
   },
-  "libraryFilterAll": "All",
+  "libraryFilterAll": "すべて",
   "@libraryFilterAll": {
     "description": "Filter chip - show all library items"
   },
-  "libraryFilterDownloaded": "Downloaded",
+  "libraryFilterDownloaded": "ダウンロード済み",
   "@libraryFilterDownloaded": {
     "description": "Filter chip - show only downloaded items"
   },
-  "libraryFilterLocal": "Local",
+  "libraryFilterLocal": "ローカル",
   "@libraryFilterLocal": {
     "description": "Filter chip - show only local library items"
   },
-  "libraryFilterTitle": "Filters",
+  "libraryFilterTitle": "フィルター",
   "@libraryFilterTitle": {
     "description": "Filter bottom sheet title"
   },
-  "libraryFilterReset": "Reset",
+  "libraryFilterReset": "リセット",
   "@libraryFilterReset": {
     "description": "Reset all filters button"
   },
-  "libraryFilterApply": "Apply",
+  "libraryFilterApply": "適用",
   "@libraryFilterApply": {
     "description": "Apply filters button"
   },
-  "libraryFilterSource": "Source",
+  "libraryFilterSource": "ソース",
   "@libraryFilterSource": {
     "description": "Filter section - source type"
   },
-  "libraryFilterQuality": "Quality",
+  "libraryFilterQuality": "品質",
   "@libraryFilterQuality": {
     "description": "Filter section - audio quality"
   },
-  "libraryFilterQualityHiRes": "Hi-Res (24bit)",
+  "libraryFilterQualityHiRes": "ハイレゾ (24bit)",
   "@libraryFilterQualityHiRes": {
     "description": "Filter option - high resolution audio"
   },
@@ -3241,15 +3292,15 @@
   "@libraryFilterQualityLossy": {
     "description": "Filter option - lossy compressed audio"
   },
-  "libraryFilterFormat": "Format",
+  "libraryFilterFormat": "形式",
   "@libraryFilterFormat": {
     "description": "Filter section - file format"
   },
-  "libraryFilterDate": "Date Added",
+  "libraryFilterDate": "日付を追加しました",
   "@libraryFilterDate": {
     "description": "Filter section - date range"
   },
-  "libraryFilterDateToday": "Today",
+  "libraryFilterDateToday": "今日",
   "@libraryFilterDateToday": {
     "description": "Filter option - today only"
   },
@@ -3277,7 +3328,7 @@
   "@libraryFilterSortOldest": {
     "description": "Sort option - oldest first"
   },
-  "libraryFilterActive": "{count} filter(s) active",
+  "libraryFilterActive": "{count} 個のフィルターが有効",
   "@libraryFilterActive": {
     "description": "Badge showing number of active filters",
     "placeholders": {
@@ -3290,7 +3341,7 @@
   "@timeJustNow": {
     "description": "Relative time - less than a minute ago"
   },
-  "timeMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "timeMinutesAgo": "{count, plural, =1{1 分前} other{{count} 分前}}",
   "@timeMinutesAgo": {
     "description": "Relative time - minutes ago",
     "placeholders": {
@@ -3299,7 +3350,7 @@
       }
     }
   },
-  "timeHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "timeHoursAgo": "{count, plural, =1{1 時間前} other{{count} 時間前}}",
   "@timeHoursAgo": {
     "description": "Relative time - hours ago",
     "placeholders": {
@@ -3308,15 +3359,15 @@
       }
     }
   },
-  "storageSwitchTitle": "Switch Storage Mode",
+  "storageSwitchTitle": "ストレージモードを切り替え",
   "@storageSwitchTitle": {
     "description": "Dialog title when switching storage mode"
   },
-  "storageSwitchToSafTitle": "Switch to SAF Storage?",
+  "storageSwitchToSafTitle": "SAF ストレージに切り替えますか？",
   "@storageSwitchToSafTitle": {
     "description": "Dialog title when switching to SAF"
   },
-  "storageSwitchToAppTitle": "Switch to App Storage?",
+  "storageSwitchToAppTitle": "アプリストレージに切り替えますか？",
   "@storageSwitchToAppTitle": {
     "description": "Dialog title when switching to app storage"
   },
@@ -3344,7 +3395,7 @@
       }
     }
   },
-  "storageSwitchNewDownloads": "New Downloads",
+  "storageSwitchNewDownloads": "新規ダウンロード",
   "@storageSwitchNewDownloads": {
     "description": "Section header for new downloads info"
   },
@@ -3357,23 +3408,23 @@
       }
     }
   },
-  "storageSwitchContinue": "Continue",
+  "storageSwitchContinue": "続行",
   "@storageSwitchContinue": {
     "description": "Button to proceed with storage switch"
   },
-  "storageSwitchSelectFolder": "Select SAF Folder",
+  "storageSwitchSelectFolder": "SAF フォルダを選択",
   "@storageSwitchSelectFolder": {
     "description": "Button to select SAF folder"
   },
-  "storageAppStorage": "App Storage",
+  "storageAppStorage": "アプリストレージ",
   "@storageAppStorage": {
     "description": "Label for app storage mode"
   },
-  "storageSafStorage": "SAF Storage",
+  "storageSafStorage": "SAF ストレージ",
   "@storageSafStorage": {
     "description": "Label for SAF storage mode"
   },
-  "storageModeBadge": "Storage: {mode}",
+  "storageModeBadge": "ストレージ: {mode}",
   "@storageModeBadge": {
     "description": "Badge showing storage mode for a track",
     "placeholders": {
@@ -3382,11 +3433,11 @@
       }
     }
   },
-  "storageStatsTitle": "Storage Statistics",
+  "storageStatsTitle": "ストレージの統計",
   "@storageStatsTitle": {
     "description": "Section title for storage stats"
   },
-  "storageStatsAppCount": "{count} tracks in App Storage",
+  "storageStatsAppCount": "アプリストレージ内の {count} 個のトラック",
   "@storageStatsAppCount": {
     "description": "Count of tracks in app storage",
     "placeholders": {
@@ -3395,7 +3446,7 @@
       }
     }
   },
-  "storageStatsSafCount": "{count} tracks in SAF Storage",
+  "storageStatsSafCount": "SAF ストレージ内の {count} 個のトラック",
   "@storageStatsSafCount": {
     "description": "Count of tracks in SAF storage",
     "placeholders": {
@@ -3408,7 +3459,7 @@
   "@storageModeInfo": {
     "description": "Info when user has files in both storage modes"
   },
-  "tutorialWelcomeTitle": "Welcome to SpotiFLAC!",
+  "tutorialWelcomeTitle": "SpotiFLAC へようこそ！",
   "@tutorialWelcomeTitle": {
     "description": "Tutorial welcome page title"
   },
@@ -3448,7 +3499,7 @@
   "@tutorialSearchTip3": {
     "description": "Tutorial search tip 3"
   },
-  "tutorialDownloadTitle": "Downloading Music",
+  "tutorialDownloadTitle": "音楽をダウンロード中",
   "@tutorialDownloadTitle": {
     "description": "Tutorial download page title"
   },
@@ -3468,7 +3519,7 @@
   "@tutorialDownloadTip3": {
     "description": "Tutorial download tip 3"
   },
-  "tutorialLibraryTitle": "Your Library",
+  "tutorialLibraryTitle": "あなたのライブラリ",
   "@tutorialLibraryTitle": {
     "description": "Tutorial library page title"
   },
@@ -3488,7 +3539,7 @@
   "@tutorialLibraryTip3": {
     "description": "Tutorial library tip 3"
   },
-  "tutorialExtensionsTitle": "Extensions",
+  "tutorialExtensionsTitle": "拡張",
   "@tutorialExtensionsTitle": {
     "description": "Tutorial extensions page title"
   },
@@ -3532,11 +3583,11 @@
   "@tutorialReadyMessage": {
     "description": "Tutorial completion message"
   },
-  "tutorialExample": "EXAMPLE",
+  "tutorialExample": "例",
   "@tutorialExample": {
     "description": "Example label in tutorial"
   },
-  "libraryForceFullScan": "Force Full Scan",
+  "libraryForceFullScan": "強制フルスキャン",
   "@libraryForceFullScan": {
     "description": "Button to force a complete rescan of library"
   },
@@ -3565,11 +3616,11 @@
   "@cleanupOrphanedDownloadsNone": {
     "description": "Snackbar when no orphans found"
   },
-  "cacheTitle": "Storage & Cache",
+  "cacheTitle": "ストレージとキャッシュ",
   "@cacheTitle": {
     "description": "Cache management page title"
   },
-  "cacheSummaryTitle": "Cache overview",
+  "cacheSummaryTitle": "キャッシュの概要",
   "@cacheSummaryTitle": {
     "description": "Heading for cache summary card"
   },
@@ -3586,15 +3637,15 @@
       }
     }
   },
-  "cacheSectionStorage": "Cached Data",
+  "cacheSectionStorage": "キャッシュ済みデータ",
   "@cacheSectionStorage": {
     "description": "Section header for cache entries"
   },
-  "cacheSectionMaintenance": "Maintenance",
+  "cacheSectionMaintenance": "メンテナンス",
   "@cacheSectionMaintenance": {
     "description": "Section header for cleanup actions"
   },
-  "cacheAppDirectory": "App cache directory",
+  "cacheAppDirectory": "アプリキャッシュのディレクトリ",
   "@cacheAppDirectory": {
     "description": "Cache item title for app cache directory"
   },
@@ -3602,7 +3653,7 @@
   "@cacheAppDirectoryDesc": {
     "description": "Description of what app cache directory contains"
   },
-  "cacheTempDirectory": "Temporary directory",
+  "cacheTempDirectory": "一時ディレクトリ",
   "@cacheTempDirectory": {
     "description": "Cache item title for temporary files directory"
   },
@@ -3610,7 +3661,7 @@
   "@cacheTempDirectoryDesc": {
     "description": "Description of what temporary directory contains"
   },
-  "cacheCoverImage": "Cover image cache",
+  "cacheCoverImage": "カバー画像のキャッシュ",
   "@cacheCoverImage": {
     "description": "Cache item title for persistent cover images"
   },
@@ -3618,7 +3669,7 @@
   "@cacheCoverImageDesc": {
     "description": "Description of what cover image cache contains"
   },
-  "cacheLibraryCover": "Library cover cache",
+  "cacheLibraryCover": "ライブラリのカバーキャッシュ",
   "@cacheLibraryCover": {
     "description": "Cache item title for local library cover art images"
   },
@@ -3646,7 +3697,7 @@
   "@cacheCleanupUnusedDesc": {
     "description": "Description of what cleanup unused data does"
   },
-  "cacheNoData": "No cached data",
+  "cacheNoData": "キャッシュデータはありません",
   "@cacheNoData": {
     "description": "Label when cache category has no data"
   },
@@ -3671,7 +3722,7 @@
       }
     }
   },
-  "cacheEntries": "{count} entries",
+  "cacheEntries": "{count} 個のエントリ",
   "@cacheEntries": {
     "description": "Track cache entry count",
     "placeholders": {
@@ -3680,7 +3731,7 @@
       }
     }
   },
-  "cacheClearSuccess": "Cleared: {target}",
+  "cacheClearSuccess": "消去済み: {target}",
   "@cacheClearSuccess": {
     "description": "Snackbar after clearing selected cache",
     "placeholders": {
@@ -3689,7 +3740,7 @@
       }
     }
   },
-  "cacheClearConfirmTitle": "Clear cache?",
+  "cacheClearConfirmTitle": "キャッシュを消去しますか？",
   "@cacheClearConfirmTitle": {
     "description": "Dialog title before clearing one cache category"
   },
@@ -3702,7 +3753,7 @@
       }
     }
   },
-  "cacheClearAllConfirmTitle": "Clear all cache?",
+  "cacheClearAllConfirmTitle": "すべてのキャッシュを消去しますか？",
   "@cacheClearAllConfirmTitle": {
     "description": "Dialog title before clearing all caches"
   },
@@ -3710,11 +3761,11 @@
   "@cacheClearAllConfirmMessage": {
     "description": "Dialog message before clearing all caches"
   },
-  "cacheClearAll": "Clear all cache",
+  "cacheClearAll": "すべてのキャッシュを消去",
   "@cacheClearAll": {
     "description": "Button label to clear all caches"
   },
-  "cacheCleanupUnused": "Cleanup unused data",
+  "cacheCleanupUnused": "未使用のデータを削除",
   "@cacheCleanupUnused": {
     "description": "Action title for cleaning unused entries"
   },
@@ -3734,11 +3785,11 @@
       }
     }
   },
-  "cacheRefreshStats": "Refresh stats",
+  "cacheRefreshStats": "状態を更新",
   "@cacheRefreshStats": {
     "description": "Button label to refresh cache statistics"
   },
-  "trackSaveCoverArt": "Save Cover Art",
+  "trackSaveCoverArt": "カバー画像を保存",
   "@trackSaveCoverArt": {
     "description": "Menu action - save album cover art as file"
   },
@@ -3746,7 +3797,7 @@
   "@trackSaveCoverArtSubtitle": {
     "description": "Subtitle for save cover art action"
   },
-  "trackSaveLyrics": "Save Lyrics (.lrc)",
+  "trackSaveLyrics": "歌詞を保存 (.lrc)",
   "@trackSaveLyrics": {
     "description": "Menu action - save lyrics as .lrc file"
   },
@@ -3770,7 +3821,7 @@
   "@trackReEnrichOnlineSubtitle": {
     "description": "Subtitle for re-enrich metadata action for local items"
   },
-  "trackEditMetadata": "Edit Metadata",
+  "trackEditMetadata": "メタデータを編集",
   "@trackEditMetadata": {
     "description": "Menu action - edit embedded metadata"
   },
@@ -3812,7 +3863,7 @@
   "@trackReEnrichFfmpegFailed": {
     "description": "Snackbar when FFmpeg embed fails for MP3/Opus"
   },
-  "trackSaveFailed": "Failed: {error}",
+  "trackSaveFailed": "失敗: {error}",
   "@trackSaveFailed": {
     "description": "Snackbar when save operation fails",
     "placeholders": {
@@ -3821,27 +3872,27 @@
       }
     }
   },
-  "trackConvertFormat": "Convert Format",
+  "trackConvertFormat": "変換の形式",
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Convert to MP3 or Opus",
+  "trackConvertFormatSubtitle": "MP3 または Opus に変換",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
-  "trackConvertTitle": "Convert Audio",
+  "trackConvertTitle": "オーディオを変換",
   "@trackConvertTitle": {
     "description": "Title of convert bottom sheet"
   },
-  "trackConvertTargetFormat": "Target Format",
+  "trackConvertTargetFormat": "ターゲットの形式",
   "@trackConvertTargetFormat": {
     "description": "Label for format selection"
   },
-  "trackConvertBitrate": "Bitrate",
+  "trackConvertBitrate": "ビットレート",
   "@trackConvertBitrate": {
     "description": "Label for bitrate selection"
   },
-  "trackConvertConfirmTitle": "Confirm Conversion",
+  "trackConvertConfirmTitle": "変換を確認",
   "@trackConvertConfirmTitle": {
     "description": "Confirmation dialog title"
   },
@@ -3860,7 +3911,7 @@
       }
     }
   },
-  "trackConvertConverting": "Converting audio...",
+  "trackConvertConverting": "オーディオを変換中...",
   "@trackConvertConverting": {
     "description": "Snackbar while converting"
   },
@@ -3873,7 +3924,7 @@
       }
     }
   },
-  "trackConvertFailed": "Conversion failed",
+  "trackConvertFailed": "変換に失敗しました",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
   }
