@@ -2446,7 +2446,7 @@
   "@qualityHiResFlac": {
     "description": "Quality option - high resolution FLAC"
   },
-  "qualityHiResFlacSubtitle": "24-bit / up to 96kHz",
+  "qualityHiResFlacSubtitle": "24-Bit / bis 96kHz",
   "@qualityHiResFlacSubtitle": {
     "description": "Technical spec for hi-res"
   },
@@ -2454,7 +2454,7 @@
   "@qualityHiResFlacMax": {
     "description": "Quality option - maximum resolution FLAC"
   },
-  "qualityHiResFlacMaxSubtitle": "24-bit / up to 192kHz",
+  "qualityHiResFlacMaxSubtitle": "24-Bit / bis 192kHz",
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
@@ -2462,15 +2462,15 @@
   "@qualityLossy": {
     "description": "Quality option - lossy format (MP3/Opus)"
   },
-  "qualityLossyMp3Subtitle": "MP3 320kbps (converted from FLAC)",
+  "qualityLossyMp3Subtitle": "MP3 320kbps (konvertiert von FLAC)",
   "@qualityLossyMp3Subtitle": {
     "description": "Technical spec for lossy MP3"
   },
-  "qualityLossyOpusSubtitle": "Opus 128kbps (converted from FLAC)",
+  "qualityLossyOpusSubtitle": "Opus 128kbps (von FLAC konvertiert)",
   "@qualityLossyOpusSubtitle": {
     "description": "Technical spec for lossy Opus"
   },
-  "enableLossyOption": "Enable Lossy Option",
+  "enableLossyOption": "Lossy-Option aktivieren",
   "@enableLossyOption": {
     "description": "Setting - enable lossy quality option"
   },
