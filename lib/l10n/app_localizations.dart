@@ -1906,6 +1906,12 @@ abstract class AppLocalizations {
   /// **'No tracks found'**
   String get errorNoTracksFound;
 
+  /// Error - seek disabled for live decrypted stream
+  ///
+  /// In en, this message translates to:
+  /// **'Seeking is not supported for this live stream'**
+  String get errorSeekNotSupported;
+
   /// Error - extension source not available
   ///
   /// In en, this message translates to:

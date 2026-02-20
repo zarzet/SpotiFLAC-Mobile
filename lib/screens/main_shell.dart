@@ -19,6 +19,7 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/share_intent_service.dart';
 import 'package:spotiflac_android/services/update_checker.dart';
 import 'package:spotiflac_android/widgets/update_dialog.dart';
+import 'package:spotiflac_android/widgets/mini_player_bar.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('MainShell');
@@ -387,13 +388,20 @@ class _MainShellState extends ConsumerState<MainShell> {
         _handleBackPress();
       },
       child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          onPageChanged: _onPageChanged,
-          physics: (_currentIndex == 0 && trackIsShowingRecentAccess)
-              ? const _NoSwipeRightPhysics()
-              : const ClampingScrollPhysics(),
-          children: tabs,
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                physics: (_currentIndex == 0 && trackIsShowingRecentAccess)
+                    ? const _NoSwipeRightPhysics()
+                    : const ClampingScrollPhysics(),
+                children: tabs,
+              ),
+            ),
+            const MiniPlayerBar(),
+          ],
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex.clamp(0, maxIndex),

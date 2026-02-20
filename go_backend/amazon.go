@@ -375,6 +375,57 @@ type AmazonDownloadResult struct {
 	DecryptionKey string
 }
 
+func resolveAmazonURLForRequest(req DownloadRequest, logPrefix string) (string, error) {
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Amazon"
+	}
+
+	amazonURL := ""
+	if req.ISRC != "" {
+		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.AmazonURL != "" {
+			amazonURL = cached.AmazonURL
+			GoLog("[%s] Cache hit! Using cached Amazon URL for ISRC %s\n", logPrefix, req.ISRC)
+		}
+	}
+
+	if amazonURL != "" {
+		return amazonURL, nil
+	}
+
+	songlink := NewSongLinkClient()
+	var availability *TrackAvailability
+	var err error
+
+	deezerID := strings.TrimSpace(req.DeezerID)
+	if prefixedDeezerID, found := strings.CutPrefix(req.SpotifyID, "deezer:"); found && strings.TrimSpace(prefixedDeezerID) != "" {
+		deezerID = strings.TrimSpace(prefixedDeezerID)
+	}
+
+	if deezerID != "" {
+		GoLog("[%s] Using Deezer ID for SongLink lookup: %s\n", logPrefix, deezerID)
+		availability, err = songlink.CheckAvailabilityFromDeezer(deezerID)
+	} else if req.SpotifyID != "" {
+		availability, err = songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
+	} else {
+		return "", fmt.Errorf("no valid Spotify or Deezer ID provided for Amazon lookup")
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to check Amazon availability via SongLink: %w", err)
+	}
+
+	if availability == nil || !availability.Amazon || availability.AmazonURL == "" {
+		return "", fmt.Errorf("track not available on Amazon Music (SongLink returned no Amazon URL)")
+	}
+
+	amazonURL = availability.AmazonURL
+	if req.ISRC != "" {
+		GetTrackIDCache().SetAmazonURL(req.ISRC, amazonURL)
+	}
+
+	return amazonURL, nil
+}
+
 func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	downloader := NewAmazonDownloader()
 
@@ -385,40 +436,9 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	amazonURL := ""
-	if req.ISRC != "" {
-		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.AmazonURL != "" {
-			amazonURL = cached.AmazonURL
-			GoLog("[Amazon] Cache hit! Using cached Amazon URL for ISRC %s\n", req.ISRC)
-		}
-	}
-
-	songlink := NewSongLinkClient()
-	var availability *TrackAvailability
-	var err error
-
-	if amazonURL == "" {
-		if deezerID, found := strings.CutPrefix(req.SpotifyID, "deezer:"); found {
-			GoLog("[Amazon] Using Deezer ID for SongLink lookup: %s\n", deezerID)
-			availability, err = songlink.CheckAvailabilityFromDeezer(deezerID)
-		} else if req.SpotifyID != "" {
-			availability, err = songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
-		} else {
-			return AmazonDownloadResult{}, fmt.Errorf("no valid Spotify or Deezer ID provided for Amazon lookup")
-		}
-
-		if err != nil {
-			return AmazonDownloadResult{}, fmt.Errorf("failed to check Amazon availability via SongLink: %w", err)
-		}
-
-		if !availability.Amazon || availability.AmazonURL == "" {
-			return AmazonDownloadResult{}, fmt.Errorf("track not available on Amazon Music (SongLink returned no Amazon URL)")
-		}
-
-		amazonURL = availability.AmazonURL
-		if req.ISRC != "" {
-			GetTrackIDCache().SetAmazonURL(req.ISRC, amazonURL)
-		}
+	amazonURL, err := resolveAmazonURLForRequest(req, "Amazon")
+	if err != nil {
+		return AmazonDownloadResult{}, err
 	}
 
 	if !isSafOutput && req.OutputDir != "." {

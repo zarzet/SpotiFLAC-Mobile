@@ -1067,6 +1067,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorNoTracksFound => 'Треки не найдены';
 
   @override
+  String get errorSeekNotSupported =>
+      'Seeking is not supported for this live stream';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Невозможно загрузить $item: отсутствует источник расширения';
   }

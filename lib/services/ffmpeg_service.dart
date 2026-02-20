@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_full/session_state.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -12,6 +14,8 @@ final _log = AppLogger('FFmpeg');
 class FFmpegService {
   static const int _commandLogPreviewLength = 300;
   static int _tempEmbedCounter = 0;
+  static FFmpegSession? _activeLiveDecryptSession;
+  static String? _activeLiveDecryptUrl;
 
   static String _buildOutputPath(String inputPath, String extension) {
     final normalizedExt = extension.startsWith('.') ? extension : '.$extension';
@@ -303,6 +307,149 @@ class FFmpegService {
 
     _log.e('FLAC to MP3 conversion failed: ${result.output}');
     return null;
+  }
+
+  static bool isActiveLiveDecryptedUrl(String url) {
+    final active = _activeLiveDecryptUrl;
+    if (active == null || active.isEmpty) return false;
+    return active == url.trim();
+  }
+
+  static Future<void> stopLiveDecryptedStream() async {
+    final session = _activeLiveDecryptSession;
+    _activeLiveDecryptSession = null;
+    _activeLiveDecryptUrl = null;
+    if (session == null) return;
+
+    try {
+      await session.cancel();
+    } catch (e) {
+      final sessionId = session.getSessionId();
+      if (sessionId != null) {
+        try {
+          await FFmpegKit.cancel(sessionId);
+        } catch (_) {}
+      }
+      _log.w('Failed to stop live decrypt session cleanly: $e');
+    }
+  }
+
+  static Future<LiveDecryptedStreamResult?> startAmazonLiveDecryptedStream({
+    required String encryptedStreamUrl,
+    required String decryptionKey,
+    String preferredFormat = 'flac',
+  }) async {
+    final inputUrl = encryptedStreamUrl.trim();
+    if (inputUrl.isEmpty) return null;
+
+    final keyCandidates = _buildDecryptionKeyCandidates(decryptionKey);
+    if (keyCandidates.isEmpty) {
+      _log.e('No usable decryption key candidates for live stream');
+      return null;
+    }
+
+    await stopLiveDecryptedStream();
+
+    final attempts = _buildLiveDecryptFormatAttempts(preferredFormat);
+    for (final format in attempts) {
+      for (final keyCandidate in keyCandidates) {
+        final stream = await _tryStartLiveDecryptAttempt(
+          inputUrl: inputUrl,
+          decryptionKey: keyCandidate,
+          format: format,
+        );
+        if (stream != null) {
+          _activeLiveDecryptSession = stream.session;
+          _activeLiveDecryptUrl = stream.localUrl;
+          return stream;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static List<_LiveDecryptFormat> _buildLiveDecryptFormatAttempts(
+    String preferredFormat,
+  ) {
+    final normalized = preferredFormat.trim().toLowerCase();
+    if (normalized == 'm4a' || normalized == 'mp4' || normalized == 'aac') {
+      return const [_LiveDecryptFormat.m4a, _LiveDecryptFormat.flac];
+    }
+    return const [_LiveDecryptFormat.flac, _LiveDecryptFormat.m4a];
+  }
+
+  static Future<LiveDecryptedStreamResult?> _tryStartLiveDecryptAttempt({
+    required String inputUrl,
+    required String decryptionKey,
+    required _LiveDecryptFormat format,
+  }) async {
+    final port = await _allocateLoopbackPort();
+    final ext = format == _LiveDecryptFormat.flac ? 'flac' : 'm4a';
+    final mimeType = format == _LiveDecryptFormat.flac
+        ? 'audio/flac'
+        : 'audio/mp4';
+    final localUrl = 'http://localhost:$port/stream.$ext';
+
+    final commandArguments = <String>[
+      '-nostdin',
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-decryption_key',
+      decryptionKey,
+      '-i',
+      inputUrl,
+      '-map',
+      '0:a:0',
+      '-c:a',
+      'copy',
+      if (format == _LiveDecryptFormat.flac) ...['-f', 'flac'],
+      if (format == _LiveDecryptFormat.m4a) ...[
+        '-movflags',
+        '+frag_keyframe+empty_moov+default_base_moof',
+        '-f',
+        'mp4',
+      ],
+      '-content_type',
+      mimeType,
+      '-listen',
+      '1',
+      localUrl,
+    ];
+
+    _log.d(
+      'Starting live decrypt tunnel: ${_previewCommandForLog(commandArguments.join(' '))}',
+    );
+
+    final session = await FFmpegKit.executeWithArgumentsAsync(commandArguments);
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+
+    final state = await session.getState();
+    if (state == SessionState.running || state == SessionState.created) {
+      return LiveDecryptedStreamResult(
+        localUrl: localUrl,
+        format: ext,
+        session: session,
+      );
+    }
+
+    final output = (await session.getOutput() ?? '').trim();
+    if (output.isNotEmpty) {
+      _log.w('Live decrypt attempt failed ($ext): $output');
+    }
+
+    try {
+      await session.cancel();
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<int> _allocateLoopbackPort() async {
+    final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final port = socket.port;
+    await socket.close();
+    return port;
   }
 
   static Future<String?> convertFlacToOpus(
@@ -919,5 +1066,19 @@ class FFmpegResult {
     required this.success,
     required this.returnCode,
     required this.output,
+  });
+}
+
+enum _LiveDecryptFormat { flac, m4a }
+
+class LiveDecryptedStreamResult {
+  final String localUrl;
+  final String format;
+  final FFmpegSession session;
+
+  LiveDecryptedStreamResult({
+    required this.localUrl,
+    required this.format,
+    required this.session,
   });
 }

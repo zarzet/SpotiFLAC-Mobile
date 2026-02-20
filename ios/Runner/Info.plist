@@ -105,5 +105,11 @@
 		<string>tidal</string>
 		<string>youtube-music</string>
 	</array>
+	
+	<!-- Background audio playback -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

@@ -1087,14 +1087,12 @@ type QobuzDownloadResult struct {
 	LyricsLRC   string
 }
 
-func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
-	downloader := NewQobuzDownloader()
-
-	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
-	if !isSafOutput {
-		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
-			return QobuzDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
-		}
+func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloader, logPrefix string) (*QobuzTrack, error) {
+	if downloader == nil {
+		downloader = NewQobuzDownloader()
+	}
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Qobuz"
 	}
 
 	expectedDurationSec := req.DurationMS / 1000
@@ -1104,15 +1102,15 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 1: Use Qobuz ID from Odesli enrichment (fastest, most accurate)
 	if req.QobuzID != "" {
-		GoLog("[Qobuz] Using Qobuz ID from Odesli enrichment: %s\n", req.QobuzID)
+		GoLog("[%s] Using Qobuz ID from Odesli enrichment: %s\n", logPrefix, req.QobuzID)
 		var trackID int64
 		if _, parseErr := fmt.Sscanf(req.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
 			track, err = downloader.GetTrackByID(trackID)
 			if err != nil {
-				GoLog("[Qobuz] Failed to get track by Odesli ID %d: %v\n", trackID, err)
+				GoLog("[%s] Failed to get track by Odesli ID %d: %v\n", logPrefix, trackID, err)
 				track = nil
 			} else if track != nil {
-				GoLog("[Qobuz] Successfully found track via Odesli ID: '%s' by '%s'\n", track.Title, track.Performer.Name)
+				GoLog("[%s] Successfully found track via Odesli ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
 			}
 		}
 	}
@@ -1120,10 +1118,10 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	// Strategy 2: Use cached Qobuz Track ID (fast, no search needed)
 	if track == nil && req.ISRC != "" {
 		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.QobuzTrackID > 0 {
-			GoLog("[Qobuz] Cache hit! Using cached track ID: %d\n", cached.QobuzTrackID)
+			GoLog("[%s] Cache hit! Using cached track ID: %d\n", logPrefix, cached.QobuzTrackID)
 			track, err = downloader.GetTrackByID(cached.QobuzTrackID)
 			if err != nil {
-				GoLog("[Qobuz] Cache hit but GetTrackByID failed: %v\n", err)
+				GoLog("[%s] Cache hit but GetTrackByID failed: %v\n", logPrefix, err)
 				track = nil
 			}
 		}
@@ -1131,19 +1129,19 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 3: Try to get QobuzID from SongLink if we have SpotifyID
 	if track == nil && req.SpotifyID != "" && req.QobuzID == "" {
-		GoLog("[Qobuz] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", req.SpotifyID)
+		GoLog("[%s] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", logPrefix, req.SpotifyID)
 		songLinkClient := NewSongLinkClient()
 		availability, slErr := songLinkClient.CheckTrackAvailability(req.SpotifyID, req.ISRC)
 		if slErr == nil && availability != nil && availability.QobuzID != "" {
 			var trackID int64
 			if _, parseErr := fmt.Sscanf(availability.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
-				GoLog("[Qobuz] Got Qobuz ID %d from SongLink\n", trackID)
+				GoLog("[%s] Got Qobuz ID %d from SongLink\n", logPrefix, trackID)
 				track, err = downloader.GetTrackByID(trackID)
 				if err != nil {
-					GoLog("[Qobuz] Failed to get track by SongLink ID %d: %v\n", trackID, err)
+					GoLog("[%s] Failed to get track by SongLink ID %d: %v\n", logPrefix, trackID, err)
 					track = nil
 				} else if track != nil {
-					GoLog("[Qobuz] Successfully found track via SongLink ID: '%s' by '%s'\n", track.Title, track.Performer.Name)
+					GoLog("[%s] Successfully found track via SongLink ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
 					// Cache for future use
 					if req.ISRC != "" {
 						GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
@@ -1155,16 +1153,16 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 4: ISRC search with duration verification
 	if track == nil && req.ISRC != "" {
-		GoLog("[Qobuz] Trying ISRC search: %s\n", req.ISRC)
+		GoLog("[%s] Trying ISRC search: %s\n", logPrefix, req.ISRC)
 		track, err = downloader.SearchTrackByISRCWithDuration(req.ISRC, expectedDurationSec)
 		if track != nil {
 			if !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-				GoLog("[Qobuz] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, track.Performer.Name)
+				GoLog("[%s] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.ArtistName, track.Performer.Name)
 				track = nil
 			} else if !qobuzTitlesMatch(req.TrackName, track.Title) {
-				GoLog("[Qobuz] Title mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.TrackName, track.Title)
+				GoLog("[%s] Title mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.TrackName, track.Title)
 				track = nil
 			}
 		}
@@ -1172,11 +1170,11 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 5: Metadata search with strict matching (duration tolerance: 10 seconds)
 	if track == nil {
-		GoLog("[Qobuz] Trying metadata search: '%s' by '%s'\n", req.TrackName, req.ArtistName)
+		GoLog("[%s] Trying metadata search: '%s' by '%s'\n", logPrefix, req.TrackName, req.ArtistName)
 		track, err = downloader.SearchTrackByMetadataWithDuration(req.TrackName, req.ArtistName, expectedDurationSec)
 		if track != nil && !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-			GoLog("[Qobuz] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-				req.ArtistName, track.Performer.Name)
+			GoLog("[%s] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
+				logPrefix, req.ArtistName, track.Performer.Name)
 			track = nil
 		}
 	}
@@ -1186,12 +1184,30 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		if err != nil {
 			errMsg = err.Error()
 		}
-		return QobuzDownloadResult{}, fmt.Errorf("qobuz search failed: %s", errMsg)
+		return nil, fmt.Errorf("qobuz search failed: %s", errMsg)
 	}
 
-	GoLog("[Qobuz] Match found: '%s' by '%s' (duration: %ds)\n", track.Title, track.Performer.Name, track.Duration)
+	GoLog("[%s] Match found: '%s' by '%s' (duration: %ds)\n", logPrefix, track.Title, track.Performer.Name, track.Duration)
 	if req.ISRC != "" {
 		GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
+	}
+
+	return track, nil
+}
+
+func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
+	downloader := NewQobuzDownloader()
+
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
+	if !isSafOutput {
+		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
+			return QobuzDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
+		}
+	}
+
+	track, err := resolveQobuzTrackForRequest(req, downloader, "Qobuz")
+	if err != nil {
+		return QobuzDownloadResult{}, err
 	}
 
 	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]interface{}{

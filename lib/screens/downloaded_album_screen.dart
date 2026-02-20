@@ -13,6 +13,7 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/utils/lyrics_metadata_helper.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
@@ -267,9 +268,17 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     }
   }
 
-  Future<void> _openFile(String filePath) async {
+  Future<void> _openFile(DownloadHistoryItem track) async {
     try {
-      await openFile(filePath);
+      await ref
+          .read(playbackProvider.notifier)
+          .playLocalPath(
+            path: track.filePath,
+            title: track.trackName,
+            artist: track.artistName,
+            album: track.albumName,
+            coverUrl: track.coverUrl ?? '',
+          );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -849,7 +858,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
-                  onPressed: () => _openFile(track.filePath),
+                  onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(
                     backgroundColor: colorScheme.primaryContainer.withValues(

@@ -5,6 +5,7 @@ import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -57,6 +58,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Added "${track.name}" to queue')));
+  }
+
+  Future<void> _playTrack(Track track) async {
+    try {
+      // Play the track and set the entire search result as the queue
+      final tracks = ref.read(trackProvider).tracks;
+      await ref
+          .read(playbackProvider.notifier)
+          .playTrackStreamAndSetQueue(track, tracks);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Cannot play stream: $e')));
+    }
+  }
+
+  void _addToStreamQueue(Track track) {
+    ref.read(playbackProvider.notifier).addToQueue(track);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added "${track.name}" to play queue')),
+    );
   }
 
   @override
@@ -175,7 +198,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ],
       ),
-      trailing: null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.play_arrow_rounded),
+            tooltip: 'Play stream',
+            onPressed: () => _playTrack(track),
+          ),
+          IconButton(
+            icon: const Icon(Icons.playlist_add_rounded, size: 20),
+            tooltip: 'Add to play queue',
+            onPressed: () => _addToStreamQueue(track),
+          ),
+        ],
+      ),
       onTap: () => _downloadTrack(track),
     );
   }

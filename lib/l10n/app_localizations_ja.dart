@@ -1036,6 +1036,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get errorNoTracksFound => 'トラックがありません';
 
   @override
+  String get errorSeekNotSupported =>
+      'Seeking is not supported for this live stream';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return '$item を読み込めません: 拡張ソースがありません';
   }

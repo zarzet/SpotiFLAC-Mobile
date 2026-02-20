@@ -535,19 +535,7 @@ func (t *TidalDownloader) SearchTrackByMetadataWithISRC(trackName, artistName, s
 		}
 	}
 
-	bestMatch := &allTracks[0]
-	for i := range allTracks {
-		track := &allTracks[i]
-		for _, tag := range track.MediaMetadata.Tags {
-			if tag == "HIRES_LOSSLESS" {
-				bestMatch = track
-				break
-			}
-		}
-		if bestMatch != &allTracks[0] {
-			break
-		}
-	}
+	bestMatch := findBestFallbackTrack(allTracks, artistName)
 
 	GoLog("[Tidal] Found via search (no ISRC provided): %s - %s (ISRC: %s, Quality: %s)\n",
 		bestMatch.Artist.Name, bestMatch.Title, bestMatch.ISRC, bestMatch.AudioQuality)
@@ -558,6 +546,94 @@ func (t *TidalDownloader) SearchTrackByMetadataWithISRC(trackName, artistName, s
 func containsQuery(queries []string, query string) bool {
 	for _, q := range queries {
 		if q == query {
+			return true
+		}
+	}
+	return false
+}
+
+func findBestFallbackTrack(allTracks []TidalTrack, artistName string) *TidalTrack {
+	if len(allTracks) == 0 {
+		return nil
+	}
+
+	if artistName != "" {
+		var artistMatches []*TidalTrack
+		for i := range allTracks {
+			if fallbackArtistsMatch(artistName, allTracks[i].Artist.Name) {
+				artistMatches = append(artistMatches, &allTracks[i])
+			}
+		}
+		if track := pickPreferredFallbackTrack(artistMatches); track != nil {
+			return track
+		}
+	}
+
+	trackPtrs := make([]*TidalTrack, len(allTracks))
+	for i := range allTracks {
+		trackPtrs[i] = &allTracks[i]
+	}
+
+	if track := pickPreferredFallbackTrack(trackPtrs); track != nil {
+		return track
+	}
+
+	return &allTracks[0]
+}
+
+func pickPreferredFallbackTrack(tracks []*TidalTrack) *TidalTrack {
+	if len(tracks) == 0 {
+		return nil
+	}
+	for _, track := range tracks {
+		if fallbackHasTag(track, "HIRES_LOSSLESS") {
+			return track
+		}
+	}
+	return tracks[0]
+}
+
+func fallbackArtistsMatch(requested, candidate string) bool {
+	req := fallbackNormalizeArtistName(requested)
+	cand := fallbackNormalizeArtistName(candidate)
+	if req == "" || cand == "" {
+		return false
+	}
+	if strings.Contains(cand, req) || strings.Contains(req, cand) {
+		return true
+	}
+
+	reqParts := strings.Fields(req)
+	candParts := strings.Fields(cand)
+	for _, part := range reqParts {
+		if len(part) < 3 {
+			continue
+		}
+		for _, token := range candParts {
+			if part == token {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func fallbackNormalizeArtistName(name string) string {
+	cleaned := strings.TrimSpace(CleanToASCII(name))
+	if cleaned == "" {
+		return ""
+	}
+	cleaned = strings.ToLower(cleaned)
+	replacements := []string{"&", "/", ",", ".", "feat", "ft"}
+	for _, repl := range replacements {
+		cleaned = strings.ReplaceAll(cleaned, repl, " ")
+	}
+	return strings.Join(strings.Fields(cleaned), " ")
+}
+
+func fallbackHasTag(track *TidalTrack, tag string) bool {
+	for _, t := range track.MediaMetadata.Tags {
+		if t == tag {
 			return true
 		}
 	}
@@ -1426,81 +1502,86 @@ func isLatinScript(s string) bool {
 	return true
 }
 
-func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
-	downloader := NewTidalDownloader()
+func tidalTrackArtistsDisplay(track *TidalTrack) string {
+	if track == nil {
+		return ""
+	}
 
-	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
-	if !isSafOutput {
-		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
-			return TidalDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
+	tidalArtist := track.Artist.Name
+	if len(track.Artists) > 0 {
+		var artistNames []string
+		for _, a := range track.Artists {
+			artistNames = append(artistNames, a.Name)
 		}
+		tidalArtist = strings.Join(artistNames, ", ")
+	}
+	return tidalArtist
+}
+
+func resolveTidalTrackForRequest(req DownloadRequest, downloader *TidalDownloader, logPrefix string) (*TidalTrack, error) {
+	if downloader == nil {
+		downloader = NewTidalDownloader()
+	}
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Tidal"
 	}
 
 	expectedDurationSec := req.DurationMS / 1000
-
 	var track *TidalTrack
 	var err error
 
 	if req.TidalID != "" {
-		GoLog("[Tidal] Using Tidal ID from Odesli enrichment: %s\n", req.TidalID)
+		GoLog("[%s] Using Tidal ID from Odesli enrichment: %s\n", logPrefix, req.TidalID)
 		var trackID int64
 		if _, parseErr := fmt.Sscanf(req.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
 			track, err = downloader.GetTrackInfoByID(trackID)
 			if err != nil {
-				GoLog("[Tidal] Failed to get track by Odesli ID %d: %v\n", trackID, err)
+				GoLog("[%s] Failed to get track by Odesli ID %d: %v\n", logPrefix, trackID, err)
 				track = nil
 			} else if track != nil {
-				GoLog("[Tidal] Successfully found track via Odesli ID: '%s' by '%s'\n", track.Title, track.Artist.Name)
+				GoLog("[%s] Successfully found track via Odesli ID: '%s' by '%s'\n", logPrefix, track.Title, track.Artist.Name)
 			}
 		}
 	}
 
 	if track == nil && req.ISRC != "" {
 		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.TidalTrackID > 0 {
-			GoLog("[Tidal] Cache hit! Using cached track ID: %d\n", cached.TidalTrackID)
+			GoLog("[%s] Cache hit! Using cached track ID: %d\n", logPrefix, cached.TidalTrackID)
 			track, err = downloader.GetTrackInfoByID(cached.TidalTrackID)
 			if err != nil {
-				GoLog("[Tidal] Cache hit but failed to get track info: %v\n", err)
+				GoLog("[%s] Cache hit but failed to get track info: %v\n", logPrefix, err)
 				track = nil // Fall through to normal search
 			}
 		}
 	}
 
 	if track == nil && req.ISRC != "" {
-		GoLog("[Tidal] Trying ISRC search: %s\n", req.ISRC)
+		GoLog("[%s] Trying ISRC search: %s\n", logPrefix, req.ISRC)
 		track, err = downloader.SearchTrackByMetadataWithISRC(req.TrackName, req.ArtistName, req.ISRC, expectedDurationSec)
 		if track != nil {
-			// Verify artist only (ISRC match is already accurate)
-			tidalArtist := track.Artist.Name
-			if len(track.Artists) > 0 {
-				var artistNames []string
-				for _, a := range track.Artists {
-					artistNames = append(artistNames, a.Name)
-				}
-				tidalArtist = strings.Join(artistNames, ", ")
-			}
+			tidalArtist := tidalTrackArtistsDisplay(track)
 			if !artistsMatch(req.ArtistName, tidalArtist) {
-				GoLog("[Tidal] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, tidalArtist)
+				GoLog("[%s] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.ArtistName, tidalArtist)
 				track = nil
 			}
 		}
 	}
 
 	if track == nil && req.SpotifyID != "" {
-		GoLog("[Tidal] ISRC search failed, trying SongLink...\n")
+		GoLog("[%s] ISRC search failed, trying SongLink...\n", logPrefix)
 
 		var trackID int64
 		var gotTidalID bool
 
 		if strings.HasPrefix(req.SpotifyID, "deezer:") {
 			deezerID := strings.TrimPrefix(req.SpotifyID, "deezer:")
-			GoLog("[Tidal] Using Deezer ID for SongLink lookup: %s\n", deezerID)
+			GoLog("[%s] Using Deezer ID for SongLink lookup: %s\n", logPrefix, deezerID)
 			songlink := NewSongLinkClient()
 			availability, slErr := songlink.CheckAvailabilityFromDeezer(deezerID)
 			if slErr == nil && availability != nil && availability.TidalID != "" {
 				if _, parseErr := fmt.Sscanf(availability.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d directly from SongLink\n", trackID)
+					GoLog("[%s] Got Tidal ID %d directly from SongLink\n", logPrefix, trackID)
 					gotTidalID = true
 				}
 			}
@@ -1509,7 +1590,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 				var idErr error
 				trackID, idErr = downloader.GetTrackIDFromURL(availability.TidalURL)
 				if idErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d from URL parsing\n", trackID)
+					GoLog("[%s] Got Tidal ID %d from URL parsing\n", logPrefix, trackID)
 					gotTidalID = true
 				}
 			}
@@ -1518,7 +1599,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 			availability, slErr := songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
 			if slErr == nil && availability != nil && availability.TidalID != "" {
 				if _, parseErr := fmt.Sscanf(availability.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d directly from SongLink\n", trackID)
+					GoLog("[%s] Got Tidal ID %d directly from SongLink\n", logPrefix, trackID)
 					gotTidalID = true
 				}
 			}
@@ -1527,7 +1608,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 				var idErr error
 				trackID, idErr = downloader.GetTrackIDFromURL(availability.TidalURL)
 				if idErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d from URL parsing\n", trackID)
+					GoLog("[%s] Got Tidal ID %d from URL parsing\n", logPrefix, trackID)
 					gotTidalID = true
 				}
 			}
@@ -1536,18 +1617,11 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		if gotTidalID && trackID > 0 {
 			track, err = downloader.GetTrackInfoByID(trackID)
 			if track != nil {
-				tidalArtist := track.Artist.Name
-				if len(track.Artists) > 0 {
-					var artistNames []string
-					for _, a := range track.Artists {
-						artistNames = append(artistNames, a.Name)
-					}
-					tidalArtist = strings.Join(artistNames, ", ")
-				}
+				tidalArtist := tidalTrackArtistsDisplay(track)
 
 				if !artistsMatch(req.ArtistName, tidalArtist) {
-					GoLog("[Tidal] Artist mismatch from SongLink: expected '%s', got '%s'. Rejecting.\n",
-						req.ArtistName, tidalArtist)
+					GoLog("[%s] Artist mismatch from SongLink: expected '%s', got '%s'. Rejecting.\n",
+						logPrefix, req.ArtistName, tidalArtist)
 					track = nil
 				}
 
@@ -1557,8 +1631,8 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 						durationDiff = -durationDiff
 					}
 					if durationDiff > 3 {
-						GoLog("[Tidal] Duration mismatch from SongLink: expected %ds, got %ds. Rejecting.\n",
-							expectedDurationSec, track.Duration)
+						GoLog("[%s] Duration mismatch from SongLink: expected %ds, got %ds. Rejecting.\n",
+							logPrefix, expectedDurationSec, track.Duration)
 						track = nil // Reject this match
 					}
 				}
@@ -1572,25 +1646,18 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	}
 
 	if track == nil {
-		GoLog("[Tidal] Trying metadata search as last resort...\n")
+		GoLog("[%s] Trying metadata search as last resort...\n", logPrefix)
 		track, err = downloader.SearchTrackByMetadataWithISRC(req.TrackName, req.ArtistName, "", expectedDurationSec)
 		if track != nil {
-			tidalArtist := track.Artist.Name
-			if len(track.Artists) > 0 {
-				var artistNames []string
-				for _, a := range track.Artists {
-					artistNames = append(artistNames, a.Name)
-				}
-				tidalArtist = strings.Join(artistNames, ", ")
-			}
+			tidalArtist := tidalTrackArtistsDisplay(track)
 
 			if !titlesMatch(req.TrackName, track.Title) {
-				GoLog("[Tidal] Title mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-					req.TrackName, track.Title)
+				GoLog("[%s] Title mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.TrackName, track.Title)
 				track = nil
 			} else if !artistsMatch(req.ArtistName, tidalArtist) {
-				GoLog("[Tidal] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, tidalArtist)
+				GoLog("[%s] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.ArtistName, tidalArtist)
 				track = nil
 			}
 		}
@@ -1601,21 +1668,32 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		if err != nil {
 			errMsg = err.Error()
 		}
-		return TidalDownloadResult{}, fmt.Errorf("tidal search failed: %s", errMsg)
+		return nil, fmt.Errorf("tidal search failed: %s", errMsg)
 	}
 
-	tidalArtist := track.Artist.Name
-	if len(track.Artists) > 0 {
-		var artistNames []string
-		for _, a := range track.Artists {
-			artistNames = append(artistNames, a.Name)
-		}
-		tidalArtist = strings.Join(artistNames, ", ")
-	}
-	GoLog("[Tidal] Match found: '%s' by '%s' (duration: %ds)\n", track.Title, tidalArtist, track.Duration)
+	tidalArtist := tidalTrackArtistsDisplay(track)
+	GoLog("[%s] Match found: '%s' by '%s' (duration: %ds)\n", logPrefix, track.Title, tidalArtist, track.Duration)
 
 	if req.ISRC != "" {
 		GetTrackIDCache().SetTidal(req.ISRC, track.ID)
+	}
+
+	return track, nil
+}
+
+func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
+	downloader := NewTidalDownloader()
+
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
+	if !isSafOutput {
+		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
+			return TidalDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
+		}
+	}
+
+	track, err := resolveTidalTrackForRequest(req, downloader, "Tidal")
+	if err != nil {
+		return TidalDownloadResult{}, err
 	}
 
 	quality := req.Quality

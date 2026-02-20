@@ -11,6 +11,7 @@ import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 
 /// Screen to display tracks from a local library album
 class LocalAlbumScreen extends ConsumerStatefulWidget {
@@ -204,9 +205,17 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     }
   }
 
-  Future<void> _openFile(String filePath) async {
+  Future<void> _openFile(LocalLibraryItem track) async {
     try {
-      await openFile(filePath);
+      await ref
+          .read(playbackProvider.notifier)
+          .playLocalPath(
+            path: track.filePath,
+            title: track.trackName,
+            artist: track.artistName,
+            album: track.albumName,
+            coverUrl: track.coverPath ?? '',
+          );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -639,7 +648,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           ),
           onTap: _isSelectionMode
               ? () => _toggleSelection(track.id)
-              : () => _openFile(track.filePath),
+              : () => _openFile(track),
           onLongPress: _isSelectionMode
               ? null
               : () => _enterSelectionMode(track.id),
@@ -724,7 +733,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
-                  onPressed: () => _openFile(track.filePath),
+                  onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(
                     backgroundColor: colorScheme.primaryContainer.withValues(

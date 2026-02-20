@@ -1058,6 +1058,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorNoTracksFound => 'Keine Titel gefunden';
 
   @override
+  String get errorSeekNotSupported =>
+      'Seeking is not supported for this live stream';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Kann $item nicht lade wegen fehlender Erweiterungsquelle';
   }

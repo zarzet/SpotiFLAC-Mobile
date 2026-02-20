@@ -1340,6 +1340,10 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
+  "errorSeekNotSupported": "Menggeser posisi lagu tidak didukung untuk live stream ini",
+  "@errorSeekNotSupported": {
+    "description": "Error - seek disabled for live decrypted stream"
+  },
   "errorMissingExtensionSource": "Tidak dapat memuat {item}: sumber ekstensi tidak ada",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",

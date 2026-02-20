@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:spotiflac_android/services/download_request_payload.dart';
+import 'package:spotiflac_android/services/stream_request_payload.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('PlatformBridge');
@@ -101,6 +102,17 @@ class PlatformBridge {
       _log.e('Download failed: $error (type: $errorType)');
     }
     return response;
+  }
+
+  static Future<Map<String, dynamic>> resolveStreamByStrategy(
+    StreamRequestPayload payload,
+  ) async {
+    final request = jsonEncode(payload.toJson());
+    final result = await _channel.invokeMethod(
+      'resolveStreamByStrategy',
+      request,
+    );
+    return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
   static Future<Map<String, dynamic>> getDownloadProgress() async {

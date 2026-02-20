@@ -27,12 +27,14 @@ class Extension {
   final bool hasMetadataProvider;
   final bool hasDownloadProvider;
   final bool hasLyricsProvider;
-  final bool skipMetadataEnrichment; // If true, use metadata from extension instead of enriching
+  final bool
+  skipMetadataEnrichment; // If true, use metadata from extension instead of enriching
   final SearchBehavior? searchBehavior;
   final URLHandler? urlHandler;
   final TrackMatching? trackMatching;
   final PostProcessing? postProcessing;
-  final Map<String, dynamic> capabilities; // Extension capabilities (homeFeed, browseCategories, etc.)
+  final Map<String, dynamic>
+  capabilities; // Extension capabilities (homeFeed, browseCategories, etc.)
 
   const Extension({
     required this.id,
@@ -63,7 +65,8 @@ class Extension {
     return Extension(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
-      displayName: json['display_name'] as String? ?? json['name'] as String? ?? '',
+      displayName:
+          json['display_name'] as String? ?? json['name'] as String? ?? '',
       version: json['version'] as String? ?? '0.0.0',
       author: json['author'] as String? ?? 'Unknown',
       description: json['description'] as String? ?? '',
@@ -71,28 +74,40 @@ class Extension {
       status: json['status'] as String? ?? 'loaded',
       errorMessage: json['error_message'] as String?,
       iconPath: json['icon_path'] as String?,
-      permissions: (json['permissions'] as List<dynamic>?)?.cast<String>() ?? [],
-      settings: (json['settings'] as List<dynamic>?)
-          ?.map((s) => ExtensionSetting.fromJson(s as Map<String, dynamic>))
-          .toList() ?? [],
-      qualityOptions: (json['quality_options'] as List<dynamic>?)
-          ?.map((q) => QualityOption.fromJson(q as Map<String, dynamic>))
-          .toList() ?? [],
+      permissions:
+          (json['permissions'] as List<dynamic>?)?.cast<String>() ?? [],
+      settings:
+          (json['settings'] as List<dynamic>?)
+              ?.map((s) => ExtensionSetting.fromJson(s as Map<String, dynamic>))
+              .toList() ??
+          [],
+      qualityOptions:
+          (json['quality_options'] as List<dynamic>?)
+              ?.map((q) => QualityOption.fromJson(q as Map<String, dynamic>))
+              .toList() ??
+          [],
       hasMetadataProvider: json['has_metadata_provider'] as bool? ?? false,
       hasDownloadProvider: json['has_download_provider'] as bool? ?? false,
       hasLyricsProvider: json['has_lyrics_provider'] as bool? ?? false,
-      skipMetadataEnrichment: json['skip_metadata_enrichment'] as bool? ?? false,
-      searchBehavior: json['search_behavior'] != null 
-          ? SearchBehavior.fromJson(json['search_behavior'] as Map<String, dynamic>)
+      skipMetadataEnrichment:
+          json['skip_metadata_enrichment'] as bool? ?? false,
+      searchBehavior: json['search_behavior'] != null
+          ? SearchBehavior.fromJson(
+              json['search_behavior'] as Map<String, dynamic>,
+            )
           : null,
       urlHandler: json['url_handler'] != null
           ? URLHandler.fromJson(json['url_handler'] as Map<String, dynamic>)
           : null,
       trackMatching: json['track_matching'] != null
-          ? TrackMatching.fromJson(json['track_matching'] as Map<String, dynamic>)
+          ? TrackMatching.fromJson(
+              json['track_matching'] as Map<String, dynamic>,
+            )
           : null,
       postProcessing: json['post_processing'] != null
-          ? PostProcessing.fromJson(json['post_processing'] as Map<String, dynamic>)
+          ? PostProcessing.fromJson(
+              json['post_processing'] as Map<String, dynamic>,
+            )
           : null,
       capabilities: (json['capabilities'] as Map<String, dynamic>?) ?? const {},
     );
@@ -139,7 +154,8 @@ class Extension {
       hasMetadataProvider: hasMetadataProvider ?? this.hasMetadataProvider,
       hasDownloadProvider: hasDownloadProvider ?? this.hasDownloadProvider,
       hasLyricsProvider: hasLyricsProvider ?? this.hasLyricsProvider,
-      skipMetadataEnrichment: skipMetadataEnrichment ?? this.skipMetadataEnrichment,
+      skipMetadataEnrichment:
+          skipMetadataEnrichment ?? this.skipMetadataEnrichment,
       searchBehavior: searchBehavior ?? this.searchBehavior,
       urlHandler: urlHandler ?? this.urlHandler,
       trackMatching: trackMatching ?? this.trackMatching,
@@ -161,11 +177,7 @@ class SearchFilter {
   final String? label;
   final String? icon;
 
-  const SearchFilter({
-    required this.id,
-    this.label,
-    this.icon,
-  });
+  const SearchFilter({required this.id, this.label, this.icon});
 
   factory SearchFilter.fromJson(Map<String, dynamic> json) {
     return SearchFilter(
@@ -181,10 +193,12 @@ class SearchBehavior {
   final String? placeholder;
   final bool primary;
   final String? icon;
-  final String? thumbnailRatio; // "square" (1:1), "wide" (16:9), "portrait" (2:3)
+  final String?
+  thumbnailRatio; // "square" (1:1), "wide" (16:9), "portrait" (2:3)
   final int? thumbnailWidth;
   final int? thumbnailHeight;
-  final List<SearchFilter> filters; // Available search filters (e.g., track, album, artist, playlist)
+  final List<SearchFilter>
+  filters; // Available search filters (e.g., track, album, artist, playlist)
 
   const SearchBehavior({
     required this.enabled,
@@ -206,9 +220,11 @@ class SearchBehavior {
       thumbnailRatio: json['thumbnailRatio'] as String?,
       thumbnailWidth: json['thumbnailWidth'] as int?,
       thumbnailHeight: json['thumbnailHeight'] as int?,
-      filters: (json['filters'] as List<dynamic>?)
-          ?.map((f) => SearchFilter.fromJson(f as Map<String, dynamic>))
-          .toList() ?? [],
+      filters:
+          (json['filters'] as List<dynamic>?)
+              ?.map((f) => SearchFilter.fromJson(f as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -216,7 +232,7 @@ class SearchBehavior {
     if (thumbnailWidth != null && thumbnailHeight != null) {
       return (thumbnailWidth!.toDouble(), thumbnailHeight!.toDouble());
     }
-    
+
     switch (thumbnailRatio) {
       case 'wide': // 16:9 - YouTube style
         return (defaultSize * 16 / 9, defaultSize);
@@ -253,17 +269,18 @@ class PostProcessing {
   final bool enabled;
   final List<PostProcessingHook> hooks;
 
-  const PostProcessing({
-    required this.enabled,
-    this.hooks = const [],
-  });
+  const PostProcessing({required this.enabled, this.hooks = const []});
 
   factory PostProcessing.fromJson(Map<String, dynamic> json) {
     return PostProcessing(
       enabled: json['enabled'] as bool? ?? false,
-      hooks: (json['hooks'] as List<dynamic>?)
-          ?.map((h) => PostProcessingHook.fromJson(h as Map<String, dynamic>))
-          .toList() ?? [],
+      hooks:
+          (json['hooks'] as List<dynamic>?)
+              ?.map(
+                (h) => PostProcessingHook.fromJson(h as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
     );
   }
 }
@@ -273,10 +290,7 @@ class URLHandler {
   final bool enabled;
   final List<String> patterns;
 
-  const URLHandler({
-    required this.enabled,
-    this.patterns = const [],
-  });
+  const URLHandler({required this.enabled, this.patterns = const []});
 
   factory URLHandler.fromJson(Map<String, dynamic> json) {
     return URLHandler(
@@ -319,7 +333,8 @@ class PostProcessingHook {
       name: json['name'] as String? ?? '',
       description: json['description'] as String?,
       defaultEnabled: json['defaultEnabled'] as bool? ?? false,
-      supportedFormats: (json['supportedFormats'] as List<dynamic>?)?.cast<String>() ?? [],
+      supportedFormats:
+          (json['supportedFormats'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 }
@@ -342,9 +357,14 @@ class QualityOption {
       id: json['id'] as String? ?? '',
       label: json['label'] as String? ?? '',
       description: json['description'] as String?,
-      settings: (json['settings'] as List<dynamic>?)
-          ?.map((s) => QualitySpecificSetting.fromJson(s as Map<String, dynamic>))
-          .toList() ?? [],
+      settings:
+          (json['settings'] as List<dynamic>?)
+              ?.map(
+                (s) =>
+                    QualitySpecificSetting.fromJson(s as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
     );
   }
 }
@@ -447,14 +467,14 @@ class ExtensionState {
     return ExtensionState(
       extensions: extensions ?? this.extensions,
       providerPriority: providerPriority ?? this.providerPriority,
-      metadataProviderPriority: metadataProviderPriority ?? this.metadataProviderPriority,
+      metadataProviderPriority:
+          metadataProviderPriority ?? this.metadataProviderPriority,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
 }
-
 
 class ExtensionNotifier extends Notifier<ExtensionState> {
   @override
@@ -464,9 +484,9 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> initialize(String extensionsDir, String dataDir) async {
     if (state.isInitialized) return;
-    
+
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await PlatformBridge.initExtensionSystem(extensionsDir, dataDir);
       await loadExtensions(extensionsDir);
@@ -482,7 +502,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> loadExtensions(String dirPath) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await PlatformBridge.loadExtensionsFromDir(dirPath);
       _log.d('Load extensions result: $result');
@@ -500,10 +520,12 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       final extensions = list.map((e) => Extension.fromJson(e)).toList();
       state = state.copyWith(extensions: extensions);
       _log.d('Loaded ${extensions.length} extensions');
-      
+
       for (final ext in extensions) {
         if (ext.searchBehavior != null) {
-          _log.d('Extension ${ext.id}: thumbnailRatio=${ext.searchBehavior!.thumbnailRatio}');
+          _log.d(
+            'Extension ${ext.id}: thumbnailRatio=${ext.searchBehavior!.thumbnailRatio}',
+          );
         }
       }
     } catch (e) {
@@ -512,14 +534,13 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     }
   }
 
-
   void clearError() {
     state = state.copyWith(error: null);
   }
 
   Future<bool> installExtension(String filePath) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await PlatformBridge.loadExtensionFromPath(filePath);
       _log.i('Installed extension: ${result['name']}');
@@ -544,10 +565,12 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<bool> upgradeExtension(String filePath) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final result = await PlatformBridge.upgradeExtension(filePath);
-      _log.i('Upgraded extension: ${result['display_name']} to v${result['version']}');
+      _log.i(
+        'Upgraded extension: ${result['display_name']} to v${result['version']}',
+      );
       await refreshExtensions();
       state = state.copyWith(isLoading: false);
       return true;
@@ -560,7 +583,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<bool> removeExtension(String extensionId) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       await PlatformBridge.removeExtension(extensionId);
       _log.i('Removed extension: $extensionId');
@@ -574,35 +597,40 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     }
   }
 
-
   Future<void> setExtensionEnabled(String extensionId, bool enabled) async {
     try {
       await PlatformBridge.setExtensionEnabled(extensionId, enabled);
       _log.d('Set extension $extensionId enabled: $enabled');
-      
-      final ext = state.extensions.where((e) => e.id == extensionId).firstOrNull;
-      
+
+      final ext = state.extensions
+          .where((e) => e.id == extensionId)
+          .firstOrNull;
+
       final extensions = state.extensions.map((e) {
         if (e.id == extensionId) {
           return e.copyWith(enabled: enabled);
         }
         return e;
       }).toList();
-      
+
       state = state.copyWith(extensions: extensions);
-      
+
       if (!enabled && ext != null) {
         final settings = ref.read(settingsProvider);
-        
+
         if (settings.searchProvider == extensionId) {
           ref.read(settingsProvider.notifier).setSearchProvider(null);
           ref.read(settingsProvider.notifier).setMetadataSource('deezer');
-          _log.d('Cleared search provider and reset to Deezer because extension $extensionId was disabled');
+          _log.d(
+            'Cleared search provider and reset to Deezer because extension $extensionId was disabled',
+          );
         }
-        
+
         if (ext.hasDownloadProvider && settings.defaultService == extensionId) {
           ref.read(settingsProvider.notifier).setDefaultService('tidal');
-          _log.d('Reset default service to Tidal because extension $extensionId was disabled');
+          _log.d(
+            'Reset default service to Tidal because extension $extensionId was disabled',
+          );
         }
       }
     } catch (e) {
@@ -620,7 +648,10 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     }
   }
 
-  Future<void> setExtensionSettings(String extensionId, Map<String, dynamic> settings) async {
+  Future<void> setExtensionSettings(
+    String extensionId,
+    Map<String, dynamic> settings,
+  ) async {
     try {
       await PlatformBridge.setExtensionSettings(extensionId, settings);
       _log.d('Updated settings for extension: $extensionId');
@@ -635,41 +666,64 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       // Load from SharedPreferences first (persisted)
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString(_providerPriorityKey);
-      
+
       List<String> priority;
       if (savedJson != null) {
         final saved = jsonDecode(savedJson) as List<dynamic>;
         priority = saved.map((e) => e as String).toList();
+        priority = _sanitizeDownloadProviderPriority(priority);
         _log.d('Loaded provider priority from prefs: $priority');
+        await prefs.setString(_providerPriorityKey, jsonEncode(priority));
         // Sync to Go backend
         await PlatformBridge.setProviderPriority(priority);
       } else {
         // Fallback to Go backend default
         priority = await PlatformBridge.getProviderPriority();
+        priority = _sanitizeDownloadProviderPriority(priority);
+        await PlatformBridge.setProviderPriority(priority);
         _log.d('Using default provider priority: $priority');
       }
-      
+
       state = state.copyWith(providerPriority: priority);
     } catch (e) {
       _log.e('Failed to load provider priority: $e');
     }
   }
 
-
   Future<void> setProviderPriority(List<String> priority) async {
     try {
+      final sanitized = _sanitizeDownloadProviderPriority(priority);
       // Save to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_providerPriorityKey, jsonEncode(priority));
-      
+      await prefs.setString(_providerPriorityKey, jsonEncode(sanitized));
+
       // Sync to Go backend
-      await PlatformBridge.setProviderPriority(priority);
-      state = state.copyWith(providerPriority: priority);
-      _log.d('Saved provider priority: $priority');
+      await PlatformBridge.setProviderPriority(sanitized);
+      state = state.copyWith(providerPriority: sanitized);
+      _log.d('Saved provider priority: $sanitized');
     } catch (e) {
       _log.e('Failed to set provider priority: $e');
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  List<String> _sanitizeDownloadProviderPriority(List<String> input) {
+    final allowed = getAllDownloadProviders().toSet();
+    final result = <String>[];
+
+    for (final provider in input) {
+      if (allowed.contains(provider) && !result.contains(provider)) {
+        result.add(provider);
+      }
+    }
+
+    for (final provider in const ['tidal', 'qobuz', 'amazon']) {
+      if (!result.contains(provider)) {
+        result.add(provider);
+      }
+    }
+
+    return result;
   }
 
   Future<void> loadMetadataProviderPriority() async {
@@ -677,7 +731,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       // Load from SharedPreferences first (persisted)
       final prefs = await SharedPreferences.getInstance();
       final savedJson = prefs.getString(_metadataProviderPriorityKey);
-      
+
       List<String> priority;
       if (savedJson != null) {
         final saved = jsonDecode(savedJson) as List<dynamic>;
@@ -690,7 +744,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         priority = await PlatformBridge.getMetadataProviderPriority();
         _log.d('Using default metadata provider priority: $priority');
       }
-      
+
       state = state.copyWith(metadataProviderPriority: priority);
     } catch (e) {
       _log.e('Failed to load metadata provider priority: $e');
@@ -702,7 +756,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       // Save to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_metadataProviderPriorityKey, jsonEncode(priority));
-      
+
       // Sync to Go backend
       await PlatformBridge.setMetadataProviderPriority(priority);
       state = state.copyWith(metadataProviderPriority: priority);
@@ -755,7 +809,9 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   }
 
   List<Extension> get searchProviders {
-    return state.extensions.where((ext) => ext.enabled && ext.hasCustomSearch).toList();
+    return state.extensions
+        .where((ext) => ext.enabled && ext.hasCustomSearch)
+        .toList();
   }
 }
 

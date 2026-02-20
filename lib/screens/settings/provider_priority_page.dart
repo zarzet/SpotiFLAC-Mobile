@@ -8,7 +8,8 @@ class ProviderPriorityPage extends ConsumerStatefulWidget {
   const ProviderPriorityPage({super.key});
 
   @override
-  ConsumerState<ProviderPriorityPage> createState() => _ProviderPriorityPageState();
+  ConsumerState<ProviderPriorityPage> createState() =>
+      _ProviderPriorityPageState();
 }
 
 class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
@@ -23,8 +24,10 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
 
   void _loadProviders() {
     final extState = ref.read(extensionProvider);
-    final allProviders = ref.read(extensionProvider.notifier).getAllDownloadProviders();
-    
+    final allProviders = ref
+        .read(extensionProvider.notifier)
+        .getAllDownloadProviders();
+
     if (extState.providerPriority.isNotEmpty) {
       _providers = List.from(extState.providerPriority);
       for (final provider in allProviders) {
@@ -86,13 +89,17 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                 builder: (context, constraints) {
                   final maxHeight = 120 + topPadding;
                   final minHeight = kToolbarHeight + topPadding;
-                  final expandRatio = ((constraints.maxHeight - minHeight) /
-                          (maxHeight - minHeight))
-                      .clamp(0.0, 1.0);
+                  final expandRatio =
+                      ((constraints.maxHeight - minHeight) /
+                              (maxHeight - minHeight))
+                          .clamp(0.0, 1.0);
                   final leftPadding = 56 - (32 * expandRatio);
                   return FlexibleSpaceBar(
                     expandedTitleScale: 1.0,
-                    titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
+                    titlePadding: EdgeInsets.only(
+                      left: leftPadding,
+                      bottom: 16,
+                    ),
                     title: Text(
                       context.l10n.providerPriorityTitle,
                       style: TextStyle(
@@ -156,14 +163,19 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 20, color: colorScheme.tertiary),
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: colorScheme.tertiary,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           context.l10n.providerPriorityInfo,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onTertiaryContainer,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colorScheme.onTertiaryContainer,
+                              ),
                         ),
                       ),
                     ],
@@ -292,7 +304,9 @@ class _ProviderItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        info.isBuiltIn ? context.l10n.providerBuiltIn : context.l10n.providerExtension,
+                        info.isBuiltIn
+                            ? context.l10n.providerBuiltIn
+                            : context.l10n.providerExtension,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -300,10 +314,7 @@ class _ProviderItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.drag_handle,
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                Icon(Icons.drag_handle, color: colorScheme.onSurfaceVariant),
               ],
             ),
           ),
@@ -321,15 +332,17 @@ class _ProviderItem extends StatelessWidget {
           isBuiltIn: true,
         );
       case 'qobuz':
-        return _ProviderInfo(
-          name: 'Qobuz',
-          icon: Icons.album,
-          isBuiltIn: true,
-        );
+        return _ProviderInfo(name: 'Qobuz', icon: Icons.album, isBuiltIn: true);
       case 'amazon':
         return _ProviderInfo(
           name: 'Amazon Music',
           icon: Icons.shopping_bag,
+          isBuiltIn: true,
+        );
+      case 'youtube':
+        return _ProviderInfo(
+          name: 'YouTube',
+          icon: Icons.play_circle_outline,
           isBuiltIn: true,
         );
       default:

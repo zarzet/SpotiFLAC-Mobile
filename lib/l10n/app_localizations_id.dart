@@ -1048,6 +1048,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get errorNoTracksFound => 'Tidak ada lagu ditemukan';
 
   @override
+  String get errorSeekNotSupported =>
+      'Menggeser posisi lagu tidak didukung untuk live stream ini';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Tidak dapat memuat $item: sumber ekstensi tidak ada';
   }

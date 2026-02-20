@@ -20,6 +20,7 @@ import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
@@ -1635,10 +1636,25 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     );
   }
 
-  Future<void> _openFile(String filePath) async {
+  Future<void> _openFile(
+    String filePath, {
+    String title = '',
+    String artist = '',
+    String album = '',
+    String coverUrl = '',
+  }) async {
     final cleanPath = _cleanFilePath(filePath);
     try {
-      await openFile(cleanPath);
+      final fallbackTitle = cleanPath.split('/').last.split('\\').last;
+      await ref
+          .read(playbackProvider.notifier)
+          .playLocalPath(
+            path: cleanPath,
+            title: title.isNotEmpty ? title : fallbackTitle,
+            artist: artist,
+            album: album,
+            coverUrl: coverUrl,
+          );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -5111,7 +5127,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               children: [
                 if (fileExists)
                   IconButton(
-                    onPressed: () => _openFile(item.filePath!),
+                    onPressed: () => _openFile(
+                      item.filePath!,
+                      title: item.track.name,
+                      artist: item.track.artistName,
+                      album: item.track.albumName,
+                      coverUrl: item.track.coverUrl ?? '',
+                    ),
                     icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                     tooltip: 'Play',
                     style: IconButton.styleFrom(
@@ -5417,7 +5439,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             ? () => _navigateToHistoryMetadataScreen(item.historyItem!)
             : item.localItem != null
             ? () => _navigateToLocalMetadataScreen(item.localItem!)
-            : () => _openFile(item.filePath),
+            : () => _openFile(
+                item.filePath,
+                title: item.trackName,
+                artist: item.artistName,
+                album: item.albumName,
+                coverUrl: item.coverUrl ?? item.localCoverPath ?? '',
+              ),
         onLongPress: _isSelectionMode
             ? null
             : () => _enterSelectionMode(item.id),
@@ -5556,7 +5584,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       children: [
                         if (fileExists)
                           IconButton(
-                            onPressed: () => _openFile(item.filePath),
+                            onPressed: () => _openFile(
+                              item.filePath,
+                              title: item.trackName,
+                              artist: item.artistName,
+                              album: item.albumName,
+                              coverUrl:
+                                  item.coverUrl ?? item.localCoverPath ?? '',
+                            ),
                             icon: Icon(
                               Icons.play_arrow,
                               color: colorScheme.primary,
@@ -5601,7 +5636,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           ? () => _navigateToHistoryMetadataScreen(item.historyItem!)
           : item.localItem != null
           ? () => _navigateToLocalMetadataScreen(item.localItem!)
-          : () => _openFile(item.filePath),
+          : () => _openFile(
+              item.filePath,
+              title: item.trackName,
+              artist: item.artistName,
+              album: item.albumName,
+              coverUrl: item.coverUrl ?? item.localCoverPath ?? '',
+            ),
       onLongPress: _isSelectionMode ? null : () => _enterSelectionMode(item.id),
       child: Stack(
         children: [
@@ -5676,7 +5717,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         builder: (context, fileExists, child) {
                           return fileExists
                               ? GestureDetector(
-                                  onTap: () => _openFile(item.filePath),
+                                  onTap: () => _openFile(
+                                    item.filePath,
+                                    title: item.trackName,
+                                    artist: item.artistName,
+                                    album: item.albumName,
+                                    coverUrl:
+                                        item.coverUrl ??
+                                        item.localCoverPath ??
+                                        '',
+                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(

@@ -759,6 +759,8 @@
   },
   "errorNoTracksFound": "No tracks found",
   "@errorNoTracksFound": {"description": "Error - search returned no results"},
+  "errorSeekNotSupported": "Seeking is not supported for this live stream",
+  "@errorSeekNotSupported": {"description": "Error - seek disabled for live decrypted stream"},
   "errorMissingExtensionSource": "Cannot load {item}: missing extension source",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",

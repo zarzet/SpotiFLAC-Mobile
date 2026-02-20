@@ -6,9 +6,9 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode
 import io.flutter.embedding.android.FlutterFragment
-import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.android.RenderMode
 import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
@@ -27,7 +27,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Locale
 
-class MainActivity: FlutterFragmentActivity() {
+class MainActivity: AudioServiceFragmentActivity() {
     private val CHANNEL = "com.zarz.spotiflac/backend"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingSafTreeResult: MethodChannel.Result? = null
@@ -1310,6 +1310,13 @@ class MainActivity: FlutterFragmentActivity() {
                                 handleSafDownload(requestJson) { json ->
                                     Gobackend.downloadByStrategy(json)
                                 }
+                            }
+                            result.success(response)
+                        }
+                        "resolveStreamByStrategy" -> {
+                            val requestJson = call.arguments as String
+                            val response = withContext(Dispatchers.IO) {
+                                Gobackend.resolveStreamByStrategy(requestJson)
                             }
                             result.success(response)
                         }
