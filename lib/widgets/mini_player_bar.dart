@@ -7,8 +7,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/playback_item.dart';
+import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
+import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
 // ─── Mini Player Bar ─────────────────────────────────────────────────────────
 class MiniPlayerBar extends ConsumerWidget {
@@ -341,19 +345,24 @@ class _FullScreenPlayerState extends ConsumerState<_FullScreenPlayer> {
                       ),
                       child: Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 30,
+                          // ── Left side
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 30,
+                                ),
+                                visualDensity: isCompactLayout
+                                    ? VisualDensity.compact
+                                    : VisualDensity.standard,
+                                onPressed: () => Navigator.of(context).pop(),
+                                tooltip: 'Close',
+                              ),
                             ),
-                            visualDensity: isCompactLayout
-                                ? VisualDensity.compact
-                                : VisualDensity.standard,
-                            onPressed: () => Navigator.of(context).pop(),
-                            tooltip: 'Close',
                           ),
-                          const Spacer(),
-                          // Queue info (tappable to open queue sheet)
+                          // ── Center: Queue info
                           if (state.queue.length > 1)
                             GestureDetector(
                               onTap: () => _showQueueSheet(context, ref),
@@ -387,26 +396,37 @@ class _FullScreenPlayerState extends ConsumerState<_FullScreenPlayer> {
                                 ),
                               ),
                             ),
-                          const Spacer(),
-                          // Lyrics toggle button
-                          IconButton(
-                            visualDensity: isCompactLayout
-                                ? VisualDensity.compact
-                                : VisualDensity.standard,
-                            icon: Icon(
-                              Icons.lyrics_outlined,
-                              color: _currentPage == 1
-                                  ? colorScheme.primary
-                                  : colorScheme.onSurfaceVariant,
+                          // ── Right side
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (!item.isLocal && item.track != null)
+                                  _DownloadButton(
+                                    item: item,
+                                    compact: isCompactLayout,
+                                  ),
+                                IconButton(
+                                  visualDensity: isCompactLayout
+                                      ? VisualDensity.compact
+                                      : VisualDensity.standard,
+                                  icon: Icon(
+                                    Icons.lyrics_outlined,
+                                    color: _currentPage == 1
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                                  onPressed: () {
+                                    if (_currentPage == 0) {
+                                      _switchToLyrics();
+                                    } else {
+                                      _switchToCover();
+                                    }
+                                  },
+                                  tooltip: 'Lyrics',
+                                ),
+                              ],
                             ),
-                            onPressed: () {
-                              if (_currentPage == 0) {
-                                _switchToLyrics();
-                              } else {
-                                _switchToCover();
-                              }
-                            },
-                            tooltip: 'Lyrics',
                           ),
                         ],
                       ),
@@ -1294,6 +1314,67 @@ class _Chip extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─── Download Button ─────────────────────────────────────────────────────────
+class _DownloadButton extends ConsumerWidget {
+  final PlaybackItem item;
+  final bool compact;
+
+  const _DownloadButton({required this.item, this.compact = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final track = item.track;
+    if (track == null) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final iconSize = compact ? 18.0 : 22.0;
+
+    return IconButton(
+      visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
+      icon: Icon(
+        Icons.download_rounded,
+        color: colorScheme.onSurfaceVariant,
+        size: iconSize,
+      ),
+      onPressed: () => _onDownloadTap(context, ref, track),
+      tooltip: context.l10n.downloadTitle,
+    );
+  }
+
+  void _onDownloadTap(BuildContext context, WidgetRef ref, Track track) {
+    final settings = ref.read(settingsProvider);
+
+    if (settings.askQualityBeforeDownload) {
+      DownloadServicePicker.show(
+        context,
+        trackName: track.name,
+        artistName: track.artistName,
+        coverUrl: track.coverUrl,
+        onSelect: (quality, service) {
+          ref
+              .read(downloadQueueProvider.notifier)
+              .addToQueue(track, service, qualityOverride: quality);
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.snackbarAddedToQueue(track.name)),
+            ),
+          );
+        },
+      );
+    } else {
+      ref
+          .read(downloadQueueProvider.notifier)
+          .addToQueue(track, settings.defaultService);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.snackbarAddedToQueue(track.name)),
+        ),
+      );
+    }
   }
 }
 
