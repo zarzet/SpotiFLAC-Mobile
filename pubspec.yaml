@@ -65,7 +65,7 @@ dependencies:
   open_filex: ^4.7.0
 
   # Notifications
-  flutter_local_notifications: 20.0.0
+  flutter_local_notifications: 20.1.0
   just_audio: ^0.10.5
   audio_session: ^0.2.2
   audio_service: ^0.18.17
