@@ -10,6 +10,8 @@ github.com/dop251/goja v0.0.0-20260106131823-651366fbe6e3 h1:bVp3yUzvSAJzu9GqID+
 github.com/dop251/goja v0.0.0-20260106131823-651366fbe6e3/go.mod h1:MxLav0peU43GgvwVgNbLAj1s/bSGboKkhuULvq/7hx4=
 github.com/dop251/goja v0.0.0-20260216154549-8b74ce4618c5 h1:QckvTXtu55YMopmVeDrPQ/r+T6xjw8KMCmE3UgUldkw=
 github.com/dop251/goja v0.0.0-20260216154549-8b74ce4618c5/go.mod h1:MxLav0peU43GgvwVgNbLAj1s/bSGboKkhuULvq/7hx4=
+github.com/dop251/goja v0.0.0-20260219130522-0ba9a5494a59 h1:r75egwbnoPNxVa/m+g7HPUfuUKi3O/4mkE0X+5W4oik=
+github.com/dop251/goja v0.0.0-20260219130522-0ba9a5494a59/go.mod h1:MxLav0peU43GgvwVgNbLAj1s/bSGboKkhuULvq/7hx4=
 github.com/go-flac/flacpicture/v2 v2.0.2 h1:HCaJIVZpxnpdWs6G3ECEVRelzqS5xOi1Ba1AGmtXbzE=
 github.com/go-flac/flacpicture/v2 v2.0.2/go.mod h1:DMZBPWPAmdLqNhqFSy5ZBs9wyBzOekXutGfP7/TFCuo=
 github.com/go-flac/flacvorbis/v2 v2.0.2 h1:xCL3OhxrxWkHrbWUBvGNe+6FQ03yLmBbz0v5z4V2PoQ=
@@ -40,6 +42,8 @@ golang.org/x/mobile v0.0.0-20260209203831-923679eb55af h1:VqXrZNyqFISxo0rNDFZQlR
 golang.org/x/mobile v0.0.0-20260209203831-923679eb55af/go.mod h1:tbwefIr7RlQD1OpZ0KEZ9nux/uiihAOGdafgZfJkmII=
 golang.org/x/mobile v0.0.0-20260211191516-dcd2a3258864 h1:cTVynMSsMYgbUrtia2HB1jrhdUwQNtQti91vUCyjMp4=
 golang.org/x/mobile v0.0.0-20260211191516-dcd2a3258864/go.mod h1:4OGHIUSBiIqyFAQDaX1tpY0BVnO20DvNDeATBu8aeFQ=
+golang.org/x/mobile v0.0.0-20260217195705-b56b3793a9c4 h1:uT3oYo9M38vJa7JpT4kCie2lJwOpoUrx7FvV0H7kXSc=
+golang.org/x/mobile v0.0.0-20260217195705-b56b3793a9c4/go.mod h1:4OGHIUSBiIqyFAQDaX1tpY0BVnO20DvNDeATBu8aeFQ=
 golang.org/x/mod v0.32.0 h1:9F4d3PHLljb6x//jOyokMv3eX+YDeepZSEo3mFJy93c=
 golang.org/x/mod v0.32.0/go.mod h1:SgipZ/3h2Ci89DlEtEXWUk/HteuRin+HHhN+WbNhguU=
 golang.org/x/mod v0.33.0 h1:tHFzIWbBifEmbwtGz65eaWyGiGZatSrT9prnU8DbVL8=
