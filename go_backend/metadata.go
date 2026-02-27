@@ -545,38 +545,60 @@ func ExtractLyrics(filePath string) (string, error) {
 	lower := strings.ToLower(filePath)
 
 	if strings.HasSuffix(lower, ".flac") {
-		return extractLyricsFromFlac(filePath)
+		lyrics, err := extractLyricsFromFlac(filePath)
+		if err == nil && strings.TrimSpace(lyrics) != "" {
+			return lyrics, nil
+		}
+		return extractLyricsFromSidecarLRC(filePath)
 	}
 
 	if strings.HasSuffix(lower, ".mp3") {
 		meta, err := ReadID3Tags(filePath)
-		if err != nil || meta == nil {
-			return "", fmt.Errorf("no lyrics found in file")
+		if err == nil && meta != nil {
+			if strings.TrimSpace(meta.Lyrics) != "" {
+				return meta.Lyrics, nil
+			}
+			if looksLikeEmbeddedLyrics(meta.Comment) {
+				return meta.Comment, nil
+			}
 		}
-		if strings.TrimSpace(meta.Lyrics) != "" {
-			return meta.Lyrics, nil
-		}
-		if looksLikeEmbeddedLyrics(meta.Comment) {
-			return meta.Comment, nil
-		}
-		return "", fmt.Errorf("no lyrics found in file")
+		return extractLyricsFromSidecarLRC(filePath)
 	}
 
 	if strings.HasSuffix(lower, ".opus") || strings.HasSuffix(lower, ".ogg") {
 		meta, err := ReadOggVorbisComments(filePath)
-		if err != nil || meta == nil {
-			return "", fmt.Errorf("no lyrics found in file")
+		if err == nil && meta != nil {
+			if strings.TrimSpace(meta.Lyrics) != "" {
+				return meta.Lyrics, nil
+			}
+			if looksLikeEmbeddedLyrics(meta.Comment) {
+				return meta.Comment, nil
+			}
 		}
-		if strings.TrimSpace(meta.Lyrics) != "" {
-			return meta.Lyrics, nil
-		}
-		if looksLikeEmbeddedLyrics(meta.Comment) {
-			return meta.Comment, nil
-		}
+		return extractLyricsFromSidecarLRC(filePath)
+	}
+
+	return extractLyricsFromSidecarLRC(filePath)
+}
+
+func extractLyricsFromSidecarLRC(filePath string) (string, error) {
+	ext := filepath.Ext(filePath)
+	base := strings.TrimSuffix(filePath, ext)
+	if strings.TrimSpace(base) == "" {
 		return "", fmt.Errorf("no lyrics found in file")
 	}
 
-	return "", fmt.Errorf("unsupported file format for lyrics extraction")
+	lrcPath := base + ".lrc"
+	data, err := os.ReadFile(lrcPath)
+	if err != nil {
+		return "", fmt.Errorf("no lyrics found in file")
+	}
+
+	lyrics := strings.TrimSpace(string(data))
+	if lyrics == "" {
+		return "", fmt.Errorf("no lyrics found in file")
+	}
+	return lyrics, nil
 }
 
 func extractLyricsFromFlac(filePath string) (string, error) {
