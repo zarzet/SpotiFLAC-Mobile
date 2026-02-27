@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
@@ -166,6 +167,9 @@ class _RecentDonorsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const donorNames = [
+      'NinoBrown',
+      '@nino_sandzak',
+      'IMJ',
       'J',
       'Julian',
       'matt_3050',
@@ -282,6 +286,19 @@ class _DonateLinksCard extends StatelessWidget {
             url: AppInfo.githubSponsorsUrl,
             colorScheme: colorScheme,
           ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 74,
+            endIndent: 16,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+          _CryptoWalletItem(
+            title: 'USDT (TRC20)',
+            walletAddress: 'TL7iAqjq9M8BwVMi9AtHvuAGHtdwEvsDta',
+            color: const Color(0xFF26A17B),
+            colorScheme: colorScheme,
+          ),
         ],
       ),
     );
@@ -357,13 +374,97 @@ class _DonateCardItem extends StatelessWidget {
   }
 }
 
+class _CryptoWalletItem extends StatelessWidget {
+  final String title;
+  final String walletAddress;
+  final Color color;
+  final ColorScheme colorScheme;
+
+  const _CryptoWalletItem({
+    required this.title,
+    required this.walletAddress,
+    required this.color,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: walletAddress));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title address copied to clipboard'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  '\$',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    walletAddress,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 11,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.copy_rounded,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 int _cr(String v) {
   int r = 0x1F;
   for (final c in v.codeUnits) { r = (r * 31 + c) & 0x7FFFFFFF; }
   return r;
 }
-// Highlighted supporters (hashes of names): Julian, J.
-const _cv = {1825257268, 1035};
+// Highlighted supporters (hashes of names): Julian, J, NinoBrown, @nino_sandzak, IMJ.
+const _cv = {1825257268, 1035, 1497948283, 398058782, 996135};
 
 class _SupporterChip extends StatelessWidget {
   final String name;

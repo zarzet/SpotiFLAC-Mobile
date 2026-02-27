@@ -20,6 +20,7 @@ import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/history_database.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
@@ -27,6 +28,7 @@ import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/screens/library_tracks_folder_screen.dart';
 import 'package:spotiflac_android/screens/local_album_screen.dart';
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 enum LibraryItemSource { downloaded, local }
 
@@ -363,9 +365,15 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
+  OverlayEntry? _selectionOverlayEntry;
+  List<UnifiedLibraryItem> _selectionOverlayItems = const [];
+  double _selectionOverlayBottomPadding = 0;
 
   bool _isPlaylistSelectionMode = false;
   final Set<String> _selectedPlaylistIds = {};
+  OverlayEntry? _playlistSelectionOverlayEntry;
+  List<UserPlaylistCollection> _playlistSelectionOverlayItems = const [];
+  double _playlistSelectionOverlayBottomPadding = 0;
 
   PageController? _filterPageController;
   final List<String> _filterModes = ['all', 'albums', 'singles'];
@@ -405,6 +413,24 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   String _localFilterQueryCache = '';
   List<LocalLibraryItem> _filteredLocalItemsCache = const [];
   final Map<String, _UnifiedCacheEntry> _unifiedItemsCache = {};
+  final Map<String, _FilterContentData> _filterContentDataCache = {};
+  List<DownloadHistoryItem>? _filterCacheAllHistoryItems;
+  _HistoryStats? _filterCacheHistoryStats;
+  List<LocalLibraryItem>? _filterCacheLocalLibraryItems;
+  LibraryCollectionsState? _filterCacheCollectionState;
+  String _filterCacheSearchQuery = '';
+  String? _filterCacheSource;
+  String? _filterCacheQuality;
+  String? _filterCacheFormat;
+  String _filterCacheSortMode = 'latest';
+  _HistoryStats? _groupedAlbumFilterHistoryStatsCache;
+  String _groupedAlbumFilterSearchQuery = '';
+  String? _groupedAlbumFilterSource;
+  String? _groupedAlbumFilterQuality;
+  String? _groupedAlbumFilterFormat;
+  String _groupedAlbumFilterSortMode = 'latest';
+  List<_GroupedAlbum> _filteredGroupedAlbumsCache = const [];
+  List<_GroupedLocalAlbum> _filteredGroupedLocalAlbumsCache = const [];
   // Advanced filters
   String? _filterSource; // null = all, 'downloaded', 'local'
   String? _filterQuality; // null = all, 'hires', 'cd', 'lossy'
@@ -440,6 +466,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   @override
   void dispose() {
+    _hideSelectionOverlay();
+    _hidePlaylistSelectionOverlay();
     for (final notifier in _fileExistsNotifiers.values) {
       notifier.dispose();
     }
@@ -469,6 +497,47 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _requestFilterRefresh();
   }
 
+  void _invalidateFilterContentCache() {
+    _filterContentDataCache.clear();
+    _filterCacheAllHistoryItems = null;
+    _filterCacheHistoryStats = null;
+    _filterCacheLocalLibraryItems = null;
+    _filterCacheCollectionState = null;
+  }
+
+  void _prepareFilterContentCache({
+    required List<DownloadHistoryItem> allHistoryItems,
+    required _HistoryStats historyStats,
+    required List<LocalLibraryItem> localLibraryItems,
+    required LibraryCollectionsState collectionState,
+  }) {
+    final isCacheValid =
+        identical(_filterCacheAllHistoryItems, allHistoryItems) &&
+        identical(_filterCacheHistoryStats, historyStats) &&
+        identical(_filterCacheLocalLibraryItems, localLibraryItems) &&
+        identical(_filterCacheCollectionState, collectionState) &&
+        _filterCacheSearchQuery == _searchQuery &&
+        _filterCacheSource == _filterSource &&
+        _filterCacheQuality == _filterQuality &&
+        _filterCacheFormat == _filterFormat &&
+        _filterCacheSortMode == _sortMode;
+
+    if (isCacheValid) {
+      return;
+    }
+
+    _filterContentDataCache.clear();
+    _filterCacheAllHistoryItems = allHistoryItems;
+    _filterCacheHistoryStats = historyStats;
+    _filterCacheLocalLibraryItems = localLibraryItems;
+    _filterCacheCollectionState = collectionState;
+    _filterCacheSearchQuery = _searchQuery;
+    _filterCacheSource = _filterSource;
+    _filterCacheQuality = _filterQuality;
+    _filterCacheFormat = _filterFormat;
+    _filterCacheSortMode = _sortMode;
+  }
+
   void _ensureHistoryCaches(
     List<DownloadHistoryItem> items,
     List<LocalLibraryItem> localItems,
@@ -491,6 +560,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       _filteredLocalItemsCache = const [];
     }
     _unifiedItemsCache.clear();
+    _invalidateFilterContentCache();
 
     if (historyChanged) {
       final validPaths = items
@@ -736,9 +806,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   void _enterSelectionMode(String itemId) {
     HapticFeedback.mediumImpact();
     setState(() {
+      _isPlaylistSelectionMode = false;
+      _selectedPlaylistIds.clear();
       _isSelectionMode = true;
       _selectedIds.add(itemId);
     });
+    _hidePlaylistSelectionOverlay();
   }
 
   void _exitSelectionMode() {
@@ -746,6 +819,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       _isSelectionMode = false;
       _selectedIds.clear();
     });
+    _hideSelectionOverlay();
   }
 
   void _toggleSelection(String itemId) {
@@ -767,14 +841,109 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
+  void _hideSelectionOverlay() {
+    _selectionOverlayEntry?.remove();
+    _selectionOverlayEntry = null;
+  }
+
+  void _syncSelectionOverlay({
+    required List<UnifiedLibraryItem> items,
+    required double bottomPadding,
+  }) {
+    if (!mounted) return;
+    if (!_isSelectionMode || _isPlaylistSelectionMode) {
+      _hideSelectionOverlay();
+      return;
+    }
+
+    _selectionOverlayItems = items;
+    _selectionOverlayBottomPadding = bottomPadding;
+
+    if (_selectionOverlayEntry != null) {
+      _selectionOverlayEntry!.markNeedsBuild();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    _selectionOverlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: Colors.transparent,
+            child: _buildSelectionBottomBar(
+              context,
+              colorScheme,
+              _selectionOverlayItems,
+              _selectionOverlayBottomPadding,
+            ),
+          ),
+        );
+      },
+    );
+    overlay.insert(_selectionOverlayEntry!);
+  }
+
+  void _hidePlaylistSelectionOverlay() {
+    _playlistSelectionOverlayEntry?.remove();
+    _playlistSelectionOverlayEntry = null;
+  }
+
+  void _syncPlaylistSelectionOverlay({
+    required List<UserPlaylistCollection> playlists,
+    required double bottomPadding,
+  }) {
+    if (!mounted) return;
+    if (!_isPlaylistSelectionMode || _isSelectionMode) {
+      _hidePlaylistSelectionOverlay();
+      return;
+    }
+
+    _playlistSelectionOverlayItems = playlists;
+    _playlistSelectionOverlayBottomPadding = bottomPadding;
+
+    if (_playlistSelectionOverlayEntry != null) {
+      _playlistSelectionOverlayEntry!.markNeedsBuild();
+      return;
+    }
+
+    final overlay = Overlay.of(context, rootOverlay: true);
+    _playlistSelectionOverlayEntry = OverlayEntry(
+      builder: (overlayContext) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: Colors.transparent,
+            child: _buildPlaylistSelectionBottomBar(
+              context,
+              colorScheme,
+              _playlistSelectionOverlayItems,
+              _playlistSelectionOverlayBottomPadding,
+            ),
+          ),
+        );
+      },
+    );
+    overlay.insert(_playlistSelectionOverlayEntry!);
+  }
+
   // --- Playlist selection mode ---
 
   void _enterPlaylistSelectionMode(String playlistId) {
     HapticFeedback.mediumImpact();
     setState(() {
+      _isSelectionMode = false;
+      _selectedIds.clear();
       _isPlaylistSelectionMode = true;
       _selectedPlaylistIds.add(playlistId);
     });
+    _hideSelectionOverlay();
   }
 
   void _exitPlaylistSelectionMode() {
@@ -782,6 +951,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       _isPlaylistSelectionMode = false;
       _selectedPlaylistIds.clear();
     });
+    _hidePlaylistSelectionOverlay();
   }
 
   void _togglePlaylistSelection(String playlistId) {
@@ -1172,6 +1342,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       _filterFormat = null;
       _sortMode = 'latest';
       _unifiedItemsCache.clear();
+      _invalidateFilterContentCache();
     });
   }
 
@@ -1400,6 +1571,46 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return result;
   }
 
+  ({List<_GroupedAlbum> albums, List<_GroupedLocalAlbum> localAlbums})
+  _resolveFilteredGroupedAlbums(_HistoryStats historyStats) {
+    final cacheValid =
+        identical(_groupedAlbumFilterHistoryStatsCache, historyStats) &&
+        _groupedAlbumFilterSearchQuery == _searchQuery &&
+        _groupedAlbumFilterSource == _filterSource &&
+        _groupedAlbumFilterQuality == _filterQuality &&
+        _groupedAlbumFilterFormat == _filterFormat &&
+        _groupedAlbumFilterSortMode == _sortMode;
+
+    if (cacheValid) {
+      return (
+        albums: _filteredGroupedAlbumsCache,
+        localAlbums: _filteredGroupedLocalAlbumsCache,
+      );
+    }
+
+    final filteredGroupedAlbums = _filterGroupedAlbums(
+      historyStats.groupedAlbums,
+      _searchQuery,
+    );
+    final filteredGroupedLocalAlbums = _filterGroupedLocalAlbums(
+      historyStats.groupedLocalAlbums,
+      _searchQuery,
+    );
+
+    _groupedAlbumFilterHistoryStatsCache = historyStats;
+    _groupedAlbumFilterSearchQuery = _searchQuery;
+    _groupedAlbumFilterSource = _filterSource;
+    _groupedAlbumFilterQuality = _filterQuality;
+    _groupedAlbumFilterFormat = _filterFormat;
+    _groupedAlbumFilterSortMode = _sortMode;
+    _filteredGroupedAlbumsCache = filteredGroupedAlbums;
+    _filteredGroupedLocalAlbumsCache = filteredGroupedLocalAlbums;
+    return (
+      albums: filteredGroupedAlbums,
+      localAlbums: filteredGroupedLocalAlbums,
+    );
+  }
+
   Set<String> _getAvailableFormats(List<UnifiedLibraryItem> items) {
     final formats = <String>{};
     for (final item in items) {
@@ -1425,6 +1636,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: colorScheme.surfaceContainerLow,
       shape: const RoundedRectangleBorder(
@@ -1433,201 +1645,224 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
           return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 32,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(2),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxSheetHeight = constraints.maxHeight * 0.9;
+                return ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxSheetHeight),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 32,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.outlineVariant,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+
+                          Row(
+                            children: [
+                              Text(
+                                context.l10n.libraryFilterTitle,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {
+                                  setSheetState(() {
+                                    tempSource = null;
+                                    tempQuality = null;
+                                    tempFormat = null;
+                                    tempSortMode = 'latest';
+                                  });
+                                },
+                                child: Text(context.l10n.libraryFilterReset),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
+                            context.l10n.libraryFilterSource,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              FilterChip(
+                                label: Text(context.l10n.libraryFilterAll),
+                                selected: tempSource == null,
+                                onSelected: (_) =>
+                                    setSheetState(() => tempSource = null),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterDownloaded,
+                                ),
+                                selected: tempSource == 'downloaded',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSource = 'downloaded',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(context.l10n.libraryFilterLocal),
+                                selected: tempSource == 'local',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempSource = 'local'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
+                            context.l10n.libraryFilterQuality,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              FilterChip(
+                                label: Text(context.l10n.libraryFilterAll),
+                                selected: tempQuality == null,
+                                onSelected: (_) =>
+                                    setSheetState(() => tempQuality = null),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterQualityHiRes,
+                                ),
+                                selected: tempQuality == 'hires',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempQuality = 'hires'),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterQualityCD,
+                                ),
+                                selected: tempQuality == 'cd',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempQuality = 'cd'),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterQualityLossy,
+                                ),
+                                selected: tempQuality == 'lossy',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempQuality = 'lossy'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
+                            context.l10n.libraryFilterFormat,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              FilterChip(
+                                label: Text(context.l10n.libraryFilterAll),
+                                selected: tempFormat == null,
+                                onSelected: (_) =>
+                                    setSheetState(() => tempFormat = null),
+                              ),
+                              for (final format
+                                  in availableFormats.toList()..sort())
+                                FilterChip(
+                                  label: Text(format.toUpperCase()),
+                                  selected: tempFormat == format,
+                                  onSelected: (_) =>
+                                      setSheetState(() => tempFormat = format),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
+                            context.l10n.libraryFilterSort,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortLatest,
+                                ),
+                                selected: tempSortMode == 'latest',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'latest',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortOldest,
+                                ),
+                                selected: tempSortMode == 'oldest',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'oldest',
+                                ),
+                              ),
+                              FilterChip(
+                                label: const Text('A-Z'),
+                                selected: tempSortMode == 'a-z',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempSortMode = 'a-z'),
+                              ),
+                              FilterChip(
+                                label: const Text('Z-A'),
+                                selected: tempSortMode == 'z-a',
+                                onSelected: (_) =>
+                                    setSheetState(() => tempSortMode = 'z-a'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton(
+                              onPressed: () {
+                                setState(() {
+                                  _filterSource = tempSource;
+                                  _filterQuality = tempQuality;
+                                  _filterFormat = tempFormat;
+                                  _sortMode = tempSortMode;
+                                  _unifiedItemsCache.clear();
+                                  _invalidateFilterContentCache();
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: Text(context.l10n.libraryFilterApply),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
-                  Row(
-                    children: [
-                      Text(
-                        context.l10n.libraryFilterTitle,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          setSheetState(() {
-                            tempSource = null;
-                            tempQuality = null;
-                            tempFormat = null;
-                            tempSortMode = 'latest';
-                          });
-                        },
-                        child: Text(context.l10n.libraryFilterReset),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    context.l10n.libraryFilterSource,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterAll),
-                        selected: tempSource == null,
-                        onSelected: (_) =>
-                            setSheetState(() => tempSource = null),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterDownloaded),
-                        selected: tempSource == 'downloaded',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSource = 'downloaded'),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterLocal),
-                        selected: tempSource == 'local',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSource = 'local'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    context.l10n.libraryFilterQuality,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterAll),
-                        selected: tempQuality == null,
-                        onSelected: (_) =>
-                            setSheetState(() => tempQuality = null),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterQualityHiRes),
-                        selected: tempQuality == 'hires',
-                        onSelected: (_) =>
-                            setSheetState(() => tempQuality = 'hires'),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterQualityCD),
-                        selected: tempQuality == 'cd',
-                        onSelected: (_) =>
-                            setSheetState(() => tempQuality = 'cd'),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterQualityLossy),
-                        selected: tempQuality == 'lossy',
-                        onSelected: (_) =>
-                            setSheetState(() => tempQuality = 'lossy'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    context.l10n.libraryFilterFormat,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterAll),
-                        selected: tempFormat == null,
-                        onSelected: (_) =>
-                            setSheetState(() => tempFormat = null),
-                      ),
-                      for (final format in availableFormats.toList()..sort())
-                        FilterChip(
-                          label: Text(format.toUpperCase()),
-                          selected: tempFormat == format,
-                          onSelected: (_) =>
-                              setSheetState(() => tempFormat = format),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    context.l10n.libraryFilterSort,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterSortLatest),
-                        selected: tempSortMode == 'latest',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSortMode = 'latest'),
-                      ),
-                      FilterChip(
-                        label: Text(context.l10n.libraryFilterSortOldest),
-                        selected: tempSortMode == 'oldest',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSortMode = 'oldest'),
-                      ),
-                      FilterChip(
-                        label: const Text('A-Z'),
-                        selected: tempSortMode == 'a-z',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSortMode = 'a-z'),
-                      ),
-                      FilterChip(
-                        label: const Text('Z-A'),
-                        selected: tempSortMode == 'z-a',
-                        onSelected: (_) =>
-                            setSheetState(() => tempSortMode = 'z-a'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () {
-                        setState(() {
-                          _filterSource = tempSource;
-                          _filterQuality = tempQuality;
-                          _filterFormat = tempFormat;
-                          _sortMode = tempSortMode;
-                          _unifiedItemsCache.clear();
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: Text(context.l10n.libraryFilterApply),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           );
         },
@@ -1635,10 +1870,25 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     );
   }
 
-  Future<void> _openFile(String filePath) async {
+  Future<void> _openFile(
+    String filePath, {
+    String title = '',
+    String artist = '',
+    String album = '',
+    String coverUrl = '',
+  }) async {
     final cleanPath = _cleanFilePath(filePath);
     try {
-      await openFile(cleanPath);
+      final fallbackTitle = cleanPath.split('/').last.split('\\').last;
+      await ref
+          .read(playbackProvider.notifier)
+          .playLocalPath(
+            path: cleanPath,
+            title: title.isNotEmpty ? title : fallbackTitle,
+            artist: artist,
+            album: album,
+            coverUrl: coverUrl,
+          );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2058,11 +2308,17 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   /// Pass a finite [size] (e.g. 56) for list view, or `null` for grid view
   /// where the widget should expand to fill its parent.
   Widget _buildPlaylistCover(
+    BuildContext context,
     UserPlaylistCollection playlist,
     ColorScheme colorScheme, [
     double? size,
   ]) {
     final borderRadius = BorderRadius.circular(8);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheExtent = size != null
+        ? (size * dpr).round().clamp(64, 1024)
+        : 420;
+    final placeholder = _playlistIconFallback(colorScheme, size);
 
     final customCoverPath = playlist.coverImagePath;
     if (customCoverPath != null && customCoverPath.isNotEmpty) {
@@ -2073,7 +2329,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _playlistIconFallback(colorScheme, size),
+          cacheWidth: cacheExtent,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.low,
+          frameBuilder: (_, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded || frame != null) return child;
+            return placeholder;
+          },
+          errorBuilder: (_, _, _) => placeholder,
         ),
       );
     }
@@ -2096,7 +2359,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _playlistIconFallback(colorScheme, size),
+            cacheWidth: cacheExtent,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.low,
+            frameBuilder: (_, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded || frame != null) return child;
+              return placeholder;
+            },
+            errorBuilder: (_, _, _) => placeholder,
           ),
         );
       }
@@ -2107,13 +2377,15 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          placeholder: (_, _) => _playlistIconFallback(colorScheme, size),
-          errorWidget: (_, _, _) => _playlistIconFallback(colorScheme, size),
+          memCacheWidth: cacheExtent,
+          cacheManager: CoverCacheManager.instance,
+          placeholder: (_, _) => placeholder,
+          errorWidget: (_, _, _) => placeholder,
         ),
       );
     }
 
-    return _playlistIconFallback(colorScheme, size);
+    return placeholder;
   }
 
   /// Icon fallback for playlists with no cover.
@@ -2267,22 +2539,20 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final historyStats =
         _historyStatsCache ??
         _buildHistoryStats(allHistoryItems, localLibraryItems);
-    final groupedAlbums = historyStats.groupedAlbums;
-    final groupedLocalAlbums = historyStats.groupedLocalAlbums;
-    final filteredGroupedAlbums = _filterGroupedAlbums(
-      groupedAlbums,
-      _searchQuery,
-    );
-    final filteredGroupedLocalAlbums = _filterGroupedLocalAlbums(
-      groupedLocalAlbums,
-      _searchQuery,
-    );
+    final filteredGrouped = _resolveFilteredGroupedAlbums(historyStats);
+    final filteredGroupedAlbums = filteredGrouped.albums;
+    final filteredGroupedLocalAlbums = filteredGrouped.localAlbums;
     final albumCount = historyStats.totalAlbumCount;
     final singleCount = historyStats.totalSingleTracks;
-    final filterDataCache = <String, _FilterContentData>{};
+    _prepareFilterContentCache(
+      allHistoryItems: allHistoryItems,
+      historyStats: historyStats,
+      localLibraryItems: localLibraryItems,
+      collectionState: collectionState,
+    );
 
     _FilterContentData getFilterData(String filterMode) {
-      return filterDataCache.putIfAbsent(
+      return _filterContentDataCache.putIfAbsent(
         filterMode,
         () => _computeFilterContentData(
           filterMode: filterMode,
@@ -2298,12 +2568,29 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final selectionItems = getFilterData(
+      historyFilterMode,
+    ).filteredUnifiedItems;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncSelectionOverlay(
+        items: selectionItems,
+        bottomPadding: bottomPadding,
+      );
+      _syncPlaylistSelectionOverlay(
+        playlists: collectionState.playlists,
+        bottomPadding: bottomPadding,
+      );
+    });
 
     return PopScope(
-      canPop: !_isSelectionMode,
+      canPop: !_isSelectionMode && !_isPlaylistSelectionMode,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _isSelectionMode) {
-          _exitSelectionMode();
+        if (!didPop) {
+          if (_isPlaylistSelectionMode) {
+            _exitPlaylistSelectionMode();
+          } else if (_isSelectionMode) {
+            _exitSelectionMode();
+          }
         }
       },
       child: Stack(
@@ -2485,170 +2772,31 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                     ),
                   ),
               ],
-              body: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  final parentController = widget.parentPageController;
-                  if (parentController == null ||
-                      !parentController.hasClients) {
-                    return false;
-                  }
-
-                  final page = _filterPageController!.page?.round() ?? 0;
-
-                  if (notification is OverscrollNotification) {
-                    final overscroll = notification.overscroll;
-
-                    if (page == 0 && overscroll < 0) {
-                      final currentOffset = parentController.offset;
-                      final targetOffset = (currentOffset + overscroll).clamp(
-                        0.0,
-                        parentController.position.maxScrollExtent,
-                      );
-                      parentController.jumpTo(targetOffset);
-                      return true;
-                    }
-
-                    if (page == 2 && overscroll > 0) {
-                      final currentOffset = parentController.offset;
-                      final targetOffset = (currentOffset + overscroll).clamp(
-                        0.0,
-                        parentController.position.maxScrollExtent,
-                      );
-                      parentController.jumpTo(targetOffset);
-                      return true;
-                    }
-                  }
-
-                  if (notification is ScrollEndNotification) {
-                    if (page == 0 || page == 2) {
-                      final currentPage =
-                          parentController.page ??
-                          widget.parentPageIndex.toDouble();
-                      final historyPage = widget.parentPageIndex.toDouble();
-                      final offset = currentPage - historyPage;
-
-                      if (offset.abs() > 0.01) {
-                        if (offset < -0.3) {
-                          parentController.animateToPage(
-                            widget.parentPageIndex - 1,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                          );
-                        } else if (offset > 0.3) {
-                          parentController.animateToPage(
-                            widget.nextPageIndex ??
-                                (widget.parentPageIndex + 1),
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                          );
-                        } else {
-                          parentController.jumpToPage(widget.parentPageIndex);
-                        }
-                      }
-                    }
-                  }
-
-                  return false;
+              body: PageView.builder(
+                controller: _filterPageController!,
+                physics: const ClampingScrollPhysics(),
+                onPageChanged: _onFilterPageChanged,
+                itemCount: _filterModes.length,
+                itemBuilder: (context, index) {
+                  final filterMode = _filterModes[index];
+                  final filterData = getFilterData(filterMode);
+                  return _buildFilterContent(
+                    context: context,
+                    colorScheme: colorScheme,
+                    filterMode: filterMode,
+                    historyViewMode: historyViewMode,
+                    hasQueueItems: hasQueueItems,
+                    filterData: filterData,
+                    localLibraryItems: localLibraryItems,
+                    collectionState: collectionState,
+                  );
                 },
-                child: PageView.builder(
-                  controller: _filterPageController!,
-                  physics: const ClampingScrollPhysics(),
-                  onPageChanged: _onFilterPageChanged,
-                  itemCount: _filterModes.length,
-                  itemBuilder: (context, index) {
-                    final filterMode = _filterModes[index];
-                    final filterData = getFilterData(filterMode);
-                    return _buildFilterContent(
-                      context: context,
-                      colorScheme: colorScheme,
-                      filterMode: filterMode,
-                      historyViewMode: historyViewMode,
-                      hasQueueItems: hasQueueItems,
-                      filterData: filterData,
-                      localLibraryItems: localLibraryItems,
-                      collectionState: collectionState,
-                    );
-                  },
-                ),
               ),
             ),
           ), // ScrollConfiguration
-
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            left: 0,
-            right: 0,
-            bottom: _isSelectionMode ? 0 : -(200 + bottomPadding),
-            child: _isSelectionMode
-                ? _buildSelectionBottomBar(
-                    context,
-                    colorScheme,
-                    _buildUnifiedItemsForSelection(
-                      filterMode: historyFilterMode,
-                      allHistoryItems: allHistoryItems,
-                      albumCounts: historyStats.albumCounts,
-                      localLibraryItems: localLibraryItems,
-                      localAlbumCounts: historyStats.localAlbumCounts,
-                      collectionState: collectionState,
-                    ),
-                    bottomPadding,
-                  )
-                : const SizedBox.shrink(),
-          ),
-
-          // Playlist selection bottom bar
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            left: 0,
-            right: 0,
-            bottom: _isPlaylistSelectionMode ? 0 : -(200 + bottomPadding),
-            child: _isPlaylistSelectionMode
-                ? _buildPlaylistSelectionBottomBar(
-                    context,
-                    colorScheme,
-                    collectionState.playlists,
-                    bottomPadding,
-                  )
-                : const SizedBox.shrink(),
-          ),
         ],
       ),
     );
-  }
-
-  /// Build unified items list for selection mode
-  List<UnifiedLibraryItem> _buildUnifiedItemsForSelection({
-    required String filterMode,
-    required List<DownloadHistoryItem> allHistoryItems,
-    required Map<String, int> albumCounts,
-    required List<LocalLibraryItem> localLibraryItems,
-    required Map<String, int> localAlbumCounts,
-    required LibraryCollectionsState collectionState,
-  }) {
-    final historyItems = _resolveHistoryItems(
-      filterMode: filterMode,
-      allHistoryItems: allHistoryItems,
-      albumCounts: albumCounts,
-    );
-
-    final unifiedItems = _getUnifiedItems(
-      filterMode: filterMode,
-      historyItems: historyItems,
-      localLibraryItems: localLibraryItems,
-      localAlbumCounts: localAlbumCounts,
-    );
-
-    // Apply advanced filters to match what's displayed
-    final filtered = _applyAdvancedFilters(unifiedItems);
-
-    if (!collectionState.hasPlaylistTracks) return filtered;
-    return filtered
-        .where(
-          (item) => !collectionState.isTrackInAnyPlaylist(item.collectionKey),
-        )
-        .toList(growable: false);
   }
 
   List<UnifiedLibraryItem> _getUnifiedItems({
@@ -3016,7 +3164,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                 _buildCollectionGridItem(
                   context: context,
                   colorScheme: colorScheme,
-                  coverWidget: _buildPlaylistCover(playlist, colorScheme),
+                  coverWidget: _buildPlaylistCover(
+                    context,
+                    playlist,
+                    colorScheme,
+                  ),
                   title: playlist.name,
                   count: playlist.tracks.length,
                   onTap: _isPlaylistSelectionMode
@@ -3031,14 +3183,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                     left: 0,
                     top: 0,
                     right: 0,
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? colorScheme.primary.withValues(alpha: 0.3)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
+                    child: IgnorePointer(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? colorScheme.primary.withValues(alpha: 0.3)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),
@@ -3047,26 +3201,28 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.surface.withValues(alpha: 0.85),
-                        shape: BoxShape.circle,
-                        border: Border.all(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
                           color: isSelected
                               ? colorScheme.primary
-                              : colorScheme.outline,
-                          width: 2,
+                              : colorScheme.surface.withValues(alpha: 0.85),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline,
+                            width: 2,
+                          ),
                         ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                size: 16,
+                                color: colorScheme.onPrimary,
+                              )
+                            : const SizedBox(width: 16, height: 16),
                       ),
-                      child: isSelected
-                          ? Icon(
-                              Icons.check,
-                              size: 16,
-                              color: colorScheme.onPrimary,
-                            )
-                          : const SizedBox(width: 16, height: 16),
                     ),
                   ),
               ],
@@ -3138,35 +3294,44 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             child: Row(
               children: [
                 if (_isPlaylistSelectionMode)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : Colors.transparent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
+                  GestureDetector(
+                    onTap: () => _togglePlaylistSelection(playlist.id),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Container(
+                        decoration: BoxDecoration(
                           color: isSelected
                               ? colorScheme.primary
-                              : colorScheme.outline,
-                          width: 2,
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline,
+                            width: 2,
+                          ),
                         ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                size: 18,
+                                color: colorScheme.onPrimary,
+                              )
+                            : const SizedBox(width: 18, height: 18),
                       ),
-                      child: isSelected
-                          ? Icon(
-                              Icons.check,
-                              size: 18,
-                              color: colorScheme.onPrimary,
-                            )
-                          : const SizedBox(width: 18, height: 18),
                     ),
                   ),
                 Expanded(
                   child: _buildCollectionListItem(
                     context: context,
                     colorScheme: colorScheme,
-                    coverWidget: _buildPlaylistCover(playlist, colorScheme, 56),
+                    coverWidget: _buildPlaylistCover(
+                      context,
+                      playlist,
+                      colorScheme,
+                      56,
+                    ),
                     title: playlist.name,
                     subtitle:
                         '${playlist.tracks.length} ${playlist.tracks.length == 1 ? 'track' : 'tracks'}',
@@ -3844,8 +4009,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               context,
             ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
-          Text(
-            album.artistName,
+          ClickableArtistName(
+            artistName: album.artistName,
+            coverUrl: album.coverUrl,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -3950,8 +4116,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               context,
             ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
-          Text(
-            album.artistName,
+          ClickableArtistName(
+            artistName: album.artistName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -4264,15 +4430,20 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   }
 
   /// Show batch convert bottom sheet for selected tracks
-  void _showBatchConvertSheet(
+  Future<void> _showBatchConvertSheet(
     BuildContext context,
     List<UnifiedLibraryItem> allItems,
-  ) {
+  ) async {
     String selectedFormat = 'MP3';
     String selectedBitrate = '320k';
+    var didStartConversion = false;
 
-    showModalBottomSheet(
+    _hideSelectionOverlay();
+    _hidePlaylistSelectionOverlay();
+
+    await showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -4367,6 +4538,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: () {
+                          didStartConversion = true;
                           Navigator.pop(context);
                           _performBatchConversion(
                             allItems: allItems,
@@ -4395,6 +4567,19 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         );
       },
     );
+
+    if (!mounted || didStartConversion) return;
+    if (_isSelectionMode) {
+      _syncSelectionOverlay(
+        items: allItems,
+        bottomPadding: MediaQuery.of(this.context).padding.bottom,
+      );
+    } else if (_isPlaylistSelectionMode) {
+      _syncPlaylistSelectionOverlay(
+        playlists: ref.read(libraryCollectionsProvider).playlists,
+        bottomPadding: MediaQuery.of(this.context).padding.bottom,
+      );
+    }
   }
 
   /// Perform batch conversion on selected tracks
@@ -4964,8 +5149,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      item.track.artistName,
+                    ClickableArtistName(
+                      artistName: item.track.artistName,
+                      artistId: item.track.artistId,
+                      coverUrl: item.track.coverUrl,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -5111,7 +5298,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               children: [
                 if (fileExists)
                   IconButton(
-                    onPressed: () => _openFile(item.filePath!),
+                    onPressed: () => _openFile(
+                      item.filePath!,
+                      title: item.track.name,
+                      artist: item.track.artistName,
+                      album: item.track.albumName,
+                      coverUrl: item.track.coverUrl ?? '',
+                    ),
                     icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                     tooltip: 'Play',
                     style: IconButton.styleFrom(
@@ -5417,7 +5610,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             ? () => _navigateToHistoryMetadataScreen(item.historyItem!)
             : item.localItem != null
             ? () => _navigateToLocalMetadataScreen(item.localItem!)
-            : () => _openFile(item.filePath),
+            : () => _openFile(
+                item.filePath,
+                title: item.trackName,
+                artist: item.artistName,
+                album: item.albumName,
+                coverUrl: item.coverUrl ?? item.localCoverPath ?? '',
+              ),
         onLongPress: _isSelectionMode
             ? null
             : () => _enterSelectionMode(item.id),
@@ -5469,8 +5668,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      item.artistName,
+                    ClickableArtistName(
+                      artistName: item.artistName,
+                      coverUrl: item.coverUrl,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -5556,7 +5756,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       children: [
                         if (fileExists)
                           IconButton(
-                            onPressed: () => _openFile(item.filePath),
+                            onPressed: () => _openFile(
+                              item.filePath,
+                              title: item.trackName,
+                              artist: item.artistName,
+                              album: item.albumName,
+                              coverUrl:
+                                  item.coverUrl ?? item.localCoverPath ?? '',
+                            ),
                             icon: Icon(
                               Icons.play_arrow,
                               color: colorScheme.primary,
@@ -5601,7 +5808,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           ? () => _navigateToHistoryMetadataScreen(item.historyItem!)
           : item.localItem != null
           ? () => _navigateToLocalMetadataScreen(item.localItem!)
-          : () => _openFile(item.filePath),
+          : () => _openFile(
+              item.filePath,
+              title: item.trackName,
+              artist: item.artistName,
+              album: item.albumName,
+              coverUrl: item.coverUrl ?? item.localCoverPath ?? '',
+            ),
       onLongPress: _isSelectionMode ? null : () => _enterSelectionMode(item.id),
       child: Stack(
         children: [
@@ -5676,7 +5889,16 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         builder: (context, fileExists, child) {
                           return fileExists
                               ? GestureDetector(
-                                  onTap: () => _openFile(item.filePath),
+                                  onTap: () => _openFile(
+                                    item.filePath,
+                                    title: item.trackName,
+                                    artist: item.artistName,
+                                    album: item.albumName,
+                                    coverUrl:
+                                        item.coverUrl ??
+                                        item.localCoverPath ??
+                                        '',
+                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
@@ -5727,8 +5949,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   context,
                 ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
               ),
-              Text(
-                item.artistName,
+              ClickableArtistName(
+                artistName: item.artistName,
+                coverUrl: item.coverUrl,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(

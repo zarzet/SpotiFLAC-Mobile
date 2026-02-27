@@ -16,13 +16,14 @@ import (
 )
 
 const (
-	spotifyTokenURL = "https://accounts.spotify.com/api/token"
-	playlistBaseURL = "https://api.spotify.com/v1/playlists/%s"
-	albumBaseURL    = "https://api.spotify.com/v1/albums/%s"
-	trackBaseURL    = "https://api.spotify.com/v1/tracks/%s"
-	artistBaseURL   = "https://api.spotify.com/v1/artists/%s"
-	artistAlbumsURL = "https://api.spotify.com/v1/artists/%s/albums"
-	searchBaseURL   = "https://api.spotify.com/v1/search"
+	spotifyTokenURL  = "https://accounts.spotify.com/api/token"
+	playlistBaseURL  = "https://api.spotify.com/v1/playlists/%s"
+	albumBaseURL     = "https://api.spotify.com/v1/albums/%s"
+	trackBaseURL     = "https://api.spotify.com/v1/tracks/%s"
+	artistBaseURL    = "https://api.spotify.com/v1/artists/%s"
+	artistAlbumsURL  = "https://api.spotify.com/v1/artists/%s/albums"
+	artistRelatedURL = "https://api.spotify.com/v1/artists/%s/related-artists"
+	searchBaseURL    = "https://api.spotify.com/v1/search"
 
 	artistCacheTTL = 10 * time.Minute
 	searchCacheTTL = 5 * time.Minute
@@ -140,6 +141,8 @@ type TrackMetadata struct {
 	DiscNumber  int    `json:"disc_number,omitempty"`
 	ExternalURL string `json:"external_urls"`
 	ISRC        string `json:"isrc"`
+	AlbumID     string `json:"album_id,omitempty"`
+	ArtistID    string `json:"artist_id,omitempty"`
 	AlbumType   string `json:"album_type,omitempty"`
 }
 
@@ -361,6 +364,10 @@ func (c *SpotifyMetadataClient) SearchTracks(ctx context.Context, query string, 
 	}
 
 	for _, track := range response.Tracks.Items {
+		var firstArtistID string
+		if len(track.Artists) > 0 {
+			firstArtistID = track.Artists[0].ID
+		}
 		result.Tracks = append(result.Tracks, TrackMetadata{
 			SpotifyID:   track.ID,
 			Artists:     joinArtists(track.Artists),
@@ -375,6 +382,8 @@ func (c *SpotifyMetadataClient) SearchTracks(ctx context.Context, query string, 
 			DiscNumber:  track.DiscNumber,
 			ExternalURL: track.ExternalURL.Spotify,
 			ISRC:        track.ExternalID.ISRC,
+			AlbumID:     track.Album.ID,
+			ArtistID:    firstArtistID,
 			AlbumType:   track.Album.AlbumType,
 		})
 	}
@@ -426,6 +435,10 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 	}
 
 	for _, track := range response.Tracks.Items {
+		var firstArtistID string
+		if len(track.Artists) > 0 {
+			firstArtistID = track.Artists[0].ID
+		}
 		result.Tracks = append(result.Tracks, TrackMetadata{
 			SpotifyID:   track.ID,
 			Artists:     joinArtists(track.Artists),
@@ -440,6 +453,8 @@ func (c *SpotifyMetadataClient) SearchAll(ctx context.Context, query string, tra
 			DiscNumber:  track.DiscNumber,
 			ExternalURL: track.ExternalURL.Spotify,
 			ISRC:        track.ExternalID.ISRC,
+			AlbumID:     track.Album.ID,
+			ArtistID:    firstArtistID,
 			AlbumType:   track.Album.AlbumType,
 		})
 	}
@@ -835,6 +850,47 @@ func (c *SpotifyMetadataClient) fetchArtist(ctx context.Context, artistID, token
 	}
 	c.cacheMu.Unlock()
 
+	return result, nil
+}
+
+func (c *SpotifyMetadataClient) GetRelatedArtists(ctx context.Context, artistID string, limit int) ([]SearchArtistResult, error) {
+	token, err := c.getAccessToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var data struct {
+		Artists []struct {
+			ID        string  `json:"id"`
+			Name      string  `json:"name"`
+			Images    []image `json:"images"`
+			Followers struct {
+				Total int `json:"total"`
+			} `json:"followers"`
+			Popularity int `json:"popularity"`
+		} `json:"artists"`
+	}
+
+	if err := c.getJSON(ctx, fmt.Sprintf(artistRelatedURL, artistID), token, &data); err != nil {
+		return nil, err
+	}
+
+	maxItems := len(data.Artists)
+	if limit > 0 && limit < maxItems {
+		maxItems = limit
+	}
+
+	result := make([]SearchArtistResult, 0, maxItems)
+	for i := 0; i < maxItems; i++ {
+		artist := data.Artists[i]
+		result = append(result, SearchArtistResult{
+			ID:         artist.ID,
+			Name:       artist.Name,
+			Images:     firstImageURL(artist.Images),
+			Followers:  artist.Followers.Total,
+			Popularity: artist.Popularity,
+		})
+	}
 	return result, nil
 }
 

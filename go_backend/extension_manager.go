@@ -48,11 +48,12 @@ type LoadedExtension struct {
 	Manifest  *ExtensionManifest `json:"manifest"`
 	VM        *goja.Runtime      `json:"-"`
 	VMMu      sync.Mutex         `json:"-"`
-	Enabled   bool               `json:"enabled"`
-	Error     string             `json:"error,omitempty"`
-	DataDir   string             `json:"data_dir"`
-	SourceDir string             `json:"source_dir"`
-	IconPath  string             `json:"icon_path"`
+	runtime   *ExtensionRuntime
+	Enabled   bool   `json:"enabled"`
+	Error     string `json:"error,omitempty"`
+	DataDir   string `json:"data_dir"`
+	SourceDir string `json:"source_dir"`
+	IconPath  string `json:"icon_path"`
 }
 
 type ExtensionManager struct {
@@ -243,6 +244,7 @@ func (m *ExtensionManager) initializeVM(ext *LoadedExtension) error {
 	}
 
 	runtime := NewExtensionRuntime(ext)
+	ext.runtime = runtime
 	runtime.RegisterAPIs(vm)
 	runtime.RegisterGoBackendAPIs(vm)
 
@@ -294,6 +296,13 @@ func (m *ExtensionManager) UnloadExtension(extensionID string) error {
 		} else if cleanup != nil && !goja.IsUndefined(cleanup) && !goja.IsNull(cleanup) {
 			GoLog("[Extension] Cleanup called for %s\n", extensionID)
 		}
+	}
+	if ext.runtime != nil {
+		if err := ext.runtime.flushStorageNow(); err != nil {
+			GoLog("[Extension] Failed to flush storage for %s: %v\n", extensionID, err)
+		}
+		ext.runtime.closeStorageFlusher()
+		ext.runtime = nil
 	}
 
 	delete(m.extensions, extensionID)
@@ -536,7 +545,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 	extDir := existing.SourceDir
 	wasEnabled := existing.Enabled
 
-	m.CleanupExtension(existing.ID)
 	m.UnloadExtension(existing.ID)
 
 	if extDir != "" {
@@ -909,7 +917,6 @@ func (m *ExtensionManager) UnloadAllExtensions() {
 	m.mu.Unlock()
 
 	for _, id := range extensionIDs {
-		m.CleanupExtension(id)
 		m.UnloadExtension(id)
 	}
 

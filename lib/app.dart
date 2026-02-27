@@ -37,6 +37,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const TutorialScreen(),
       ),
     ],
+    // Safety net: if a deep link URL (e.g. Spotify/Deezer) somehow reaches
+    // GoRouter, redirect to home instead of showing "Page Not Found".
+    errorBuilder: (context, state) => const MainShell(),
   );
 });
 
@@ -54,10 +57,14 @@ class SpotiFLACApp extends ConsumerWidget {
         : null;
 
     Locale? locale;
-    if (localeString != 'system') {
+    if (localeString != 'system' && localeString.isNotEmpty) {
       if (localeString.contains('_')) {
         final parts = localeString.split('_');
-        locale = Locale(parts[0], parts[1]);
+        if (parts.length == 2) {
+          locale = Locale(parts[0], parts[1]);
+        } else {
+          locale = Locale(parts[0]);
+        }
       } else {
         locale = Locale(localeString);
       }
@@ -76,6 +83,25 @@ class SpotiFLACApp extends ConsumerWidget {
           themeAnimationCurve: Curves.easeInOut,
           routerConfig: router,
           locale: locale,
+          localeResolutionCallback: (deviceLocale, supportedLocales) {
+            if (locale != null) return locale;
+            if (deviceLocale == null) return supportedLocales.first;
+
+            for (var supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == deviceLocale.languageCode &&
+                  supportedLocale.countryCode == deviceLocale.countryCode) {
+                return supportedLocale;
+              }
+            }
+
+            for (var supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == deviceLocale.languageCode) {
+                return supportedLocale;
+              }
+            }
+
+            return supportedLocales.first;
+          },
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

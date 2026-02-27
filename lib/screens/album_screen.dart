@@ -14,9 +14,7 @@ import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
-import 'package:spotiflac_android/screens/artist_screen.dart';
-import 'package:spotiflac_android/screens/home_tab.dart'
-    show ExtensionArtistScreen;
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class _AlbumCache {
   static final Map<String, _CacheEntry> _cache = {};
@@ -187,7 +185,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           .toList();
 
       final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
-      final artistId = albumInfo?['artist_id'] as String?;
+      final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
+          ?.toString();
 
       _AlbumCache.set(widget.albumId, tracks);
 
@@ -215,6 +214,9 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       artistName: data['artists'] as String? ?? '',
       albumName: data['album_name'] as String? ?? '',
       albumArtist: data['album_artist'] as String?,
+      artistId:
+          (data['artist_id'] ?? data['artistId'])?.toString() ?? _artistId,
+      albumId: data['album_id']?.toString() ?? widget.albumId,
       coverUrl: data['images'] as String?,
       isrc: data['isrc'] as String?,
       duration: ((data['duration_ms'] as int? ?? 0) / 1000).round(),
@@ -368,19 +370,19 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                         ),
                         if (artistName != null && artistName.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          GestureDetector(
-                            onTap: () => _navigateToArtist(context, artistName),
-                            child: Text(
-                              artistName,
-                              style: TextStyle(
-                                color: colorScheme.primary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          ClickableArtistName(
+                            artistName: artistName,
+                            artistId: _artistId,
+                            coverUrl: widget.coverUrl,
+                            extensionId: widget.extensionId,
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                         if (tracks.isNotEmpty) ...[
@@ -459,7 +461,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                               const SizedBox(width: 12),
                               FilledButton.icon(
                                 onPressed: () => _downloadAll(context),
-                                icon: const Icon(Icons.download, size: 18),
+                                icon: Icon(Icons.download, size: 18),
                                 label: Text(
                                   context.l10n.downloadAllCount(tracks.length),
                                 ),
@@ -608,8 +610,9 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         ),
       ),
       child: IconButton(
-        onPressed:
-            tracks == null || tracks.isEmpty ? null : () => _loveAll(tracks),
+        onPressed: tracks == null || tracks.isEmpty
+            ? null
+            : () => _loveAll(tracks),
         icon: Icon(
           allLoved ? Icons.favorite : Icons.favorite_border,
           size: 22,
@@ -634,10 +637,9 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         ),
       ),
       child: IconButton(
-        onPressed:
-            _tracks == null || _tracks!.isEmpty
-                ? null
-                : () => showAddTracksToPlaylistSheet(context, ref, _tracks!),
+        onPressed: _tracks == null || _tracks!.isEmpty
+            ? null
+            : () => showAddTracksToPlaylistSheet(context, ref, _tracks!),
         icon: const Icon(Icons.add, size: 22, color: Colors.white),
         tooltip: 'Add to Playlist',
         padding: EdgeInsets.zero,
@@ -657,9 +659,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Removed ${tracks.length} tracks from Loved'),
-          ),
+          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
         );
       }
     } else {
@@ -672,53 +672,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Added $addedCount tracks to Loved'),
-          ),
+          SnackBar(content: Text('Added $addedCount tracks to Loved')),
         );
       }
     }
-  }
-
-  void _navigateToArtist(BuildContext context, String artistName) {
-    final artistId =
-        _artistId ??
-        (widget.albumId.startsWith('deezer:') ? 'deezer:unknown' : 'unknown');
-
-    if (artistId == 'unknown' ||
-        artistId == 'deezer:unknown' ||
-        artistId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Artist information not available')),
-      );
-      return;
-    }
-
-    if (widget.extensionId != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ExtensionArtistScreen(
-            extensionId: widget.extensionId!,
-            artistId: artistId,
-            artistName: artistName,
-            coverUrl: widget.coverUrl,
-          ),
-        ),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ArtistScreen(
-          artistId: artistId,
-          artistName: artistName,
-          coverUrl: widget.coverUrl,
-        ),
-      ),
-    );
   }
 
   Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
@@ -860,8 +817,10 @@ class _AlbumTrackItem extends ConsumerWidget {
           subtitle: Row(
             children: [
               Flexible(
-                child: Text(
-                  track.artistName,
+                child: ClickableArtistName(
+                  artistName: track.artistName,
+                  artistId: track.artistId,
+                  coverUrl: track.coverUrl,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: colorScheme.onSurfaceVariant),
@@ -908,6 +867,11 @@ class _AlbumTrackItem extends ConsumerWidget {
             isQueued: isQueued,
             isInHistory: isInHistory,
             isInLocalLibrary: isInLocalLibrary,
+          ),
+          onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
+            context,
+            ref,
+            track,
           ),
         ),
       ),

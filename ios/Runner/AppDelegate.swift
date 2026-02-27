@@ -5,6 +5,15 @@ import Gobackend  // Import Go framework
 @main
 @objc class AppDelegate: FlutterAppDelegate {
     private let CHANNEL = "com.zarz.spotiflac/backend"
+    private let DOWNLOAD_PROGRESS_STREAM_CHANNEL = "com.zarz.spotiflac/download_progress_stream"
+    private let LIBRARY_SCAN_PROGRESS_STREAM_CHANNEL = "com.zarz.spotiflac/library_scan_progress_stream"
+    private let streamQueue = DispatchQueue(label: "com.zarz.spotiflac.progress_stream", qos: .utility)
+    private var downloadProgressTimer: DispatchSourceTimer?
+    private var downloadProgressEventSink: FlutterEventSink?
+    private var lastDownloadProgressPayload: String?
+    private var libraryScanProgressTimer: DispatchSourceTimer?
+    private var libraryScanProgressEventSink: FlutterEventSink?
+    private var lastLibraryScanProgressPayload: String?
     
     override func application(
         _ application: UIApplication,
@@ -16,13 +25,110 @@ import Gobackend  // Import Go framework
             name: CHANNEL,
             binaryMessenger: controller.binaryMessenger
         )
+        let downloadProgressEvents = FlutterEventChannel(
+            name: DOWNLOAD_PROGRESS_STREAM_CHANNEL,
+            binaryMessenger: controller.binaryMessenger
+        )
+        let libraryScanProgressEvents = FlutterEventChannel(
+            name: LIBRARY_SCAN_PROGRESS_STREAM_CHANNEL,
+            binaryMessenger: controller.binaryMessenger
+        )
         
         channel.setMethodCallHandler { [weak self] call, result in
             self?.handleMethodCall(call: call, result: result)
         }
+        downloadProgressEvents.setStreamHandler(
+            ClosureStreamHandler(
+                onListen: { [weak self] _, events in
+                    self?.startDownloadProgressStream(events)
+                    return nil
+                },
+                onCancel: { [weak self] _ in
+                    self?.stopDownloadProgressStream()
+                    return nil
+                }
+            )
+        )
+        libraryScanProgressEvents.setStreamHandler(
+            ClosureStreamHandler(
+                onListen: { [weak self] _, events in
+                    self?.startLibraryScanProgressStream(events)
+                    return nil
+                },
+                onCancel: { [weak self] _ in
+                    self?.stopLibraryScanProgressStream()
+                    return nil
+                }
+            )
+        )
         
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    deinit {
+        stopDownloadProgressStream()
+        stopLibraryScanProgressStream()
+    }
+
+    private func startDownloadProgressStream(_ eventSink: @escaping FlutterEventSink) {
+        stopDownloadProgressStream()
+        downloadProgressEventSink = eventSink
+        lastDownloadProgressPayload = nil
+
+        let timer = DispatchSource.makeTimerSource(queue: streamQueue)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(800))
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            let payload = GobackendGetAllDownloadProgress() as String? ?? "{}"
+            if payload == self.lastDownloadProgressPayload {
+                return
+            }
+            self.lastDownloadProgressPayload = payload
+            DispatchQueue.main.async { [weak self] in
+                self?.downloadProgressEventSink?(payload)
+            }
+        }
+        downloadProgressTimer = timer
+        timer.resume()
+    }
+
+    private func stopDownloadProgressStream() {
+        downloadProgressTimer?.setEventHandler {}
+        downloadProgressTimer?.cancel()
+        downloadProgressTimer = nil
+        downloadProgressEventSink = nil
+        lastDownloadProgressPayload = nil
+    }
+
+    private func startLibraryScanProgressStream(_ eventSink: @escaping FlutterEventSink) {
+        stopLibraryScanProgressStream()
+        libraryScanProgressEventSink = eventSink
+        lastLibraryScanProgressPayload = nil
+
+        let timer = DispatchSource.makeTimerSource(queue: streamQueue)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(800))
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            let payload = GobackendGetLibraryScanProgressJSON() as String? ?? "{}"
+            if payload == self.lastLibraryScanProgressPayload {
+                return
+            }
+            self.lastLibraryScanProgressPayload = payload
+            DispatchQueue.main.async { [weak self] in
+                self?.libraryScanProgressEventSink?(payload)
+            }
+        }
+        libraryScanProgressTimer = timer
+        timer.resume()
+    }
+
+    private func stopLibraryScanProgressStream() {
+        libraryScanProgressTimer?.setEventHandler {}
+        libraryScanProgressTimer?.cancel()
+        libraryScanProgressTimer = nil
+        libraryScanProgressEventSink = nil
+        lastLibraryScanProgressPayload = nil
     }
     
     private func handleMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -72,6 +178,14 @@ import Gobackend  // Import Go framework
             let trackLimit = args["track_limit"] as? Int ?? 15
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let response = GobackendSearchSpotifyAll(query, Int(trackLimit), Int(artistLimit), &error)
+            if let error = error { throw error }
+            return response
+
+        case "getSpotifyRelatedArtists":
+            let args = call.arguments as! [String: Any]
+            let artistId = args["artist_id"] as! String
+            let limit = args["limit"] as? Int ?? 12
+            let response = GobackendGetSpotifyRelatedArtists(artistId, Int(limit), &error)
             if let error = error { throw error }
             return response
             
@@ -279,6 +393,14 @@ import Gobackend  // Import Go framework
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let filter = args["filter"] as? String ?? ""
             let response = GobackendSearchDeezerAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+            if let error = error { throw error }
+            return response
+
+        case "getDeezerRelatedArtists":
+            let args = call.arguments as! [String: Any]
+            let artistId = args["artist_id"] as! String
+            let limit = args["limit"] as? Int ?? 12
+            let response = GobackendGetDeezerRelatedArtists(artistId, Int(limit), &error)
             if let error = error { throw error }
             return response
 
@@ -838,5 +960,29 @@ import Gobackend  // Import Go framework
                 userInfo: [NSLocalizedDescriptionKey: "Method not implemented: \(call.method)"]
             )
         }
+    }
+}
+
+private final class ClosureStreamHandler: NSObject, FlutterStreamHandler {
+    typealias ListenHandler = (_ arguments: Any?, _ events: @escaping FlutterEventSink) -> FlutterError?
+    typealias CancelHandler = (_ arguments: Any?) -> FlutterError?
+
+    private let onListenHandler: ListenHandler
+    private let onCancelHandler: CancelHandler
+
+    init(
+        onListen: @escaping ListenHandler,
+        onCancel: @escaping CancelHandler = { _ in nil }
+    ) {
+        self.onListenHandler = onListen
+        self.onCancelHandler = onCancel
+    }
+
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        onListenHandler(arguments, events)
+    }
+
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        onCancelHandler(arguments)
     }
 }

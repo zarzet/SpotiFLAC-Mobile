@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "选择您的模式",
+  "setupModeSelectionDescription": "您想如何使用 SpotiFLAC？您可以稍后在设置中随时更改。",
+  "setupModeDownloaderTitle": "下载器",
+  "setupModeDownloaderFeature1": "以无损 FLAC 品质下载曲目",
+  "setupModeDownloaderFeature2": "将音乐保存到设备以供离线收听",
+  "setupModeDownloaderFeature3": "管理您的本地音乐库",
+  "setupModeStreamingTitle": "流媒体",
+  "setupModeStreamingFeature1": "无需下载即可即时播放曲目",
+  "setupModeStreamingFeature2": "Smart Queue 自动为您发现新音乐",
+  "setupModeStreamingFeature3": "通过播放控件随时点播任意曲目",
+  "setupModeChangeableLater": "您可以随时在设置中切换模式。",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "自动发现并将相似曲目添加到您的队列中"
 }

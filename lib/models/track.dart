@@ -9,6 +9,8 @@ class Track {
   final String artistName;
   final String albumName;
   final String? albumArtist;
+  final String? artistId;
+  final String? albumId;
   final String? coverUrl;
   final String? isrc;
   final int duration;
@@ -27,6 +29,8 @@ class Track {
     required this.artistName,
     required this.albumName,
     this.albumArtist,
+    this.artistId,
+    this.albumId,
     this.coverUrl,
     this.isrc,
     required this.duration,

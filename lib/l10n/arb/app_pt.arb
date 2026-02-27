@@ -2565,5 +2565,18 @@
   "utilityFunctions": "Utility Functions",
   "@utilityFunctions": {
     "description": "Extension capability - utility functions"
-  }
+  },
+  "setupModeSelectionTitle": "Escolha seu modo",
+  "setupModeSelectionDescription": "Como você gostaria de usar o SpotiFLAC? Você pode alterar isso depois nas Configurações.",
+  "setupModeDownloaderTitle": "Downloader",
+  "setupModeDownloaderFeature1": "Baixe faixas em qualidade FLAC lossless",
+  "setupModeDownloaderFeature2": "Salve músicas no seu dispositivo para ouvir offline",
+  "setupModeDownloaderFeature3": "Gerencie sua biblioteca de músicas local",
+  "setupModeStreamingTitle": "Streaming",
+  "setupModeStreamingFeature1": "Transmita faixas instantaneamente sem baixar",
+  "setupModeStreamingFeature2": "Smart Queue descobre automaticamente novas músicas para você",
+  "setupModeStreamingFeature3": "Reproduza qualquer faixa sob demanda com controles de reprodução",
+  "setupModeChangeableLater": "Você pode alternar entre os modos a qualquer momento nas Configurações.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Descubra e adicione automaticamente faixas semelhantes à sua fila"
 }

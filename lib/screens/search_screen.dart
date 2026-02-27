@@ -6,6 +6,8 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   final String query;
@@ -61,9 +63,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final trackState = ref.watch(trackProvider);
+    final tracks = ref.watch(trackProvider.select((s) => s.tracks));
+    final isLoading = ref.watch(trackProvider.select((s) => s.isLoading));
+    final error = ref.watch(trackProvider.select((s) => s.error));
     final colorScheme = Theme.of(context).colorScheme;
-    final tracks = trackState.tracks;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,15 +89,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          if (trackState.isLoading)
-            LinearProgressIndicator(color: colorScheme.primary),
-          if (trackState.error != null)
+          if (isLoading) LinearProgressIndicator(color: colorScheme.primary),
+          if (error != null)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                trackState.error!,
-                style: TextStyle(color: colorScheme.error),
-              ),
+              child: Text(error, style: TextStyle(color: colorScheme.error)),
             ),
           Expanded(
             child: tracks.isEmpty
@@ -159,14 +158,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            track.artistName,
+          ClickableArtistName(
+            artistName: track.artistName,
+            artistId: track.artistId,
+            coverUrl: track.coverUrl,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
-          Text(
-            track.albumName,
+          ClickableAlbumName(
+            albumName: track.albumName,
+            albumId: track.albumId,
+            artistName: track.artistName,
+            coverUrl: track.coverUrl,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -175,7 +179,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ],
       ),
-      trailing: null,
+      onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
+        context,
+        ref,
+        track,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.download_rounded),
+            tooltip: 'Download',
+            onPressed: () => _downloadTrack(track),
+          ),
+        ],
+      ),
       onTap: () => _downloadTrack(track),
     );
   }

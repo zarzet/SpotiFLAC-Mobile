@@ -25,6 +25,7 @@ class DownloadedEmbeddedCoverResolver {
       LinkedHashMap<String, _EmbeddedCoverCacheEntry>();
   static final Set<String> _pendingExtract = <String>{};
   static final Set<String> _pendingRefresh = <String>{};
+  static final Set<String> _pendingPreviewValidation = <String>{};
   static final Set<String> _failedExtract = <String>{};
 
   static String cleanFilePath(String? filePath) {
@@ -66,12 +67,9 @@ class DownloadedEmbeddedCoverResolver {
 
     final cached = _cache[cleanPath];
     if (cached != null) {
-      if (File(cached.previewPath).existsSync()) {
-        _touch(cleanPath, cached);
-        return cached.previewPath;
-      }
-      _cache.remove(cleanPath);
-      _cleanupTempCoverPathSync(cached.previewPath);
+      _touch(cleanPath, cached);
+      _validateCachedPreviewAsync(cleanPath, cached, onChanged: onChanged);
+      return cached.previewPath;
     }
 
     return null;
@@ -106,6 +104,7 @@ class DownloadedEmbeddedCoverResolver {
     final cached = _cache.remove(cleanPath);
     _pendingExtract.remove(cleanPath);
     _pendingRefresh.remove(cleanPath);
+    _pendingPreviewValidation.remove(cleanPath);
     _failedExtract.remove(cleanPath);
     if (cached != null) {
       _cleanupTempCoverPathSync(cached.previewPath);
@@ -144,8 +143,34 @@ class DownloadedEmbeddedCoverResolver {
       }
       _pendingExtract.remove(oldestKey);
       _pendingRefresh.remove(oldestKey);
+      _pendingPreviewValidation.remove(oldestKey);
       _failedExtract.remove(oldestKey);
     }
+  }
+
+  static void _validateCachedPreviewAsync(
+    String cleanPath,
+    _EmbeddedCoverCacheEntry entry, {
+    VoidCallback? onChanged,
+  }) {
+    if (_pendingPreviewValidation.contains(cleanPath)) return;
+    _pendingPreviewValidation.add(cleanPath);
+    Future.microtask(() async {
+      try {
+        final exists = await fileExists(entry.previewPath);
+        if (!exists) {
+          final latest = _cache[cleanPath];
+          if (latest != null && latest.previewPath == entry.previewPath) {
+            _cache.remove(cleanPath);
+            _failedExtract.remove(cleanPath);
+            onChanged?.call();
+          }
+          _cleanupTempCoverPathSync(entry.previewPath);
+        }
+      } finally {
+        _pendingPreviewValidation.remove(cleanPath);
+      }
+    });
   }
 
   static void _ensureCover(

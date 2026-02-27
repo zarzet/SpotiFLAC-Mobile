@@ -123,6 +123,35 @@ func SearchSpotifyAll(query string, trackLimit, artistLimit int) (string, error)
 	return string(jsonBytes), nil
 }
 
+func GetSpotifyRelatedArtists(artistID string, limit int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	client, err := NewSpotifyMetadataClient()
+	if err != nil {
+		return "", err
+	}
+
+	normalizedArtistID := strings.TrimSpace(strings.TrimPrefix(artistID, "spotify:"))
+	if normalizedArtistID == "" {
+		return "", fmt.Errorf("invalid Spotify artist ID")
+	}
+
+	artists, err := client.GetRelatedArtists(ctx, normalizedArtistID, limit)
+	if err != nil {
+		return "", err
+	}
+
+	resp := map[string]interface{}{
+		"artists": artists,
+	}
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
 func CheckAvailability(spotifyID, isrc string) (string, error) {
 	client := NewSongLinkClient()
 	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
@@ -159,6 +188,7 @@ type DownloadRequest struct {
 	OutputExt            string `json:"output_ext,omitempty"`
 	FilenameFormat       string `json:"filename_format"`
 	Quality              string `json:"quality"`
+	EmbedMetadata        bool   `json:"embed_metadata"`
 	EmbedLyrics          bool   `json:"embed_lyrics"`
 	EmbedMaxQualityCover bool   `json:"embed_max_quality_cover"`
 	TrackNumber          int    `json:"track_number"`
@@ -467,6 +497,24 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = amazonErr
+	case "deezer":
+		deezerResult, deezerErr := downloadFromDeezer(req)
+		if deezerErr == nil {
+			result = DownloadResult{
+				FilePath:    deezerResult.FilePath,
+				BitDepth:    deezerResult.BitDepth,
+				SampleRate:  deezerResult.SampleRate,
+				Title:       deezerResult.Title,
+				Artist:      deezerResult.Artist,
+				Album:       deezerResult.Album,
+				ReleaseDate: deezerResult.ReleaseDate,
+				TrackNumber: deezerResult.TrackNumber,
+				DiscNumber:  deezerResult.DiscNumber,
+				ISRC:        deezerResult.ISRC,
+				LyricsLRC:   deezerResult.LyricsLRC,
+			}
+		}
+		err = deezerErr
 	case "youtube":
 		youtubeResult, youtubeErr := downloadFromYouTube(req)
 		if youtubeErr == nil {
@@ -592,7 +640,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	enrichRequestExtendedMetadata(&req)
 
-	allServices := []string{"tidal", "qobuz", "amazon"}
+	allServices := []string{"tidal", "qobuz", "amazon", "deezer"}
 	preferredService := req.Service
 	if preferredService == "" {
 		preferredService = "tidal"
@@ -680,6 +728,26 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[DownloadWithFallback] Amazon error: %v\n", amazonErr)
 			}
 			err = amazonErr
+		case "deezer":
+			deezerResult, deezerErr := downloadFromDeezer(req)
+			if deezerErr == nil {
+				result = DownloadResult{
+					FilePath:    deezerResult.FilePath,
+					BitDepth:    deezerResult.BitDepth,
+					SampleRate:  deezerResult.SampleRate,
+					Title:       deezerResult.Title,
+					Artist:      deezerResult.Artist,
+					Album:       deezerResult.Album,
+					ReleaseDate: deezerResult.ReleaseDate,
+					TrackNumber: deezerResult.TrackNumber,
+					DiscNumber:  deezerResult.DiscNumber,
+					ISRC:        deezerResult.ISRC,
+					LyricsLRC:   deezerResult.LyricsLRC,
+				}
+			} else if !errors.Is(deezerErr, ErrDownloadCancelled) {
+				GoLog("[DownloadWithFallback] Deezer error: %v\n", deezerErr)
+			}
+			err = deezerErr
 		}
 
 		if err != nil && errors.Is(err, ErrDownloadCancelled) {
@@ -1159,6 +1227,26 @@ func SearchDeezerAll(query string, trackLimit, artistLimit int, filter string) (
 		return "", err
 	}
 
+	return string(jsonBytes), nil
+}
+
+func GetDeezerRelatedArtists(artistID string, limit int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	client := GetDeezerClient()
+	artists, err := client.GetRelatedArtists(ctx, artistID, limit)
+	if err != nil {
+		return "", err
+	}
+
+	resp := map[string]interface{}{
+		"artists": artists,
+	}
+	jsonBytes, err := json.Marshal(resp)
+	if err != nil {
+		return "", err
+	}
 	return string(jsonBytes), nil
 }
 
@@ -3145,7 +3233,10 @@ func callExtensionFunctionJSON(extensionID, functionName string, timeout time.Du
 		return "", fmt.Errorf("extension '%s' is disabled", extensionID)
 	}
 
-	provider := NewExtensionProviderWrapper(ext)
+	// Goja runtime is not thread-safe; guard direct extension.*() calls with VMMu
+	// to avoid races with other provider calls (e.g. getAlbum/getPlaylist).
+	ext.VMMu.Lock()
+	defer ext.VMMu.Unlock()
 
 	script := fmt.Sprintf(`
 		(function() {
@@ -3156,7 +3247,7 @@ func callExtensionFunctionJSON(extensionID, functionName string, timeout time.Du
 		})()
 	`, functionName, functionName)
 
-	result, err := RunWithTimeoutAndRecover(provider.vm, script, timeout)
+	result, err := RunWithTimeoutAndRecover(ext.VM, script, timeout)
 	if err != nil {
 		return "", fmt.Errorf("%s failed: %w", functionName, err)
 	}

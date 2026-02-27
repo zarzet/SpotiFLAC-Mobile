@@ -88,18 +88,48 @@ type ExtensionRuntime struct {
 	cookieJar   http.CookieJar
 	dataDir     string
 	vm          *goja.Runtime
+
+	storageMu      sync.RWMutex
+	storageCache   map[string]interface{}
+	storageLoaded  bool
+	storageDirty   bool
+	storageClosed  bool
+	storageTimer   *time.Timer
+	storageWriteMu sync.Mutex
+
+	credentialsMu     sync.RWMutex
+	credentialsCache  map[string]interface{}
+	credentialsLoaded bool
+	storageFlushDelay time.Duration
 }
+
+type privateIPCacheEntry struct {
+	isPrivate bool
+	expiresAt time.Time
+}
+
+const (
+	privateIPCacheTTL      = 5 * time.Minute
+	privateIPErrorCacheTTL = 30 * time.Second
+	maxPrivateIPCacheSize  = 1024
+)
+
+var (
+	privateIPCache   = make(map[string]privateIPCacheEntry)
+	privateIPCacheMu sync.RWMutex
+)
 
 func NewExtensionRuntime(ext *LoadedExtension) *ExtensionRuntime {
 	jar, _ := newSimpleCookieJar()
 
 	runtime := &ExtensionRuntime{
-		extensionID: ext.ID,
-		manifest:    ext.Manifest,
-		settings:    make(map[string]interface{}),
-		cookieJar:   jar,
-		dataDir:     ext.DataDir,
-		vm:          ext.VM,
+		extensionID:       ext.ID,
+		manifest:          ext.Manifest,
+		settings:          make(map[string]interface{}),
+		cookieJar:         jar,
+		dataDir:           ext.DataDir,
+		vm:                ext.VM,
+		storageFlushDelay: defaultStorageFlushDelay,
 	}
 
 	// Extension sandbox enforces HTTPS-only domains. Do not apply global
@@ -166,18 +196,68 @@ func isPrivateIP(host string) bool {
 		return isPrivateIPAddr(ip)
 	}
 
+	if cached, ok := getPrivateIPCache(hostLower); ok {
+		return cached
+	}
+
 	ips, err := net.LookupIP(hostLower)
 	if err != nil {
+		setPrivateIPCache(hostLower, false, privateIPErrorCacheTTL)
 		return false
 	}
 
+	isPrivate := false
 	for _, ip := range ips {
 		if isPrivateIPAddr(ip) {
-			return true
+			isPrivate = true
+			break
 		}
 	}
 
-	return false
+	setPrivateIPCache(hostLower, isPrivate, privateIPCacheTTL)
+	return isPrivate
+}
+
+func getPrivateIPCache(host string) (bool, bool) {
+	now := time.Now()
+
+	privateIPCacheMu.RLock()
+	entry, exists := privateIPCache[host]
+	privateIPCacheMu.RUnlock()
+	if !exists {
+		return false, false
+	}
+
+	if now.Before(entry.expiresAt) {
+		return entry.isPrivate, true
+	}
+
+	privateIPCacheMu.Lock()
+	delete(privateIPCache, host)
+	privateIPCacheMu.Unlock()
+	return false, false
+}
+
+func setPrivateIPCache(host string, isPrivate bool, ttl time.Duration) {
+	expiresAt := time.Now().Add(ttl)
+
+	privateIPCacheMu.Lock()
+	if len(privateIPCache) >= maxPrivateIPCacheSize {
+		now := time.Now()
+		for key, entry := range privateIPCache {
+			if now.After(entry.expiresAt) {
+				delete(privateIPCache, key)
+			}
+		}
+		if len(privateIPCache) >= maxPrivateIPCacheSize {
+			privateIPCache = make(map[string]privateIPCacheEntry)
+		}
+	}
+	privateIPCache[host] = privateIPCacheEntry{
+		isPrivate: isPrivate,
+		expiresAt: expiresAt,
+	}
+	privateIPCacheMu.Unlock()
 }
 
 func isPrivateIPAddr(ip net.IP) bool {

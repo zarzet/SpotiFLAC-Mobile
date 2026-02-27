@@ -45,7 +45,7 @@ type AfkarXYZResponse struct {
 	} `json:"data"`
 }
 
-// AmazonStreamResponse is the new response format from amazon.afkarxyz.fun/api/track/{asin}
+// AmazonStreamResponse is the new response format from amzn.afkarxyz.fun/api/track/{asin}
 type AmazonStreamResponse struct {
 	StreamURL     string `json:"streamUrl"`
 	DecryptionKey string `json:"decryptionKey"`
@@ -179,7 +179,7 @@ func (a *AmazonDownloader) doAfkarXYZRequestNew(asin string) (string, string, st
 	ctx, cancel := context.WithTimeout(context.Background(), amazonAPITimeoutMobile)
 	defer cancel()
 
-	apiURL := fmt.Sprintf("https://amazon.afkarxyz.fun/api/track/%s", asin)
+	apiURL := fmt.Sprintf("https://amzn.afkarxyz.fun/api/track/%s", asin)
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to create request: %w", err)
@@ -193,13 +193,13 @@ func (a *AmazonDownloader) doAfkarXYZRequestNew(asin string) (string, string, st
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return "", "", "", fmt.Errorf("Amazon API returned status %d", resp.StatusCode)
+	body, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return "", "", "", fmt.Errorf("failed to read response: %w", readErr)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", "", fmt.Errorf("failed to read response: %w", err)
+	if resp.StatusCode != 200 {
+		return "", "", "", fmt.Errorf("Amazon API returned status %d", resp.StatusCode)
 	}
 
 	var apiResp AmazonStreamResponse
@@ -219,7 +219,7 @@ func (a *AmazonDownloader) doAfkarXYZRequestLegacy(amazonURL string) (string, st
 	ctx, cancel := context.WithTimeout(context.Background(), amazonAPITimeoutMobile)
 	defer cancel()
 
-	apiURL := "https://amazon.afkarxyz.fun/convert?url=" + url.QueryEscape(amazonURL)
+	apiURL := "https://amzn.afkarxyz.fun/convert?url=" + url.QueryEscape(amazonURL)
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to create legacy request: %w", err)
@@ -375,6 +375,57 @@ type AmazonDownloadResult struct {
 	DecryptionKey string
 }
 
+func resolveAmazonURLForRequest(req DownloadRequest, logPrefix string) (string, error) {
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Amazon"
+	}
+
+	amazonURL := ""
+	if req.ISRC != "" {
+		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.AmazonURL != "" {
+			amazonURL = cached.AmazonURL
+			GoLog("[%s] Cache hit! Using cached Amazon URL for ISRC %s\n", logPrefix, req.ISRC)
+		}
+	}
+
+	if amazonURL != "" {
+		return amazonURL, nil
+	}
+
+	songlink := NewSongLinkClient()
+	var availability *TrackAvailability
+	var err error
+
+	deezerID := strings.TrimSpace(req.DeezerID)
+	if prefixedDeezerID, found := strings.CutPrefix(req.SpotifyID, "deezer:"); found && strings.TrimSpace(prefixedDeezerID) != "" {
+		deezerID = strings.TrimSpace(prefixedDeezerID)
+	}
+
+	if deezerID != "" {
+		GoLog("[%s] Using Deezer ID for SongLink lookup: %s\n", logPrefix, deezerID)
+		availability, err = songlink.CheckAvailabilityFromDeezer(deezerID)
+	} else if req.SpotifyID != "" {
+		availability, err = songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
+	} else {
+		return "", fmt.Errorf("no valid Spotify or Deezer ID provided for Amazon lookup")
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("failed to check Amazon availability via SongLink: %w", err)
+	}
+
+	if availability == nil || !availability.Amazon || availability.AmazonURL == "" {
+		return "", fmt.Errorf("track not available on Amazon Music (SongLink returned no Amazon URL)")
+	}
+
+	amazonURL = availability.AmazonURL
+	if req.ISRC != "" {
+		GetTrackIDCache().SetAmazonURL(req.ISRC, amazonURL)
+	}
+
+	return amazonURL, nil
+}
+
 func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	downloader := NewAmazonDownloader()
 
@@ -385,40 +436,9 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	amazonURL := ""
-	if req.ISRC != "" {
-		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.AmazonURL != "" {
-			amazonURL = cached.AmazonURL
-			GoLog("[Amazon] Cache hit! Using cached Amazon URL for ISRC %s\n", req.ISRC)
-		}
-	}
-
-	songlink := NewSongLinkClient()
-	var availability *TrackAvailability
-	var err error
-
-	if amazonURL == "" {
-		if deezerID, found := strings.CutPrefix(req.SpotifyID, "deezer:"); found {
-			GoLog("[Amazon] Using Deezer ID for SongLink lookup: %s\n", deezerID)
-			availability, err = songlink.CheckAvailabilityFromDeezer(deezerID)
-		} else if req.SpotifyID != "" {
-			availability, err = songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
-		} else {
-			return AmazonDownloadResult{}, fmt.Errorf("no valid Spotify or Deezer ID provided for Amazon lookup")
-		}
-
-		if err != nil {
-			return AmazonDownloadResult{}, fmt.Errorf("failed to check Amazon availability via SongLink: %w", err)
-		}
-
-		if !availability.Amazon || availability.AmazonURL == "" {
-			return AmazonDownloadResult{}, fmt.Errorf("track not available on Amazon Music (SongLink returned no Amazon URL)")
-		}
-
-		amazonURL = availability.AmazonURL
-		if req.ISRC != "" {
-			GetTrackIDCache().SetAmazonURL(req.ISRC, amazonURL)
-		}
+	amazonURL, err := resolveAmazonURLForRequest(req, "Amazon")
+	if err != nil {
+		return AmazonDownloadResult{}, err
 	}
 
 	if !isSafOutput && req.OutputDir != "." {
@@ -467,13 +487,19 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	parallelDone := make(chan struct{})
 	go func() {
 		defer close(parallelDone)
+		coverURL := req.CoverURL
+		embedLyrics := req.EmbedLyrics
+		if !req.EmbedMetadata {
+			coverURL = ""
+			embedLyrics = false
+		}
 		parallelResult = FetchCoverAndLyricsParallel(
-			req.CoverURL,
+			coverURL,
 			req.EmbedMaxQualityCover,
 			req.SpotifyID,
 			req.TrackName,
 			req.ArtistName,
-			req.EmbedLyrics,
+			embedLyrics,
 			int64(req.DurationMS),
 		)
 	}()
@@ -560,8 +586,12 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 		}
 	}
 
-	if isSafOutput || needsDecryption {
-		GoLog("[Amazon] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+	if isSafOutput || needsDecryption || !req.EmbedMetadata {
+		if !req.EmbedMetadata {
+			GoLog("[Amazon] Metadata embedding disabled by settings, skipping in-backend metadata/lyrics embedding\n")
+		} else {
+			GoLog("[Amazon] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+		}
 	} else {
 		isFlacOutput := strings.HasSuffix(strings.ToLower(actualOutputPath), ".flac")
 		if isFlacOutput {
@@ -641,7 +671,7 @@ func downloadFromAmazon(req DownloadRequest) (AmazonDownloadResult, error) {
 	}
 
 	lyricsLRC := ""
-	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+	if req.EmbedMetadata && req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
 		lyricsLRC = parallelResult.LyricsLRC
 	}
 

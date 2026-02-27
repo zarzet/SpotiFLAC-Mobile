@@ -26,6 +26,7 @@ import 'package:spotiflac_android/screens/playlist_screen.dart';
 import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
@@ -64,6 +65,121 @@ class _CsvImportOptions {
   });
 }
 
+class _SearchResultBuckets {
+  final List<Track> realTracks;
+  final List<int> realTrackIndexes;
+  final List<Track> albumItems;
+  final List<Track> playlistItems;
+  final List<Track> artistItems;
+
+  const _SearchResultBuckets({
+    required this.realTracks,
+    required this.realTrackIndexes,
+    required this.albumItems,
+    required this.playlistItems,
+    required this.artistItems,
+  });
+}
+
+_RecentAccessView _buildRecentAccessViewData(
+  List<RecentAccessItem> items,
+  List<DownloadHistoryItem> historyItems,
+  Set<String> hiddenIds,
+) {
+  final albumGroups = <String, _RecentAlbumAggregate>{};
+  for (final h in historyItems) {
+    final artistForKey = (h.albumArtist != null && h.albumArtist!.isNotEmpty)
+        ? h.albumArtist!
+        : h.artistName;
+    final albumKey = '${h.albumName}|$artistForKey';
+    final existing = albumGroups[albumKey];
+    if (existing == null) {
+      albumGroups[albumKey] = _RecentAlbumAggregate(count: 1, mostRecent: h);
+    } else {
+      existing.count++;
+      if (h.downloadedAt.isAfter(existing.mostRecent.downloadedAt)) {
+        existing.mostRecent = h;
+      }
+    }
+  }
+
+  final downloadIds = <String>[];
+  final visibleDownloads = <RecentAccessItem>[];
+  final downloadFilePathByRecentKey = <String, String>{};
+  for (final aggregate in albumGroups.values) {
+    final mostRecent = aggregate.mostRecent;
+    final artistForKey =
+        (mostRecent.albumArtist != null && mostRecent.albumArtist!.isNotEmpty)
+        ? mostRecent.albumArtist!
+        : mostRecent.artistName;
+
+    final isSingleTrack = aggregate.count == 1;
+    final recentId = isSingleTrack
+        ? (mostRecent.spotifyId ?? mostRecent.id)
+        : '${mostRecent.albumName}|$artistForKey';
+    final recent = RecentAccessItem(
+      id: recentId,
+      name: isSingleTrack ? mostRecent.trackName : mostRecent.albumName,
+      subtitle: isSingleTrack ? mostRecent.artistName : artistForKey,
+      imageUrl: mostRecent.coverUrl,
+      type: isSingleTrack ? RecentAccessType.track : RecentAccessType.album,
+      accessedAt: mostRecent.downloadedAt,
+      providerId: 'download',
+    );
+
+    downloadIds.add(recentId);
+    downloadFilePathByRecentKey['${recent.type.name}:${recent.id}'] =
+        mostRecent.filePath;
+    if (!hiddenIds.contains(recentId)) {
+      visibleDownloads.add(recent);
+    }
+  }
+
+  visibleDownloads.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
+  if (visibleDownloads.length > 10) {
+    visibleDownloads.removeRange(10, visibleDownloads.length);
+  }
+
+  final allItems = <RecentAccessItem>[...items, ...visibleDownloads];
+  allItems.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
+
+  final seen = <String>{};
+  final uniqueItems = <RecentAccessItem>[];
+  for (final item in allItems) {
+    final key = '${item.type.name}:${item.id}';
+    if (seen.add(key)) {
+      uniqueItems.add(item);
+      if (uniqueItems.length >= 10) {
+        break;
+      }
+    }
+  }
+
+  return _RecentAccessView(
+    uniqueItems: uniqueItems,
+    downloadIds: downloadIds,
+    downloadFilePathByRecentKey: downloadFilePathByRecentKey,
+    hasHiddenDownloads: hiddenIds.isNotEmpty,
+  );
+}
+
+final recentAccessViewProvider = Provider<_RecentAccessView>((ref) {
+  final historyItems = ref.watch(
+    downloadHistoryProvider.select((s) => s.items),
+  );
+  final recentAccessItems = ref.watch(
+    recentAccessProvider.select((s) => s.items),
+  );
+  final hiddenDownloadIds = ref.watch(
+    recentAccessProvider.select((s) => s.hiddenDownloadIds),
+  );
+  return _buildRecentAccessViewData(
+    recentAccessItems,
+    historyItems,
+    hiddenDownloadIds,
+  );
+});
+
 class _HomeTabState extends ConsumerState<HomeTab>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   final _urlController = TextEditingController();
@@ -79,13 +195,24 @@ class _HomeTabState extends ConsumerState<HomeTab>
   static const int _minLiveSearchChars = 3;
   static const Duration _liveSearchDelay = Duration(milliseconds: 800);
 
-  List<DownloadHistoryItem>? _recentAccessHistoryCache;
-  List<RecentAccessItem>? _recentAccessItemsCache;
-  Set<String>? _recentAccessHiddenIdsCache;
-  _RecentAccessView? _recentAccessViewCache;
   bool _embeddedCoverRefreshScheduled = false;
   List<Extension>? _thumbnailSizesExtensionsCache;
+  bool _isCsvImporting = false;
+
+  void _setCsvImporting(bool value) {
+    if (_isCsvImporting == value) return;
+    if (!mounted) {
+      _isCsvImporting = value;
+      return;
+    }
+    setState(() {
+      _isCsvImporting = value;
+    });
+  }
+
   Map<String, (double, double)>? _thumbnailSizesCache;
+  List<Track>? _searchBucketsSourceTracks;
+  _SearchResultBuckets? _searchBucketsCache;
 
   double _responsiveScale({
     required BuildContext context,
@@ -139,6 +266,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
     super.initState();
     _urlController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(_onSearchFocusChanged);
+
+    // Run an initial fetch check in case extensions were already initialized
+    // before HomeTab was mounted (e.g. auto-installed during first setup).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchExploreIfNeeded();
+    });
 
     _trackStateSub = ref.listenManual<TrackState>(trackProvider, (
       previous,
@@ -228,6 +361,74 @@ class _HomeTabState extends ConsumerState<HomeTab>
     _thumbnailSizesExtensionsCache = extensions;
     _thumbnailSizesCache = map;
     return map;
+  }
+
+  List<SearchFilter> _resolveSearchFilters(
+    String? currentSearchProvider,
+    List<Extension> extensions,
+  ) {
+    final isUsingExtensionSearch =
+        currentSearchProvider != null &&
+        currentSearchProvider.isNotEmpty &&
+        extensions.any((e) => e.id == currentSearchProvider && e.enabled);
+
+    if (isUsingExtensionSearch) {
+      final currentSearchExtension = extensions
+          .where((e) => e.id == currentSearchProvider && e.enabled)
+          .firstOrNull;
+      final filters = currentSearchExtension?.searchBehavior?.filters;
+      if (filters != null && filters.isNotEmpty) {
+        return filters;
+      }
+    }
+
+    return const [
+      SearchFilter(id: 'track', label: 'Tracks', icon: 'music'),
+      SearchFilter(id: 'artist', label: 'Artists', icon: 'artist'),
+      SearchFilter(id: 'album', label: 'Albums', icon: 'album'),
+      SearchFilter(id: 'playlist', label: 'Playlists', icon: 'playlist'),
+    ];
+  }
+
+  _SearchResultBuckets _getSearchResultBuckets(List<Track> tracks) {
+    final cached = _searchBucketsCache;
+    if (cached != null && identical(tracks, _searchBucketsSourceTracks)) {
+      return cached;
+    }
+
+    final realTracks = <Track>[];
+    final realTrackIndexes = <int>[];
+    final albumItems = <Track>[];
+    final playlistItems = <Track>[];
+    final artistItems = <Track>[];
+
+    for (int i = 0; i < tracks.length; i++) {
+      final track = tracks[i];
+      if (!track.isCollection) {
+        realTracks.add(track);
+        realTrackIndexes.add(i);
+      }
+      if (track.isAlbumItem) {
+        albumItems.add(track);
+      }
+      if (track.isPlaylistItem) {
+        playlistItems.add(track);
+      }
+      if (track.isArtistItem) {
+        artistItems.add(track);
+      }
+    }
+
+    final buckets = _SearchResultBuckets(
+      realTracks: realTracks,
+      realTrackIndexes: realTrackIndexes,
+      albumItems: albumItems,
+      playlistItems: playlistItems,
+      artistItems: artistItems,
+    );
+    _searchBucketsSourceTracks = tracks;
+    _searchBucketsCache = buckets;
+    return buckets;
   }
 
   void _onSearchFocusChanged() {
@@ -502,20 +703,28 @@ class _HomeTabState extends ConsumerState<HomeTab>
   }
 
   Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
+    if (_isCsvImporting) return;
+    _setCsvImporting(true);
+
     int currentProgress = 0;
     int totalTracks = 0;
 
-    bool dialogShown = false;
+    bool progressDialogInitialized = false;
+    bool progressDialogVisible = false;
+    BuildContext? progressDialogContext;
     StateSetter? setDialogState;
 
     void showProgressDialog() {
-      if (dialogShown || !mounted) return;
-      dialogShown = true;
+      if (progressDialogInitialized || !mounted) return;
+      progressDialogInitialized = true;
+      progressDialogVisible = true;
       showDialog(
         context: this.context,
+        useRootNavigator: false,
         barrierDismissible: false,
         builder: (dialogCtx) => StatefulBuilder(
           builder: (dialogCtx, setState) {
+            progressDialogContext = dialogCtx;
             setDialogState = setState;
             return AlertDialog(
               content: Column(
@@ -536,169 +745,193 @@ class _HomeTabState extends ConsumerState<HomeTab>
             );
           },
         ),
-      );
+      ).then((_) {
+        progressDialogVisible = false;
+        progressDialogContext = null;
+      });
     }
 
-    final tracks = await CsvImportService.pickAndParseCsv(
-      onProgress: (current, total) {
-        currentProgress = current;
-        totalTracks = total;
-        if (!dialogShown && total > 0) {
-          showProgressDialog();
+    void closeProgressDialog() {
+      if (!progressDialogVisible) return;
+      setDialogState = null;
+      try {
+        if (progressDialogContext != null) {
+          Navigator.of(progressDialogContext!).pop();
+        } else if (mounted) {
+          final navigator = Navigator.of(this.context);
+          if (navigator.canPop()) {
+            navigator.pop();
+          }
         }
-        setDialogState?.call(() {});
-      },
-    );
-
-    if (dialogShown && mounted) {
-      Navigator.of(this.context).pop();
+      } catch (_) {}
+      progressDialogVisible = false;
+      progressDialogContext = null;
     }
 
-    if (tracks.isNotEmpty) {
-      final settings = ref.read(settingsProvider);
-
-      if (!mounted) return;
-
-      // ignore: use_build_context_synchronously
-      final l10n = context.l10n;
-
-      final options = await showDialog<_CsvImportOptions>(
-        context: this.context,
-        builder: (dialogCtx) {
-          var skipDownloaded = true;
-          return StatefulBuilder(
-            builder: (dialogCtx, setDialogState) => AlertDialog(
-              title: Text(l10n.dialogImportPlaylistTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.dialogImportPlaylistMessage(tracks.length)),
-                  const SizedBox(height: 12),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Skip already downloaded songs'),
-                    value: skipDownloaded,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        skipDownloaded = value ?? true;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(
-                    dialogCtx,
-                    const _CsvImportOptions(
-                      confirmed: false,
-                      skipDownloaded: true,
-                    ),
-                  ),
-                  child: Text(l10n.dialogCancel),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(
-                    dialogCtx,
-                    _CsvImportOptions(
-                      confirmed: true,
-                      skipDownloaded: skipDownloaded,
-                    ),
-                  ),
-                  child: Text(l10n.dialogImport),
-                ),
-              ],
-            ),
-          );
+    try {
+      final tracks = await CsvImportService.pickAndParseCsv(
+        onProgress: (current, total) {
+          currentProgress = current;
+          totalTracks = total;
+          if (!progressDialogInitialized && total > 0) {
+            showProgressDialog();
+          }
+          setDialogState?.call(() {});
         },
       );
 
-      if (options == null || !options.confirmed) return;
+      closeProgressDialog();
 
-      var tracksToQueue = tracks;
-      var skippedDownloadedCount = 0;
+      if (tracks.isNotEmpty) {
+        final settings = ref.read(settingsProvider);
 
-      if (options.skipDownloaded) {
-        final historyState = ref.read(downloadHistoryProvider);
-        tracksToQueue = [];
-        for (final track in tracks) {
-          final isDownloaded =
-              historyState.isDownloaded(track.id) ||
-              (track.isrc != null &&
-                  historyState.getByIsrc(track.isrc!) != null);
-          if (isDownloaded) {
-            skippedDownloadedCount++;
-            continue;
-          }
-          tracksToQueue.add(track);
-        }
-      }
+        if (!mounted) return;
 
-      if (tracksToQueue.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(this.context).showSnackBar(
-            SnackBar(
-              content: Text(
-                l10n.discographySkippedDownloaded(0, skippedDownloadedCount),
-              ),
-            ),
-          );
-        }
-        return;
-      }
+        // ignore: use_build_context_synchronously
+        final l10n = context.l10n;
 
-      final queueSnackbarMessage = skippedDownloadedCount > 0
-          ? l10n.discographySkippedDownloaded(
-              tracksToQueue.length,
-              skippedDownloadedCount,
-            )
-          : l10n.snackbarAddedTracksToQueue(tracksToQueue.length);
-
-      if (!mounted) return;
-
-      if (settings.askQualityBeforeDownload) {
-        DownloadServicePicker.show(
-          this.context,
-          trackName: l10n.csvImportTracks(tracksToQueue.length),
-          artistName: l10n.dialogImportPlaylistTitle,
-          onSelect: (quality, service) {
-            ref
-                .read(downloadQueueProvider.notifier)
-                .addMultipleToQueue(
-                  tracksToQueue,
-                  service,
-                  qualityOverride: quality,
-                );
-            if (mounted) {
-              ScaffoldMessenger.of(this.context).showSnackBar(
-                SnackBar(
-                  content: Text(queueSnackbarMessage),
-                  action: SnackBarAction(
-                    label: l10n.snackbarViewQueue,
-                    onPressed: () {},
-                  ),
+        final options = await showDialog<_CsvImportOptions>(
+          context: this.context,
+          useRootNavigator: false,
+          builder: (dialogCtx) {
+            var skipDownloaded = true;
+            return StatefulBuilder(
+              builder: (dialogCtx, setDialogState) => AlertDialog(
+                title: Text(l10n.dialogImportPlaylistTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.dialogImportPlaylistMessage(tracks.length)),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Skip already downloaded songs'),
+                      value: skipDownloaded,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          skipDownloaded = value ?? true;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-              );
-            }
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(
+                      dialogCtx,
+                      const _CsvImportOptions(
+                        confirmed: false,
+                        skipDownloaded: true,
+                      ),
+                    ),
+                    child: Text(l10n.dialogCancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(
+                      dialogCtx,
+                      _CsvImportOptions(
+                        confirmed: true,
+                        skipDownloaded: skipDownloaded,
+                      ),
+                    ),
+                    child: Text(l10n.dialogImport),
+                  ),
+                ],
+              ),
+            );
           },
         );
-      } else {
-        ref
-            .read(downloadQueueProvider.notifier)
-            .addMultipleToQueue(tracksToQueue, settings.defaultService);
-        if (mounted) {
-          ScaffoldMessenger.of(this.context).showSnackBar(
-            SnackBar(
-              content: Text(queueSnackbarMessage),
-              action: SnackBarAction(
-                label: l10n.snackbarViewQueue,
-                onPressed: () {},
+
+        if (options == null || !options.confirmed) return;
+
+        var tracksToQueue = tracks;
+        var skippedDownloadedCount = 0;
+
+        if (options.skipDownloaded) {
+          final historyState = ref.read(downloadHistoryProvider);
+          tracksToQueue = [];
+          for (final track in tracks) {
+            final isDownloaded =
+                historyState.isDownloaded(track.id) ||
+                (track.isrc != null &&
+                    historyState.getByIsrc(track.isrc!) != null);
+            if (isDownloaded) {
+              skippedDownloadedCount++;
+              continue;
+            }
+            tracksToQueue.add(track);
+          }
+        }
+
+        if (tracksToQueue.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  l10n.discographySkippedDownloaded(0, skippedDownloadedCount),
+                ),
               ),
-            ),
+            );
+          }
+          return;
+        }
+
+        final queueSnackbarMessage = skippedDownloadedCount > 0
+            ? l10n.discographySkippedDownloaded(
+                tracksToQueue.length,
+                skippedDownloadedCount,
+              )
+            : l10n.snackbarAddedTracksToQueue(tracksToQueue.length);
+
+        if (!mounted) return;
+
+        if (settings.askQualityBeforeDownload) {
+          DownloadServicePicker.show(
+            this.context,
+            trackName: l10n.csvImportTracks(tracksToQueue.length),
+            artistName: l10n.dialogImportPlaylistTitle,
+            onSelect: (quality, service) {
+              ref
+                  .read(downloadQueueProvider.notifier)
+                  .addMultipleToQueue(
+                    tracksToQueue,
+                    service,
+                    qualityOverride: quality,
+                  );
+              if (mounted) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: Text(queueSnackbarMessage),
+                    action: SnackBarAction(
+                      label: l10n.snackbarViewQueue,
+                      onPressed: () {},
+                    ),
+                  ),
+                );
+              }
+            },
           );
+        } else {
+          ref
+              .read(downloadQueueProvider.notifier)
+              .addMultipleToQueue(tracksToQueue, settings.defaultService);
+          if (mounted) {
+            ScaffoldMessenger.of(this.context).showSnackBar(
+              SnackBar(
+                content: Text(queueSnackbarMessage),
+                action: SnackBarAction(
+                  label: l10n.snackbarViewQueue,
+                  onPressed: () {},
+                ),
+              ),
+            );
+          }
         }
       }
+    } finally {
+      closeProgressDialog();
+      _setCsvImporting(false);
     }
   }
 
@@ -706,25 +939,22 @@ class _HomeTabState extends ConsumerState<HomeTab>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final tracks = ref.watch(trackProvider.select((s) => s.tracks));
-    final searchArtists = ref.watch(
-      trackProvider.select((s) => s.searchArtists),
-    );
-    final searchAlbums = ref.watch(trackProvider.select((s) => s.searchAlbums));
-    final searchPlaylists = ref.watch(
-      trackProvider.select((s) => s.searchPlaylists),
+    final hasActualResults = ref.watch(
+      trackProvider.select(
+        (s) =>
+            s.tracks.isNotEmpty ||
+            (s.searchArtists != null && s.searchArtists!.isNotEmpty) ||
+            (s.searchAlbums != null && s.searchAlbums!.isNotEmpty) ||
+            (s.searchPlaylists != null && s.searchPlaylists!.isNotEmpty),
+      ),
     );
     final isLoading = ref.watch(trackProvider.select((s) => s.isLoading));
-    final error = ref.watch(trackProvider.select((s) => s.error));
     final hasSearchedBefore = ref.watch(
       settingsProvider.select((s) => s.hasSearchedBefore),
     );
 
-    final exploreSections = ref.watch(
-      exploreProvider.select((s) => s.sections),
-    );
-    final exploreGreeting = ref.watch(
-      exploreProvider.select((s) => s.greeting),
+    final hasExploreContent = ref.watch(
+      exploreProvider.select((s) => s.sections.isNotEmpty),
     );
     final exploreLoading = ref.watch(
       exploreProvider.select((s) => s.isLoading),
@@ -736,11 +966,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
 
     final colorScheme = Theme.of(context).colorScheme;
-    final hasActualResults =
-        tracks.isNotEmpty ||
-        (searchArtists != null && searchArtists.isNotEmpty) ||
-        (searchAlbums != null && searchAlbums.isNotEmpty) ||
-        (searchPlaylists != null && searchPlaylists.isNotEmpty);
     final searchText = _urlController.text.trim();
     final hasSearchInput = searchText.isNotEmpty;
     final isSearchFocused = _searchFocusNode.hasFocus;
@@ -755,12 +980,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final historyItems = ref.watch(
       downloadHistoryProvider.select((s) => s.items),
     );
-    final recentAccessItems = ref.watch(
-      recentAccessProvider.select((s) => s.items),
-    );
-    final hiddenDownloadIds = ref.watch(
-      recentAccessProvider.select((s) => s.hiddenDownloadIds),
-    );
 
     final recentModeRequested = isShowingRecentAccess || isSearchFocused;
     final showRecentAccess =
@@ -769,67 +988,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
         !isLoading;
     final hasResults =
         hasSearchInput || hasActualResults || isLoading || showRecentAccess;
-    final recentAccessView = showRecentAccess
-        ? _getRecentAccessView(
-            recentAccessItems,
-            historyItems,
-            hiddenDownloadIds,
-          )
-        : null;
-
-    final hasExploreContent = exploreSections.isNotEmpty;
     final showExplore =
         !hasActualResults &&
         !isLoading &&
         !showRecentAccess &&
         (hasHomeFeedExtension || hasExploreContent) &&
         hasExploreContent;
-
-    // Get current search extension and its filters
-    final currentSearchProvider = ref.watch(
-      settingsProvider.select((s) => s.searchProvider),
-    );
-    final extensions = ref.watch(extensionProvider.select((s) => s.extensions));
-    final selectedSearchFilter = ref.watch(
-      trackProvider.select((s) => s.selectedSearchFilter),
-    );
-    final searchExtensionId = ref.watch(
-      trackProvider.select((s) => s.searchExtensionId),
-    );
-    final localLibrarySettings = ref.watch(
-      settingsProvider.select(
-        (s) => (s.localLibraryEnabled, s.localLibraryShowDuplicates),
-      ),
-    );
-    final showLocalLibraryIndicator =
-        localLibrarySettings.$1 && localLibrarySettings.$2;
-    final thumbnailSizesByExtensionId = _getThumbnailSizesByExtensionId(
-      extensions,
-    );
-    Extension? currentSearchExtension;
-    List<SearchFilter> searchFilters = [];
-
-    final isUsingExtensionSearch =
-        currentSearchProvider != null &&
-        currentSearchProvider.isNotEmpty &&
-        extensions.any((e) => e.id == currentSearchProvider && e.enabled);
-
-    if (isUsingExtensionSearch) {
-      currentSearchExtension = extensions
-          .where((e) => e.id == currentSearchProvider && e.enabled)
-          .firstOrNull;
-      if (currentSearchExtension?.searchBehavior?.filters.isNotEmpty == true) {
-        searchFilters = currentSearchExtension!.searchBehavior!.filters;
-      }
-    } else {
-      // Default Deezer filters
-      searchFilters = const [
-        SearchFilter(id: 'track', label: 'Tracks', icon: 'music'),
-        SearchFilter(id: 'artist', label: 'Artists', icon: 'artist'),
-        SearchFilter(id: 'album', label: 'Albums', icon: 'album'),
-        SearchFilter(id: 'playlist', label: 'Playlists', icon: 'playlist'),
-      ];
-    }
 
     if (hasActualResults &&
         isShowingRecentAccess &&
@@ -953,20 +1117,45 @@ class _HomeTabState extends ConsumerState<HomeTab>
               ),
 
               // Search filter bar (only shown when has search results)
-              if (searchFilters.isNotEmpty &&
-                  hasActualResults &&
-                  !showRecentAccess)
-                SliverToBoxAdapter(
-                  child: _buildSearchFilterBar(
-                    searchFilters,
-                    selectedSearchFilter,
-                    colorScheme,
-                  ),
+              if (hasActualResults && !showRecentAccess)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final currentSearchProvider = ref.watch(
+                      settingsProvider.select((s) => s.searchProvider),
+                    );
+                    final extensions = ref.watch(
+                      extensionProvider.select((s) => s.extensions),
+                    );
+                    final selectedSearchFilter = ref.watch(
+                      trackProvider.select((s) => s.selectedSearchFilter),
+                    );
+                    final searchFilters = _resolveSearchFilters(
+                      currentSearchProvider,
+                      extensions,
+                    );
+                    if (searchFilters.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverToBoxAdapter(
+                      child: _buildSearchFilterBar(
+                        searchFilters,
+                        selectedSearchFilter,
+                        colorScheme,
+                      ),
+                    );
+                  },
                 ),
 
               if (showRecentAccess)
-                SliverToBoxAdapter(
-                  child: _buildRecentAccess(recentAccessView!, colorScheme),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final recentAccessView = ref.watch(
+                      recentAccessViewProvider,
+                    );
+                    return SliverToBoxAdapter(
+                      child: _buildRecentAccess(recentAccessView, colorScheme),
+                    );
+                  },
                 ),
 
               SliverToBoxAdapter(
@@ -1008,10 +1197,22 @@ class _HomeTabState extends ConsumerState<HomeTab>
               ),
 
               if (showExplore)
-                ..._buildExploreSections(
-                  exploreSections,
-                  exploreGreeting,
-                  colorScheme,
+                Consumer(
+                  builder: (context, ref, _) {
+                    final exploreSections = ref.watch(
+                      exploreProvider.select((s) => s.sections),
+                    );
+                    final exploreGreeting = ref.watch(
+                      exploreProvider.select((s) => s.greeting),
+                    );
+                    return SliverMainAxisGroup(
+                      slivers: _buildExploreSections(
+                        exploreSections,
+                        exploreGreeting,
+                        colorScheme,
+                      ),
+                    );
+                  },
                 ),
 
               if (hasHomeFeedExtension &&
@@ -1025,18 +1226,63 @@ class _HomeTabState extends ConsumerState<HomeTab>
                   ),
                 ),
 
-              ..._buildSearchResults(
-                tracks: tracks,
-                searchArtists: searchArtists,
-                searchAlbums: searchAlbums,
-                searchPlaylists: searchPlaylists,
-                isLoading: isLoading,
-                error: error,
-                colorScheme: colorScheme,
-                hasResults: hasActualResults || isLoading,
-                searchExtensionId: searchExtensionId,
-                showLocalLibraryIndicator: showLocalLibraryIndicator,
-                thumbnailSizesByExtensionId: thumbnailSizesByExtensionId,
+              Consumer(
+                builder: (context, ref, _) {
+                  final tracks = ref.watch(
+                    trackProvider.select((s) => s.tracks),
+                  );
+                  final searchArtists = ref.watch(
+                    trackProvider.select((s) => s.searchArtists),
+                  );
+                  final searchAlbums = ref.watch(
+                    trackProvider.select((s) => s.searchAlbums),
+                  );
+                  final searchPlaylists = ref.watch(
+                    trackProvider.select((s) => s.searchPlaylists),
+                  );
+                  final isLoading = ref.watch(
+                    trackProvider.select((s) => s.isLoading),
+                  );
+                  final error = ref.watch(trackProvider.select((s) => s.error));
+                  final searchExtensionId = ref.watch(
+                    trackProvider.select((s) => s.searchExtensionId),
+                  );
+                  final localLibrarySettings = ref.watch(
+                    settingsProvider.select(
+                      (s) =>
+                          (s.localLibraryEnabled, s.localLibraryShowDuplicates),
+                    ),
+                  );
+                  final extensions = ref.watch(
+                    extensionProvider.select((s) => s.extensions),
+                  );
+                  final showLocalLibraryIndicator =
+                      localLibrarySettings.$1 && localLibrarySettings.$2;
+                  final thumbnailSizesByExtensionId =
+                      _getThumbnailSizesByExtensionId(extensions);
+                  final hasResults =
+                      tracks.isNotEmpty ||
+                      (searchArtists != null && searchArtists.isNotEmpty) ||
+                      (searchAlbums != null && searchAlbums.isNotEmpty) ||
+                      (searchPlaylists != null && searchPlaylists.isNotEmpty) ||
+                      isLoading;
+
+                  return SliverMainAxisGroup(
+                    slivers: _buildSearchResults(
+                      tracks: tracks,
+                      searchArtists: searchArtists,
+                      searchAlbums: searchAlbums,
+                      searchPlaylists: searchPlaylists,
+                      isLoading: isLoading,
+                      error: error,
+                      colorScheme: colorScheme,
+                      hasResults: hasResults,
+                      searchExtensionId: searchExtensionId,
+                      showLocalLibraryIndicator: showLocalLibraryIndicator,
+                      thumbnailSizesByExtensionId: thumbnailSizesByExtensionId,
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -1157,103 +1403,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         ),
       ],
     );
-  }
-
-  _RecentAccessView _getRecentAccessView(
-    List<RecentAccessItem> items,
-    List<DownloadHistoryItem> historyItems,
-    Set<String> hiddenIds,
-  ) {
-    final cached = _recentAccessViewCache;
-    if (cached != null &&
-        identical(historyItems, _recentAccessHistoryCache) &&
-        identical(items, _recentAccessItemsCache) &&
-        identical(hiddenIds, _recentAccessHiddenIdsCache)) {
-      return cached;
-    }
-
-    final albumGroups = <String, _RecentAlbumAggregate>{};
-    for (final h in historyItems) {
-      final artistForKey = (h.albumArtist != null && h.albumArtist!.isNotEmpty)
-          ? h.albumArtist!
-          : h.artistName;
-      final albumKey = '${h.albumName}|$artistForKey';
-      final existing = albumGroups[albumKey];
-      if (existing == null) {
-        albumGroups[albumKey] = _RecentAlbumAggregate(count: 1, mostRecent: h);
-      } else {
-        existing.count++;
-        if (h.downloadedAt.isAfter(existing.mostRecent.downloadedAt)) {
-          existing.mostRecent = h;
-        }
-      }
-    }
-
-    final downloadIds = <String>[];
-    final visibleDownloads = <RecentAccessItem>[];
-    final downloadFilePathByRecentKey = <String, String>{};
-    for (final aggregate in albumGroups.values) {
-      final mostRecent = aggregate.mostRecent;
-      final artistForKey =
-          (mostRecent.albumArtist != null && mostRecent.albumArtist!.isNotEmpty)
-          ? mostRecent.albumArtist!
-          : mostRecent.artistName;
-
-      final isSingleTrack = aggregate.count == 1;
-      final recentId = isSingleTrack
-          ? (mostRecent.spotifyId ?? mostRecent.id)
-          : '${mostRecent.albumName}|$artistForKey';
-      final recent = RecentAccessItem(
-        id: recentId,
-        name: isSingleTrack ? mostRecent.trackName : mostRecent.albumName,
-        subtitle: isSingleTrack ? mostRecent.artistName : artistForKey,
-        imageUrl: mostRecent.coverUrl,
-        type: isSingleTrack ? RecentAccessType.track : RecentAccessType.album,
-        accessedAt: mostRecent.downloadedAt,
-        providerId: 'download',
-      );
-
-      downloadIds.add(recentId);
-      downloadFilePathByRecentKey['${recent.type.name}:${recent.id}'] =
-          mostRecent.filePath;
-      if (!hiddenIds.contains(recentId)) {
-        visibleDownloads.add(recent);
-      }
-    }
-
-    visibleDownloads.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
-    if (visibleDownloads.length > 10) {
-      visibleDownloads.removeRange(10, visibleDownloads.length);
-    }
-
-    final allItems = <RecentAccessItem>[...items, ...visibleDownloads];
-    allItems.sort((a, b) => b.accessedAt.compareTo(a.accessedAt));
-
-    final seen = <String>{};
-    final uniqueItems = <RecentAccessItem>[];
-    for (final item in allItems) {
-      final key = '${item.type.name}:${item.id}';
-      if (seen.add(key)) {
-        uniqueItems.add(item);
-        if (uniqueItems.length >= 10) {
-          break;
-        }
-      }
-    }
-
-    final view = _RecentAccessView(
-      uniqueItems: uniqueItems,
-      downloadIds: downloadIds,
-      downloadFilePathByRecentKey: downloadFilePathByRecentKey,
-      hasHiddenDownloads: hiddenIds.isNotEmpty,
-    );
-
-    _recentAccessHistoryCache = historyItems;
-    _recentAccessItemsCache = items;
-    _recentAccessHiddenIdsCache = hiddenIds;
-    _recentAccessViewCache = view;
-
-    return view;
   }
 
   List<Widget> _buildExploreSections(
@@ -1407,8 +1556,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               ),
               if (item.artists.isNotEmpty && !isArtist)
-                Text(
-                  item.artists,
+                ClickableArtistName(
+                  artistName: item.artists,
+                  coverUrl: item.coverUrl,
+                  extensionId: item.providerId,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1499,6 +1650,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -1554,8 +1706,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          item.artists,
+                        ClickableArtistName(
+                          artistName: item.artists,
+                          coverUrl: item.coverUrl,
+                          extensionId: item.providerId,
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: colorScheme.onSurfaceVariant),
                           maxLines: 1,
@@ -1573,7 +1727,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
               title: Text(context.l10n.downloadTitle),
               onTap: () {
                 Navigator.pop(context);
-                _downloadExploreTrack(item);
+                _handleExploreTrackPrimaryAction(item);
               },
             ),
             ListTile(
@@ -1591,7 +1745,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
   }
 
-  Future<void> _downloadExploreTrack(ExploreItem item) async {
+  Future<void> _handleExploreTrackPrimaryAction(ExploreItem item) async {
     final settings = ref.read(settingsProvider);
 
     final track = Track(
@@ -1599,6 +1753,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
       name: item.name,
       artistName: item.artists,
       albumName: item.albumName ?? '',
+      albumId: item.albumId,
       duration: item.durationMs ~/ 1000,
       trackNumber: 1,
       discNumber: 1,
@@ -1921,6 +2076,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             ),
           );
         }
+        return;
       case RecentAccessType.album:
         if (item.providerId == 'download') {
           Navigator.push(
@@ -1960,6 +2116,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             ),
           );
         }
+        return;
       case RecentAccessType.track:
         final historyItem = ref
             .read(downloadHistoryProvider.notifier)
@@ -1971,10 +2128,44 @@ class _HomeTabState extends ConsumerState<HomeTab>
             context,
           ).showSnackBar(SnackBar(content: Text(item.name)));
         }
+        return;
       case RecentAccessType.playlist:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.recentPlaylistInfo(item.name))),
-        );
+        if (item.id.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.recentPlaylistInfo(item.name))),
+          );
+          return;
+        }
+
+        if (item.providerId != null &&
+            item.providerId!.isNotEmpty &&
+            item.providerId != 'deezer' &&
+            item.providerId != 'spotify') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExtensionPlaylistScreen(
+                extensionId: item.providerId!,
+                playlistId: item.id,
+                playlistName: item.name,
+                coverUrl: item.imageUrl,
+              ),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlaylistScreen(
+                playlistName: item.name,
+                coverUrl: item.imageUrl,
+                tracks: const [],
+                playlistId: item.id,
+              ),
+            ),
+          );
+        }
+        return;
     }
   }
 
@@ -2107,28 +2298,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
       return [const SliverToBoxAdapter(child: SizedBox.shrink())];
     }
 
-    final realTracks = <Track>[];
-    final realTrackIndexes = <int>[];
-    final albumItems = <Track>[];
-    final playlistItems = <Track>[];
-    final artistItems = <Track>[];
-
-    for (int i = 0; i < tracks.length; i++) {
-      final track = tracks[i];
-      if (!track.isCollection) {
-        realTracks.add(track);
-        realTrackIndexes.add(i);
-      }
-      if (track.isAlbumItem) {
-        albumItems.add(track);
-      }
-      if (track.isPlaylistItem) {
-        playlistItems.add(track);
-      }
-      if (track.isArtistItem) {
-        artistItems.add(track);
-      }
-    }
+    final buckets = _getSearchResultBuckets(tracks);
+    final realTracks = buckets.realTracks;
+    final realTrackIndexes = buckets.realTrackIndexes;
+    final albumItems = buckets.albumItems;
+    final playlistItems = buckets.playlistItems;
+    final artistItems = buckets.artistItems;
 
     final slivers = <Widget>[
       if (error != null)
@@ -2676,7 +2851,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
             else ...[
               IconButton(
                 icon: const Icon(Icons.file_upload_outlined),
-                onPressed: () => _importCsv(context, ref),
+                onPressed: _isCsvImporting
+                    ? null
+                    : () => _importCsv(context, ref),
                 tooltip: 'Import CSV',
               ),
               IconButton(
@@ -2969,6 +3146,11 @@ class _TrackItemWithStatus extends ConsumerWidget {
             isInHistory: isInHistory,
             isInLocalLibrary: isInLocalLibrary,
           ),
+          onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
+            context,
+            ref,
+            track,
+          ),
           splashColor: colorScheme.primary.withValues(alpha: 0.12),
           highlightColor: colorScheme.primary.withValues(alpha: 0.08),
           child: Padding(
@@ -3014,8 +3196,11 @@ class _TrackItemWithStatus extends ConsumerWidget {
                       Row(
                         children: [
                           Flexible(
-                            child: Text(
-                              track.artistName,
+                            child: ClickableArtistName(
+                              artistName: track.artistName,
+                              artistId: track.artistId,
+                              coverUrl: track.coverUrl,
+                              extensionId: extensionId,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -3061,9 +3246,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
                     ],
                   ),
                 ),
-                TrackCollectionQuickActions(
-                  track: track,
-                ),
+                TrackCollectionQuickActions(track: track),
               ],
             ),
           ),
@@ -3407,8 +3590,11 @@ class _SearchAlbumItemWidget extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        album.artists.isNotEmpty ? album.artists : 'Album',
+                      ClickableArtistName(
+                        artistName: album.artists.isNotEmpty
+                            ? album.artists
+                            : 'Album',
+                        coverUrl: album.imageUrl,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -3608,7 +3794,7 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
           .toList();
 
       // Extract artist info from album response
-      final artistId = result['artist_id'] as String?;
+      final artistId = (result['artist_id'] ?? result['artistId'])?.toString();
       final artistName = result['artists'] as String?;
 
       setState(() {
@@ -3640,6 +3826,9 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? widget.albumName).toString(),
+      artistId:
+          (data['artist_id'] ?? data['artistId'])?.toString() ?? _artistId,
+      albumId: data['album_id']?.toString() ?? widget.albumId,
       coverUrl: _resolveCoverUrl(
         data['cover_url']?.toString(),
         widget.coverUrl,
@@ -3792,6 +3981,8 @@ class _ExtensionPlaylistScreenState
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? '').toString(),
+      artistId: (data['artist_id'] ?? data['artistId'])?.toString(),
+      albumId: data['album_id']?.toString(),
       coverUrl: _resolveCoverUrl(
         data['cover_url']?.toString(),
         widget.coverUrl,
@@ -3963,6 +4154,10 @@ class _ExtensionArtistScreenState extends ConsumerState<ExtensionArtistScreen> {
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
       albumArtist: data['album_artist']?.toString(),
+      artistId:
+          (data['artist_id'] ?? data['artistId'])?.toString() ??
+          widget.artistId,
+      albumId: data['album_id']?.toString(),
       coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
@@ -4177,8 +4372,10 @@ class _QuickPicksPageViewState extends State<_QuickPicksPageView> {
                     ),
                   ),
                   if (item.artists.isNotEmpty)
-                    Text(
-                      item.artists,
+                    ClickableArtistName(
+                      artistName: item.artists,
+                      coverUrl: item.coverUrl,
+                      extensionId: item.providerId,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(

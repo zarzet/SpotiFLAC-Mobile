@@ -20,12 +20,15 @@ class ExtensionsPage extends ConsumerStatefulWidget {
 }
 
 class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
-  static final RegExp _platformExceptionPattern =
-      RegExp(r'PlatformException\([^,]+,\s*([^,]+(?:,[^,]+)?),');
-  static final RegExp _platformExceptionSimplePattern =
-      RegExp(r'PlatformException\([^,]+,\s*(.+?),\s*null');
-  static final RegExp _trailingNullsPattern =
-      RegExp(r',\s*null\s*,\s*null\)?$');
+  static final RegExp _platformExceptionPattern = RegExp(
+    r'PlatformException\([^,]+,\s*([^,]+(?:,[^,]+)?),',
+  );
+  static final RegExp _platformExceptionSimplePattern = RegExp(
+    r'PlatformException\([^,]+,\s*(.+?),\s*null',
+  );
+  static final RegExp _trailingNullsPattern = RegExp(
+    r',\s*null\s*,\s*null\)?$',
+  );
   static final RegExp _leadingCommaPattern = RegExp(r'^\s*,\s*');
 
   @override
@@ -40,11 +43,13 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
       final appDir = await getApplicationDocumentsDirectory();
       final extensionsDir = '${appDir.path}/extensions';
       final dataDir = '${appDir.path}/extension_data';
-      
+
       await Directory(extensionsDir).create(recursive: true);
       await Directory(dataDir).create(recursive: true);
-      
-      await ref.read(extensionProvider.notifier).initialize(extensionsDir, dataDir);
+
+      await ref
+          .read(extensionProvider.notifier)
+          .initialize(extensionsDir, dataDir);
     }
   }
 
@@ -59,67 +64,205 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-          SliverAppBar(
-            expandedHeight: 120 + topPadding,
-            collapsedHeight: kToolbarHeight,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-            ),
-            flexibleSpace: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxHeight = 120 + topPadding;
-                final minHeight = kToolbarHeight + topPadding;
-                final expandRatio = ((constraints.maxHeight - minHeight) /
-                        (maxHeight - minHeight))
-                    .clamp(0.0, 1.0);
-                final leftPadding = 56 - (32 * expandRatio);
-                return FlexibleSpaceBar(
-                  expandedTitleScale: 1.0,
-                  titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
-                  title: Text(
-                    context.l10n.extensionsTitle,
-                    style: TextStyle(
-                      fontSize: 20 + (8 * expandRatio),
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+            SliverAppBar(
+              expandedHeight: 120 + topPadding,
+              collapsedHeight: kToolbarHeight,
+              floating: false,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+              flexibleSpace: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxHeight = 120 + topPadding;
+                  final minHeight = kToolbarHeight + topPadding;
+                  final expandRatio =
+                      ((constraints.maxHeight - minHeight) /
+                              (maxHeight - minHeight))
+                          .clamp(0.0, 1.0);
+                  final leftPadding = 56 - (32 * expandRatio);
+                  return FlexibleSpaceBar(
+                    expandedTitleScale: 1.0,
+                    titlePadding: EdgeInsets.only(
+                      left: leftPadding,
+                      bottom: 16,
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          if (extState.isLoading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
+                    title: Text(
+                      context.l10n.extensionsTitle,
+                      style: TextStyle(
+                        fontSize: 20 + (8 * expandRatio),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
 
-          if (extState.error != null)
+            if (extState.isLoading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+
+            if (extState.error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: colorScheme.error),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            extState.error!,
+                            style: TextStyle(
+                              color: colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(
+                title: context.l10n.extensionsProviderPrioritySection,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SettingsGroup(
+                children: [
+                  _DownloadPriorityItem(),
+                  _MetadataPriorityItem(),
+                  _SearchProviderSelector(),
+                ],
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: SettingsSectionHeader(
+                title: context.l10n.extensionsInstalledSection,
+              ),
+            ),
+
+            if (extState.extensions.isEmpty && !extState.isLoading)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.extension_outlined,
+                          size: 48,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          context.l10n.extensionsNoExtensions,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          context.l10n.extensionsNoExtensionsSubtitle,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            if (extState.extensions.isNotEmpty)
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: extState.extensions.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final ext = entry.value;
+                    return _ExtensionItem(
+                      extension: ext,
+                      showDivider: index < extState.extensions.length - 1,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ExtensionDetailPage(extensionId: ext.id),
+                        ),
+                      ),
+                      onToggle: (enabled) => ref
+                          .read(extensionProvider.notifier)
+                          .setExtensionEnabled(ext.id, enabled),
+                    );
+                  }).toList(),
+                ),
+              ),
+
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
+                child: FilledButton.icon(
+                  onPressed: _installExtension,
+                  icon: const Icon(Icons.add),
+                  label: Text(context.l10n.extensionsInstallButton),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.errorContainer,
+                    color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: colorScheme.error),
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: colorScheme.tertiary,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          extState.error!,
-                          style: TextStyle(color: colorScheme.onErrorContainer),
+                          context.l10n.extensionsInfoTip,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colorScheme.onTertiaryContainer,
+                              ),
                         ),
                       ),
                     ],
@@ -127,131 +270,9 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
                 ),
               ),
             ),
-
-          SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: context.l10n.extensionsProviderPrioritySection),
-          ),
-          SliverToBoxAdapter(
-            child: SettingsGroup(
-              children: [
-                _DownloadPriorityItem(),
-                _MetadataPriorityItem(),
-                _SearchProviderSelector(),
-              ],
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: context.l10n.extensionsInstalledSection),
-          ),
-
-          if (extState.extensions.isEmpty && !extState.isLoading)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.extension_outlined,
-                        size: 48,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        context.l10n.extensionsNoExtensions,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.extensionsNoExtensionsSubtitle,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          if (extState.extensions.isNotEmpty)
-            SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: extState.extensions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final ext = entry.value;
-                  return _ExtensionItem(
-                    extension: ext,
-                    showDivider: index < extState.extensions.length - 1,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ExtensionDetailPage(extensionId: ext.id),
-                      ),
-                    ),
-                    onToggle: (enabled) => ref
-                        .read(extensionProvider.notifier)
-                        .setExtensionEnabled(ext.id, enabled),
-                  );
-                }).toList(),
-              ),
-            ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: FilledButton.icon(
-                onPressed: _installExtension,
-                icon: const Icon(Icons.add),
-                label: Text(context.l10n.extensionsInstallButton),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 20, color: colorScheme.tertiary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        context.l10n.extensionsInfoTip,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -267,9 +288,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
         if (!file.path!.endsWith('.spotiflac-ext')) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.l10n.snackbarSelectExtFile),
-              ),
+              SnackBar(content: Text(context.l10n.snackbarSelectExtFile)),
             );
           }
           return;
@@ -287,12 +306,12 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
           } else {
             message = _getFriendlyErrorMessage(extState.error);
           }
-          
+
           ref.read(extensionProvider.notifier).clearError();
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         }
       }
     }
@@ -301,9 +320,9 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
   /// Parse error message to be more user-friendly
   String _getFriendlyErrorMessage(String? error) {
     if (error == null) return 'Failed to install extension';
-    
+
     String message = error;
-    
+
     if (message.contains('PlatformException')) {
       final match = _platformExceptionPattern.firstMatch(message);
       if (match != null) {
@@ -315,10 +334,10 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
         }
       }
     }
-    
+
     message = message.replaceAll(_trailingNullsPattern, '');
     message = message.replaceAll(_leadingCommaPattern, '');
-    
+
     return message;
   }
 }
@@ -359,7 +378,9 @@ class _ExtensionItem extends StatelessWidget {
                         : colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: extension.iconPath != null && extension.iconPath!.isNotEmpty
+                  child:
+                      extension.iconPath != null &&
+                          extension.iconPath!.isNotEmpty
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.file(
@@ -396,7 +417,8 @@ class _ExtensionItem extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         hasError
-                            ? extension.errorMessage ?? context.l10n.extensionsErrorLoading
+                            ? extension.errorMessage ??
+                                  context.l10n.extensionsErrorLoading
                             : 'v${extension.version} ${context.l10n.extensionsAuthor(extension.author)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: hasError
@@ -435,17 +457,16 @@ class _DownloadPriorityItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
-    final hasDownloadExtensions = extState.extensions
-        .any((e) => e.enabled && e.hasDownloadProvider);
-    
+
+    final hasDownloadExtensions = extState.extensions.any(
+      (e) => e.enabled && e.hasDownloadProvider,
+    );
+
     return InkWell(
-      onTap: hasDownloadExtensions 
+      onTap: hasDownloadExtensions
           ? () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const ProviderPriorityPage(),
-              ),
+              MaterialPageRoute(builder: (_) => const ProviderPriorityPage()),
             )
           : null,
       child: Padding(
@@ -454,8 +475,8 @@ class _DownloadPriorityItem extends ConsumerWidget {
           children: [
             Icon(
               Icons.download,
-              color: hasDownloadExtensions 
-                  ? colorScheme.onSurfaceVariant 
+              color: hasDownloadExtensions
+                  ? colorScheme.onSurfaceVariant
                   : colorScheme.outline,
             ),
             const SizedBox(width: 16),
@@ -466,14 +487,12 @@ class _DownloadPriorityItem extends ConsumerWidget {
                   Text(
                     context.l10n.extensionsDownloadPriority,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: hasDownloadExtensions 
-                          ? null 
-                          : colorScheme.outline,
+                      color: hasDownloadExtensions ? null : colorScheme.outline,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    hasDownloadExtensions 
+                    hasDownloadExtensions
                         ? context.l10n.extensionsDownloadPrioritySubtitle
                         : context.l10n.extensionsNoDownloadProvider,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -485,8 +504,8 @@ class _DownloadPriorityItem extends ConsumerWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: hasDownloadExtensions 
-                  ? colorScheme.onSurfaceVariant 
+              color: hasDownloadExtensions
+                  ? colorScheme.onSurfaceVariant
                   : colorScheme.outline,
             ),
           ],
@@ -503,12 +522,13 @@ class _MetadataPriorityItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
-    final hasMetadataExtensions = extState.extensions
-        .any((e) => e.enabled && e.hasMetadataProvider);
-    
+
+    final hasMetadataExtensions = extState.extensions.any(
+      (e) => e.enabled && e.hasMetadataProvider,
+    );
+
     return InkWell(
-      onTap: hasMetadataExtensions 
+      onTap: hasMetadataExtensions
           ? () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -522,8 +542,8 @@ class _MetadataPriorityItem extends ConsumerWidget {
           children: [
             Icon(
               Icons.search,
-              color: hasMetadataExtensions 
-                  ? colorScheme.onSurfaceVariant 
+              color: hasMetadataExtensions
+                  ? colorScheme.onSurfaceVariant
                   : colorScheme.outline,
             ),
             const SizedBox(width: 16),
@@ -534,14 +554,12 @@ class _MetadataPriorityItem extends ConsumerWidget {
                   Text(
                     context.l10n.extensionsMetadataPriority,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: hasMetadataExtensions 
-                          ? null 
-                          : colorScheme.outline,
+                      color: hasMetadataExtensions ? null : colorScheme.outline,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    hasMetadataExtensions 
+                    hasMetadataExtensions
                         ? context.l10n.extensionsMetadataPrioritySubtitle
                         : context.l10n.extensionsNoMetadataProvider,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -553,8 +571,8 @@ class _MetadataPriorityItem extends ConsumerWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: hasMetadataExtensions 
-                  ? colorScheme.onSurfaceVariant 
+              color: hasMetadataExtensions
+                  ? colorScheme.onSurfaceVariant
                   : colorScheme.outline,
             ),
           ],
@@ -572,32 +590,40 @@ class _SearchProviderSelector extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     final searchProviders = extState.extensions
         .where((e) => e.enabled && e.hasCustomSearch)
         .toList();
-    
+
     String currentProviderName = context.l10n.extensionDefaultProvider;
-    if (settings.searchProvider != null && settings.searchProvider!.isNotEmpty) {
-      final ext = searchProviders.where((e) => e.id == settings.searchProvider).firstOrNull;
+    if (settings.searchProvider != null &&
+        settings.searchProvider!.isNotEmpty) {
+      final ext = searchProviders
+          .where((e) => e.id == settings.searchProvider)
+          .firstOrNull;
       currentProviderName = ext?.displayName ?? settings.searchProvider!;
     }
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          onTap: searchProviders.isEmpty 
-              ? null 
-              : () => _showSearchProviderPicker(context, ref, settings, searchProviders),
+          onTap: searchProviders.isEmpty
+              ? null
+              : () => _showSearchProviderPicker(
+                  context,
+                  ref,
+                  settings,
+                  searchProviders,
+                ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Icon(
                   Icons.manage_search,
-                  color: searchProviders.isEmpty 
-                      ? colorScheme.outline 
+                  color: searchProviders.isEmpty
+                      ? colorScheme.outline
                       : colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 16),
@@ -608,14 +634,14 @@ class _SearchProviderSelector extends ConsumerWidget {
                       Text(
                         context.l10n.extensionsSearchProvider,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: searchProviders.isEmpty 
-                              ? colorScheme.outline 
+                          color: searchProviders.isEmpty
+                              ? colorScheme.outline
                               : null,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        searchProviders.isEmpty 
+                        searchProviders.isEmpty
                             ? context.l10n.extensionsNoCustomSearch
                             : currentProviderName,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -627,8 +653,8 @@ class _SearchProviderSelector extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.chevron_right,
-                  color: searchProviders.isEmpty 
-                      ? colorScheme.outline 
+                  color: searchProviders.isEmpty
+                      ? colorScheme.outline
                       : colorScheme.onSurfaceVariant,
                 ),
               ],
@@ -646,9 +672,10 @@ class _SearchProviderSelector extends ConsumerWidget {
     List<Extension> searchProviders,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -662,9 +689,9 @@ class _SearchProviderSelector extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
                 ctx.l10n.extensionsSearchProvider,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             Padding(
@@ -680,7 +707,9 @@ class _SearchProviderSelector extends ConsumerWidget {
               leading: Icon(Icons.music_note, color: colorScheme.primary),
               title: Text(ctx.l10n.extensionDefaultProvider),
               subtitle: Text(ctx.l10n.extensionDefaultProviderSubtitle),
-              trailing: (settings.searchProvider == null || settings.searchProvider!.isEmpty)
+              trailing:
+                  (settings.searchProvider == null ||
+                      settings.searchProvider!.isEmpty)
                   ? Icon(Icons.check_circle, color: colorScheme.primary)
                   : Icon(Icons.circle_outlined, color: colorScheme.outline),
               onTap: () {
@@ -688,18 +717,23 @@ class _SearchProviderSelector extends ConsumerWidget {
                 Navigator.pop(ctx);
               },
             ),
-            ...searchProviders.map((ext) => ListTile(
-              leading: Icon(Icons.extension, color: colorScheme.secondary),
-              title: Text(ext.displayName),
-              subtitle: Text(ext.searchBehavior?.placeholder ?? ctx.l10n.extensionsCustomSearch),
-              trailing: settings.searchProvider == ext.id
-                  ? Icon(Icons.check_circle, color: colorScheme.primary)
-                  : Icon(Icons.circle_outlined, color: colorScheme.outline),
-              onTap: () {
-                ref.read(settingsProvider.notifier).setSearchProvider(ext.id);
-                Navigator.pop(ctx);
-              },
-            )),
+            ...searchProviders.map(
+              (ext) => ListTile(
+                leading: Icon(Icons.extension, color: colorScheme.secondary),
+                title: Text(ext.displayName),
+                subtitle: Text(
+                  ext.searchBehavior?.placeholder ??
+                      ctx.l10n.extensionsCustomSearch,
+                ),
+                trailing: settings.searchProvider == ext.id
+                    ? Icon(Icons.check_circle, color: colorScheme.primary)
+                    : Icon(Icons.circle_outlined, color: colorScheme.outline),
+                onTap: () {
+                  ref.read(settingsProvider.notifier).setSearchProvider(ext.id);
+                  Navigator.pop(ctx);
+                },
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),

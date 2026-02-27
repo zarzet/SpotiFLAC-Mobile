@@ -544,6 +544,54 @@ abstract class AppLocalizations {
   /// **'Try other services if download fails'**
   String get optionsAutoFallbackSubtitle;
 
+  /// Toggle to skip to the next queue track when current track stream resolution fails
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Skip Unavailable Tracks'**
+  String get optionsAutoSkipUnavailableTracks;
+
+  /// Subtitle when auto skip on resolve failure is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically skip to the next queue track when a stream cannot be resolved.'**
+  String get optionsAutoSkipUnavailableTracksSubtitleOn;
+
+  /// Subtitle when auto skip on resolve failure is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Stop on failed track resolution and show an error.'**
+  String get optionsAutoSkipUnavailableTracksSubtitleOff;
+
+  /// Tap behavior mode for track lists
+  ///
+  /// In en, this message translates to:
+  /// **'Interaction Mode'**
+  String get optionsInteractionMode;
+
+  /// Interaction mode where taps queue downloads
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader Mode'**
+  String get modeDownloader;
+
+  /// Subtitle for downloader interaction mode
+  ///
+  /// In en, this message translates to:
+  /// **'Tap tracks to add them to download queue'**
+  String get modeDownloaderSubtitle;
+
+  /// Interaction mode where taps start playback
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming Mode'**
+  String get modeStreaming;
+
+  /// Subtitle for streaming interaction mode
+  ///
+  /// In en, this message translates to:
+  /// **'Tap tracks to play instantly'**
+  String get modeStreamingSubtitle;
+
   /// Enable extension download providers
   ///
   /// In en, this message translates to:
@@ -1906,6 +1954,12 @@ abstract class AppLocalizations {
   /// **'No tracks found'**
   String get errorNoTracksFound;
 
+  /// Error - seek disabled for live decrypted stream
+  ///
+  /// In en, this message translates to:
+  /// **'Seeking is not supported for this live stream'**
+  String get errorSeekNotSupported;
+
   /// Error - extension source not available
   ///
   /// In en, this message translates to:
@@ -2841,6 +2895,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download All ({count})'**
   String downloadAllCount(int count);
+
+  /// Play all button with count
+  ///
+  /// In en, this message translates to:
+  /// **'Play All ({count})'**
+  String playAllCount(int count);
 
   /// Track count display
   ///
@@ -4048,11 +4108,23 @@ abstract class AppLocalizations {
   /// **'Download Discography'**
   String get discographyDownload;
 
+  /// Button - play artist discography
+  ///
+  /// In en, this message translates to:
+  /// **'Play Discography'**
+  String get discographyPlay;
+
   /// Option - download entire discography
   ///
   /// In en, this message translates to:
   /// **'Download All'**
   String get discographyDownloadAll;
+
+  /// Option - play entire discography
+  ///
+  /// In en, this message translates to:
+  /// **'Play All'**
+  String get discographyPlayAll;
 
   /// Subtitle showing total tracks and albums
   ///
@@ -4119,6 +4191,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Download Selected'**
   String get discographyDownloadSelected;
+
+  /// Button - play selected albums
+  ///
+  /// In en, this message translates to:
+  /// **'Play Selected'**
+  String get discographyPlaySelected;
 
   /// Snackbar - tracks added from discography
   ///
@@ -5555,6 +5633,384 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Converted {success} of {total} tracks to {format}'**
   String selectionBatchConvertSuccess(int success, int total, String format);
+
+  /// Title for mode selection step in setup wizard
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Your Mode'**
+  String get setupModeSelectionTitle;
+
+  /// Description for mode selection step
+  ///
+  /// In en, this message translates to:
+  /// **'How would you like to use SpotiFLAC? You can always change this later in Settings.'**
+  String get setupModeSelectionDescription;
+
+  /// Title for downloader mode option
+  ///
+  /// In en, this message translates to:
+  /// **'Downloader'**
+  String get setupModeDownloaderTitle;
+
+  /// Downloader mode feature 1
+  ///
+  /// In en, this message translates to:
+  /// **'Download tracks in lossless FLAC quality'**
+  String get setupModeDownloaderFeature1;
+
+  /// Downloader mode feature 2
+  ///
+  /// In en, this message translates to:
+  /// **'Save music to your device for offline listening'**
+  String get setupModeDownloaderFeature2;
+
+  /// Downloader mode feature 3
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your local music library'**
+  String get setupModeDownloaderFeature3;
+
+  /// Title for streaming mode option
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get setupModeStreamingTitle;
+
+  /// Streaming mode feature 1
+  ///
+  /// In en, this message translates to:
+  /// **'Stream tracks instantly without downloading'**
+  String get setupModeStreamingFeature1;
+
+  /// Streaming mode feature 2
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Queue auto-discovers new music for you'**
+  String get setupModeStreamingFeature2;
+
+  /// Streaming mode feature 3
+  ///
+  /// In en, this message translates to:
+  /// **'Play any track on demand with playback controls'**
+  String get setupModeStreamingFeature3;
+
+  /// Hint that mode can be changed later
+  ///
+  /// In en, this message translates to:
+  /// **'You can switch between modes anytime in Settings.'**
+  String get setupModeChangeableLater;
+
+  /// Title for Smart Queue toggle in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Queue'**
+  String get settingsSmartQueueTitle;
+
+  /// Subtitle for Smart Queue toggle in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically discover and add similar tracks to your queue'**
+  String get settingsSmartQueueSubtitle;
+
+  /// Title for the What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s New in 4.0'**
+  String get whatsNewTitle;
+
+  /// Subtitle for the What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'SpotiFLAC has evolved — here\'s what changed since 3.x'**
+  String get whatsNewSubtitle;
+
+  /// Welcome page title in What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'SpotiFLAC Mobile 4.0'**
+  String get whatsNewWelcomeTitle;
+
+  /// Welcome page description in What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back! This is a major update packed with new features. Swipe through to see what\'s changed.'**
+  String get whatsNewWelcomeDesc;
+
+  /// Welcome page tip 1
+  ///
+  /// In en, this message translates to:
+  /// **'New streaming mode with instant playback'**
+  String get whatsNewWelcomeTip1;
+
+  /// Welcome page tip 2
+  ///
+  /// In en, this message translates to:
+  /// **'Redesigned library and full-screen player'**
+  String get whatsNewWelcomeTip2;
+
+  /// Welcome page tip 3
+  ///
+  /// In en, this message translates to:
+  /// **'Batch tools, performance boosts, and more'**
+  String get whatsNewWelcomeTip3;
+
+  /// What's New feature: Streaming Mode title
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming Mode'**
+  String get whatsNewStreamingTitle;
+
+  /// What's New feature: Streaming Mode description
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any track to play instantly — no download needed. Full-screen player with synced lyrics and media controls.'**
+  String get whatsNewStreamingDesc;
+
+  /// What's New feature: Smart Queue title
+  ///
+  /// In en, this message translates to:
+  /// **'Smart Queue'**
+  String get whatsNewSmartQueueTitle;
+
+  /// What's New feature: Smart Queue description
+  ///
+  /// In en, this message translates to:
+  /// **'Your queue auto-curates with related tracks and artist discovery. Never run out of music.'**
+  String get whatsNewSmartQueueDesc;
+
+  /// What's New feature: Dual Mode title
+  ///
+  /// In en, this message translates to:
+  /// **'Dual Mode'**
+  String get whatsNewDualModeTitle;
+
+  /// What's New feature: Dual Mode description
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between Downloader and Streaming modes anytime. All buttons adapt automatically.'**
+  String get whatsNewDualModeDesc;
+
+  /// What's New feature: Library redesign title
+  ///
+  /// In en, this message translates to:
+  /// **'Redesigned Library'**
+  String get whatsNewLibraryTitle;
+
+  /// What's New feature: Library redesign description
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist-first layout with drag-and-drop categorization, custom covers, and multi-select batch actions.'**
+  String get whatsNewLibraryDesc;
+
+  /// What's New feature: Full-Screen Player title
+  ///
+  /// In en, this message translates to:
+  /// **'Full-Screen Player'**
+  String get whatsNewPlayerTitle;
+
+  /// What's New feature: Full-Screen Player description
+  ///
+  /// In en, this message translates to:
+  /// **'Cover art parallax, synced lyrics, playback persistence across restarts, and download button in player.'**
+  String get whatsNewPlayerDesc;
+
+  /// What's New feature: Context Menus title
+  ///
+  /// In en, this message translates to:
+  /// **'Long-Press Menus'**
+  String get whatsNewContextMenuTitle;
+
+  /// What's New feature: Context Menus description
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press any track for quick actions — add to playlist, share, convert, or re-enrich metadata.'**
+  String get whatsNewContextMenuDesc;
+
+  /// What's New feature: Performance title
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get whatsNewPerformanceTitle;
+
+  /// What's New feature: Performance description
+  ///
+  /// In en, this message translates to:
+  /// **'Faster startup, reduced memory usage, SQLite-backed persistence, and granular UI updates.'**
+  String get whatsNewPerformanceDesc;
+
+  /// What's New feature: Batch Tools title
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Tools'**
+  String get whatsNewBatchToolsTitle;
+
+  /// What's New feature: Batch Tools description
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-select share, batch convert to MP3/Opus, and batch re-enrich metadata across your library.'**
+  String get whatsNewBatchToolsDesc;
+
+  /// What's New tip: streaming instant play
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any track to start playing instantly'**
+  String get whatsNewStreamingTip1;
+
+  /// What's New tip: streaming synced lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Synced lyrics in the full-screen player'**
+  String get whatsNewStreamingTip2;
+
+  /// What's New tip: streaming download from player
+  ///
+  /// In en, this message translates to:
+  /// **'Download tracks directly from the player'**
+  String get whatsNewStreamingTip3;
+
+  /// What's New tip: smart queue auto-fill
+  ///
+  /// In en, this message translates to:
+  /// **'Queue auto-fills with related tracks'**
+  String get whatsNewSmartQueueTip1;
+
+  /// What's New tip: smart queue artist discovery
+  ///
+  /// In en, this message translates to:
+  /// **'Discover new artists as you listen'**
+  String get whatsNewSmartQueueTip2;
+
+  /// What's New tip: smart queue endless
+  ///
+  /// In en, this message translates to:
+  /// **'Never run out of music to play'**
+  String get whatsNewSmartQueueTip3;
+
+  /// What's New tip: dual mode switch
+  ///
+  /// In en, this message translates to:
+  /// **'Switch modes anytime in Settings'**
+  String get whatsNewDualModeTip1;
+
+  /// What's New tip: dual mode adaptive UI
+  ///
+  /// In en, this message translates to:
+  /// **'UI buttons adapt to your current mode'**
+  String get whatsNewDualModeTip2;
+
+  /// What's New tip: dual mode use cases
+  ///
+  /// In en, this message translates to:
+  /// **'Download for offline, stream for instant play'**
+  String get whatsNewDualModeTip3;
+
+  /// What's New tip: library drag and drop
+  ///
+  /// In en, this message translates to:
+  /// **'Drag and drop to organize playlists'**
+  String get whatsNewLibraryTip1;
+
+  /// What's New tip: library custom covers
+  ///
+  /// In en, this message translates to:
+  /// **'Set custom cover images for playlists'**
+  String get whatsNewLibraryTip2;
+
+  /// What's New tip: library multi-select
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-select tracks for batch actions'**
+  String get whatsNewLibraryTip3;
+
+  /// What's New tip: player parallax
+  ///
+  /// In en, this message translates to:
+  /// **'Cover art with parallax scrolling effect'**
+  String get whatsNewPlayerTip1;
+
+  /// What's New tip: player persistence
+  ///
+  /// In en, this message translates to:
+  /// **'Playback persists across app restarts'**
+  String get whatsNewPlayerTip2;
+
+  /// What's New tip: player lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Synced lyrics while you listen'**
+  String get whatsNewPlayerTip3;
+
+  /// What's New tip: context menu add to playlist
+  ///
+  /// In en, this message translates to:
+  /// **'Add tracks to any playlist instantly'**
+  String get whatsNewContextMenuTip1;
+
+  /// What's New tip: context menu share/convert
+  ///
+  /// In en, this message translates to:
+  /// **'Share or convert with one tap'**
+  String get whatsNewContextMenuTip2;
+
+  /// What's New tip: context menu re-enrich
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enrich metadata when needed'**
+  String get whatsNewContextMenuTip3;
+
+  /// What's New tip: batch share
+  ///
+  /// In en, this message translates to:
+  /// **'Share multiple tracks at once'**
+  String get whatsNewBatchToolsTip1;
+
+  /// What's New tip: batch convert
+  ///
+  /// In en, this message translates to:
+  /// **'Batch convert to MP3 or Opus format'**
+  String get whatsNewBatchToolsTip2;
+
+  /// What's New tip: batch re-enrich
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enrich metadata across your library'**
+  String get whatsNewBatchToolsTip3;
+
+  /// What's New tip: performance startup
+  ///
+  /// In en, this message translates to:
+  /// **'Faster app startup time'**
+  String get whatsNewPerformanceTip1;
+
+  /// What's New tip: performance memory
+  ///
+  /// In en, this message translates to:
+  /// **'Reduced memory usage during playback'**
+  String get whatsNewPerformanceTip2;
+
+  /// What's New tip: performance SQLite
+  ///
+  /// In en, this message translates to:
+  /// **'SQLite-backed storage for reliability'**
+  String get whatsNewPerformanceTip3;
+
+  /// Ready card message on last What's New page
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set — enjoy the new SpotiFLAC!'**
+  String get whatsNewReadyMessage;
+
+  /// Button text to dismiss What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s Go'**
+  String get whatsNewGetStarted;
+
+  /// Page indicator text in What's New screen
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String whatsNewPageIndicator(int current, int total);
 }
 
 class _AppLocalizationsDelegate

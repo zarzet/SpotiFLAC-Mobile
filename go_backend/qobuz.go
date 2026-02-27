@@ -3,7 +3,6 @@ package gobackend
 import (
 	"bufio"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +25,11 @@ type QobuzDownloader struct {
 var (
 	globalQobuzDownloader *QobuzDownloader
 	qobuzDownloaderOnce   sync.Once
+)
+
+const (
+	qobuzTrackGetBaseURL    = "https://www.qobuz.com/api.json/0.2/track/get?track_id="
+	qobuzTrackSearchBaseURL = "https://www.qobuz.com/api.json/0.2/track/search?query="
 )
 
 type QobuzTrack struct {
@@ -185,13 +189,19 @@ func qobuzTitlesMatch(expectedTitle, foundTitle string) bool {
 		}
 	}
 
-	// Some tracks are symbol/emoji-heavy and providers can return textual
-	// aliases. If artist/duration already matched upstream, avoid false rejects.
+	// Emoji/symbol-only titles must be matched strictly to avoid false positives
+	// like mapping "🪐" to unrelated textual tracks.
 	if (!hasAlphaNumericRunes(expectedTitle) || !hasAlphaNumericRunes(foundTitle)) &&
 		strings.TrimSpace(expectedTitle) != "" &&
 		strings.TrimSpace(foundTitle) != "" {
-		GoLog("[Qobuz] Symbol-heavy title detected, relaxing match: '%s' vs '%s'\n", expectedTitle, foundTitle)
-		return true
+		expectedSymbols := normalizeSymbolOnlyTitle(expectedTitle)
+		foundSymbols := normalizeSymbolOnlyTitle(foundTitle)
+		if expectedSymbols != "" && foundSymbols != "" && expectedSymbols == foundSymbols {
+			GoLog("[Qobuz] Symbol-heavy title matched strictly: '%s' vs '%s'\n", expectedTitle, foundTitle)
+			return true
+		}
+		GoLog("[Qobuz] Symbol-heavy title mismatch: '%s' vs '%s'\n", expectedTitle, foundTitle)
+		return false
 	}
 
 	expectedLatin := qobuzIsLatinScript(expectedTitle)
@@ -331,8 +341,7 @@ func NewQobuzDownloader() *QobuzDownloader {
 }
 
 func (q *QobuzDownloader) GetTrackByID(trackID int64) (*QobuzTrack, error) {
-	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly93d3cucW9idXouY29tL2FwaS5qc29uLzAuMi90cmFjay9nZXQ/dHJhY2tfaWQ9")
-	trackURL := fmt.Sprintf("%s%d&app_id=%s", string(apiBase), trackID, q.appID)
+	trackURL := fmt.Sprintf("%s%d&app_id=%s", qobuzTrackGetBaseURL, trackID, q.appID)
 
 	req, err := http.NewRequest("GET", trackURL, nil)
 	if err != nil {
@@ -358,46 +367,10 @@ func (q *QobuzDownloader) GetTrackByID(trackID int64) (*QobuzTrack, error) {
 }
 
 func (q *QobuzDownloader) GetAvailableAPIs() []string {
-	encodedAPIs := []string{
-		"ZGFiLnllZXQuc3UvYXBpL3N0cmVhbT90cmFja0lkPQ==",
-		"ZGFibXVzaWMueHl6L2FwaS9zdHJlYW0/dHJhY2tJZD0=",
-		"cW9idXouc3F1aWQud3RmL2FwaS9kb3dubG9hZC1tdXNpYz90cmFja19pZD0=",
+	return []string{
+		"https://dab.yeet.su/api/stream?trackId=",
+		"https://dabmusic.xyz/api/stream?trackId=",
 	}
-
-	var apis []string
-	for _, encoded := range encodedAPIs {
-		decoded, err := base64.StdEncoding.DecodeString(encoded)
-		if err != nil {
-			continue
-		}
-		apis = append(apis, "https://"+string(decoded))
-	}
-
-	return apis
-}
-
-func mapJumoQuality(quality string) int {
-	switch quality {
-	case "6":
-		return 6
-	case "7":
-		return 7
-	case "27":
-		return 27
-	default:
-		return 6
-	}
-}
-
-func decodeXOR(data []byte) string {
-	text := string(data)
-	runes := []rune(text)
-	result := make([]rune, len(runes))
-	for i, char := range runes {
-		key := rune((i * 17) % 128)
-		result[i] = char ^ 253 ^ key
-	}
-	return string(result)
 }
 
 func extractQobuzDownloadURLFromBody(body []byte) (string, error) {
@@ -436,67 +409,8 @@ func extractQobuzDownloadURLFromBody(body []byte) (string, error) {
 	return "", fmt.Errorf("no download URL in response")
 }
 
-func (q *QobuzDownloader) downloadFromJumo(trackID int64, quality string) (string, error) {
-	formatID := mapJumoQuality(quality)
-	region := "US"
-	jumoURL := fmt.Sprintf("https://jumo-dl.pages.dev/get?track_id=%d&format_id=%d&region=%s", trackID, formatID, region)
-
-	GoLog("[Qobuz] Trying Jumo API fallback...\n")
-
-	client := NewHTTPClientWithTimeout(30 * time.Second)
-	req, err := http.NewRequest("GET", jumoURL, nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("User-Agent", getRandomUserAgent())
-	req.Header.Set("Referer", "https://jumo-dl.pages.dev/")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("Jumo API returned HTTP %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
-		decoded := decodeXOR(body)
-		if err := json.Unmarshal([]byte(decoded), &result); err != nil {
-			return "", fmt.Errorf("failed to parse Jumo response (plain or XOR): %w", err)
-		}
-	}
-
-	if urlVal, ok := result["url"].(string); ok && urlVal != "" {
-		GoLog("[Qobuz] Jumo API returned URL successfully\n")
-		return urlVal, nil
-	}
-
-	if data, ok := result["data"].(map[string]any); ok {
-		if urlVal, ok := data["url"].(string); ok && urlVal != "" {
-			GoLog("[Qobuz] Jumo API returned URL successfully (from data)\n")
-			return urlVal, nil
-		}
-	}
-
-	if linkVal, ok := result["link"].(string); ok && linkVal != "" {
-		GoLog("[Qobuz] Jumo API returned URL successfully (from link)\n")
-		return linkVal, nil
-	}
-
-	return "", fmt.Errorf("URL not found in Jumo response")
-}
-
 func (q *QobuzDownloader) SearchTrackByISRC(isrc string) (*QobuzTrack, error) {
-	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly93d3cucW9idXouY29tL2FwaS5qc29uLzAuMi90cmFjay9zZWFyY2g/cXVlcnk9")
-	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", string(apiBase), url.QueryEscape(isrc), q.appID)
+	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(isrc), q.appID)
 
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
@@ -538,8 +452,7 @@ func (q *QobuzDownloader) SearchTrackByISRC(isrc string) (*QobuzTrack, error) {
 func (q *QobuzDownloader) SearchTrackByISRCWithDuration(isrc string, expectedDurationSec int) (*QobuzTrack, error) {
 	GoLog("[Qobuz] Searching by ISRC: %s\n", isrc)
 
-	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly93d3cucW9idXouY29tL2FwaS5qc29uLzAuMi90cmFjay9zZWFyY2g/cXVlcnk9")
-	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", string(apiBase), url.QueryEscape(isrc), q.appID)
+	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(isrc), q.appID)
 
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
@@ -621,8 +534,6 @@ func (q *QobuzDownloader) SearchTrackByMetadata(trackName, artistName string) (*
 }
 
 func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
-	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly93d3cucW9idXouY29tL2FwaS5qc29uLzAuMi90cmFjay9zZWFyY2g/cXVlcnk9")
-
 	queries := []string{}
 
 	if artistName != "" && trackName != "" {
@@ -674,7 +585,7 @@ func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistNam
 
 		GoLog("[Qobuz] Searching for: %s\n", cleanQuery)
 
-		searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", string(apiBase), url.QueryEscape(cleanQuery), q.appID)
+		searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(cleanQuery), q.appID)
 
 		req, err := http.NewRequest("GET", searchURL, nil)
 		if err != nil {
@@ -799,26 +710,8 @@ func getQobuzAPITimeout() time.Duration {
 	return qobuzAPITimeoutMobile
 }
 
-// qobuzSquidCountries defines the region fallback order for squid.wtf API
-var qobuzSquidCountries = []string{"US", "FR"}
-
 // fetchQobuzURLWithRetry fetches download URL from a single Qobuz API with retry logic
-// For squid.wtf APIs, it tries US region first, then falls back to FR
 func fetchQobuzURLWithRetry(api string, trackID int64, quality string, timeout time.Duration) (string, error) {
-	isSquid := strings.Contains(api, "squid.wtf")
-
-	if isSquid {
-		for _, country := range qobuzSquidCountries {
-			GoLog("[Qobuz] Trying squid.wtf with country=%s\n", country)
-			result, err := fetchQobuzURLSingleAttempt(api, trackID, quality, timeout, country)
-			if err == nil {
-				return result, nil
-			}
-			GoLog("[Qobuz] squid.wtf country=%s failed: %v\n", country, err)
-		}
-		return "", fmt.Errorf("squid.wtf failed for all regions (US, FR)")
-	}
-
 	return fetchQobuzURLSingleAttempt(api, trackID, quality, timeout, "")
 }
 
@@ -964,34 +857,43 @@ func (q *QobuzDownloader) GetDownloadURL(trackID int64, quality string) (string,
 		return "", fmt.Errorf("no Qobuz API available")
 	}
 
-	_, downloadURL, err := getQobuzDownloadURLParallel(apis, trackID, quality)
+	qualityCode := strings.TrimSpace(quality)
+	if qualityCode == "" || qualityCode == "5" {
+		qualityCode = "6"
+	}
+
+	downloadFunc := func(qual string) (string, error) {
+		_, downloadURL, err := getQobuzDownloadURLParallel(apis, trackID, qual)
+		if err != nil {
+			return "", err
+		}
+		return downloadURL, nil
+	}
+
+	downloadURL, err := downloadFunc(qualityCode)
 	if err == nil {
 		return downloadURL, nil
 	}
 
-	GoLog("[Qobuz] Standard APIs failed, trying Jumo fallback...\n")
-	jumoURL, jumoErr := q.downloadFromJumo(trackID, quality)
-	if jumoErr == nil {
-		return jumoURL, nil
-	}
-
-	if quality == "27" {
+	currentQuality := qualityCode
+	if currentQuality == "27" {
 		GoLog("[Qobuz] Hi-res (27) failed, trying 24-bit (7)...\n")
-		jumoURL, jumoErr = q.downloadFromJumo(trackID, "7")
-		if jumoErr == nil {
-			return jumoURL, nil
+		downloadURL, err = downloadFunc("7")
+		if err == nil {
+			return downloadURL, nil
 		}
+		currentQuality = "7"
 	}
 
-	if quality == "27" || quality == "7" {
+	if currentQuality == "7" {
 		GoLog("[Qobuz] 24-bit failed, trying 16-bit (6)...\n")
-		jumoURL, jumoErr = q.downloadFromJumo(trackID, "6")
-		if jumoErr == nil {
-			return jumoURL, nil
+		downloadURL, err = downloadFunc("6")
+		if err == nil {
+			return downloadURL, nil
 		}
 	}
 
-	return "", fmt.Errorf("all Qobuz APIs and Jumo fallback failed: %w", err)
+	return "", fmt.Errorf("all Qobuz APIs failed: %w", err)
 }
 
 func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD int, itemID string) error {
@@ -1087,14 +989,12 @@ type QobuzDownloadResult struct {
 	LyricsLRC   string
 }
 
-func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
-	downloader := NewQobuzDownloader()
-
-	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
-	if !isSafOutput {
-		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
-			return QobuzDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
-		}
+func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloader, logPrefix string) (*QobuzTrack, error) {
+	if downloader == nil {
+		downloader = NewQobuzDownloader()
+	}
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Qobuz"
 	}
 
 	expectedDurationSec := req.DurationMS / 1000
@@ -1104,15 +1004,15 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 1: Use Qobuz ID from Odesli enrichment (fastest, most accurate)
 	if req.QobuzID != "" {
-		GoLog("[Qobuz] Using Qobuz ID from Odesli enrichment: %s\n", req.QobuzID)
+		GoLog("[%s] Using Qobuz ID from Odesli enrichment: %s\n", logPrefix, req.QobuzID)
 		var trackID int64
 		if _, parseErr := fmt.Sscanf(req.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
 			track, err = downloader.GetTrackByID(trackID)
 			if err != nil {
-				GoLog("[Qobuz] Failed to get track by Odesli ID %d: %v\n", trackID, err)
+				GoLog("[%s] Failed to get track by Odesli ID %d: %v\n", logPrefix, trackID, err)
 				track = nil
 			} else if track != nil {
-				GoLog("[Qobuz] Successfully found track via Odesli ID: '%s' by '%s'\n", track.Title, track.Performer.Name)
+				GoLog("[%s] Successfully found track via Odesli ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
 			}
 		}
 	}
@@ -1120,10 +1020,10 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	// Strategy 2: Use cached Qobuz Track ID (fast, no search needed)
 	if track == nil && req.ISRC != "" {
 		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.QobuzTrackID > 0 {
-			GoLog("[Qobuz] Cache hit! Using cached track ID: %d\n", cached.QobuzTrackID)
+			GoLog("[%s] Cache hit! Using cached track ID: %d\n", logPrefix, cached.QobuzTrackID)
 			track, err = downloader.GetTrackByID(cached.QobuzTrackID)
 			if err != nil {
-				GoLog("[Qobuz] Cache hit but GetTrackByID failed: %v\n", err)
+				GoLog("[%s] Cache hit but GetTrackByID failed: %v\n", logPrefix, err)
 				track = nil
 			}
 		}
@@ -1131,19 +1031,19 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 3: Try to get QobuzID from SongLink if we have SpotifyID
 	if track == nil && req.SpotifyID != "" && req.QobuzID == "" {
-		GoLog("[Qobuz] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", req.SpotifyID)
+		GoLog("[%s] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", logPrefix, req.SpotifyID)
 		songLinkClient := NewSongLinkClient()
 		availability, slErr := songLinkClient.CheckTrackAvailability(req.SpotifyID, req.ISRC)
 		if slErr == nil && availability != nil && availability.QobuzID != "" {
 			var trackID int64
 			if _, parseErr := fmt.Sscanf(availability.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
-				GoLog("[Qobuz] Got Qobuz ID %d from SongLink\n", trackID)
+				GoLog("[%s] Got Qobuz ID %d from SongLink\n", logPrefix, trackID)
 				track, err = downloader.GetTrackByID(trackID)
 				if err != nil {
-					GoLog("[Qobuz] Failed to get track by SongLink ID %d: %v\n", trackID, err)
+					GoLog("[%s] Failed to get track by SongLink ID %d: %v\n", logPrefix, trackID, err)
 					track = nil
 				} else if track != nil {
-					GoLog("[Qobuz] Successfully found track via SongLink ID: '%s' by '%s'\n", track.Title, track.Performer.Name)
+					GoLog("[%s] Successfully found track via SongLink ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
 					// Cache for future use
 					if req.ISRC != "" {
 						GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
@@ -1155,16 +1055,16 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 4: ISRC search with duration verification
 	if track == nil && req.ISRC != "" {
-		GoLog("[Qobuz] Trying ISRC search: %s\n", req.ISRC)
+		GoLog("[%s] Trying ISRC search: %s\n", logPrefix, req.ISRC)
 		track, err = downloader.SearchTrackByISRCWithDuration(req.ISRC, expectedDurationSec)
 		if track != nil {
 			if !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-				GoLog("[Qobuz] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, track.Performer.Name)
+				GoLog("[%s] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.ArtistName, track.Performer.Name)
 				track = nil
 			} else if !qobuzTitlesMatch(req.TrackName, track.Title) {
-				GoLog("[Qobuz] Title mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.TrackName, track.Title)
+				GoLog("[%s] Title mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
+					logPrefix, req.TrackName, track.Title)
 				track = nil
 			}
 		}
@@ -1172,11 +1072,11 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 
 	// Strategy 5: Metadata search with strict matching (duration tolerance: 10 seconds)
 	if track == nil {
-		GoLog("[Qobuz] Trying metadata search: '%s' by '%s'\n", req.TrackName, req.ArtistName)
+		GoLog("[%s] Trying metadata search: '%s' by '%s'\n", logPrefix, req.TrackName, req.ArtistName)
 		track, err = downloader.SearchTrackByMetadataWithDuration(req.TrackName, req.ArtistName, expectedDurationSec)
 		if track != nil && !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-			GoLog("[Qobuz] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-				req.ArtistName, track.Performer.Name)
+			GoLog("[%s] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
+				logPrefix, req.ArtistName, track.Performer.Name)
 			track = nil
 		}
 	}
@@ -1186,12 +1086,30 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		if err != nil {
 			errMsg = err.Error()
 		}
-		return QobuzDownloadResult{}, fmt.Errorf("qobuz search failed: %s", errMsg)
+		return nil, fmt.Errorf("qobuz search failed: %s", errMsg)
 	}
 
-	GoLog("[Qobuz] Match found: '%s' by '%s' (duration: %ds)\n", track.Title, track.Performer.Name, track.Duration)
+	GoLog("[%s] Match found: '%s' by '%s' (duration: %ds)\n", logPrefix, track.Title, track.Performer.Name, track.Duration)
 	if req.ISRC != "" {
 		GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
+	}
+
+	return track, nil
+}
+
+func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
+	downloader := NewQobuzDownloader()
+
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
+	if !isSafOutput {
+		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
+			return QobuzDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
+		}
+	}
+
+	track, err := resolveQobuzTrackForRequest(req, downloader, "Qobuz")
+	if err != nil {
+		return QobuzDownloadResult{}, err
 	}
 
 	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]interface{}{
@@ -1241,13 +1159,19 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	parallelDone := make(chan struct{})
 	go func() {
 		defer close(parallelDone)
+		coverURL := req.CoverURL
+		embedLyrics := req.EmbedLyrics
+		if !req.EmbedMetadata {
+			coverURL = ""
+			embedLyrics = false
+		}
 		parallelResult = FetchCoverAndLyricsParallel(
-			req.CoverURL,
+			coverURL,
 			req.EmbedMaxQualityCover,
 			req.SpotifyID,
 			req.TrackName,
 			req.ArtistName,
-			req.EmbedLyrics,
+			embedLyrics,
 			int64(req.DurationMS),
 		)
 	}()
@@ -1297,8 +1221,12 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		GoLog("[Qobuz] Using parallel-fetched cover (%d bytes)\n", len(coverData))
 	}
 
-	if isSafOutput {
-		GoLog("[Qobuz] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+	if isSafOutput || !req.EmbedMetadata {
+		if !req.EmbedMetadata {
+			GoLog("[Qobuz] Metadata embedding disabled by settings, skipping in-backend metadata/lyrics embedding\n")
+		} else {
+			GoLog("[Qobuz] SAF output detected - skipping in-backend metadata/lyrics embedding (handled in Flutter)\n")
+		}
 	} else {
 		if err := EmbedMetadataWithCoverData(outputPath, metadata, coverData); err != nil {
 			fmt.Printf("Warning: failed to embed metadata: %v\n", err)
@@ -1337,7 +1265,7 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	}
 
 	lyricsLRC := ""
-	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+	if req.EmbedMetadata && req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
 		lyricsLRC = parallelResult.LyricsLRC
 	}
 

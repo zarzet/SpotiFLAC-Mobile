@@ -13,134 +13,9 @@ Future<void> showAddTrackToPlaylistSheet(
   WidgetRef ref,
   Track track,
 ) async {
-  final notifier = ref.read(libraryCollectionsProvider.notifier);
-  final state = ref.read(libraryCollectionsProvider);
-
-  if (!context.mounted) return;
-
-  await showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheetContext) {
-      final playlists = ref.watch(
-        libraryCollectionsProvider.select((state) => state.playlists),
-      );
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.playlist_add),
-              title: Text(sheetContext.l10n.collectionAddToPlaylist),
-              subtitle: Text('${track.name} • ${track.artistName}'),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: Text(sheetContext.l10n.collectionCreatePlaylist),
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                final name = await _promptPlaylistName(context);
-                if (name == null || name.trim().isEmpty || !context.mounted) {
-                  return;
-                }
-                final playlistId = await notifier.createPlaylist(name.trim());
-                final added = await notifier.addTrackToPlaylist(
-                  playlistId,
-                  track,
-                );
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      added
-                          ? context.l10n.collectionAddedToPlaylist(name.trim())
-                          : context.l10n.collectionAlreadyInPlaylist(
-                              name.trim(),
-                            ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            if (playlists.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: Text(
-                  sheetContext.l10n.collectionNoPlaylistsYet,
-                  style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              )
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 320),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: playlists.length,
-                  itemBuilder: (context, index) {
-                    final playlist = playlists[index];
-                    final alreadyInPlaylist = playlist.containsTrack(track);
-                    return ListTile(
-                      leading: _PlaylistPickerThumbnail(
-                        playlist: playlist,
-                        isSelected: alreadyInPlaylist,
-                      ),
-                      title: Text(playlist.name),
-                      subtitle: Text(
-                        context.l10n.collectionPlaylistTracks(
-                          playlist.tracks.length,
-                        ),
-                      ),
-                      enabled: !alreadyInPlaylist,
-                      onTap: !alreadyInPlaylist
-                          ? () async {
-                              final added = await notifier.addTrackToPlaylist(
-                                playlist.id,
-                                track,
-                              );
-                              if (!context.mounted) return;
-                              Navigator.of(sheetContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    added
-                                        ? context.l10n
-                                              .collectionAddedToPlaylist(
-                                                playlist.name,
-                                              )
-                                        : context.l10n
-                                              .collectionAlreadyInPlaylist(
-                                                playlist.name,
-                                              ),
-                                  ),
-                                ),
-                              );
-                            }
-                          : null,
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      );
-    },
-  );
-
-  if (!context.mounted) return;
-
-  final afterState = ref.read(libraryCollectionsProvider);
-  if (afterState.playlists.length != state.playlists.length) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.collectionPlaylistCreated)),
-    );
-  }
+  return showAddTracksToPlaylistSheet(context, ref, [track]);
 }
 
-/// Batch version: add multiple tracks to a chosen playlist.
 Future<void> showAddTracksToPlaylistSheet(
   BuildContext context,
   WidgetRef ref,
@@ -148,79 +23,157 @@ Future<void> showAddTracksToPlaylistSheet(
 ) async {
   if (tracks.isEmpty) return;
 
-  final notifier = ref.read(libraryCollectionsProvider.notifier);
-
   if (!context.mounted) return;
 
   await showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (sheetContext) {
-      final playlists = ref.watch(
-        libraryCollectionsProvider.select((state) => state.playlists),
+      return _PlaylistPickerSheetContent(tracks: tracks);
+    },
+  );
+}
+
+class _PlaylistPickerSheetContent extends ConsumerStatefulWidget {
+  final List<Track> tracks;
+
+  const _PlaylistPickerSheetContent({required this.tracks});
+
+  @override
+  ConsumerState<_PlaylistPickerSheetContent> createState() =>
+      _PlaylistPickerSheetContentState();
+}
+
+class _PlaylistPickerSheetContentState
+    extends ConsumerState<_PlaylistPickerSheetContent> {
+  final Set<String> _selectedPlaylistIds = {};
+  final Set<String> _initialDisabledIds = {};
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final playlists = ref.read(libraryCollectionsProvider).playlists;
+      for (final playlist in playlists) {
+        final alreadyInPlaylist =
+            widget.tracks.every((t) => playlist.containsTrack(t));
+        if (alreadyInPlaylist) {
+          _initialDisabledIds.add(playlist.id);
+          _selectedPlaylistIds.add(playlist.id);
+        }
+      }
+      _initialized = true;
+    }
+  }
+
+  void _handleDone() async {
+    final notifier = ref.read(libraryCollectionsProvider.notifier);
+    final idsToAdd = _selectedPlaylistIds.difference(_initialDisabledIds);
+    final addedNames = <String>[];
+
+    for (final playlistId in idsToAdd) {
+      final playlist =
+          ref.read(libraryCollectionsProvider).playlistById(playlistId);
+      if (playlist != null) {
+        addedNames.add(playlist.name);
+      }
+      await notifier.addTracksToPlaylist(playlistId, widget.tracks);
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+
+    if (addedNames.isNotEmpty) {
+      final name =
+          addedNames.length == 1 ? addedNames.first : addedNames.join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.collectionAddedToPlaylist(name)),
+        ),
       );
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.playlist_add),
-              title: Text(sheetContext.l10n.collectionAddToPlaylist),
-              subtitle: Text(
-                '${tracks.length} ${tracks.length == 1 ? 'track' : 'tracks'}',
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: Text(sheetContext.l10n.collectionCreatePlaylist),
-              onTap: () async {
-                Navigator.of(sheetContext).pop();
-                final name = await _promptPlaylistName(context);
-                if (name == null || name.trim().isEmpty || !context.mounted) {
-                  return;
-                }
-                final playlistId = await notifier.createPlaylist(name.trim());
-                final result = await notifier.addTracksToPlaylist(
-                  playlistId,
-                  tracks,
-                );
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      result.addedCount > 0
-                          ? context.l10n.collectionAddedToPlaylist(name.trim())
-                          : context.l10n.collectionAlreadyInPlaylist(
-                              name.trim(),
-                            ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            if (playlists.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: Text(
-                  sheetContext.l10n.collectionNoPlaylistsYet,
-                  style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
-                  ),
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final playlists = ref.watch(
+      libraryCollectionsProvider.select((state) => state.playlists),
+    );
+    final notifier = ref.read(libraryCollectionsProvider.notifier);
+
+    final String subtitle;
+    if (widget.tracks.length == 1) {
+      final track = widget.tracks.first;
+      subtitle = '${track.name} • ${track.artistName}';
+    } else {
+      subtitle =
+          '${widget.tracks.length} ${widget.tracks.length == 1 ? 'track' : 'tracks'}';
+    }
+
+    final idsToAdd = _selectedPlaylistIds.difference(_initialDisabledIds);
+    final hasNewSelections = idsToAdd.isNotEmpty;
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.playlist_add),
+            title: Text(context.l10n.collectionAddToPlaylist),
+            subtitle: Text(subtitle),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.add_circle_outline),
+            title: Text(context.l10n.collectionCreatePlaylist),
+            onTap: () async {
+              final name = await _promptPlaylistName(context);
+              if (name == null || name.trim().isEmpty || !context.mounted) {
+                return;
+              }
+              final playlistId = await notifier.createPlaylist(name.trim());
+              await notifier.addTracksToPlaylist(playlistId, widget.tracks);
+              setState(() {
+                _initialDisabledIds.add(playlistId);
+                _selectedPlaylistIds.add(playlistId);
+              });
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(context.l10n.collectionAddedToPlaylist(name.trim())),
                 ),
-              )
-            else
-              ConstrainedBox(
+              );
+            },
+          ),
+          if (playlists.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Text(
+                context.l10n.collectionNoPlaylistsYet,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            )
+          else
+            Flexible(
+              child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 320),
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: playlists.length,
                   itemBuilder: (context, index) {
                     final playlist = playlists[index];
+                    final isAlreadyIn = _initialDisabledIds.contains(playlist.id);
+                    final isSelected = _selectedPlaylistIds.contains(playlist.id);
+
                     return ListTile(
                       leading: _PlaylistPickerThumbnail(
                         playlist: playlist,
-                        isSelected: false,
+                        isSelected: isSelected,
                       ),
                       title: Text(playlist.name),
                       subtitle: Text(
@@ -228,37 +181,44 @@ Future<void> showAddTracksToPlaylistSheet(
                           playlist.tracks.length,
                         ),
                       ),
-                      onTap: () async {
-                        final result = await notifier.addTracksToPlaylist(
-                          playlist.id,
-                          tracks,
-                        );
-                        if (!context.mounted) return;
-                        Navigator.of(sheetContext).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              result.addedCount > 0
-                                  ? context.l10n.collectionAddedToPlaylist(
-                                      playlist.name,
-                                    )
-                                  : context.l10n.collectionAlreadyInPlaylist(
-                                      playlist.name,
-                                    ),
-                            ),
-                          ),
-                        );
-                      },
+                      enabled: !isAlreadyIn,
+                      onTap: !isAlreadyIn
+                          ? () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedPlaylistIds.remove(playlist.id);
+                                } else {
+                                  _selectedPlaylistIds.add(playlist.id);
+                                }
+                              });
+                            }
+                          : null,
                     );
                   },
                 ),
               ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      );
-    },
-  );
+            ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  if (hasNewSelections) {
+                    _handleDone();
+                  } else {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Text(context.l10n.dialogDone),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 Future<String?> _promptPlaylistName(BuildContext context) async {
@@ -352,10 +312,7 @@ class _PlaylistPickerThumbnail extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: colorScheme.primary,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: colorScheme.primary, width: 1.5),
                 ),
                 child: Icon(
                   Icons.check,

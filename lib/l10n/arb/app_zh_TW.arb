@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "選擇您的模式",
+  "setupModeSelectionDescription": "您想如何使用 SpotiFLAC？您可以稍後在設定中隨時變更。",
+  "setupModeDownloaderTitle": "下載器",
+  "setupModeDownloaderFeature1": "以無損 FLAC 品質下載曲目",
+  "setupModeDownloaderFeature2": "將音樂儲存到裝置以供離線收聽",
+  "setupModeDownloaderFeature3": "管理您的本機音樂庫",
+  "setupModeStreamingTitle": "串流",
+  "setupModeStreamingFeature1": "無需下載即可即時串流曲目",
+  "setupModeStreamingFeature2": "Smart Queue 自動為您探索新音樂",
+  "setupModeStreamingFeature3": "透過播放控制項隨時點播任意曲目",
+  "setupModeChangeableLater": "您可以隨時在設定中切換模式。",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "自動探索並將相似曲目新增到您的佇列中"
 }

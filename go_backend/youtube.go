@@ -276,11 +276,11 @@ func (y *YouTubeDownloader) requestCobaltDirect(videoURL, audioFormat, audioBitr
 }
 
 // requestSpotubeDL uses SpotubeDL as a Cobalt proxy (they handle auth to yt-dl.click instances).
-// Note: engine v2 currently serves MP3-oriented outputs, so we only use v2 for MP3 requests.
+// Engines v3/v2 are MP3-oriented outputs, so we only use them for MP3 requests.
 func (y *YouTubeDownloader) requestSpotubeDL(videoID, audioFormat, audioBitrate string) (*CobaltResponse, error) {
 	engines := []string{"v1"}
 	if strings.EqualFold(audioFormat, "mp3") {
-		engines = append(engines, "v2")
+		engines = append(engines, "v3", "v2")
 	}
 	var lastErr error
 

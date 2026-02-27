@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_flutter_new_audio/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_full/session_state.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -11,7 +13,20 @@ final _log = AppLogger('FFmpeg');
 
 class FFmpegService {
   static const int _commandLogPreviewLength = 300;
+  static const Duration _liveTunnelStartupTimeout = Duration(seconds: 8);
+  static const Duration _liveTunnelStartupPollInterval = Duration(
+    milliseconds: 200,
+  );
+  static const Duration _liveTunnelStabilizationDelay = Duration(
+    milliseconds: 900,
+  );
   static int _tempEmbedCounter = 0;
+  static FFmpegSession? _activeLiveDecryptSession;
+  static String? _activeLiveDecryptUrl;
+  static String? _activeLiveTempInputPath;
+  static String? _activeNativeDashManifestPath;
+  static String? _activeNativeDashManifestUrl;
+  static final Set<String> _preparedNativeDashManifestPaths = <String>{};
 
   static String _buildOutputPath(String inputPath, String extension) {
     final normalizedExt = extension.startsWith('.') ? extension : '.$extension';
@@ -303,6 +318,433 @@ class FFmpegService {
 
     _log.e('FLAC to MP3 conversion failed: ${result.output}');
     return null;
+  }
+
+  static bool isActiveLiveDecryptedUrl(String url) {
+    final active = _activeLiveDecryptUrl;
+    if (active == null || active.isEmpty) return false;
+    return active == url.trim();
+  }
+
+  static bool isActiveNativeDashManifestUrl(String url) {
+    final activeUrl = _activeNativeDashManifestUrl;
+    if (activeUrl == null || activeUrl.isEmpty) return false;
+
+    final normalized = url.trim();
+    if (activeUrl == normalized) return true;
+
+    try {
+      final activePath = Uri.parse(activeUrl).toFilePath();
+      final incomingPath = Uri.parse(normalized).toFilePath();
+      return activePath == incomingPath;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<String?> prepareTidalDashManifestForNativePlayback({
+    required String manifestPayload,
+    bool registerAsActive = true,
+  }) async {
+    final rawPayload = manifestPayload.trim();
+    if (rawPayload.isEmpty) return null;
+
+    final payload = rawPayload.startsWith('MANIFEST:')
+        ? rawPayload.substring('MANIFEST:'.length)
+        : rawPayload;
+
+    final manifestPath = await _writeTempManifestFile(payload);
+    if (manifestPath == null) {
+      _log.e('Failed to prepare Tidal DASH manifest for native playback');
+      return null;
+    }
+
+    final manifestUrl = Uri.file(manifestPath).toString();
+    _preparedNativeDashManifestPaths.add(manifestPath);
+    if (registerAsActive) {
+      await activatePreparedNativeDashManifest(manifestUrl);
+    }
+    return manifestUrl;
+  }
+
+  static Future<void> activatePreparedNativeDashManifest(String url) async {
+    final normalized = url.trim();
+    if (normalized.isEmpty) return;
+
+    final manifestPath = _nativeDashManifestPathFromUrl(normalized);
+    if (manifestPath == null ||
+        !_preparedNativeDashManifestPaths.contains(manifestPath)) {
+      return;
+    }
+
+    final previousPath = _activeNativeDashManifestPath;
+    _activeNativeDashManifestPath = manifestPath;
+    _activeNativeDashManifestUrl = Uri.file(manifestPath).toString();
+
+    if (previousPath != null &&
+        previousPath.isNotEmpty &&
+        previousPath != manifestPath) {
+      _preparedNativeDashManifestPaths.remove(previousPath);
+      await _deleteNativeDashManifestFile(previousPath);
+    }
+  }
+
+  static Future<void> stopNativeDashManifestPlayback() async {
+    final manifestPath = _activeNativeDashManifestPath;
+    _activeNativeDashManifestPath = null;
+    _activeNativeDashManifestUrl = null;
+
+    if (manifestPath == null || manifestPath.isEmpty) return;
+    _preparedNativeDashManifestPaths.remove(manifestPath);
+    await _deleteNativeDashManifestFile(manifestPath);
+  }
+
+  static Future<void> cleanupInactivePreparedNativeDashManifests() async {
+    final activePath = _activeNativeDashManifestPath;
+    final stalePaths = _preparedNativeDashManifestPaths
+        .where((path) => path != activePath)
+        .toList(growable: false);
+
+    for (final path in stalePaths) {
+      _preparedNativeDashManifestPaths.remove(path);
+      await _deleteNativeDashManifestFile(path);
+    }
+  }
+
+  static String? _nativeDashManifestPathFromUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      if (uri.scheme.toLowerCase() != 'file') {
+        return null;
+      }
+      final path = uri.toFilePath();
+      return path.trim().isEmpty ? null : path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _deleteNativeDashManifestFile(String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> stopLiveDecryptedStream() async {
+    final session = _activeLiveDecryptSession;
+    final tempInputPath = _activeLiveTempInputPath;
+    _activeLiveDecryptSession = null;
+    _activeLiveDecryptUrl = null;
+    _activeLiveTempInputPath = null;
+
+    if (session != null) {
+      try {
+        await session.cancel();
+      } catch (e) {
+        final sessionId = session.getSessionId();
+        if (sessionId != null) {
+          try {
+            await FFmpegKit.cancel(sessionId);
+          } catch (_) {}
+        }
+        _log.w('Failed to stop live decrypt session cleanly: $e');
+      }
+    }
+
+    if (tempInputPath != null && tempInputPath.isNotEmpty) {
+      try {
+        final file = File(tempInputPath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {}
+    }
+  }
+
+  static Future<LiveDecryptedStreamResult?> startTidalDashLiveStream({
+    required String manifestPayload,
+    String preferredFormat = 'm4a',
+  }) async {
+    final rawPayload = manifestPayload.trim();
+    if (rawPayload.isEmpty) return null;
+
+    final payload = rawPayload.startsWith('MANIFEST:')
+        ? rawPayload.substring('MANIFEST:'.length)
+        : rawPayload;
+
+    final manifestPath = await _writeTempManifestFile(payload);
+    if (manifestPath == null) {
+      _log.e('Failed to prepare Tidal DASH manifest for live stream');
+      return null;
+    }
+
+    await stopLiveDecryptedStream();
+    await stopNativeDashManifestPlayback();
+
+    final attempts = _buildLiveDashFormatAttempts(preferredFormat);
+    for (final format in attempts) {
+      final stream = await _tryStartLiveDashAttempt(
+        manifestPath: manifestPath,
+        format: format,
+      );
+      if (stream != null) {
+        _activeLiveDecryptSession = stream.session;
+        _activeLiveDecryptUrl = stream.localUrl;
+        _activeLiveTempInputPath = manifestPath;
+        return stream;
+      }
+    }
+
+    try {
+      final file = File(manifestPath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<String?> _writeTempManifestFile(String payload) async {
+    if (payload.trim().isEmpty) return null;
+
+    Uint8List bytes;
+    try {
+      bytes = base64Decode(payload);
+    } catch (_) {
+      bytes = Uint8List.fromList(utf8.encode(payload));
+    }
+
+    final manifestText = utf8.decode(bytes, allowMalformed: true).trim();
+    if (manifestText.isEmpty) return null;
+
+    final tempDir = await getTemporaryDirectory();
+    final manifestPath =
+        '${tempDir.path}${Platform.pathSeparator}tidal_dash_${DateTime.now().microsecondsSinceEpoch}.mpd';
+    await File(manifestPath).writeAsString(manifestText, flush: true);
+    return manifestPath;
+  }
+
+  static List<_LiveDecryptFormat> _buildLiveDashFormatAttempts(
+    String preferredFormat,
+  ) {
+    final normalized = preferredFormat.trim().toLowerCase();
+    if (normalized == 'flac') {
+      return const [_LiveDecryptFormat.flac, _LiveDecryptFormat.m4a];
+    }
+    return const [_LiveDecryptFormat.m4a, _LiveDecryptFormat.flac];
+  }
+
+  static Future<bool> _awaitLiveTunnelReady(FFmpegSession session) async {
+    final deadline = DateTime.now().add(_liveTunnelStartupTimeout);
+    var seenRunning = false;
+
+    while (DateTime.now().isBefore(deadline)) {
+      final state = await session.getState();
+      if (state == SessionState.running) {
+        seenRunning = true;
+        break;
+      }
+      if (state != SessionState.created) {
+        return false;
+      }
+      await Future<void>.delayed(_liveTunnelStartupPollInterval);
+    }
+
+    if (!seenRunning) {
+      return false;
+    }
+
+    await Future<void>.delayed(_liveTunnelStabilizationDelay);
+    return (await session.getState()) == SessionState.running;
+  }
+
+  static Future<LiveDecryptedStreamResult?> _tryStartLiveDashAttempt({
+    required String manifestPath,
+    required _LiveDecryptFormat format,
+  }) async {
+    final port = await _allocateLoopbackPort();
+    final ext = format == _LiveDecryptFormat.flac ? 'flac' : 'm4a';
+    final mimeType = format == _LiveDecryptFormat.flac
+        ? 'audio/flac'
+        : 'audio/mp4';
+    final localUrl = 'http://localhost:$port/stream.$ext';
+
+    final commandArguments = <String>[
+      '-nostdin',
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-protocol_whitelist',
+      'file,http,https,tcp,tls,crypto,data',
+      '-i',
+      manifestPath,
+      '-map',
+      '0:a:0',
+      '-c:a',
+      'copy',
+      if (format == _LiveDecryptFormat.flac) ...['-f', 'flac'],
+      if (format == _LiveDecryptFormat.m4a) ...[
+        '-movflags',
+        '+frag_keyframe+empty_moov+default_base_moof',
+        '-f',
+        'mp4',
+      ],
+      '-content_type',
+      mimeType,
+      '-listen',
+      '1',
+      localUrl,
+    ];
+
+    _log.d(
+      'Starting Tidal DASH tunnel: ${_previewCommandForLog(commandArguments.join(' '))}',
+    );
+
+    final session = await FFmpegKit.executeWithArgumentsAsync(commandArguments);
+    final isReady = await _awaitLiveTunnelReady(session);
+    if (isReady) {
+      return LiveDecryptedStreamResult(
+        localUrl: localUrl,
+        format: ext,
+        session: session,
+      );
+    }
+
+    final state = await session.getState();
+    final output = (await session.getOutput() ?? '').trim();
+    if (output.isNotEmpty) {
+      _log.w('Tidal DASH tunnel failed ($ext): $output');
+    } else {
+      _log.w('Tidal DASH tunnel failed ($ext) with session state: $state');
+    }
+
+    try {
+      await session.cancel();
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<LiveDecryptedStreamResult?> startAmazonLiveDecryptedStream({
+    required String encryptedStreamUrl,
+    required String decryptionKey,
+    String preferredFormat = 'flac',
+  }) async {
+    final inputUrl = encryptedStreamUrl.trim();
+    if (inputUrl.isEmpty) return null;
+
+    final keyCandidates = _buildDecryptionKeyCandidates(decryptionKey);
+    if (keyCandidates.isEmpty) {
+      _log.e('No usable decryption key candidates for live stream');
+      return null;
+    }
+
+    await stopLiveDecryptedStream();
+
+    final attempts = _buildLiveDecryptFormatAttempts(preferredFormat);
+    for (final format in attempts) {
+      for (final keyCandidate in keyCandidates) {
+        final stream = await _tryStartLiveDecryptAttempt(
+          inputUrl: inputUrl,
+          decryptionKey: keyCandidate,
+          format: format,
+        );
+        if (stream != null) {
+          _activeLiveDecryptSession = stream.session;
+          _activeLiveDecryptUrl = stream.localUrl;
+          _activeLiveTempInputPath = null;
+          return stream;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  static List<_LiveDecryptFormat> _buildLiveDecryptFormatAttempts(
+    String preferredFormat,
+  ) {
+    final normalized = preferredFormat.trim().toLowerCase();
+    if (normalized == 'm4a' || normalized == 'mp4' || normalized == 'aac') {
+      return const [_LiveDecryptFormat.m4a, _LiveDecryptFormat.flac];
+    }
+    return const [_LiveDecryptFormat.flac, _LiveDecryptFormat.m4a];
+  }
+
+  static Future<LiveDecryptedStreamResult?> _tryStartLiveDecryptAttempt({
+    required String inputUrl,
+    required String decryptionKey,
+    required _LiveDecryptFormat format,
+  }) async {
+    final port = await _allocateLoopbackPort();
+    final ext = format == _LiveDecryptFormat.flac ? 'flac' : 'm4a';
+    final mimeType = format == _LiveDecryptFormat.flac
+        ? 'audio/flac'
+        : 'audio/mp4';
+    final localUrl = 'http://localhost:$port/stream.$ext';
+
+    final commandArguments = <String>[
+      '-nostdin',
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-decryption_key',
+      decryptionKey,
+      '-i',
+      inputUrl,
+      '-map',
+      '0:a:0',
+      '-c:a',
+      'copy',
+      if (format == _LiveDecryptFormat.flac) ...['-f', 'flac'],
+      if (format == _LiveDecryptFormat.m4a) ...[
+        '-movflags',
+        '+frag_keyframe+empty_moov+default_base_moof',
+        '-f',
+        'mp4',
+      ],
+      '-content_type',
+      mimeType,
+      '-listen',
+      '1',
+      localUrl,
+    ];
+
+    _log.d(
+      'Starting live decrypt tunnel: ${_previewCommandForLog(commandArguments.join(' '))}',
+    );
+
+    final session = await FFmpegKit.executeWithArgumentsAsync(commandArguments);
+    final isReady = await _awaitLiveTunnelReady(session);
+    if (isReady) {
+      return LiveDecryptedStreamResult(
+        localUrl: localUrl,
+        format: ext,
+        session: session,
+      );
+    }
+
+    final state = await session.getState();
+    final output = (await session.getOutput() ?? '').trim();
+    if (output.isNotEmpty) {
+      _log.w('Live decrypt attempt failed ($ext): $output');
+    } else {
+      _log.w('Live decrypt attempt failed ($ext) with session state: $state');
+    }
+
+    try {
+      await session.cancel();
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<int> _allocateLoopbackPort() async {
+    final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final port = socket.port;
+    await socket.close();
+    return port;
   }
 
   static Future<String?> convertFlacToOpus(
@@ -861,9 +1303,10 @@ class FFmpegService {
 
     for (final entry in vorbisMetadata.entries) {
       final key = entry.key.toUpperCase();
+      final normalizedKey = key.replaceAll(RegExp(r'[^A-Z0-9]'), '');
       final value = entry.value;
 
-      switch (key) {
+      switch (normalizedKey) {
         case 'TITLE':
           id3Map['title'] = value;
           break;
@@ -878,10 +1321,12 @@ class FFmpegService {
           break;
         case 'TRACKNUMBER':
         case 'TRACK':
+        case 'TRCK':
           id3Map['track'] = value;
           break;
         case 'DISCNUMBER':
         case 'DISC':
+        case 'TPOS':
           id3Map['disc'] = value;
           break;
         case 'DATE':
@@ -919,5 +1364,19 @@ class FFmpegResult {
     required this.success,
     required this.returnCode,
     required this.output,
+  });
+}
+
+enum _LiveDecryptFormat { flac, m4a }
+
+class LiveDecryptedStreamResult {
+  final String localUrl;
+  final String format;
+  final FFmpegSession session;
+
+  LiveDecryptedStreamResult({
+    required this.localUrl,
+    required this.format,
+    required this.session,
   });
 }

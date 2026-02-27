@@ -14,6 +14,9 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   storageMode: json['storageMode'] as String? ?? 'app',
   downloadTreeUri: json['downloadTreeUri'] as String? ?? '',
   autoFallback: json['autoFallback'] as bool? ?? true,
+  autoSkipUnavailableTracks: json['autoSkipUnavailableTracks'] as bool? ?? true,
+  smartQueueEnabled: json['smartQueueEnabled'] as bool? ?? true,
+  embedMetadata: json['embedMetadata'] as bool? ?? true,
   embedLyrics: json['embedLyrics'] as bool? ?? true,
   maxQualityCover: json['maxQualityCover'] as bool? ?? true,
   isFirstLaunch: json['isFirstLaunch'] as bool? ?? true,
@@ -50,10 +53,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   autoExportFailedDownloads:
       json['autoExportFailedDownloads'] as bool? ?? false,
   downloadNetworkMode: json['downloadNetworkMode'] as String? ?? 'any',
-  networkCompatibilityMode:
-      json['networkCompatibilityMode'] as bool? ??
-      json['songLinkCompatibilityMode'] as bool? ??
-      false,
+  networkCompatibilityMode: json['networkCompatibilityMode'] as bool? ?? false,
   songLinkRegion: json['songLinkRegion'] as String? ?? 'US',
   localLibraryEnabled: json['localLibraryEnabled'] as bool? ?? false,
   localLibraryPath: json['localLibraryPath'] as String? ?? '',
@@ -64,7 +64,14 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       (json['lyricsProviders'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList() ??
-      const ['lrclib', 'musixmatch', 'netease', 'apple_music', 'qqmusic'],
+      const [
+        'lrclib',
+        'spotify_api',
+        'musixmatch',
+        'netease',
+        'apple_music',
+        'qqmusic',
+      ],
   lyricsIncludeTranslationNetease:
       json['lyricsIncludeTranslationNetease'] as bool? ?? false,
   lyricsIncludeRomanizationNetease:
@@ -72,6 +79,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   lyricsMultiPersonWordByWord:
       json['lyricsMultiPersonWordByWord'] as bool? ?? false,
   musixmatchLanguage: json['musixmatchLanguage'] as String? ?? '',
+  lastSeenVersion: json['lastSeenVersion'] as String? ?? '',
 );
 
 Map<String, dynamic> _$AppSettingsToJson(
@@ -84,6 +92,9 @@ Map<String, dynamic> _$AppSettingsToJson(
   'storageMode': instance.storageMode,
   'downloadTreeUri': instance.downloadTreeUri,
   'autoFallback': instance.autoFallback,
+  'autoSkipUnavailableTracks': instance.autoSkipUnavailableTracks,
+  'smartQueueEnabled': instance.smartQueueEnabled,
+  'embedMetadata': instance.embedMetadata,
   'embedLyrics': instance.embedLyrics,
   'maxQualityCover': instance.maxQualityCover,
   'isFirstLaunch': instance.isFirstLaunch,
@@ -128,4 +139,5 @@ Map<String, dynamic> _$AppSettingsToJson(
   'lyricsIncludeRomanizationNetease': instance.lyricsIncludeRomanizationNetease,
   'lyricsMultiPersonWordByWord': instance.lyricsMultiPersonWordByWord,
   'musixmatchLanguage': instance.musixmatchLanguage,
+  'lastSeenVersion': instance.lastSeenVersion,
 };

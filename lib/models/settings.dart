@@ -11,6 +11,9 @@ class AppSettings {
   final String storageMode; // 'app' or 'saf'
   final String downloadTreeUri; // SAF persistable tree URI
   final bool autoFallback;
+  final bool autoSkipUnavailableTracks;
+  final bool smartQueueEnabled; // Enable smart curated autoplay queue
+  final bool embedMetadata; // Master switch for metadata/cover/lyrics embedding
   final bool embedLyrics;
   final bool maxQualityCover;
   final bool isFirstLaunch;
@@ -76,6 +79,10 @@ class AppSettings {
   final String
   musixmatchLanguage; // Optional ISO language code for Musixmatch localized lyrics
 
+  // Version upgrade tracking
+  final String
+  lastSeenVersion; // Last app version the user has acknowledged (e.g. '3.7.0')
+
   const AppSettings({
     this.defaultService = 'tidal',
     this.audioQuality = 'LOSSLESS',
@@ -84,6 +91,9 @@ class AppSettings {
     this.storageMode = 'app',
     this.downloadTreeUri = '',
     this.autoFallback = true,
+    this.autoSkipUnavailableTracks = true,
+    this.smartQueueEnabled = true,
+    this.embedMetadata = true,
     this.embedLyrics = true,
     this.maxQualityCover = true,
     this.isFirstLaunch = true,
@@ -127,6 +137,7 @@ class AppSettings {
     // Lyrics providers default order
     this.lyricsProviders = const [
       'lrclib',
+      'spotify_api',
       'musixmatch',
       'netease',
       'apple_music',
@@ -136,6 +147,8 @@ class AppSettings {
     this.lyricsIncludeRomanizationNetease = false,
     this.lyricsMultiPersonWordByWord = false,
     this.musixmatchLanguage = '',
+    // Version upgrade tracking
+    this.lastSeenVersion = '',
   });
 
   AppSettings copyWith({
@@ -146,6 +159,9 @@ class AppSettings {
     String? storageMode,
     String? downloadTreeUri,
     bool? autoFallback,
+    bool? autoSkipUnavailableTracks,
+    bool? smartQueueEnabled,
+    bool? embedMetadata,
     bool? embedLyrics,
     bool? maxQualityCover,
     bool? isFirstLaunch,
@@ -193,6 +209,8 @@ class AppSettings {
     bool? lyricsIncludeRomanizationNetease,
     bool? lyricsMultiPersonWordByWord,
     String? musixmatchLanguage,
+    // Version upgrade tracking
+    String? lastSeenVersion,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -202,6 +220,10 @@ class AppSettings {
       storageMode: storageMode ?? this.storageMode,
       downloadTreeUri: downloadTreeUri ?? this.downloadTreeUri,
       autoFallback: autoFallback ?? this.autoFallback,
+      autoSkipUnavailableTracks:
+          autoSkipUnavailableTracks ?? this.autoSkipUnavailableTracks,
+      smartQueueEnabled: smartQueueEnabled ?? this.smartQueueEnabled,
+      embedMetadata: embedMetadata ?? this.embedMetadata,
       embedLyrics: embedLyrics ?? this.embedLyrics,
       maxQualityCover: maxQualityCover ?? this.maxQualityCover,
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
@@ -264,6 +286,8 @@ class AppSettings {
       lyricsMultiPersonWordByWord:
           lyricsMultiPersonWordByWord ?? this.lyricsMultiPersonWordByWord,
       musixmatchLanguage: musixmatchLanguage ?? this.musixmatchLanguage,
+      // Version upgrade tracking
+      lastSeenVersion: lastSeenVersion ?? this.lastSeenVersion,
     );
   }
 

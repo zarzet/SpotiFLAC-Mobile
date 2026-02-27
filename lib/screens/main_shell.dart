@@ -16,9 +16,11 @@ import 'package:spotiflac_android/screens/store_tab.dart';
 import 'package:spotiflac_android/screens/queue_tab.dart';
 import 'package:spotiflac_android/screens/settings/settings_tab.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/services/shell_navigation_service.dart';
 import 'package:spotiflac_android/services/share_intent_service.dart';
 import 'package:spotiflac_android/services/update_checker.dart';
 import 'package:spotiflac_android/widgets/update_dialog.dart';
+import 'package:spotiflac_android/widgets/mini_player_bar.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('MainShell');
@@ -36,11 +38,21 @@ class _MainShellState extends ConsumerState<MainShell> {
   bool _hasCheckedUpdate = false;
   StreamSubscription<String>? _shareSubscription;
   DateTime? _lastBackPress;
+  final GlobalKey<NavigatorState> _homeTabNavigatorKey =
+      ShellNavigationService.homeTabNavigatorKey;
+  final GlobalKey<NavigatorState> _libraryTabNavigatorKey =
+      ShellNavigationService.libraryTabNavigatorKey;
+  final GlobalKey<NavigatorState> _storeTabNavigatorKey =
+      ShellNavigationService.storeTabNavigatorKey;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _currentIndex);
+    ShellNavigationService.syncState(
+      currentTabIndex: _currentIndex,
+      showStoreTab: false,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdates();
       _setupShareListener();
@@ -86,6 +98,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (!mounted) return;
 
     Navigator.of(context).popUntil((route) => route.isFirst);
+    _homeTabNavigatorKey.currentState?.popUntil((route) => route.isFirst);
 
     if (_currentIndex != 0) {
       _onNavTap(0);
@@ -213,10 +226,34 @@ class _MainShellState extends ConsumerState<MainShell> {
     super.dispose();
   }
 
+  void _resetHomeToMain() {
+    final showStore = ref.read(
+      settingsProvider.select((s) => s.showExtensionStore),
+    );
+    final homeNavigator = _navigatorForTab(0, showStore);
+    homeNavigator?.popUntil((route) => route.isFirst);
+    // Unfocus BEFORE clear so _onTrackStateChanged can properly
+    // clear _urlController (it checks !_searchFocusNode.hasFocus)
+    FocusManager.instance.primaryFocus?.unfocus();
+    ref.read(trackProvider.notifier).clear();
+  }
+
   void _onNavTap(int index) {
+    if (index == 0 && _currentIndex == 0) {
+      _resetHomeToMain();
+      return;
+    }
+
     if (_currentIndex != index) {
       HapticFeedback.selectionClick();
       setState(() => _currentIndex = index);
+      final showStore = ref.read(
+        settingsProvider.select((s) => s.showExtensionStore),
+      );
+      ShellNavigationService.syncState(
+        currentTabIndex: _currentIndex,
+        showStoreTab: showStore,
+      );
       _pageController.animateToPage(
         index,
         duration: const Duration(milliseconds: 250),
@@ -226,48 +263,121 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _onPageChanged(int index) {
+    final previousIndex = _currentIndex;
     if (_currentIndex != index) {
       setState(() => _currentIndex = index);
+      final showStore = ref.read(
+        settingsProvider.select((s) => s.showExtensionStore),
+      );
+      ShellNavigationService.syncState(
+        currentTabIndex: _currentIndex,
+        showStoreTab: showStore,
+      );
       FocusManager.instance.primaryFocus?.unfocus();
+      if (index == 0 && previousIndex != 0) {
+        _resetHomeToMain();
+      }
     }
   }
 
   void _handleBackPress() {
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    if (rootNavigator.canPop()) {
+      _log.i('Back: step 1 - root navigator pop');
+      rootNavigator.pop();
+      _lastBackPress = null;
+      return;
+    }
+
+    final showStore = ref.read(
+      settingsProvider.select((s) => s.showExtensionStore),
+    );
+    final currentNavigator = _navigatorForTab(_currentIndex, showStore);
+    if (currentNavigator != null && currentNavigator.canPop()) {
+      _log.i('Back: step 2 - tab navigator pop (tab=$_currentIndex)');
+      currentNavigator.pop();
+      _lastBackPress = null;
+      return;
+    }
+
     final trackState = ref.read(trackProvider);
 
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-    if (isKeyboardVisible) {
+
+    _log.d(
+      'Back: state check - tab=$_currentIndex, '
+      'isShowingRecentAccess=${trackState.isShowingRecentAccess}, '
+      'hasSearchText=${trackState.hasSearchText}, '
+      'hasContent=${trackState.hasContent}, '
+      'isLoading=${trackState.isLoading}, '
+      'isKeyboardVisible=$isKeyboardVisible',
+    );
+
+    if (_currentIndex == 0 &&
+        trackState.isShowingRecentAccess &&
+        !trackState.isLoading &&
+        (trackState.hasSearchText || trackState.hasContent)) {
+      // Has recent access AND search content — clear everything at once
+      _log.i(
+        'Back: step 3a - dismiss recent access + clear search/content '
+        '(hasSearchText=${trackState.hasSearchText}, hasContent=${trackState.hasContent})',
+      );
       FocusManager.instance.primaryFocus?.unfocus();
+      ref.read(trackProvider.notifier).clear();
+      _lastBackPress = null;
       return;
     }
 
     if (_currentIndex == 0 && trackState.isShowingRecentAccess) {
+      // Recent access overlay only (no search content) — just dismiss it
+      _log.i('Back: step 3b - dismiss recent access only');
       ref.read(trackProvider.notifier).setShowingRecentAccess(false);
       FocusManager.instance.primaryFocus?.unfocus();
+      _lastBackPress = null;
       return;
     }
 
     if (_currentIndex == 0 &&
         !trackState.isLoading &&
         (trackState.hasSearchText || trackState.hasContent)) {
+      _log.i(
+        'Back: step 4 - clear search/content '
+        '(hasSearchText=${trackState.hasSearchText}, hasContent=${trackState.hasContent})',
+      );
+      // Unfocus BEFORE clear so _onTrackStateChanged can properly
+      // clear _urlController (it checks !_searchFocusNode.hasFocus)
+      FocusManager.instance.primaryFocus?.unfocus();
       ref.read(trackProvider.notifier).clear();
+      _lastBackPress = null;
+      return;
+    }
+
+    if (_currentIndex == 0 && isKeyboardVisible) {
+      _log.i('Back: step 5 - dismiss keyboard');
+      FocusManager.instance.primaryFocus?.unfocus();
+      _lastBackPress = null;
       return;
     }
 
     if (_currentIndex != 0) {
+      _log.i('Back: step 6 - switch to home tab from tab=$_currentIndex');
       _onNavTap(0);
+      _lastBackPress = null;
       return;
     }
 
     if (trackState.isLoading) {
+      _log.i('Back: blocked - loading in progress');
       return;
     }
 
     final now = DateTime.now();
     if (_lastBackPress != null &&
         now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+      _log.i('Back: step 8 - double-tap exit');
       SystemNavigator.pop();
     } else {
+      _log.i('Back: step 7 - first tap, showing exit snackbar');
       _lastBackPress = now;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -279,46 +389,46 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
   }
 
+  NavigatorState? _navigatorForTab(int index, bool showStore) {
+    if (index == 0) return _homeTabNavigatorKey.currentState;
+    if (index == 1) return _libraryTabNavigatorKey.currentState;
+    if (showStore && index == 2) return _storeTabNavigatorKey.currentState;
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final queueState = ref.watch(
       downloadQueueProvider.select((s) => s.queuedCount),
     );
-    final trackHasSearchText = ref.watch(
-      trackProvider.select((s) => s.hasSearchText),
-    );
-    final trackHasContent = ref.watch(
-      trackProvider.select((s) => s.hasContent),
-    );
-    final trackIsLoading = ref.watch(trackProvider.select((s) => s.isLoading));
-    final trackIsShowingRecentAccess = ref.watch(
-      trackProvider.select((s) => s.isShowingRecentAccess),
-    );
     final showStore = ref.watch(
       settingsProvider.select((s) => s.showExtensionStore),
+    );
+    ShellNavigationService.syncState(
+      currentTabIndex: _currentIndex,
+      showStoreTab: showStore,
     );
     final storeUpdatesCount = ref.watch(
       storeProvider.select((s) => s.updatesAvailableCount),
     );
 
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    final canPop =
-        _currentIndex == 0 &&
-        !trackHasSearchText &&
-        !trackHasContent &&
-        !trackIsLoading &&
-        !trackIsShowingRecentAccess &&
-        !isKeyboardVisible;
-
     final tabs = <Widget>[
-      const HomeTab(),
-      QueueTab(
-        parentPageController: _pageController,
-        parentPageIndex: 1,
-        nextPageIndex: showStore ? 2 : 3,
+      _TabNavigator(
+        key: const ValueKey('tab-home'),
+        navigatorKey: _homeTabNavigatorKey,
+        child: const HomeTab(),
       ),
-      if (showStore) const StoreTab(),
+      _TabNavigator(
+        key: const ValueKey('tab-library'),
+        navigatorKey: _libraryTabNavigatorKey,
+        child: _LibraryTabRoot(parentPageController: _pageController),
+      ),
+      if (showStore)
+        _TabNavigator(
+          key: const ValueKey('tab-store'),
+          navigatorKey: _storeTabNavigatorKey,
+          child: const StoreTab(),
+        ),
       const SettingsTab(),
     ];
 
@@ -378,7 +488,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
 
     return PopScope(
-      canPop: canPop,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) {
           return;
@@ -387,13 +497,18 @@ class _MainShellState extends ConsumerState<MainShell> {
         _handleBackPress();
       },
       child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          onPageChanged: _onPageChanged,
-          physics: (_currentIndex == 0 && trackIsShowingRecentAccess)
-              ? const _NoSwipeRightPhysics()
-              : const ClampingScrollPhysics(),
-          children: tabs,
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                physics: const NeverScrollableScrollPhysics(),
+                children: tabs,
+              ),
+            ),
+            const MiniPlayerBar(),
+          ],
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _currentIndex.clamp(0, maxIndex),
@@ -415,23 +530,42 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 }
 
-/// Custom physics that blocks swiping to the right (next page) while
-/// still allowing vertical scrolling inside the page content.
-class _NoSwipeRightPhysics extends ScrollPhysics {
-  const _NoSwipeRightPhysics({super.parent});
+class _TabNavigator extends StatelessWidget {
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget child;
+
+  const _TabNavigator({
+    super.key,
+    required this.navigatorKey,
+    required this.child,
+  });
 
   @override
-  _NoSwipeRightPhysics applyTo(ScrollPhysics? ancestor) {
-    return _NoSwipeRightPhysics(parent: buildParent(ancestor));
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: navigatorKey,
+      onGenerateInitialRoutes: (_, _) => [
+        MaterialPageRoute<void>(builder: (_) => child),
+      ],
+    );
   }
+}
+
+class _LibraryTabRoot extends ConsumerWidget {
+  final PageController parentPageController;
+
+  const _LibraryTabRoot({required this.parentPageController});
 
   @override
-  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    // In a horizontal PageView, a negative offset means the user is
-    // dragging left (i.e. trying to go to the next page / right).
-    // Block that direction only.
-    if (offset < 0) return 0.0;
-    return super.applyPhysicsToUserOffset(position, offset);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final showStore = ref.watch(
+      settingsProvider.select((s) => s.showExtensionStore),
+    );
+    return QueueTab(
+      parentPageController: parentPageController,
+      parentPageIndex: 1,
+      nextPageIndex: showStore ? 2 : 3,
+    );
   }
 }
 

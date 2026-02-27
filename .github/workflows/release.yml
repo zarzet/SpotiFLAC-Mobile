@@ -71,7 +71,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.25.7"
           cache-dependency-path: go_backend/go.sum
 
       # Cache Gradle for faster builds
@@ -174,7 +174,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.25.7"
           cache-dependency-path: go_backend/go.sum
 
       # Cache CocoaPods

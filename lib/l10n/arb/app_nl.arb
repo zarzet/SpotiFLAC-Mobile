@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "Kies je modus",
+  "setupModeSelectionDescription": "Hoe wil je SpotiFLAC gebruiken? Je kunt dit later altijd wijzigen in Instellingen.",
+  "setupModeDownloaderTitle": "Downloader",
+  "setupModeDownloaderFeature1": "Download nummers in lossless FLAC-kwaliteit",
+  "setupModeDownloaderFeature2": "Sla muziek op je apparaat op om offline te luisteren",
+  "setupModeDownloaderFeature3": "Beheer je lokale muziekbibliotheek",
+  "setupModeStreamingTitle": "Streaming",
+  "setupModeStreamingFeature1": "Stream nummers direct zonder te downloaden",
+  "setupModeStreamingFeature2": "Smart Queue ontdekt automatisch nieuwe muziek voor je",
+  "setupModeStreamingFeature3": "Speel elk nummer op aanvraag af met afspeelbediening",
+  "setupModeChangeableLater": "Je kunt op elk moment wisselen tussen modi in Instellingen.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Ontdek automatisch vergelijkbare nummers en voeg ze toe aan je wachtrij"
 }

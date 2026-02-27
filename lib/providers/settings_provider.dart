@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:spotiflac_android/models/settings.dart';
+import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
-const _currentMigrationVersion = 2;
+const _currentMigrationVersion = 4;
 const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
@@ -93,6 +94,18 @@ class SettingsNotifier extends Notifier<AppSettings> {
       if (!state.isFirstLaunch && !state.hasCompletedTutorial) {
         state = state.copyWith(hasCompletedTutorial: true);
       }
+      // Migration 4: include Spotify Lyrics API in provider order for existing users
+      if (!state.lyricsProviders.contains('spotify_api')) {
+        final updatedProviders = List<String>.from(state.lyricsProviders);
+        final lrclibIndex = updatedProviders.indexOf('lrclib');
+        if (lrclibIndex >= 0) {
+          updatedProviders.insert(lrclibIndex + 1, 'spotify_api');
+        } else {
+          updatedProviders.add('spotify_api');
+        }
+        state = state.copyWith(lyricsProviders: updatedProviders);
+      }
+      state = state.copyWith(lastSeenVersion: AppInfo.version);
       await prefs.setInt(_migrationVersionKey, _currentMigrationVersion);
       await _saveSettings();
     }
@@ -266,8 +279,23 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
+  void setAutoSkipUnavailableTracks(bool enabled) {
+    state = state.copyWith(autoSkipUnavailableTracks: enabled);
+    _saveSettings();
+  }
+
+  void setSmartQueueEnabled(bool enabled) {
+    state = state.copyWith(smartQueueEnabled: enabled);
+    _saveSettings();
+  }
+
   void setEmbedLyrics(bool enabled) {
     state = state.copyWith(embedLyrics: enabled);
+    _saveSettings();
+  }
+
+  void setEmbedMetadata(bool enabled) {
+    state = state.copyWith(embedMetadata: enabled);
     _saveSettings();
   }
 

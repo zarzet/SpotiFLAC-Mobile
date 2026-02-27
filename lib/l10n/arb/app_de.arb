@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "Wähle deinen Modus",
+  "setupModeSelectionDescription": "Wie möchtest du SpotiFLAC nutzen? Du kannst dies später jederzeit in den Einstellungen ändern.",
+  "setupModeDownloaderTitle": "Downloader",
+  "setupModeDownloaderFeature1": "Lade Titel in verlustfreier FLAC-Qualität herunter",
+  "setupModeDownloaderFeature2": "Speichere Musik auf deinem Gerät zum Offline-Hören",
+  "setupModeDownloaderFeature3": "Verwalte deine lokale Musikbibliothek",
+  "setupModeStreamingTitle": "Streaming",
+  "setupModeStreamingFeature1": "Streame Titel sofort ohne Herunterladen",
+  "setupModeStreamingFeature2": "Smart Queue entdeckt automatisch neue Musik für dich",
+  "setupModeStreamingFeature3": "Spiele jeden Titel auf Abruf mit Wiedergabesteuerung",
+  "setupModeChangeableLater": "Du kannst jederzeit in den Einstellungen zwischen den Modi wechseln.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Automatisch ähnliche Titel entdecken und zu deiner Warteschlange hinzufügen"
 }

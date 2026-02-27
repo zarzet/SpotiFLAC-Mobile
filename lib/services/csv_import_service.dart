@@ -106,6 +106,8 @@ class CsvImportService {
               artistName: trackData['artists'] as String? ?? track.artistName,
               albumName: trackData['album_name'] as String? ?? track.albumName,
               albumArtist: trackData['album_artist'] as String?,
+              artistId: trackData['artist_id']?.toString(),
+              albumId: trackData['album_id']?.toString(),
               coverUrl: coverUrl ?? track.coverUrl,
               isrc: trackData['isrc'] as String? ?? track.isrc,
               duration: durationMs > 0 ? durationMs ~/ 1000 : track.duration,

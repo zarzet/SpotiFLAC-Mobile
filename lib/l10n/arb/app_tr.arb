@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "Modunuzu Seçin",
+  "setupModeSelectionDescription": "SpotiFLAC'ı nasıl kullanmak istersiniz? Bunu daha sonra Ayarlar'dan değiştirebilirsiniz.",
+  "setupModeDownloaderTitle": "İndirici",
+  "setupModeDownloaderFeature1": "Kayıpsız FLAC kalitesinde parça indirin",
+  "setupModeDownloaderFeature2": "Çevrimdışı dinlemek için müziği cihazınıza kaydedin",
+  "setupModeDownloaderFeature3": "Yerel müzik kütüphanenizi yönetin",
+  "setupModeStreamingTitle": "Yayın Akışı",
+  "setupModeStreamingFeature1": "İndirmeden parçaları anında yayınlayın",
+  "setupModeStreamingFeature2": "Smart Queue sizin için otomatik olarak yeni müzik keşfeder",
+  "setupModeStreamingFeature3": "İstediğiniz parçayı oynatma kontrolleriyle çalın",
+  "setupModeChangeableLater": "Ayarlar'dan istediğiniz zaman modlar arasında geçiş yapabilirsiniz.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Sıranıza otomatik olarak benzer parçalar keşfedin ve ekleyin"
 }

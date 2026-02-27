@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "モードを選択",
+  "setupModeSelectionDescription": "SpotiFLACをどのように使いますか？この設定は後からいつでも変更できます。",
+  "setupModeDownloaderTitle": "ダウンローダー",
+  "setupModeDownloaderFeature1": "ロスレスFLAC品質でトラックをダウンロード",
+  "setupModeDownloaderFeature2": "オフライン再生用に音楽をデバイスに保存",
+  "setupModeDownloaderFeature3": "ローカル音楽ライブラリを管理",
+  "setupModeStreamingTitle": "ストリーミング",
+  "setupModeStreamingFeature1": "ダウンロードせずにトラックを即座にストリーミング",
+  "setupModeStreamingFeature2": "Smart Queueが自動的に新しい音楽を見つけます",
+  "setupModeStreamingFeature3": "再生コントロールで任意のトラックをオンデマンド再生",
+  "setupModeChangeableLater": "設定からいつでもモードを切り替えられます。",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "類似トラックを自動的に検出してキューに追加"
 }

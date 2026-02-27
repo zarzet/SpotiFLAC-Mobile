@@ -16,6 +16,7 @@ class _LyricsProviderPriorityPageState
     extends ConsumerState<LyricsProviderPriorityPage> {
   static const _allProviderIds = [
     'lrclib',
+    'spotify_api',
     'netease',
     'musixmatch',
     'apple_music',
@@ -183,6 +184,12 @@ class _LyricsProviderPriorityPageState
 
   static _LyricsProviderInfo _getLyricsProviderInfo(String id) {
     switch (id) {
+      case 'spotify_api':
+        return _LyricsProviderInfo(
+          name: 'Spotify Lyrics API',
+          description: 'Spotify-sourced synced lyrics via community API',
+          icon: Icons.music_note_outlined,
+        );
       case 'lrclib':
         return _LyricsProviderInfo(
           name: 'LRCLIB',

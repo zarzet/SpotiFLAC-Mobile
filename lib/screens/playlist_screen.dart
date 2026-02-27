@@ -6,9 +6,11 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 
@@ -108,6 +110,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
       albumArtist: data['album_artist']?.toString(),
+      artistId: (data['artist_id'] ?? data['artistId'])?.toString(),
+      albumId: data['album_id']?.toString(),
       coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
@@ -297,22 +301,15 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Center(
-                            child: FilledButton.icon(
-                              onPressed: () => _downloadAll(context),
-                              icon: const Icon(Icons.download, size: 18),
-                              label: Text(
-                                context.l10n.downloadAllCount(_tracks.length),
-                              ),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black87,
-                                minimumSize: const Size(0, 48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                              ),
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildLoveAllButton(),
+                              const SizedBox(width: 12),
+                              _buildDownloadAllCenterButton(context),
+                              const SizedBox(width: 12),
+                              _buildShufflePlayButton(),
+                            ],
                           ),
                         ],
                       ],
@@ -410,6 +407,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
   void _downloadTrack(BuildContext context, Track track) {
     final settings = ref.read(settingsProvider);
+
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
@@ -437,22 +435,175 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     }
   }
 
-  void _downloadAll(BuildContext context) {
+  // ── Shuffle / Love / Download buttons ──
+
+  Widget _buildCircleButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.15),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22, color: Colors.white),
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  Widget _buildLoveAllButton() {
+    final collectionsState = ref.watch(libraryCollectionsProvider);
+    final allLoved =
+        _tracks.isNotEmpty && _tracks.every((t) => collectionsState.isLoved(t));
+
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.15),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: IconButton(
+        onPressed: _tracks.isEmpty ? null : () => _loveAll(_tracks),
+        icon: Icon(
+          allLoved ? Icons.favorite : Icons.favorite_border,
+          size: 22,
+          color: allLoved ? Colors.redAccent : Colors.white,
+        ),
+        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  Widget _buildDownloadAllCenterButton(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: _tracks.isEmpty ? null : () => _confirmDownloadAll(context),
+      icon: const Icon(Icons.download_rounded, size: 18),
+      label: Text(context.l10n.downloadAllCount(_tracks.length)),
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        minimumSize: const Size(0, 48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+    );
+  }
+
+  Widget _buildShufflePlayButton() {
+    return _buildCircleButton(
+      icon: Icons.shuffle_rounded,
+      tooltip: 'Shuffle Play',
+      onPressed: _tracks.isEmpty ? null : _shufflePlayLocal,
+    );
+  }
+
+  void _shufflePlayLocal() {
     if (_tracks.isEmpty) return;
+    final shuffled = [..._tracks]..shuffle();
+    final messenger = ScaffoldMessenger.of(context);
+    ref.read(playbackProvider.notifier).playTrackList(shuffled).catchError((e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Cannot shuffle play local tracks: $e')),
+      );
+    });
+  }
+
+  void _confirmDownloadAll(BuildContext context) {
+    if (_tracks.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          backgroundColor: colorScheme.surfaceContainerHigh,
+          title: const Text('Download All'),
+          content: Text('Download ${_tracks.length} tracks?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(context.l10n.dialogCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _downloadAll(context);
+              },
+              child: const Text('Download'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _loveAll(List<Track> tracks) async {
+    final notifier = ref.read(libraryCollectionsProvider.notifier);
+    final state = ref.read(libraryCollectionsProvider);
+    final allLoved = tracks.every((t) => state.isLoved(t));
+
+    if (allLoved) {
+      for (final track in tracks) {
+        final key = trackCollectionKey(track);
+        await notifier.removeFromLoved(key);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
+        );
+      }
+    } else {
+      int addedCount = 0;
+      for (final track in tracks) {
+        if (!state.isLoved(track)) {
+          await notifier.toggleLoved(track);
+          addedCount++;
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added $addedCount tracks to Loved')),
+        );
+      }
+    }
+  }
+
+  void _downloadAll(BuildContext context) {
+    _downloadTracks(context, _tracks);
+  }
+
+  void _downloadTracks(BuildContext context, List<Track> tracks) {
+    if (tracks.isEmpty) return;
     final settings = ref.read(settingsProvider);
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
-        trackName: '${_tracks.length} tracks',
+        trackName: '${tracks.length} tracks',
         artistName: widget.playlistName,
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
-              .addMultipleToQueue(_tracks, service, qualityOverride: quality);
+              .addMultipleToQueue(tracks, service, qualityOverride: quality);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                context.l10n.snackbarAddedTracksToQueue(_tracks.length),
+                context.l10n.snackbarAddedTracksToQueue(tracks.length),
               ),
             ),
           );
@@ -461,12 +612,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     } else {
       ref
           .read(downloadQueueProvider.notifier)
-          .addMultipleToQueue(_tracks, settings.defaultService);
+          .addMultipleToQueue(tracks, settings.defaultService);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            context.l10n.snackbarAddedTracksToQueue(_tracks.length),
-          ),
+          content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length)),
         ),
       );
     }
@@ -602,15 +751,18 @@ class _PlaylistTrackItem extends ConsumerWidget {
               ],
             ],
           ),
-          trailing: TrackCollectionQuickActions(
-            track: track,
-          ),
+          trailing: TrackCollectionQuickActions(track: track),
           onTap: () => _handleTap(
             context,
             ref,
             isQueued: isQueued,
             isInHistory: isInHistory,
             isInLocalLibrary: isInLocalLibrary,
+          ),
+          onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
+            context,
+            ref,
+            track,
           ),
         ),
       ),

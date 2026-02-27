@@ -149,6 +149,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -264,6 +265,9 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     const double size = 48;
     final borderRadius = BorderRadius.circular(8);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (size * dpr).round().clamp(64, 512);
+    final placeholder = _playlistIconFallback(colorScheme, size);
 
     // Priority: custom cover > first track cover URL > icon fallback
     final customCoverPath = playlist.coverImagePath;
@@ -275,7 +279,14 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _playlistIconFallback(colorScheme, size),
+          cacheWidth: cacheWidth,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.low,
+          frameBuilder: (_, child, frame, wasSynchronouslyLoaded) {
+            if (wasSynchronouslyLoaded || frame != null) return child;
+            return placeholder;
+          },
+          errorBuilder: (_, _, _) => placeholder,
         ),
       );
     }
@@ -302,7 +313,14 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _playlistIconFallback(colorScheme, size),
+            cacheWidth: cacheWidth,
+            gaplessPlayback: true,
+            filterQuality: FilterQuality.low,
+            frameBuilder: (_, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded || frame != null) return child;
+              return placeholder;
+            },
+            errorBuilder: (_, _, _) => placeholder,
           ),
         );
       }
@@ -314,15 +332,15 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
-          memCacheWidth: (size * 2).toInt(),
+          memCacheWidth: cacheWidth,
           cacheManager: CoverCacheManager.instance,
-          placeholder: (_, _) => _playlistIconFallback(colorScheme, size),
-          errorWidget: (_, _, _) => _playlistIconFallback(colorScheme, size),
+          placeholder: (_, _) => placeholder,
+          errorWidget: (_, _, _) => placeholder,
         ),
       );
     }
 
-    return _playlistIconFallback(colorScheme, size);
+    return placeholder;
   }
 
   Widget _playlistIconFallback(ColorScheme colorScheme, double size) {

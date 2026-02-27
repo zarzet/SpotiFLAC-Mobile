@@ -501,14 +501,17 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   SettingsSwitchItem(
                     icon: Icons.subtitles_outlined,
                     title: context.l10n.optionsEmbedLyrics,
-                    subtitle: context.l10n.optionsEmbedLyricsSubtitle,
+                    subtitle: settings.embedMetadata
+                        ? context.l10n.optionsEmbedLyricsSubtitle
+                        : 'Disabled while Embed Metadata is turned off',
                     value: settings.embedLyrics,
+                    enabled: settings.embedMetadata,
                     onChanged: (value) => ref
                         .read(settingsProvider.notifier)
                         .setEmbedLyrics(value),
-                    showDivider: settings.embedLyrics,
+                    showDivider: settings.embedMetadata && settings.embedLyrics,
                   ),
-                  if (settings.embedLyrics) ...[
+                  if (settings.embedMetadata && settings.embedLyrics) ...[
                     SettingsItem(
                       icon: Icons.lyrics_outlined,
                       title: context.l10n.lyricsMode,
@@ -858,6 +861,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
   ) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -992,6 +996,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: colorScheme.surface,
       shape: const RoundedRectangleBorder(
@@ -1209,6 +1214,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
         settings.storageMode == 'saf' && settings.downloadTreeUri.isNotEmpty;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1288,6 +1294,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1451,6 +1458,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1516,6 +1524,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
   }
 
   static const _providerDisplayNames = <String, String>{
+    'spotify_api': 'Spotify Lyrics API',
     'lrclib': 'LRCLIB',
     'netease': 'Netease',
     'musixmatch': 'Musixmatch',
@@ -1544,6 +1553,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1604,6 +1614,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1702,6 +1713,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1786,6 +1798,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1857,6 +1870,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final normalizedCurrent = current.trim().toUpperCase();
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -1924,6 +1938,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -2024,16 +2039,13 @@ class _ServiceSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
+    final builtInServiceIds = ['tidal', 'qobuz', 'amazon', 'youtube'];
 
     final extensionProviders = extState.extensions
         .where((e) => e.enabled && e.hasDownloadProvider)
         .toList();
 
-    final isExtensionService = ![
-      'tidal',
-      'qobuz',
-      'amazon',
-    ].contains(currentService);
+    final isExtensionService = !builtInServiceIds.contains(currentService);
     final isCurrentExtensionEnabled = isExtensionService
         ? extensionProviders.any((e) => e.id == currentService)
         : true;
@@ -2046,47 +2058,56 @@ class _ServiceSelector extends ConsumerWidget {
         children: [
           Row(
             children: [
-              _ServiceChip(
-                icon: Icons.music_note,
-                label: 'Tidal',
-                isSelected: effectiveService == 'tidal',
-                onTap: () => onChanged('tidal'),
+              Expanded(
+                child: _ServiceChip(
+                  icon: Icons.music_note,
+                  label: 'Tidal',
+                  isSelected: effectiveService == 'tidal',
+                  onTap: () => onChanged('tidal'),
+                ),
               ),
               const SizedBox(width: 8),
-              _ServiceChip(
-                icon: Icons.album,
-                label: 'Qobuz',
-                isSelected: effectiveService == 'qobuz',
-                onTap: () => onChanged('qobuz'),
+              Expanded(
+                child: _ServiceChip(
+                  icon: Icons.album,
+                  label: 'Qobuz',
+                  isSelected: effectiveService == 'qobuz',
+                  onTap: () => onChanged('qobuz'),
+                ),
               ),
               const SizedBox(width: 8),
-              _ServiceChip(
-                icon: Icons.shopping_bag_outlined,
-                label: 'Amazon',
-                isSelected: effectiveService == 'amazon',
-                onTap: () => onChanged('amazon'),
+              Expanded(
+                child: _ServiceChip(
+                  icon: Icons.shopping_bag_outlined,
+                  label: 'Amazon',
+                  isSelected: effectiveService == 'amazon',
+                  onTap: () => onChanged('amazon'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ServiceChip(
+                  icon: Icons.smart_display,
+                  label: 'YouTube',
+                  isSelected: effectiveService == 'youtube',
+                  onTap: () => onChanged('youtube'),
+                ),
               ),
             ],
           ),
           if (extensionProviders.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                for (int i = 0; i < extensionProviders.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 8),
-                  Expanded(
-                    child: _ServiceChip(
-                      icon: Icons.extension,
-                      label: extensionProviders[i].displayName,
-                      isSelected: effectiveService == extensionProviders[i].id,
-                      onTap: () => onChanged(extensionProviders[i].id),
-                    ),
+                for (final extension in extensionProviders)
+                  _ServiceChip(
+                    icon: Icons.extension,
+                    label: extension.displayName,
+                    isSelected: effectiveService == extension.id,
+                    onTap: () => onChanged(extension.id),
                   ),
-                ],
-                for (int i = extensionProviders.length; i < 3; i++) ...[
-                  const SizedBox(width: 8),
-                  const Expanded(child: SizedBox()),
-                ],
               ],
             ),
           ],
@@ -2120,38 +2141,35 @@ class _ServiceChip extends StatelessWidget {
           )
         : colorScheme.surfaceContainerHigh;
 
-    return Expanded(
-      child: Material(
-        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
+    return Material(
+      color: isSelected ? colorScheme.primaryContainer : unselectedColor,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              children: [
-                Icon(
-                  icon,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color: isSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),

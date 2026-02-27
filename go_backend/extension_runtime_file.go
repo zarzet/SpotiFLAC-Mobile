@@ -396,13 +396,14 @@ func (r *ExtensionRuntime) fileCopy(call goja.FunctionCall) goja.Value {
 		})
 	}
 
-	data, err := os.ReadFile(fullSrc)
+	srcFile, err := os.Open(fullSrc)
 	if err != nil {
 		return r.vm.ToValue(map[string]interface{}{
 			"success": false,
 			"error":   fmt.Sprintf("failed to read source: %v", err),
 		})
 	}
+	defer srcFile.Close()
 
 	dir := filepath.Dir(fullDst)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -412,10 +413,26 @@ func (r *ExtensionRuntime) fileCopy(call goja.FunctionCall) goja.Value {
 		})
 	}
 
-	if err := os.WriteFile(fullDst, data, 0644); err != nil {
+	dstFile, err := os.OpenFile(fullDst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
 		return r.vm.ToValue(map[string]interface{}{
 			"success": false,
-			"error":   fmt.Sprintf("failed to write destination: %v", err),
+			"error":   fmt.Sprintf("failed to open destination: %v", err),
+		})
+	}
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		_ = dstFile.Close()
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   fmt.Sprintf("failed to copy file: %v", err),
+		})
+	}
+
+	if err := dstFile.Close(); err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   fmt.Sprintf("failed to finalize destination: %v", err),
 		})
 	}
 

@@ -22,6 +22,7 @@ const (
 
 // Lyrics provider names (used in settings and cascade ordering)
 const (
+	LyricsProviderSpotifyAPI = "spotify_api"
 	LyricsProviderLRCLIB     = "lrclib"
 	LyricsProviderNetease    = "netease"
 	LyricsProviderMusixmatch = "musixmatch"
@@ -33,6 +34,7 @@ const (
 // LRCLIB first (no proxy dependency), then the others.
 var DefaultLyricsProviders = []string{
 	LyricsProviderLRCLIB,
+	LyricsProviderSpotifyAPI,
 	LyricsProviderMusixmatch,
 	LyricsProviderNetease,
 	LyricsProviderAppleMusic,
@@ -43,6 +45,11 @@ var DefaultLyricsProviders = []string{
 var (
 	lyricsProvidersMu sync.RWMutex
 	lyricsProviders   []string // ordered list of enabled providers
+)
+
+var (
+	spotifyLyricsRateLimitMu    sync.RWMutex
+	spotifyLyricsRateLimitedTil time.Time
 )
 
 // LyricsFetchOptions controls optional provider-specific enhancements.
@@ -78,6 +85,7 @@ func SetLyricsProviderOrder(providers []string) {
 
 	// Validate provider names
 	validNames := map[string]bool{
+		LyricsProviderSpotifyAPI: true,
 		LyricsProviderLRCLIB:     true,
 		LyricsProviderNetease:    true,
 		LyricsProviderMusixmatch: true,
@@ -114,6 +122,7 @@ func GetLyricsProviderOrder() []string {
 // GetAvailableLyricsProviders returns metadata about all available providers.
 func GetAvailableLyricsProviders() []map[string]interface{} {
 	return []map[string]interface{}{
+		{"id": LyricsProviderSpotifyAPI, "name": "Spotify Lyrics API", "has_proxy_dependency": true, "description": "Spotify-sourced synced lyrics via community API"},
 		{"id": LyricsProviderLRCLIB, "name": "LRCLIB", "has_proxy_dependency": false, "description": "Open-source synced lyrics database"},
 		{"id": LyricsProviderNetease, "name": "Netease", "has_proxy_dependency": false, "description": "NetEase Cloud Music (good for Asian songs)"},
 		{"id": LyricsProviderMusixmatch, "name": "Musixmatch", "has_proxy_dependency": true, "description": "Largest lyrics database (multi-language)"},
@@ -245,6 +254,18 @@ type LRCLibResponse struct {
 	SyncedLyrics string  `json:"syncedLyrics"`
 }
 
+type SpotifyLyricsLine struct {
+	TimeTag string `json:"timeTag"`
+	Words   string `json:"words"`
+}
+
+type SpotifyLyricsAPIResponse struct {
+	Error    bool                `json:"error"`
+	Message  string              `json:"message"`
+	SyncType string              `json:"syncType"`
+	Lines    []SpotifyLyricsLine `json:"lines"`
+}
+
 type LyricsLine struct {
 	StartTimeMs int64  `json:"startTimeMs"`
 	Words       string `json:"words"`
@@ -352,6 +373,172 @@ func (c *LyricsClient) FetchLyricsFromLRCLibSearch(query string, durationSec flo
 	return c.parseLRCLibResponse(&results[0]), nil
 }
 
+func parseSpotifyLyricsTimeTagToMs(tag string) int64 {
+	raw := strings.TrimSpace(tag)
+	raw = strings.TrimPrefix(raw, "[")
+	raw = strings.TrimSuffix(raw, "]")
+	if raw == "" {
+		return 0
+	}
+
+	if ms, err := strconv.ParseInt(raw, 10, 64); err == nil {
+		return ms
+	}
+
+	re := regexp.MustCompile(`^(\d{1,2}):(\d{2})\.(\d{1,3})$`)
+	matches := re.FindStringSubmatch(raw)
+	if len(matches) != 4 {
+		return 0
+	}
+
+	minutes, _ := strconv.ParseInt(matches[1], 10, 64)
+	seconds, _ := strconv.ParseInt(matches[2], 10, 64)
+	fraction := matches[3]
+	fractionInt, _ := strconv.ParseInt(fraction, 10, 64)
+	if len(fraction) == 2 {
+		fractionInt *= 10
+	} else if len(fraction) == 1 {
+		fractionInt *= 100
+	}
+	return minutes*60*1000 + seconds*1000 + fractionInt
+}
+
+func getSpotifyLyricsRateLimitUntil() time.Time {
+	spotifyLyricsRateLimitMu.RLock()
+	defer spotifyLyricsRateLimitMu.RUnlock()
+	return spotifyLyricsRateLimitedTil
+}
+
+func setSpotifyLyricsRateLimitUntil(until time.Time) {
+	spotifyLyricsRateLimitMu.Lock()
+	spotifyLyricsRateLimitedTil = until
+	spotifyLyricsRateLimitMu.Unlock()
+}
+
+func parseSpotifyRetryAfter(retryAfter string, now time.Time) time.Time {
+	raw := strings.TrimSpace(retryAfter)
+	if raw == "" {
+		return now.Add(10 * time.Minute)
+	}
+
+	if sec, err := strconv.Atoi(raw); err == nil && sec > 0 {
+		return now.Add(time.Duration(sec) * time.Second)
+	}
+
+	if when, err := http.ParseTime(raw); err == nil && when.After(now) {
+		return when
+	}
+
+	return now.Add(10 * time.Minute)
+}
+
+func (c *LyricsClient) FetchLyricsFromSpotifyAPI(spotifyID string) (*LyricsResponse, error) {
+	now := time.Now()
+	if limitedUntil := getSpotifyLyricsRateLimitUntil(); limitedUntil.After(now) {
+		waitFor := int(math.Ceil(limitedUntil.Sub(now).Seconds()))
+		return nil, fmt.Errorf(
+			"Spotify Lyrics API cooldown active (%ds remaining after previous 429)",
+			waitFor,
+		)
+	}
+
+	spotifyID = strings.TrimSpace(spotifyID)
+	if spotifyID == "" {
+		return nil, fmt.Errorf("spotify ID is empty")
+	}
+	if parsed, err := parseSpotifyURI(spotifyID); err == nil && parsed.Type == "track" && parsed.ID != "" {
+		spotifyID = parsed.ID
+	}
+
+	apiURL := fmt.Sprintf("https://spotify-lyrics-api-pi.vercel.app/?trackid=%s&format=lrc", url.QueryEscape(spotifyID))
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", getRandomUserAgent())
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch from Spotify Lyrics API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			retryUntil := parseSpotifyRetryAfter(resp.Header.Get("Retry-After"), now)
+			setSpotifyLyricsRateLimitUntil(retryUntil)
+		}
+		var payload map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err == nil {
+			if msg, ok := payload["message"].(string); ok && strings.TrimSpace(msg) != "" {
+				return nil, fmt.Errorf("Spotify Lyrics API returned status %d: %s", resp.StatusCode, strings.TrimSpace(msg))
+			}
+			if msg, ok := payload["error"].(string); ok && strings.TrimSpace(msg) != "" {
+				return nil, fmt.Errorf("Spotify Lyrics API returned status %d: %s", resp.StatusCode, strings.TrimSpace(msg))
+			}
+		}
+		return nil, fmt.Errorf("Spotify Lyrics API returned status %d", resp.StatusCode)
+	}
+
+	var apiResp SpotifyLyricsAPIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("failed to parse Spotify Lyrics API response: %w", err)
+	}
+
+	if apiResp.Error {
+		msg := strings.TrimSpace(apiResp.Message)
+		if msg == "" {
+			msg = "Spotify Lyrics API returned error"
+		}
+		return nil, fmt.Errorf("%s", msg)
+	}
+
+	result := &LyricsResponse{
+		Lines:        make([]LyricsLine, 0, len(apiResp.Lines)),
+		SyncType:     apiResp.SyncType,
+		Instrumental: false,
+		PlainLyrics:  "",
+		Provider:     "Spotify Lyrics API",
+		Source:       "Spotify Lyrics API",
+	}
+
+	for _, line := range apiResp.Lines {
+		words := strings.TrimSpace(line.Words)
+		if words == "" {
+			continue
+		}
+		startMs := parseSpotifyLyricsTimeTagToMs(line.TimeTag)
+		result.Lines = append(result.Lines, LyricsLine{
+			StartTimeMs: startMs,
+			Words:       words,
+			EndTimeMs:   0,
+		})
+	}
+
+	if len(result.Lines) > 1 {
+		for i := 0; i < len(result.Lines)-1; i++ {
+			nextStart := result.Lines[i+1].StartTimeMs
+			if nextStart > result.Lines[i].StartTimeMs {
+				result.Lines[i].EndTimeMs = nextStart
+			}
+		}
+		last := len(result.Lines) - 1
+		if result.Lines[last].EndTimeMs == 0 {
+			result.Lines[last].EndTimeMs = result.Lines[last].StartTimeMs + 5000
+		}
+	}
+
+	if len(result.Lines) == 0 {
+		return nil, fmt.Errorf("Spotify Lyrics API returned empty lines")
+	}
+
+	if result.SyncType == "" {
+		result.SyncType = "LINE_SYNCED"
+	}
+
+	return result, nil
+}
+
 func (c *LyricsClient) findBestMatch(results []LRCLibResponse, targetDurationSec float64) *LRCLibResponse {
 	var bestSynced *LRCLibResponse
 	var bestPlain *LRCLibResponse
@@ -448,6 +635,9 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 		var err error
 
 		switch providerName {
+		case LyricsProviderSpotifyAPI:
+			lyrics, err = c.FetchLyricsFromSpotifyAPI(spotifyID)
+
 		case LyricsProviderLRCLIB:
 			lyrics, err = c.tryLRCLIB(primaryArtist, artistName, trackName, simplifiedTrack, durationSec)
 

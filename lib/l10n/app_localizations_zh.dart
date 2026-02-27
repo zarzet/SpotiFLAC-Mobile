@@ -249,6 +249,33 @@ class AppLocalizationsZh extends AppLocalizations {
       'Try other services if download fails';
 
   @override
+  String get optionsAutoSkipUnavailableTracks => 'Auto Skip Unavailable Tracks';
+
+  @override
+  String get optionsAutoSkipUnavailableTracksSubtitleOn =>
+      'Automatically skip to the next queue track when a stream cannot be resolved.';
+
+  @override
+  String get optionsAutoSkipUnavailableTracksSubtitleOff =>
+      'Stop on failed track resolution and show an error.';
+
+  @override
+  String get optionsInteractionMode => 'Interaction Mode';
+
+  @override
+  String get modeDownloader => 'Downloader Mode';
+
+  @override
+  String get modeDownloaderSubtitle =>
+      'Tap tracks to add them to download queue';
+
+  @override
+  String get modeStreaming => 'Streaming Mode';
+
+  @override
+  String get modeStreamingSubtitle => 'Tap tracks to play instantly';
+
+  @override
   String get optionsUseExtensionProviders => 'Use Extension Providers';
 
   @override
@@ -1042,6 +1069,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorNoTracksFound => 'No tracks found';
 
   @override
+  String get errorSeekNotSupported =>
+      'Seeking is not supported for this live stream';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Cannot load $item: missing extension source';
   }
@@ -1555,6 +1586,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String downloadAllCount(int count) {
     return 'Download All ($count)';
+  }
+
+  @override
+  String playAllCount(int count) {
+    return 'Play All ($count)';
   }
 
   @override
@@ -2236,7 +2272,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discographyDownload => 'Download Discography';
 
   @override
+  String get discographyPlay => 'Play Discography';
+
+  @override
   String get discographyDownloadAll => 'Download All';
+
+  @override
+  String get discographyPlayAll => 'Play All';
 
   @override
   String discographyDownloadAllSubtitle(int count, int albumCount) {
@@ -2281,6 +2323,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get discographyDownloadSelected => 'Download Selected';
+
+  @override
+  String get discographyPlaySelected => 'Play Selected';
 
   @override
   String discographyAddedToQueue(int count) {
@@ -3180,6 +3225,211 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String selectionBatchConvertSuccess(int success, int total, String format) {
     return 'Converted $success of $total tracks to $format';
+  }
+
+  @override
+  String get setupModeSelectionTitle => '选择您的模式';
+
+  @override
+  String get setupModeSelectionDescription => '您想如何使用 SpotiFLAC？您可以稍后在设置中随时更改。';
+
+  @override
+  String get setupModeDownloaderTitle => '下载器';
+
+  @override
+  String get setupModeDownloaderFeature1 => '以无损 FLAC 品质下载曲目';
+
+  @override
+  String get setupModeDownloaderFeature2 => '将音乐保存到设备以供离线收听';
+
+  @override
+  String get setupModeDownloaderFeature3 => '管理您的本地音乐库';
+
+  @override
+  String get setupModeStreamingTitle => '流媒体';
+
+  @override
+  String get setupModeStreamingFeature1 => '无需下载即可即时播放曲目';
+
+  @override
+  String get setupModeStreamingFeature2 => 'Smart Queue 自动为您发现新音乐';
+
+  @override
+  String get setupModeStreamingFeature3 => '通过播放控件随时点播任意曲目';
+
+  @override
+  String get setupModeChangeableLater => '您可以随时在设置中切换模式。';
+
+  @override
+  String get settingsSmartQueueTitle => 'Smart Queue';
+
+  @override
+  String get settingsSmartQueueSubtitle => '自动发现并将相似曲目添加到您的队列中';
+
+  @override
+  String get whatsNewTitle => 'What\'s New in 4.0';
+
+  @override
+  String get whatsNewSubtitle =>
+      'SpotiFLAC has evolved — here\'s what changed since 3.x';
+
+  @override
+  String get whatsNewWelcomeTitle => 'SpotiFLAC Mobile 4.0';
+
+  @override
+  String get whatsNewWelcomeDesc =>
+      'Welcome back! This is a major update packed with new features. Swipe through to see what\'s changed.';
+
+  @override
+  String get whatsNewWelcomeTip1 => 'New streaming mode with instant playback';
+
+  @override
+  String get whatsNewWelcomeTip2 => 'Redesigned library and full-screen player';
+
+  @override
+  String get whatsNewWelcomeTip3 => 'Batch tools, performance boosts, and more';
+
+  @override
+  String get whatsNewStreamingTitle => 'Streaming Mode';
+
+  @override
+  String get whatsNewStreamingDesc =>
+      'Tap any track to play instantly — no download needed. Full-screen player with synced lyrics and media controls.';
+
+  @override
+  String get whatsNewSmartQueueTitle => 'Smart Queue';
+
+  @override
+  String get whatsNewSmartQueueDesc =>
+      'Your queue auto-curates with related tracks and artist discovery. Never run out of music.';
+
+  @override
+  String get whatsNewDualModeTitle => 'Dual Mode';
+
+  @override
+  String get whatsNewDualModeDesc =>
+      'Switch between Downloader and Streaming modes anytime. All buttons adapt automatically.';
+
+  @override
+  String get whatsNewLibraryTitle => 'Redesigned Library';
+
+  @override
+  String get whatsNewLibraryDesc =>
+      'Playlist-first layout with drag-and-drop categorization, custom covers, and multi-select batch actions.';
+
+  @override
+  String get whatsNewPlayerTitle => 'Full-Screen Player';
+
+  @override
+  String get whatsNewPlayerDesc =>
+      'Cover art parallax, synced lyrics, playback persistence across restarts, and download button in player.';
+
+  @override
+  String get whatsNewContextMenuTitle => 'Long-Press Menus';
+
+  @override
+  String get whatsNewContextMenuDesc =>
+      'Long-press any track for quick actions — add to playlist, share, convert, or re-enrich metadata.';
+
+  @override
+  String get whatsNewPerformanceTitle => 'Performance';
+
+  @override
+  String get whatsNewPerformanceDesc =>
+      'Faster startup, reduced memory usage, SQLite-backed persistence, and granular UI updates.';
+
+  @override
+  String get whatsNewBatchToolsTitle => 'Batch Tools';
+
+  @override
+  String get whatsNewBatchToolsDesc =>
+      'Multi-select share, batch convert to MP3/Opus, and batch re-enrich metadata across your library.';
+
+  @override
+  String get whatsNewStreamingTip1 =>
+      'Tap any track to start playing instantly';
+
+  @override
+  String get whatsNewStreamingTip2 => 'Synced lyrics in the full-screen player';
+
+  @override
+  String get whatsNewStreamingTip3 =>
+      'Download tracks directly from the player';
+
+  @override
+  String get whatsNewSmartQueueTip1 => 'Queue auto-fills with related tracks';
+
+  @override
+  String get whatsNewSmartQueueTip2 => 'Discover new artists as you listen';
+
+  @override
+  String get whatsNewSmartQueueTip3 => 'Never run out of music to play';
+
+  @override
+  String get whatsNewDualModeTip1 => 'Switch modes anytime in Settings';
+
+  @override
+  String get whatsNewDualModeTip2 => 'UI buttons adapt to your current mode';
+
+  @override
+  String get whatsNewDualModeTip3 =>
+      'Download for offline, stream for instant play';
+
+  @override
+  String get whatsNewLibraryTip1 => 'Drag and drop to organize playlists';
+
+  @override
+  String get whatsNewLibraryTip2 => 'Set custom cover images for playlists';
+
+  @override
+  String get whatsNewLibraryTip3 => 'Multi-select tracks for batch actions';
+
+  @override
+  String get whatsNewPlayerTip1 => 'Cover art with parallax scrolling effect';
+
+  @override
+  String get whatsNewPlayerTip2 => 'Playback persists across app restarts';
+
+  @override
+  String get whatsNewPlayerTip3 => 'Synced lyrics while you listen';
+
+  @override
+  String get whatsNewContextMenuTip1 => 'Add tracks to any playlist instantly';
+
+  @override
+  String get whatsNewContextMenuTip2 => 'Share or convert with one tap';
+
+  @override
+  String get whatsNewContextMenuTip3 => 'Re-enrich metadata when needed';
+
+  @override
+  String get whatsNewBatchToolsTip1 => 'Share multiple tracks at once';
+
+  @override
+  String get whatsNewBatchToolsTip2 => 'Batch convert to MP3 or Opus format';
+
+  @override
+  String get whatsNewBatchToolsTip3 => 'Re-enrich metadata across your library';
+
+  @override
+  String get whatsNewPerformanceTip1 => 'Faster app startup time';
+
+  @override
+  String get whatsNewPerformanceTip2 => 'Reduced memory usage during playback';
+
+  @override
+  String get whatsNewPerformanceTip3 => 'SQLite-backed storage for reliability';
+
+  @override
+  String get whatsNewReadyMessage =>
+      'You\'re all set — enjoy the new SpotiFLAC!';
+
+  @override
+  String get whatsNewGetStarted => 'Let\'s Go';
+
+  @override
+  String whatsNewPageIndicator(int current, int total) {
+    return '$current of $total';
   }
 }
 
@@ -6114,6 +6364,45 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get setupModeSelectionTitle => '选择您的模式';
+
+  @override
+  String get setupModeSelectionDescription => '您想如何使用 SpotiFLAC？您可以稍后在设置中随时更改。';
+
+  @override
+  String get setupModeDownloaderTitle => '下载器';
+
+  @override
+  String get setupModeDownloaderFeature1 => '以无损 FLAC 品质下载曲目';
+
+  @override
+  String get setupModeDownloaderFeature2 => '将音乐保存到设备以供离线收听';
+
+  @override
+  String get setupModeDownloaderFeature3 => '管理您的本地音乐库';
+
+  @override
+  String get setupModeStreamingTitle => '流媒体';
+
+  @override
+  String get setupModeStreamingFeature1 => '无需下载即可即时播放曲目';
+
+  @override
+  String get setupModeStreamingFeature2 => 'Smart Queue 自动为您发现新音乐';
+
+  @override
+  String get setupModeStreamingFeature3 => '通过播放控件随时点播任意曲目';
+
+  @override
+  String get setupModeChangeableLater => '您可以随时在设置中切换模式。';
+
+  @override
+  String get settingsSmartQueueTitle => 'Smart Queue';
+
+  @override
+  String get settingsSmartQueueSubtitle => '自动发现并将相似曲目添加到您的队列中';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -9047,4 +9336,43 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get setupModeSelectionTitle => '選擇您的模式';
+
+  @override
+  String get setupModeSelectionDescription => '您想如何使用 SpotiFLAC？您可以稍後在設定中隨時變更。';
+
+  @override
+  String get setupModeDownloaderTitle => '下載器';
+
+  @override
+  String get setupModeDownloaderFeature1 => '以無損 FLAC 品質下載曲目';
+
+  @override
+  String get setupModeDownloaderFeature2 => '將音樂儲存到裝置以供離線收聽';
+
+  @override
+  String get setupModeDownloaderFeature3 => '管理您的本機音樂庫';
+
+  @override
+  String get setupModeStreamingTitle => '串流';
+
+  @override
+  String get setupModeStreamingFeature1 => '無需下載即可即時串流曲目';
+
+  @override
+  String get setupModeStreamingFeature2 => 'Smart Queue 自動為您探索新音樂';
+
+  @override
+  String get setupModeStreamingFeature3 => '透過播放控制項隨時點播任意曲目';
+
+  @override
+  String get setupModeChangeableLater => '您可以隨時在設定中切換模式。';
+
+  @override
+  String get settingsSmartQueueTitle => 'Smart Queue';
+
+  @override
+  String get settingsSmartQueueSubtitle => '自動探索並將相似曲目新增到您的佇列中';
 }

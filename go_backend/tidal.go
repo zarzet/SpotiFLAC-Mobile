@@ -20,18 +20,18 @@ import (
 )
 
 type TidalDownloader struct {
-	client         *http.Client
-	clientID       string
-	clientSecret   string
-	apiURL         string
-	cachedToken    string
-	tokenExpiresAt time.Time
-	tokenMu        sync.Mutex
+	client *http.Client
+	apiURL string
 }
 
 var (
 	globalTidalDownloader *TidalDownloader
 	tidalDownloaderOnce   sync.Once
+)
+
+const (
+	spotifyTrackBaseURL   = "https://open.spotify.com/track/"
+	songLinkLookupBaseURL = "https://api.song.link/v1-alpha.1/links?url="
 )
 
 type TidalTrack struct {
@@ -102,13 +102,8 @@ type MPD struct {
 
 func NewTidalDownloader() *TidalDownloader {
 	tidalDownloaderOnce.Do(func() {
-		clientID, _ := base64.StdEncoding.DecodeString("NkJEU1JkcEs5aHFFQlRnVQ==")
-		clientSecret, _ := base64.StdEncoding.DecodeString("eGV1UG1ZN25icFo5SUliTEFjUTkzc2hrYTFWTmhlVUFxTjZJY3N6alRHOD0=")
-
 		globalTidalDownloader = &TidalDownloader{
-			client:       NewHTTPClientWithTimeout(DefaultTimeout), // 60s timeout
-			clientID:     string(clientID),
-			clientSecret: string(clientSecret),
+			client: NewHTTPClientWithTimeout(DefaultTimeout), // 60s timeout
 		}
 
 		apis := globalTidalDownloader.GetAvailableAPIs()
@@ -120,85 +115,27 @@ func NewTidalDownloader() *TidalDownloader {
 }
 
 func (t *TidalDownloader) GetAvailableAPIs() []string {
-	encodedAPIs := []string{
-		"dGlkYWwtYXBpLmJpbmltdW0ub3Jn",     // tidal-api.binimum.org (priority)
-		"dGlkYWwua2lub3BsdXMub25saW5l",     // tidal.kinoplus.online
-		"dHJpdG9uLnNxdWlkLnd0Zg==",         // triton.squid.wtf
-		"dm9nZWwucXFkbC5zaXRl",             // vogel.qqdl.site
-		"bWF1cy5xcWRsLnNpdGU=",             // maus.qqdl.site
-		"aHVuZC5xcWRsLnNpdGU=",             // hund.qqdl.site
-		"a2F0emUucXFkbC5zaXRl",             // katze.qqdl.site
-		"d29sZi5xcWRsLnNpdGU=",             // wolf.qqdl.site
-		"aGlmaS1vbmUuc3BvdGlzYXZlci5uZXQ=", // hifi-one.spotisaver.net
-		"aGlmaS10d28uc3BvdGlzYXZlci5uZXQ=", // hifi-two.spotisaver.net
+	return []string{
+		"https://tidal-api.binimum.org", // priority
+		"https://tidal.kinoplus.online",
+		"https://triton.squid.wtf",
+		"https://vogel.qqdl.site",
+		"https://maus.qqdl.site",
+		"https://hund.qqdl.site",
+		"https://katze.qqdl.site",
+		"https://wolf.qqdl.site",
+		"https://hifi-one.spotisaver.net",
+		"https://hifi-two.spotisaver.net",
 	}
-
-	var apis []string
-	for _, encoded := range encodedAPIs {
-		decoded, err := base64.StdEncoding.DecodeString(encoded)
-		if err != nil {
-			continue
-		}
-		apis = append(apis, "https://"+string(decoded))
-	}
-
-	return apis
 }
 
 func (t *TidalDownloader) GetAccessToken() (string, error) {
-	t.tokenMu.Lock()
-	defer t.tokenMu.Unlock()
-
-	if t.cachedToken != "" && time.Now().Add(60*time.Second).Before(t.tokenExpiresAt) {
-		return t.cachedToken, nil
-	}
-
-	data := fmt.Sprintf("client_id=%s&grant_type=client_credentials", t.clientID)
-
-	authURL, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hdXRoLnRpZGFsLmNvbS92MS9vYXV0aDIvdG9rZW4=")
-	req, err := http.NewRequest("POST", string(authURL), strings.NewReader(data))
-	if err != nil {
-		return "", err
-	}
-
-	req.SetBasicAuth(t.clientID, t.clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := DoRequestWithUserAgent(t.client, req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get access token: HTTP %d", resp.StatusCode)
-	}
-
-	var result struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-
-	t.cachedToken = result.AccessToken
-	if result.ExpiresIn > 0 {
-		t.tokenExpiresAt = time.Now().Add(time.Duration(result.ExpiresIn) * time.Second)
-	} else {
-		t.tokenExpiresAt = time.Now().Add(55 * time.Minute) // Default 55 min
-	}
-
-	return result.AccessToken, nil
+	return "", fmt.Errorf("tidal official metadata API disabled: no client credentials mode")
 }
 
 func (t *TidalDownloader) GetTidalURLFromSpotify(spotifyTrackID string) (string, error) {
-	spotifyBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9vcGVuLnNwb3RpZnkuY29tL3RyYWNrLw==")
-	spotifyURL := fmt.Sprintf("%s%s", string(spotifyBase), spotifyTrackID)
-
-	apiBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkuc29uZy5saW5rL3YxLWFscGhhLjEvbGlua3M/dXJsPQ==")
-	apiURL := fmt.Sprintf("%s%s", string(apiBase), url.QueryEscape(spotifyURL))
+	spotifyURL := fmt.Sprintf("%s%s", spotifyTrackBaseURL, spotifyTrackID)
+	apiURL := fmt.Sprintf("%s%s", songLinkLookupBaseURL, url.QueryEscape(spotifyURL))
 
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
@@ -251,321 +188,20 @@ func (t *TidalDownloader) GetTrackIDFromURL(tidalURL string) (int64, error) {
 }
 
 func (t *TidalDownloader) GetTrackInfoByID(trackID int64) (*TidalTrack, error) {
-	token, err := t.GetAccessToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get access token: %w", err)
-	}
-
-	trackBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkudGlkYWwuY29tL3YxL3RyYWNrcy8=")
-	trackURL := fmt.Sprintf("%s%d?countryCode=US", string(trackBase), trackID)
-
-	req, err := http.NewRequest("GET", trackURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := DoRequestWithUserAgent(t.client, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to get track info: HTTP %d", resp.StatusCode)
-	}
-
-	var trackInfo TidalTrack
-	if err := json.NewDecoder(resp.Body).Decode(&trackInfo); err != nil {
-		return nil, err
-	}
-
-	return &trackInfo, nil
+	return nil, fmt.Errorf("tidal track lookup API disabled: no client credentials mode")
 }
 
 func (t *TidalDownloader) SearchTrackByISRC(isrc string) (*TidalTrack, error) {
-	token, err := t.GetAccessToken()
-	if err != nil {
-		return nil, err
-	}
-
-	searchBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkudGlkYWwuY29tL3YxL3NlYXJjaC90cmFja3M/cXVlcnk9")
-	searchURL := fmt.Sprintf("%s%s&limit=50&countryCode=US", string(searchBase), url.QueryEscape(isrc))
-
-	req, err := http.NewRequest("GET", searchURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	resp, err := DoRequestWithUserAgent(t.client, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("search failed: HTTP %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Items []TidalTrack `json:"items"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	for i := range result.Items {
-		if result.Items[i].ISRC == isrc {
-			return &result.Items[i], nil
-		}
-	}
-
-	if len(result.Items) == 0 {
-		return nil, fmt.Errorf("no tracks found for ISRC: %s", isrc)
-	}
-
-	return nil, fmt.Errorf("no exact ISRC match found for: %s", isrc)
+	return nil, fmt.Errorf("tidal ISRC search API disabled: no client credentials mode")
 }
 
 // Now includes romaji conversion for Japanese text (4 search strategies like PC)
-func (t *TidalDownloader) SearchTrackByMetadataWithISRC(trackName, artistName, spotifyISRC string, expectedDuration int) (*TidalTrack, error) {
-	token, err := t.GetAccessToken()
-	if err != nil {
-		return nil, err
-	}
-
-	// Build search queries - multiple strategies (same as PC version)
-	queries := []string{}
-
-	if artistName != "" && trackName != "" {
-		queries = append(queries, artistName+" "+trackName)
-	}
-
-	if trackName != "" {
-		queries = append(queries, trackName)
-	}
-
-	if ContainsJapanese(trackName) || ContainsJapanese(artistName) {
-		romajiTrack := JapaneseToRomaji(trackName)
-		romajiArtist := JapaneseToRomaji(artistName)
-
-		cleanRomajiTrack := CleanToASCII(romajiTrack)
-		cleanRomajiArtist := CleanToASCII(romajiArtist)
-
-		if cleanRomajiArtist != "" && cleanRomajiTrack != "" {
-			romajiQuery := cleanRomajiArtist + " " + cleanRomajiTrack
-			if !containsQuery(queries, romajiQuery) {
-				queries = append(queries, romajiQuery)
-				GoLog("[Tidal] Japanese detected, adding romaji query: %s\n", romajiQuery)
-			}
-		}
-
-		if cleanRomajiTrack != "" && cleanRomajiTrack != trackName {
-			if !containsQuery(queries, cleanRomajiTrack) {
-				queries = append(queries, cleanRomajiTrack)
-			}
-		}
-
-		if artistName != "" && cleanRomajiTrack != "" {
-			partialQuery := artistName + " " + cleanRomajiTrack
-			if !containsQuery(queries, partialQuery) {
-				queries = append(queries, partialQuery)
-			}
-		}
-	}
-
-	if artistName != "" {
-		artistOnly := CleanToASCII(JapaneseToRomaji(artistName))
-		if artistOnly != "" && !containsQuery(queries, artistOnly) {
-			queries = append(queries, artistOnly)
-		}
-	}
-
-	searchBase, _ := base64.StdEncoding.DecodeString("aHR0cHM6Ly9hcGkudGlkYWwuY29tL3YxL3NlYXJjaC90cmFja3M/cXVlcnk9")
-
-	var allTracks []TidalTrack
-	searchedQueries := make(map[string]bool)
-
-	for _, query := range queries {
-		cleanQuery := strings.TrimSpace(query)
-		if cleanQuery == "" || searchedQueries[cleanQuery] {
-			continue
-		}
-		searchedQueries[cleanQuery] = true
-
-		GoLog("[Tidal] Searching for: %s\n", cleanQuery)
-
-		searchURL := fmt.Sprintf("%s%s&limit=100&countryCode=US", string(searchBase), url.QueryEscape(cleanQuery))
-
-		req, err := http.NewRequest("GET", searchURL, nil)
-		if err != nil {
-			continue
-		}
-
-		req.Header.Set("Authorization", "Bearer "+token)
-
-		resp, err := DoRequestWithUserAgent(t.client, req)
-		if err != nil {
-			GoLog("[Tidal] Search error for '%s': %v\n", cleanQuery, err)
-			continue
-		}
-
-		if resp.StatusCode != 200 {
-			resp.Body.Close()
-			continue
-		}
-
-		var result struct {
-			Items []TidalTrack `json:"items"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			resp.Body.Close()
-			continue
-		}
-		resp.Body.Close()
-
-		if len(result.Items) > 0 {
-			GoLog("[Tidal] Found %d results for '%s'\n", len(result.Items), cleanQuery)
-
-			if spotifyISRC != "" {
-				for i := range result.Items {
-					if result.Items[i].ISRC == spotifyISRC {
-						track := &result.Items[i]
-						if expectedDuration > 0 {
-							durationDiff := track.Duration - expectedDuration
-							if durationDiff < 0 {
-								durationDiff = -durationDiff
-							}
-							if durationDiff <= 3 {
-								GoLog("[Tidal] ISRC match: '%s' (duration verified)\n", track.Title)
-								return track, nil
-							}
-							GoLog("[Tidal] ISRC match but duration mismatch (expected %ds, got %ds), continuing...\n",
-								expectedDuration, track.Duration)
-						} else {
-							GoLog("[Tidal] ISRC match: '%s'\n", track.Title)
-							return track, nil
-						}
-					}
-				}
-			}
-
-			allTracks = append(allTracks, result.Items...)
-		}
-	}
-
-	if len(allTracks) == 0 {
-		return nil, fmt.Errorf("no tracks found for any search query")
-	}
-
-	if spotifyISRC != "" {
-		GoLog("[Tidal] Looking for ISRC match: %s\n", spotifyISRC)
-		var isrcMatches []*TidalTrack
-		for i := range allTracks {
-			track := &allTracks[i]
-			if track.ISRC == spotifyISRC {
-				isrcMatches = append(isrcMatches, track)
-			}
-		}
-
-		if len(isrcMatches) > 0 {
-			if expectedDuration > 0 {
-				var durationVerifiedMatches []*TidalTrack
-				for _, track := range isrcMatches {
-					durationDiff := track.Duration - expectedDuration
-					if durationDiff < 0 {
-						durationDiff = -durationDiff
-					}
-					if durationDiff <= 3 {
-						durationVerifiedMatches = append(durationVerifiedMatches, track)
-					}
-				}
-
-				if len(durationVerifiedMatches) > 0 {
-					GoLog("[Tidal] ISRC match with duration verification: '%s' (expected %ds, found %ds)\n",
-						durationVerifiedMatches[0].Title, expectedDuration, durationVerifiedMatches[0].Duration)
-					return durationVerifiedMatches[0], nil
-				}
-
-				GoLog("[Tidal] WARNING: ISRC %s found but duration mismatch. Expected=%ds, Found=%ds. Rejecting.\n",
-					spotifyISRC, expectedDuration, isrcMatches[0].Duration)
-				return nil, fmt.Errorf("ISRC found but duration mismatch: expected %ds, found %ds (likely different version/edit)",
-					expectedDuration, isrcMatches[0].Duration)
-			}
-
-			GoLog("[Tidal] ISRC match (no duration verification): '%s'\n", isrcMatches[0].Title)
-			return isrcMatches[0], nil
-		}
-
-		GoLog("[Tidal] No ISRC match found for: %s\n", spotifyISRC)
-		return nil, fmt.Errorf("ISRC mismatch: no track found with ISRC %s on Tidal", spotifyISRC)
-	}
-
-	if expectedDuration > 0 {
-		tolerance := 3 // 3 seconds tolerance
-		var durationMatches []*TidalTrack
-
-		for i := range allTracks {
-			track := &allTracks[i]
-			durationDiff := track.Duration - expectedDuration
-			if durationDiff < 0 {
-				durationDiff = -durationDiff
-			}
-			if durationDiff <= tolerance {
-				durationMatches = append(durationMatches, track)
-			}
-		}
-
-		if len(durationMatches) > 0 {
-			bestMatch := durationMatches[0]
-			for _, track := range durationMatches {
-				for _, tag := range track.MediaMetadata.Tags {
-					if tag == "HIRES_LOSSLESS" {
-						bestMatch = track
-						break
-					}
-				}
-			}
-			GoLog("[Tidal] Found via duration match: %s - %s (%s)\n",
-				bestMatch.Artist.Name, bestMatch.Title, bestMatch.AudioQuality)
-			return bestMatch, nil
-		}
-	}
-
-	bestMatch := &allTracks[0]
-	for i := range allTracks {
-		track := &allTracks[i]
-		for _, tag := range track.MediaMetadata.Tags {
-			if tag == "HIRES_LOSSLESS" {
-				bestMatch = track
-				break
-			}
-		}
-		if bestMatch != &allTracks[0] {
-			break
-		}
-	}
-
-	GoLog("[Tidal] Found via search (no ISRC provided): %s - %s (ISRC: %s, Quality: %s)\n",
-		bestMatch.Artist.Name, bestMatch.Title, bestMatch.ISRC, bestMatch.AudioQuality)
-
-	return bestMatch, nil
-}
-
-func containsQuery(queries []string, query string) bool {
-	for _, q := range queries {
-		if q == query {
-			return true
-		}
-	}
-	return false
+func (t *TidalDownloader) SearchTrackByMetadataWithISRC(trackName, artistName, albumName, spotifyISRC string, expectedDuration int) (*TidalTrack, error) {
+	return nil, fmt.Errorf("tidal metadata search API disabled: no client credentials mode")
 }
 
 func (t *TidalDownloader) SearchTrackByMetadata(trackName, artistName string) (*TidalTrack, error) {
-	return t.SearchTrackByMetadataWithISRC(trackName, artistName, "", 0)
+	return nil, fmt.Errorf("tidal metadata search API disabled: no client credentials mode")
 }
 
 // TidalDownloadInfo contains download URL and quality info
@@ -1300,13 +936,19 @@ func titlesMatch(expectedTitle, foundTitle string) bool {
 		}
 	}
 
-	// Some tracks are symbol/emoji-heavy and providers can return textual
-	// aliases. If artist/duration already matched upstream, avoid false rejects.
+	// Emoji/symbol-only titles must be matched strictly to avoid false positives
+	// like mapping "🪐" to "Higher Power".
 	if (!hasAlphaNumericRunes(expectedTitle) || !hasAlphaNumericRunes(foundTitle)) &&
 		strings.TrimSpace(expectedTitle) != "" &&
 		strings.TrimSpace(foundTitle) != "" {
-		GoLog("[Tidal] Symbol-heavy title detected, relaxing match: '%s' vs '%s'\n", expectedTitle, foundTitle)
-		return true
+		expectedSymbols := normalizeSymbolOnlyTitle(expectedTitle)
+		foundSymbols := normalizeSymbolOnlyTitle(foundTitle)
+		if expectedSymbols != "" && foundSymbols != "" && expectedSymbols == foundSymbols {
+			GoLog("[Tidal] Symbol-heavy title matched strictly: '%s' vs '%s'\n", expectedTitle, foundTitle)
+			return true
+		}
+		GoLog("[Tidal] Symbol-heavy title mismatch: '%s' vs '%s'\n", expectedTitle, foundTitle)
+		return false
 	}
 
 	expectedLatin := isLatinScript(expectedTitle)
@@ -1426,182 +1068,9 @@ func isLatinScript(s string) bool {
 	return true
 }
 
-func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
-	downloader := NewTidalDownloader()
-
-	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
-	if !isSafOutput {
-		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
-			return TidalDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
-		}
-	}
-
-	expectedDurationSec := req.DurationMS / 1000
-
-	var track *TidalTrack
-	var err error
-
-	if req.TidalID != "" {
-		GoLog("[Tidal] Using Tidal ID from Odesli enrichment: %s\n", req.TidalID)
-		var trackID int64
-		if _, parseErr := fmt.Sscanf(req.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
-			track, err = downloader.GetTrackInfoByID(trackID)
-			if err != nil {
-				GoLog("[Tidal] Failed to get track by Odesli ID %d: %v\n", trackID, err)
-				track = nil
-			} else if track != nil {
-				GoLog("[Tidal] Successfully found track via Odesli ID: '%s' by '%s'\n", track.Title, track.Artist.Name)
-			}
-		}
-	}
-
-	if track == nil && req.ISRC != "" {
-		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.TidalTrackID > 0 {
-			GoLog("[Tidal] Cache hit! Using cached track ID: %d\n", cached.TidalTrackID)
-			track, err = downloader.GetTrackInfoByID(cached.TidalTrackID)
-			if err != nil {
-				GoLog("[Tidal] Cache hit but failed to get track info: %v\n", err)
-				track = nil // Fall through to normal search
-			}
-		}
-	}
-
-	if track == nil && req.ISRC != "" {
-		GoLog("[Tidal] Trying ISRC search: %s\n", req.ISRC)
-		track, err = downloader.SearchTrackByMetadataWithISRC(req.TrackName, req.ArtistName, req.ISRC, expectedDurationSec)
-		if track != nil {
-			// Verify artist only (ISRC match is already accurate)
-			tidalArtist := track.Artist.Name
-			if len(track.Artists) > 0 {
-				var artistNames []string
-				for _, a := range track.Artists {
-					artistNames = append(artistNames, a.Name)
-				}
-				tidalArtist = strings.Join(artistNames, ", ")
-			}
-			if !artistsMatch(req.ArtistName, tidalArtist) {
-				GoLog("[Tidal] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, tidalArtist)
-				track = nil
-			}
-		}
-	}
-
-	if track == nil && req.SpotifyID != "" {
-		GoLog("[Tidal] ISRC search failed, trying SongLink...\n")
-
-		var trackID int64
-		var gotTidalID bool
-
-		if strings.HasPrefix(req.SpotifyID, "deezer:") {
-			deezerID := strings.TrimPrefix(req.SpotifyID, "deezer:")
-			GoLog("[Tidal] Using Deezer ID for SongLink lookup: %s\n", deezerID)
-			songlink := NewSongLinkClient()
-			availability, slErr := songlink.CheckAvailabilityFromDeezer(deezerID)
-			if slErr == nil && availability != nil && availability.TidalID != "" {
-				if _, parseErr := fmt.Sscanf(availability.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d directly from SongLink\n", trackID)
-					gotTidalID = true
-				}
-			}
-			// Fallback to URL parsing if TidalID not in struct
-			if !gotTidalID && availability != nil && availability.TidalURL != "" {
-				var idErr error
-				trackID, idErr = downloader.GetTrackIDFromURL(availability.TidalURL)
-				if idErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d from URL parsing\n", trackID)
-					gotTidalID = true
-				}
-			}
-		} else {
-			songlink := NewSongLinkClient()
-			availability, slErr := songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
-			if slErr == nil && availability != nil && availability.TidalID != "" {
-				if _, parseErr := fmt.Sscanf(availability.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d directly from SongLink\n", trackID)
-					gotTidalID = true
-				}
-			}
-			// Fallback to URL parsing if TidalID not in struct
-			if !gotTidalID && availability != nil && availability.TidalURL != "" {
-				var idErr error
-				trackID, idErr = downloader.GetTrackIDFromURL(availability.TidalURL)
-				if idErr == nil && trackID > 0 {
-					GoLog("[Tidal] Got Tidal ID %d from URL parsing\n", trackID)
-					gotTidalID = true
-				}
-			}
-		}
-
-		if gotTidalID && trackID > 0 {
-			track, err = downloader.GetTrackInfoByID(trackID)
-			if track != nil {
-				tidalArtist := track.Artist.Name
-				if len(track.Artists) > 0 {
-					var artistNames []string
-					for _, a := range track.Artists {
-						artistNames = append(artistNames, a.Name)
-					}
-					tidalArtist = strings.Join(artistNames, ", ")
-				}
-
-				if !artistsMatch(req.ArtistName, tidalArtist) {
-					GoLog("[Tidal] Artist mismatch from SongLink: expected '%s', got '%s'. Rejecting.\n",
-						req.ArtistName, tidalArtist)
-					track = nil
-				}
-
-				if track != nil && expectedDurationSec > 0 {
-					durationDiff := track.Duration - expectedDurationSec
-					if durationDiff < 0 {
-						durationDiff = -durationDiff
-					}
-					if durationDiff > 3 {
-						GoLog("[Tidal] Duration mismatch from SongLink: expected %ds, got %ds. Rejecting.\n",
-							expectedDurationSec, track.Duration)
-						track = nil // Reject this match
-					}
-				}
-
-				// Cache for future use
-				if track != nil && req.ISRC != "" {
-					GetTrackIDCache().SetTidal(req.ISRC, track.ID)
-				}
-			}
-		}
-	}
-
+func tidalTrackArtistsDisplay(track *TidalTrack) string {
 	if track == nil {
-		GoLog("[Tidal] Trying metadata search as last resort...\n")
-		track, err = downloader.SearchTrackByMetadataWithISRC(req.TrackName, req.ArtistName, "", expectedDurationSec)
-		if track != nil {
-			tidalArtist := track.Artist.Name
-			if len(track.Artists) > 0 {
-				var artistNames []string
-				for _, a := range track.Artists {
-					artistNames = append(artistNames, a.Name)
-				}
-				tidalArtist = strings.Join(artistNames, ", ")
-			}
-
-			if !titlesMatch(req.TrackName, track.Title) {
-				GoLog("[Tidal] Title mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-					req.TrackName, track.Title)
-				track = nil
-			} else if !artistsMatch(req.ArtistName, tidalArtist) {
-				GoLog("[Tidal] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-					req.ArtistName, tidalArtist)
-				track = nil
-			}
-		}
-	}
-
-	if track == nil {
-		errMsg := "could not find matching track on Tidal (artist/duration mismatch)"
-		if err != nil {
-			errMsg = err.Error()
-		}
-		return TidalDownloadResult{}, fmt.Errorf("tidal search failed: %s", errMsg)
+		return ""
 	}
 
 	tidalArtist := track.Artist.Name
@@ -1612,10 +1081,130 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		}
 		tidalArtist = strings.Join(artistNames, ", ")
 	}
-	GoLog("[Tidal] Match found: '%s' by '%s' (duration: %ds)\n", track.Title, tidalArtist, track.Duration)
+	return tidalArtist
+}
+
+func resolveTidalTrackForRequest(req DownloadRequest, downloader *TidalDownloader, logPrefix string) (*TidalTrack, error) {
+	if downloader == nil {
+		downloader = NewTidalDownloader()
+	}
+	if strings.TrimSpace(logPrefix) == "" {
+		logPrefix = "Tidal"
+	}
+
+	expectedDurationSec := req.DurationMS / 1000
+	var trackID int64
+	var gotTidalID bool
+
+	if req.TidalID != "" {
+		GoLog("[%s] Using Tidal ID from Odesli enrichment: %s\n", logPrefix, req.TidalID)
+		if _, parseErr := fmt.Sscanf(req.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
+			gotTidalID = true
+		}
+	}
+
+	if !gotTidalID && req.ISRC != "" {
+		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.TidalTrackID > 0 {
+			GoLog("[%s] Cache hit! Using cached track ID: %d\n", logPrefix, cached.TidalTrackID)
+			trackID = cached.TidalTrackID
+			gotTidalID = true
+		}
+	}
+
+	if !gotTidalID && (req.SpotifyID != "" || req.DeezerID != "") {
+		GoLog("[%s] Trying SongLink for Tidal ID...\n", logPrefix)
+
+		resolveFromAvailability := func(availability *TrackAvailability) {
+			if availability == nil || gotTidalID {
+				return
+			}
+			if availability.TidalID != "" {
+				if _, parseErr := fmt.Sscanf(availability.TidalID, "%d", &trackID); parseErr == nil && trackID > 0 {
+					GoLog("[%s] Got Tidal ID %d directly from SongLink\n", logPrefix, trackID)
+					gotTidalID = true
+					return
+				}
+			}
+			if availability.TidalURL != "" {
+				var idErr error
+				trackID, idErr = downloader.GetTrackIDFromURL(availability.TidalURL)
+				if idErr == nil && trackID > 0 {
+					GoLog("[%s] Got Tidal ID %d from URL parsing\n", logPrefix, trackID)
+					gotTidalID = true
+				}
+			}
+		}
+
+		// Prefer Deezer-based SongLink lookup when DeezerID is available.
+		if req.DeezerID != "" {
+			GoLog("[%s] Using Deezer ID for SongLink lookup: %s\n", logPrefix, req.DeezerID)
+			songlink := NewSongLinkClient()
+			availability, slErr := songlink.CheckAvailabilityFromDeezer(req.DeezerID)
+			if slErr == nil {
+				resolveFromAvailability(availability)
+			} else {
+				GoLog("[%s] SongLink Deezer lookup failed: %v\n", logPrefix, slErr)
+			}
+		}
+
+		if !gotTidalID && req.SpotifyID != "" {
+			if strings.HasPrefix(req.SpotifyID, "deezer:") {
+				deezerID := strings.TrimPrefix(req.SpotifyID, "deezer:")
+				GoLog("[%s] Using Deezer ID for SongLink lookup: %s\n", logPrefix, deezerID)
+				songlink := NewSongLinkClient()
+				availability, slErr := songlink.CheckAvailabilityFromDeezer(deezerID)
+				if slErr == nil {
+					resolveFromAvailability(availability)
+				} else {
+					GoLog("[%s] SongLink Deezer lookup failed: %v\n", logPrefix, slErr)
+				}
+			}
+		}
+
+		if !gotTidalID && req.SpotifyID != "" && !strings.HasPrefix(req.SpotifyID, "deezer:") {
+			songlink := NewSongLinkClient()
+			availability, slErr := songlink.CheckTrackAvailability(req.SpotifyID, req.ISRC)
+			if slErr == nil {
+				resolveFromAvailability(availability)
+			}
+		}
+	}
+
+	if !gotTidalID || trackID <= 0 {
+		return nil, fmt.Errorf("failed to find tidal track id from request/cache/songlink")
+	}
+
+	track := &TidalTrack{
+		ID:           trackID,
+		Title:        strings.TrimSpace(req.TrackName),
+		ISRC:         strings.TrimSpace(req.ISRC),
+		Duration:     expectedDurationSec,
+		TrackNumber:  req.TrackNumber,
+		VolumeNumber: req.DiscNumber,
+	}
+	track.Artist.Name = strings.TrimSpace(req.ArtistName)
+	track.Album.Title = strings.TrimSpace(req.AlbumName)
+	track.Album.ReleaseDate = strings.TrimSpace(req.ReleaseDate)
 
 	if req.ISRC != "" {
-		GetTrackIDCache().SetTidal(req.ISRC, track.ID)
+		GetTrackIDCache().SetTidal(req.ISRC, trackID)
+	}
+	return track, nil
+}
+
+func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
+	downloader := NewTidalDownloader()
+
+	isSafOutput := isFDOutput(req.OutputFD) || strings.TrimSpace(req.OutputPath) != ""
+	if !isSafOutput {
+		if existingFile, exists := checkISRCExistsInternal(req.OutputDir, req.ISRC); exists {
+			return TidalDownloadResult{FilePath: "EXISTS:" + existingFile}, nil
+		}
+	}
+
+	track, err := resolveTidalTrackForRequest(req, downloader, "Tidal")
+	if err != nil {
+		return TidalDownloadResult{}, err
 	}
 
 	quality := req.Quality
@@ -1694,13 +1283,19 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	parallelDone := make(chan struct{})
 	go func() {
 		defer close(parallelDone)
+		coverURL := req.CoverURL
+		embedLyrics := req.EmbedLyrics
+		if !req.EmbedMetadata {
+			coverURL = ""
+			embedLyrics = false
+		}
 		parallelResult = FetchCoverAndLyricsParallel(
-			req.CoverURL,
+			coverURL,
 			req.EmbedMaxQualityCover,
 			req.SpotifyID,
 			req.TrackName,
 			req.ArtistName,
-			req.EmbedLyrics,
+			embedLyrics,
 			int64(req.DurationMS),
 		)
 	}()
@@ -1784,11 +1379,15 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	}
 
 	if (isSafOutput && actualExt == ".flac") || (!isSafOutput && strings.HasSuffix(actualOutputPath, ".flac")) {
-		if err := EmbedMetadataWithCoverData(actualOutputPath, metadata, coverData); err != nil {
-			fmt.Printf("Warning: failed to embed metadata: %v\n", err)
+		if req.EmbedMetadata {
+			if err := EmbedMetadataWithCoverData(actualOutputPath, metadata, coverData); err != nil {
+				fmt.Printf("Warning: failed to embed metadata: %v\n", err)
+			}
+		} else {
+			GoLog("[Tidal] Metadata embedding disabled by settings, skipping FLAC metadata/lyrics embedding\n")
 		}
 
-		if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+		if req.EmbedMetadata && req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
 			lyricsMode := req.LyricsMode
 			if lyricsMode == "" {
 				lyricsMode = "embed"
@@ -1811,14 +1410,14 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 					fmt.Println("[Tidal] Lyrics embedded successfully")
 				}
 			}
-		} else if req.EmbedLyrics {
+		} else if req.EmbedMetadata && req.EmbedLyrics {
 			fmt.Println("[Tidal] No lyrics available from parallel fetch")
 		}
 	} else if (isSafOutput && actualExt == ".m4a") || (!isSafOutput && strings.HasSuffix(actualOutputPath, ".m4a")) {
 		if quality == "HIGH" {
 			GoLog("[Tidal] HIGH quality M4A - skipping metadata embedding (file from server is already valid)\n")
 
-			if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+			if req.EmbedMetadata && req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
 				lyricsMode := req.LyricsMode
 				if lyricsMode == "" {
 					lyricsMode = "embed"
@@ -1849,7 +1448,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		bitDepth = 0
 		sampleRate = 44100
 	}
-	if req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
+	if req.EmbedMetadata && req.EmbedLyrics && parallelResult != nil && parallelResult.LyricsLRC != "" {
 		lyricsLRC = parallelResult.LyricsLRC
 	}
 

@@ -1,5 +1,104 @@
 # Changelog
 
+## [4.0.1] - 2026-02-26
+
+### Added
+- **Clickable Metadata Navigation**: Added reusable `ClickableArtistName` and `ClickableAlbumName`
+- **Love Action in Media Notification**: Added custom notification action (`toggle_love`) with new Android favorite/favorite-border status icons
+
+### Changed
+
+- **Track Metadata Model Expansion**: `Track` now carries `artistId` and `albumId`, propagated across search, queue, playback, CSV import, and extension mapping flows
+- **Full-Screen Player UX**: Top bar now supports swipe-down dismiss; artist/album text is now tappable; and in-player love toggle is available next to track metadata
+- **Playlist Picker Flow Refactor**: Reworked playlist picker sheet into stateful multi-select flow with explicit Done action and improved create-playlist handling
+- **CSV Import Interaction Flow**: Added single-flight import guard, more reliable progress dialog lifecycle, and safer local navigator usage
+- **Amazon API**: Amazon metadata fetch `amzn.afkarxyz.fun`
+- **Qobuz URL Resolution Strategy**: Removed legacy/Jumo fallback path; now uses standard API pool (deeb)
+- **Update Checker Asset Targeting**: Update selection now prioritizes arm64/universal assets only
+- **Donate Page Supporters**: Updated highlighted donor/supporter list entries
+
+### Fixed
+
+- **FLAC External Lyrics Output**: External `.lrc` writing now works consistently for lyrics mode `external`/`both`, with SAF conversion paths avoiding duplicate writes
+- **Loved-State Notification Sync**: Playback notification controls now refresh correctly when loved state changes
+- **Queue Selection Touch Handling**: Selection overlays/check indicators no longer block tap gestures in queue and playlist selection modes
+- **Vorbis-to-ID3 Tag Mapping Robustness**: FFmpeg metadata conversion now normalizes keys and handles aliases like `TRCK` and `TPOS`
+- **Nested Dialog Navigation Safety**: Adjusted dialog navigator scope in CSV import and track-delete flows to prevent navigator mismatch issues
+- **Artist/Album Routing Reliability**: Track metadata routing now reuses resolved artist/album IDs across album/artist/home/search/queue/player surfaces
+- **Release Workflow Go Toolchain**: Pinned CI release workflow Go version to `1.25.7` for consistent build behavior
+
+---
+
+## [4.0.0] - 2026-02-22
+
+> **Major update warning:** This release introduces a large streaming-focused refactor and broad cross-app behavior changes.
+>
+> **Diff scope (`cdc583678558223ecbb552176b53727d303ae218..HEAD`):** 121 files changed, 28,354 insertions(+), 4,598 deletions(-).
+
+### Added
+
+- **End-to-End Streaming Mode**: Full streaming playback flow with full-screen player, synced lyrics, media controls, and queue-aware tap behavior across album, artist, playlist, home, and search screens
+- **Smart Queue System**: ML-based queue auto-curation with related artist discovery, plus a dedicated playback queue view
+- **DASH Streaming Pipeline**: Native DASH manifest playback support with local proxy integration and FFmpeg tunnel fallback for unsupported paths
+- **Playback State Persistence**: Player state and queue continuity restored across app restarts
+- **Adaptive Playback Engine**: EventChannel-driven playback/progress updates (replacing polling) and adaptive prefetch behavior
+- **Queue Reliability Controls**: New auto-skip unavailable tracks option during queue playback
+- **Player Quick Action**: New download button in full-screen player top bar
+- **Metadata Control**: New global master switch for embed metadata behavior
+- **Setup Flow Update**: Initial setup now prioritizes mode selection instead of Spotify API setup
+- **Library Workflow Expansion**: Playlist-first library redesign, drag-and-drop categorization, folder multi-select, and batch playlist picker flows
+- **SongLink Region Setting**: Region selection support for metadata/linking behavior
+- **Track Interaction UX**: Long-press context menus for track actions across major collection screens
+- **Batch Tools**: Multi-select share, batch convert, and batch re-enrich improvements for downloaded/local/queue workflows
+
+### Changed
+
+- **Global Mode-Driven Actions**: Interaction mode now drives behavior app-wide (download-oriented vs streaming-oriented actions)
+- **UI Redesign and Responsiveness**: Full-screen cover/parallax rollout and responsive fixes for filter sheets and full-screen player in small screens/landscape
+- **Performance Optimizations**: Granular Riverpod consumers, selective provider watching, computation caching, debounced extension storage writes, and lifecycle cleanups
+- **Lyrics Loading Strategy**: Lyrics are now lazy-loaded only when the lyrics view is visible
+- **Persistence Backend Refactor**: Core persistence paths migrated to SQLite-backed stores for app state and library collections
+- **Shared Code Refactor**: Duplicated logic extracted into shared Dart/Go utilities for cleaner boundaries and maintainability
+
+### Fixed
+
+- **iOS Build Compatibility**: Resolved `RepeatMode` naming collision with Flutter SDK symbols
+- **Playback Completion Handling**: Fixed track completion restart issues and queue-end completion synchronization
+- **Streaming Stability**: Added guards for playback race conditions during queue/stream state transitions
+- **Provider I/O Safety**: Improved Android/Go file descriptor handling for SAF-based outputs
+- **Metadata Matching Robustness**: Improved title matching with strict emoji handling and name+artist fallback lookup behavior
+- **Navigation Behavior**: Back button now exits app correctly instead of unexpectedly returning to home
+
+---
+
+## [4.0.0] - 2026-02-22
+
+### Added
+
+- **Interaction Mode Setting**: New "Interaction Mode" toggle in Options settings to switch between Downloader Mode (tap to queue downloads) and Streaming Mode (tap to play instantly)
+  - Affects album, artist discography, playlist, home explore, and search screens
+  - All action buttons (Download All, Download Selected, Download Discography) dynamically switch to Play equivalents when in Streaming Mode
+- **Streaming Playback Integration**: Tapping tracks in Streaming Mode plays them via `playTrackStreamAndSetQueue` with full queue support across all collection screens (album, artist, playlist, home, search)
+- **Long-Press Track Context Menus**: Added `onLongPress` handler on track items across album, artist, home, playlist, and search screens to open the track options bottom sheet via `TrackCollectionQuickActions.showTrackOptionsSheet`
+- **USDT TRC20 Crypto Donation**: Added USDT (TRC20) wallet address to Donate page with tap-to-copy-to-clipboard functionality and snackbar confirmation
+- **Localization**: Added interaction mode and streaming playback strings across all 14 supported locales (`optionsInteractionMode`, `modeDownloader`, `modeDownloaderSubtitle`, `modeStreaming`, `modeStreamingSubtitle`, `playAllCount`, `discographyPlay`, `discographyPlayAll`, `discographyPlaySelected`)
+- **Indonesian (ID) Localization**: Full translations for all new streaming mode strings
+
+### Changed
+
+- **Mini Player Bar Layout**: Media section (cover art / lyrics) now uses fixed-height `SizedBox` (50% screen height, clamped 300–560px) instead of `Expanded` for more consistent layout
+- **Lyrics Font Size Increase**: Synced lyrics current line 22→24px, non-current 18→19px; word-by-word highlight 22→24px; unsynced 18→19px
+- **Playback Media Controls**: Removed stop button from notification media controls for cleaner transport bar
+- **Playback Queue Exhaustion**: Player now properly syncs `ProcessingState.completed` state when queue is exhausted instead of silently stopping
+- **`TrackCollectionQuickActions.showTrackOptionsSheet` Made Static**: Extracted to a public static method so all screens can invoke it directly for long-press handling
+- **Bottom Spacing in Mini Player**: Reduced from 16px to 4px for tighter layout
+
+### Fixed
+
+- **Playback State Not Updating on Queue End**: Fixed playback notification staying in "playing" state when all tracks in queue have finished
+
+---
+
 ## [3.7.0] - 2026-02-19
 
 ### Added

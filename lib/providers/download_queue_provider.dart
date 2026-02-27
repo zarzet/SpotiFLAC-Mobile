@@ -702,10 +702,13 @@ class _ProgressUpdate {
 
 class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   Timer? _progressTimer;
+  Timer? _progressStreamBootstrapTimer;
   Timer? _queuePersistDebounce;
+  StreamSubscription<Map<String, dynamic>>? _progressStreamSub;
   int _downloadCount = 0;
   static const _cleanupInterval = 50;
   static const _progressPollingInterval = Duration(milliseconds: 800);
+  static const _idleProgressPollEveryTicks = 3;
   static const _queueSchedulingInterval = Duration(milliseconds: 250);
   static const _queuePersistDebounceDuration = Duration(milliseconds: 350);
   static const _bytesUiStep = 104857; // ~0.1 MiB, matches one-decimal MB UI.
@@ -718,6 +721,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   final Set<String> _ensuredDirs = {};
   int _progressPollingErrorCount = 0;
   bool _isProgressPollingInFlight = false;
+  int _idleProgressPollTick = 0;
+  bool _hasReceivedProgressStreamEvent = false;
+  bool _usingProgressStream = false;
   String? _lastServiceTrackName;
   String? _lastServiceArtistName;
   int _lastServicePercent = -1;
@@ -788,7 +794,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     ref.onDispose(() {
       _progressTimer?.cancel();
+      _progressStreamBootstrapTimer?.cancel();
+      _progressStreamSub?.cancel();
       _progressTimer = null;
+      _progressStreamBootstrapTimer = null;
+      _progressStreamSub = null;
       if (_queuePersistDebounce?.isActive == true) {
         _queuePersistDebounce?.cancel();
         unawaited(_flushQueueToStorage());
@@ -895,212 +905,104 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   void _startMultiProgressPolling() {
     _progressTimer?.cancel();
+    _progressStreamBootstrapTimer?.cancel();
+    _progressStreamBootstrapTimer = null;
+    _progressStreamSub?.cancel();
+    _progressStreamSub = null;
+    _hasReceivedProgressStreamEvent = false;
+    _usingProgressStream = false;
+    _idleProgressPollTick = 0;
+
+    if (Platform.isAndroid || Platform.isIOS) {
+      _attachDownloadProgressStream();
+      return;
+    }
+
+    _startMultiProgressPollingTimer();
+  }
+
+  void _attachDownloadProgressStream() {
+    _progressStreamSub = PlatformBridge.downloadProgressStream().listen(
+      (allProgress) {
+        _hasReceivedProgressStreamEvent = true;
+        _usingProgressStream = true;
+        _progressStreamBootstrapTimer?.cancel();
+        _progressStreamBootstrapTimer = null;
+        if (_isProgressPollingInFlight) return;
+        _isProgressPollingInFlight = true;
+        try {
+          _processAllDownloadProgress(allProgress);
+          _progressPollingErrorCount = 0;
+        } catch (e) {
+          _progressPollingErrorCount++;
+          if (_progressPollingErrorCount <= 3) {
+            _log.w('Progress stream processing failed: $e');
+          }
+        } finally {
+          _isProgressPollingInFlight = false;
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (_usingProgressStream) {
+          _log.w(
+            'Download progress stream failed, fallback to polling: $error',
+          );
+        }
+        _progressStreamSub?.cancel();
+        _progressStreamSub = null;
+        _usingProgressStream = false;
+        _progressStreamBootstrapTimer?.cancel();
+        _progressStreamBootstrapTimer = null;
+        _startMultiProgressPollingTimer();
+      },
+      cancelOnError: false,
+    );
+
+    _progressStreamBootstrapTimer = Timer(const Duration(seconds: 3), () {
+      if (_hasReceivedProgressStreamEvent) {
+        return;
+      }
+      _log.w('Download progress stream timeout, fallback to polling');
+      _progressStreamSub?.cancel();
+      _progressStreamSub = null;
+      _usingProgressStream = false;
+      _startMultiProgressPollingTimer();
+    });
+  }
+
+  void _startMultiProgressPollingTimer() {
+    _progressTimer?.cancel();
     _progressTimer = Timer.periodic(_progressPollingInterval, (timer) async {
       if (_isProgressPollingInFlight) return;
       _isProgressPollingInFlight = true;
       try {
-        final allProgress = await PlatformBridge.getAllDownloadProgress();
-        final items = allProgress['items'] as Map<String, dynamic>? ?? {};
         final currentItems = state.items;
-        final itemsById = <String, DownloadItem>{};
-        final itemIndexById = <String, int>{};
-        int queuedCount = 0;
-        int downloadingCount = 0;
-        DownloadItem? firstDownloading;
-        for (int i = 0; i < currentItems.length; i++) {
-          final item = currentItems[i];
-          itemsById[item.id] = item;
-          itemIndexById[item.id] = i;
-          if (item.status == DownloadStatus.downloading) {
-            downloadingCount++;
-            firstDownloading ??= item;
-          }
-          if (item.status == DownloadStatus.queued ||
-              item.status == DownloadStatus.downloading) {
-            queuedCount++;
-          }
-        }
-        final progressUpdates = <String, _ProgressUpdate>{};
+        final hasQueuedItems = currentItems.any(
+          (item) => item.status == DownloadStatus.queued,
+        );
+        final hasActiveItems = currentItems.any(
+          (item) =>
+              item.status == DownloadStatus.downloading ||
+              item.status == DownloadStatus.finalizing,
+        );
 
-        bool hasFinalizingItem = false;
-        String? finalizingTrackName;
-        String? finalizingArtistName;
-
-        for (final entry in items.entries) {
-          final itemId = entry.key;
-          final localItem = itemsById[itemId];
-          if (localItem == null) {
-            continue;
-          }
-          if (localItem.status == DownloadStatus.skipped) {
-            PlatformBridge.clearItemProgress(itemId).catchError((_) {});
-            continue;
-          }
-          if (localItem.status == DownloadStatus.completed ||
-              localItem.status == DownloadStatus.failed) {
-            continue;
-          }
-          final itemProgress = entry.value as Map<String, dynamic>;
-          final bytesReceived = itemProgress['bytes_received'] as int? ?? 0;
-          final bytesTotal = itemProgress['bytes_total'] as int? ?? 0;
-          final speedMBps =
-              (itemProgress['speed_mbps'] as num?)?.toDouble() ?? 0.0;
-          final isDownloading =
-              itemProgress['is_downloading'] as bool? ?? false;
-          final status = itemProgress['status'] as String? ?? 'downloading';
-
-          if (status == 'finalizing' && bytesTotal > 0) {
-            progressUpdates[itemId] = const _ProgressUpdate(
-              status: DownloadStatus.finalizing,
-              progress: 1.0,
-            );
-            hasFinalizingItem = true;
-            finalizingTrackName = localItem.track.name;
-            finalizingArtistName = localItem.track.artistName;
-            continue;
+        if (!hasActiveItems) {
+          if (state.isPaused || !hasQueuedItems) {
+            _idleProgressPollTick = 0;
+            return;
           }
 
-          final progressFromBackend =
-              (itemProgress['progress'] as num?)?.toDouble() ?? 0.0;
-
-          if (isDownloading) {
-            double percentage = 0.0;
-            if (bytesTotal > 0) {
-              percentage = bytesReceived / bytesTotal;
-            } else {
-              percentage = progressFromBackend;
-            }
-            final normalizedProgress = _normalizeProgressForUi(percentage);
-            final normalizedSpeed = _normalizeSpeedForUi(speedMBps);
-            final normalizedBytes = _normalizeBytesForUi(bytesReceived);
-
-            progressUpdates[itemId] = _ProgressUpdate(
-              status: DownloadStatus.downloading,
-              progress: normalizedProgress,
-              speedMBps: normalizedSpeed,
-              bytesReceived: normalizedBytes,
-            );
-
-            if (LogBuffer.loggingEnabled) {
-              final mbReceived = bytesReceived / (1024 * 1024);
-              final mbTotal = bytesTotal / (1024 * 1024);
-              if (bytesTotal > 0) {
-                _log.d(
-                  'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB) @ ${speedMBps.toStringAsFixed(2)} MB/s',
-                );
-              } else {
-                _log.d(
-                  'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (DASH segments/unknown size) @ ${speedMBps.toStringAsFixed(2)} MB/s',
-                );
-              }
-            }
+          _idleProgressPollTick =
+              (_idleProgressPollTick + 1) % _idleProgressPollEveryTicks;
+          if (_idleProgressPollTick != 0) {
+            return;
           }
+        } else {
+          _idleProgressPollTick = 0;
         }
 
-        if (progressUpdates.isNotEmpty) {
-          var updatedItems = currentItems;
-          bool changed = false;
-
-          for (final entry in progressUpdates.entries) {
-            final index = itemIndexById[entry.key];
-            if (index == null) continue;
-            final current = updatedItems[index];
-            if (current.status == DownloadStatus.skipped ||
-                current.status == DownloadStatus.completed ||
-                current.status == DownloadStatus.failed) {
-              continue;
-            }
-            final update = entry.value;
-            final next = current.copyWith(
-              status: update.status,
-              progress: update.progress,
-              speedMBps: update.speedMBps ?? current.speedMBps,
-              bytesReceived: update.bytesReceived ?? current.bytesReceived,
-            );
-            if (current.status != next.status ||
-                current.progress != next.progress ||
-                current.speedMBps != next.speedMBps ||
-                current.bytesReceived != next.bytesReceived) {
-              if (!changed) {
-                updatedItems = List<DownloadItem>.from(updatedItems);
-                changed = true;
-              }
-              updatedItems[index] = next;
-            }
-          }
-
-          if (changed) {
-            state = state.copyWith(items: updatedItems);
-          }
-        }
-
-        if (hasFinalizingItem && finalizingTrackName != null) {
-          final safeArtistName = finalizingArtistName ?? '';
-          if (finalizingTrackName != _lastFinalizingTrackName ||
-              safeArtistName != _lastFinalizingArtistName) {
-            _notificationService.showDownloadFinalizing(
-              trackName: finalizingTrackName,
-              artistName: safeArtistName,
-            );
-            _lastFinalizingTrackName = finalizingTrackName;
-            _lastFinalizingArtistName = safeArtistName;
-          }
-          return;
-        }
-        _lastFinalizingTrackName = null;
-        _lastFinalizingArtistName = null;
-
-        if (items.isNotEmpty) {
-          final firstEntry = items.entries.first;
-          final firstProgress = firstEntry.value as Map<String, dynamic>;
-          final bytesReceived = firstProgress['bytes_received'] as int? ?? 0;
-          final bytesTotal = firstProgress['bytes_total'] as int? ?? 0;
-
-          if (downloadingCount > 0 && firstDownloading != null) {
-            final trackName = downloadingCount == 1
-                ? firstDownloading.track.name
-                : '$downloadingCount downloads';
-            final artistName = downloadingCount == 1
-                ? firstDownloading.track.artistName
-                : 'Downloading...';
-
-            int notifProgress = bytesReceived;
-            int notifTotal = bytesTotal;
-
-            if (bytesTotal <= 0) {
-              final progressPercent =
-                  (firstProgress['progress'] as num?)?.toDouble() ?? 0.0;
-              notifProgress = (progressPercent * 100).toInt();
-              notifTotal = 100;
-            }
-
-            final safeNotifTotal = notifTotal > 0 ? notifTotal : 1;
-            if (_shouldUpdateProgressNotification(
-              trackName: trackName,
-              artistName: artistName,
-              progress: notifProgress,
-              total: safeNotifTotal,
-              queueCount: queuedCount,
-            )) {
-              _notificationService.showDownloadProgress(
-                trackName: trackName,
-                artistName: artistName,
-                progress: notifProgress,
-                total: safeNotifTotal,
-              );
-            }
-
-            if (Platform.isAndroid) {
-              _maybeUpdateAndroidDownloadService(
-                trackName: firstDownloading.track.name,
-                artistName: firstDownloading.track.artistName,
-                progress: notifProgress,
-                total: safeNotifTotal,
-                queueCount: queuedCount,
-              );
-            }
-          }
-        }
+        final allProgress = await PlatformBridge.getAllDownloadProgress();
+        _processAllDownloadProgress(allProgress);
         _progressPollingErrorCount = 0;
       } catch (e) {
         _progressPollingErrorCount++;
@@ -1111,6 +1013,221 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         _isProgressPollingInFlight = false;
       }
     });
+  }
+
+  void _processAllDownloadProgress(Map<String, dynamic> allProgress) {
+    final rawItems = allProgress['items'];
+    final items = rawItems is Map
+        ? rawItems.map((key, value) => MapEntry(key.toString(), value))
+        : const <String, dynamic>{};
+    final currentItems = state.items;
+    final itemsById = <String, DownloadItem>{};
+    final itemIndexById = <String, int>{};
+    int queuedCount = 0;
+    int downloadingCount = 0;
+    DownloadItem? firstDownloading;
+    for (int i = 0; i < currentItems.length; i++) {
+      final item = currentItems[i];
+      itemsById[item.id] = item;
+      itemIndexById[item.id] = i;
+      if (item.status == DownloadStatus.downloading) {
+        downloadingCount++;
+        firstDownloading ??= item;
+      }
+      if (item.status == DownloadStatus.queued ||
+          item.status == DownloadStatus.downloading) {
+        queuedCount++;
+      }
+    }
+    final progressUpdates = <String, _ProgressUpdate>{};
+
+    bool hasFinalizingItem = false;
+    String? finalizingTrackName;
+    String? finalizingArtistName;
+
+    for (final entry in items.entries) {
+      final itemId = entry.key;
+      final localItem = itemsById[itemId];
+      if (localItem == null) {
+        continue;
+      }
+      if (localItem.status == DownloadStatus.skipped) {
+        PlatformBridge.clearItemProgress(itemId).catchError((_) {});
+        continue;
+      }
+      if (localItem.status == DownloadStatus.completed ||
+          localItem.status == DownloadStatus.failed) {
+        continue;
+      }
+      final rawItemProgress = entry.value;
+      if (rawItemProgress is! Map) {
+        continue;
+      }
+      final itemProgress = Map<String, dynamic>.from(rawItemProgress);
+      final bytesReceived =
+          (itemProgress['bytes_received'] as num?)?.toInt() ?? 0;
+      final bytesTotal = (itemProgress['bytes_total'] as num?)?.toInt() ?? 0;
+      final speedMBps = (itemProgress['speed_mbps'] as num?)?.toDouble() ?? 0.0;
+      final isDownloading = itemProgress['is_downloading'] as bool? ?? false;
+      final status = itemProgress['status'] as String? ?? 'downloading';
+
+      if (status == 'finalizing' && bytesTotal > 0) {
+        progressUpdates[itemId] = const _ProgressUpdate(
+          status: DownloadStatus.finalizing,
+          progress: 1.0,
+        );
+        hasFinalizingItem = true;
+        finalizingTrackName = localItem.track.name;
+        finalizingArtistName = localItem.track.artistName;
+        continue;
+      }
+
+      final progressFromBackend =
+          (itemProgress['progress'] as num?)?.toDouble() ?? 0.0;
+
+      if (isDownloading) {
+        double percentage = 0.0;
+        if (bytesTotal > 0) {
+          percentage = bytesReceived / bytesTotal;
+        } else {
+          percentage = progressFromBackend;
+        }
+        final normalizedProgress = _normalizeProgressForUi(percentage);
+        final normalizedSpeed = _normalizeSpeedForUi(speedMBps);
+        final normalizedBytes = _normalizeBytesForUi(bytesReceived);
+
+        progressUpdates[itemId] = _ProgressUpdate(
+          status: DownloadStatus.downloading,
+          progress: normalizedProgress,
+          speedMBps: normalizedSpeed,
+          bytesReceived: normalizedBytes,
+        );
+
+        if (LogBuffer.loggingEnabled) {
+          final mbReceived = bytesReceived / (1024 * 1024);
+          final mbTotal = bytesTotal / (1024 * 1024);
+          if (bytesTotal > 0) {
+            _log.d(
+              'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (${mbReceived.toStringAsFixed(2)}/${mbTotal.toStringAsFixed(2)} MB) @ ${speedMBps.toStringAsFixed(2)} MB/s',
+            );
+          } else {
+            _log.d(
+              'Progress [$itemId]: ${(percentage * 100).toStringAsFixed(1)}% (DASH segments/unknown size) @ ${speedMBps.toStringAsFixed(2)} MB/s',
+            );
+          }
+        }
+      }
+    }
+
+    if (progressUpdates.isNotEmpty) {
+      var updatedItems = currentItems;
+      bool changed = false;
+
+      for (final entry in progressUpdates.entries) {
+        final index = itemIndexById[entry.key];
+        if (index == null) continue;
+        final current = updatedItems[index];
+        if (current.status == DownloadStatus.skipped ||
+            current.status == DownloadStatus.completed ||
+            current.status == DownloadStatus.failed) {
+          continue;
+        }
+        final update = entry.value;
+        final next = current.copyWith(
+          status: update.status,
+          progress: update.progress,
+          speedMBps: update.speedMBps ?? current.speedMBps,
+          bytesReceived: update.bytesReceived ?? current.bytesReceived,
+        );
+        if (current.status != next.status ||
+            current.progress != next.progress ||
+            current.speedMBps != next.speedMBps ||
+            current.bytesReceived != next.bytesReceived) {
+          if (!changed) {
+            updatedItems = List<DownloadItem>.from(updatedItems);
+            changed = true;
+          }
+          updatedItems[index] = next;
+        }
+      }
+
+      if (changed) {
+        state = state.copyWith(items: updatedItems);
+      }
+    }
+
+    if (hasFinalizingItem && finalizingTrackName != null) {
+      final safeArtistName = finalizingArtistName ?? '';
+      if (finalizingTrackName != _lastFinalizingTrackName ||
+          safeArtistName != _lastFinalizingArtistName) {
+        _notificationService.showDownloadFinalizing(
+          trackName: finalizingTrackName,
+          artistName: safeArtistName,
+        );
+        _lastFinalizingTrackName = finalizingTrackName;
+        _lastFinalizingArtistName = safeArtistName;
+      }
+      return;
+    }
+    _lastFinalizingTrackName = null;
+    _lastFinalizingArtistName = null;
+
+    if (items.isNotEmpty) {
+      final firstEntry = items.entries.first;
+      final rawFirstProgress = firstEntry.value;
+      if (rawFirstProgress is! Map) {
+        return;
+      }
+      final firstProgress = Map<String, dynamic>.from(rawFirstProgress);
+      final bytesReceived =
+          (firstProgress['bytes_received'] as num?)?.toInt() ?? 0;
+      final bytesTotal = (firstProgress['bytes_total'] as num?)?.toInt() ?? 0;
+
+      if (downloadingCount > 0 && firstDownloading != null) {
+        final trackName = downloadingCount == 1
+            ? firstDownloading.track.name
+            : '$downloadingCount downloads';
+        final artistName = downloadingCount == 1
+            ? firstDownloading.track.artistName
+            : 'Downloading...';
+
+        int notifProgress = bytesReceived;
+        int notifTotal = bytesTotal;
+
+        if (bytesTotal <= 0) {
+          final progressPercent =
+              (firstProgress['progress'] as num?)?.toDouble() ?? 0.0;
+          notifProgress = (progressPercent * 100).toInt();
+          notifTotal = 100;
+        }
+
+        final safeNotifTotal = notifTotal > 0 ? notifTotal : 1;
+        if (_shouldUpdateProgressNotification(
+          trackName: trackName,
+          artistName: artistName,
+          progress: notifProgress,
+          total: safeNotifTotal,
+          queueCount: queuedCount,
+        )) {
+          _notificationService.showDownloadProgress(
+            trackName: trackName,
+            artistName: artistName,
+            progress: notifProgress,
+            total: safeNotifTotal,
+          );
+        }
+
+        if (Platform.isAndroid) {
+          _maybeUpdateAndroidDownloadService(
+            trackName: firstDownloading.track.name,
+            artistName: firstDownloading.track.artistName,
+            progress: notifProgress,
+            total: safeNotifTotal,
+            queueCount: queuedCount,
+          );
+        }
+      }
+    }
   }
 
   void _maybeUpdateAndroidDownloadService({
@@ -1156,9 +1273,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   void _stopProgressPolling() {
     _progressTimer?.cancel();
+    _progressStreamBootstrapTimer?.cancel();
+    _progressStreamSub?.cancel();
     _progressTimer = null;
+    _progressStreamBootstrapTimer = null;
+    _progressStreamSub = null;
     _progressPollingErrorCount = 0;
     _isProgressPollingInFlight = false;
+    _idleProgressPollTick = 0;
+    _hasReceivedProgressStreamEvent = false;
+    _usingProgressStream = false;
     _lastServiceTrackName = null;
     _lastServiceArtistName = null;
     _lastServicePercent = -1;
@@ -1926,6 +2050,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       artistName: baseTrack.artistName,
       albumName: backendAlbum ?? baseTrack.albumName,
       albumArtist: resolvedAlbumArtist,
+      artistId: baseTrack.artistId,
+      albumId: baseTrack.albumId,
       coverUrl: baseTrack.coverUrl,
       duration: baseTrack.duration,
       isrc: baseTrack.isrc,
@@ -1945,8 +2071,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String? genre,
     String? label,
     String? copyright,
+    bool writeExternalLrc = true,
   }) async {
     final settings = ref.read(settingsProvider);
+    if (!settings.embedMetadata) {
+      _log.d('Metadata embedding disabled, skipping FLAC metadata/cover embed');
+      return;
+    }
 
     String? coverPath;
     var coverUrl = track.coverUrl;
@@ -2030,12 +2161,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final shouldEmbedLyrics =
           settings.embedLyrics &&
           (lyricsMode == 'embed' || lyricsMode == 'both');
+      final shouldSaveExternalLyrics =
+          settings.embedLyrics &&
+          (lyricsMode == 'external' || lyricsMode == 'both');
+      final shouldFetchLyrics = shouldEmbedLyrics || shouldSaveExternalLyrics;
+      String? lrcContent;
 
-      if (shouldEmbedLyrics) {
+      if (shouldFetchLyrics) {
         try {
           final durationMs = track.duration * 1000;
 
-          final lrcContent = await PlatformBridge.getLyricsLRC(
+          final fetchedLrc = await PlatformBridge.getLyricsLRC(
             track.id,
             track.name,
             track.artistName,
@@ -2043,20 +2179,46 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             durationMs: durationMs,
           );
 
-          if (lrcContent.isNotEmpty && lrcContent != '[instrumental:true]') {
-            metadata['LYRICS'] = lrcContent;
-            metadata['UNSYNCEDLYRICS'] = lrcContent;
-            _log.d('Lyrics fetched for embedding (${lrcContent.length} chars)');
-          } else if (lrcContent == '[instrumental:true]') {
-            _log.d('Track is instrumental, skipping lyrics embedding');
+          if (fetchedLrc.isNotEmpty && fetchedLrc != '[instrumental:true]') {
+            lrcContent = fetchedLrc;
+            _log.d('Lyrics fetched for FLAC (${fetchedLrc.length} chars)');
+          } else if (fetchedLrc == '[instrumental:true]') {
+            _log.d('Track is instrumental, skipping lyrics handling');
+          } else {
+            _log.d('No lyrics returned for FLAC download');
           }
         } catch (e) {
-          _log.w('Failed to fetch lyrics for embedding: $e');
+          _log.w('Failed to fetch lyrics for FLAC: $e');
+        }
+      }
+
+      if (shouldEmbedLyrics) {
+        if (lrcContent != null) {
+          metadata['LYRICS'] = lrcContent;
+          metadata['UNSYNCEDLYRICS'] = lrcContent;
+          _log.d('Lyrics added to FLAC metadata');
+        } else {
+          _log.d('No lyrics available for FLAC embedding');
         }
       } else {
         metadata['LYRICS'] = '';
         metadata['UNSYNCEDLYRICS'] = '';
-        _log.d('Lyrics embedding disabled by settings, skipping lyric fetch');
+        _log.d(
+          'Lyrics embedding disabled by settings, skipping lyric embedding',
+        );
+      }
+
+      if (writeExternalLrc && shouldSaveExternalLyrics && lrcContent != null) {
+        try {
+          final replacedPath = flacPath.replaceAll(RegExp(r'\.[^.]+$'), '.lrc');
+          final lrcPath = replacedPath == flacPath
+              ? '$flacPath.lrc'
+              : replacedPath;
+          await File(lrcPath).writeAsString(lrcContent);
+          _log.d('External LRC file saved: $lrcPath');
+        } catch (e) {
+          _log.w('Failed to save external LRC file for FLAC: $e');
+        }
       }
 
       _log.d('Generating tags for FLAC: $metadata');
@@ -2098,6 +2260,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String? copyright,
   }) async {
     final settings = ref.read(settingsProvider);
+    if (!settings.embedMetadata) {
+      _log.d('Metadata embedding disabled, skipping MP3 metadata/cover embed');
+      return;
+    }
 
     String? coverPath;
     var coverUrl = track.coverUrl;
@@ -2262,6 +2428,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String? copyright,
   }) async {
     final settings = ref.read(settingsProvider);
+    if (!settings.embedMetadata) {
+      _log.d('Metadata embedding disabled, skipping Opus metadata/cover embed');
+      return;
+    }
 
     String? coverPath;
     var coverUrl = track.coverUrl;
@@ -2743,6 +2913,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     try {
       final settings = ref.read(settingsProvider);
+      final metadataEmbeddingEnabled = settings.embedMetadata;
 
       Track trackToDownload = item.track;
       final needsEnrichment =
@@ -2785,6 +2956,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                     (data['album_name'] as String?) ??
                     trackToDownload.albumName,
                 albumArtist: data['album_artist'] as String?,
+                artistId:
+                    (data['artist_id'] ?? data['artistId'])?.toString() ??
+                    trackToDownload.artistId,
+                albumId:
+                    data['album_id']?.toString() ?? trackToDownload.albumId,
                 coverUrl: data['images'] as String?,
                 duration:
                     ((data['duration_ms'] as int?) ??
@@ -2991,6 +3167,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 artistName: trackToDownload.artistName,
                 albumName: trackToDownload.albumName,
                 albumArtist: trackToDownload.albumArtist,
+                artistId: trackToDownload.artistId,
+                albumId: trackToDownload.albumId,
                 coverUrl: trackToDownload.coverUrl,
                 duration: trackToDownload.duration,
                 isrc: (deezerIsrc != null && _isValidISRC(deezerIsrc))
@@ -3101,12 +3279,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           artistName: trackToDownload.artistName,
           albumName: trackToDownload.albumName,
           albumArtist: resolvedAlbumArtist,
-          coverUrl: trackToDownload.coverUrl ?? '',
+          coverUrl: metadataEmbeddingEnabled
+              ? (trackToDownload.coverUrl ?? '')
+              : '',
           outputDir: outputDir,
           filenameFormat: state.filenameFormat,
           quality: quality,
-          embedLyrics: settings.embedLyrics,
-          embedMaxQualityCover: settings.maxQualityCover,
+          embedMetadata: metadataEmbeddingEnabled,
+          embedLyrics: metadataEmbeddingEnabled && settings.embedLyrics,
+          embedMaxQualityCover:
+              metadataEmbeddingEnabled && settings.maxQualityCover,
           trackNumber: normalizedTrackNumber,
           discNumber: normalizedDiscNumber,
           releaseDate: trackToDownload.releaseDate ?? '',
@@ -3501,6 +3683,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                         genre: backendGenre ?? genre,
                         label: backendLabel ?? label,
                         copyright: backendCopyright,
+                        writeExternalLrc: false,
                       );
 
                       final newFileName = '${safBaseName ?? 'track'}.flac';
@@ -3692,7 +3875,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
             }
           }
-        } else if (isContentUriPath &&
+        } else if (metadataEmbeddingEnabled &&
+            isContentUriPath &&
             effectiveSafMode &&
             isFlacFile &&
             !wasExisting) {
@@ -3724,6 +3908,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 genre: backendGenre ?? genre,
                 label: backendLabel ?? label,
                 copyright: backendCopyright,
+                writeExternalLrc: false,
               );
 
               final newFileName = '${safBaseName ?? 'track'}.flac';
@@ -3753,7 +3938,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               } catch (_) {}
             }
           }
-        } else if (!isContentUriPath &&
+        } else if (metadataEmbeddingEnabled &&
+            !isContentUriPath &&
             !effectiveSafMode &&
             isFlacFile &&
             !wasExisting &&
@@ -3792,7 +3978,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
 
         // YouTube downloads: embed metadata to raw Opus/MP3 files from Cobalt
-        if (!wasExisting && item.service == 'youtube' && filePath != null) {
+        if (metadataEmbeddingEnabled &&
+            !wasExisting &&
+            item.service == 'youtube' &&
+            filePath != null) {
           final isOpusFile = filePath.endsWith('.opus');
           final isMp3File = filePath.endsWith('.mp3');
 
@@ -3957,6 +4146,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
         final lyricsMode = settings.lyricsMode;
         final shouldSaveExternalLrc =
+            metadataEmbeddingEnabled &&
             settings.embedLyrics &&
             (lyricsMode == 'external' || lyricsMode == 'both');
         if (shouldSaveExternalLrc &&

@@ -18,6 +18,7 @@ import 'package:spotiflac_android/screens/home_tab.dart'
     show ExtensionAlbumScreen;
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 /// Simple in-memory cache for artist data
 class _ArtistCache {
@@ -309,6 +310,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
       albumArtist: data['album_artist']?.toString(),
+      artistId:
+          (data['artist_id'] ?? data['artistId'])?.toString() ??
+          widget.artistId,
+      albumId: data['album_id']?.toString(),
       coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
@@ -675,6 +680,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -772,7 +778,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     List<ArtistAlbum> albums,
   ) async {
     final settings = ref.read(settingsProvider);
-
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
@@ -990,6 +995,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               .toString(),
       albumName: album.name,
       albumArtist: widget.artistName,
+      artistId: widget.artistId,
+      albumId: album.id.isNotEmpty ? album.id : null,
       coverUrl: album.coverUrl,
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
@@ -1110,17 +1117,18 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       children: [
                         Text(
                           widget.artistName,
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                offset: const Offset(0, 1),
-                                blurRadius: 4,
-                                color: Colors.black.withValues(alpha: 0.5),
+                          style: Theme.of(context).textTheme.headlineLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 4,
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1128,16 +1136,19 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                           const SizedBox(height: 4),
                           Text(
                             listenersText,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(0, 1),
-                                  blurRadius: 2,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 2,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
                           ),
                         ],
                       ],
@@ -1263,6 +1274,11 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
             isInHistory: isInHistory,
             isInLocalLibrary: isInLocalLibrary,
           ),
+          onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
+            context,
+            ref,
+            track,
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -1329,8 +1345,12 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (track.albumName.isNotEmpty)
-                        Text(
-                          track.albumName,
+                        ClickableAlbumName(
+                          albumName: track.albumName,
+                          albumId: track.albumId,
+                          artistName: track.artistName,
+                          coverUrl: track.coverUrl,
+                          extensionId: widget.extensionId,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: colorScheme.onSurfaceVariant),
                           maxLines: 1,
@@ -1339,9 +1359,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     ],
                   ),
                 ),
-                TrackCollectionQuickActions(
-                  track: track,
-                ),
+                TrackCollectionQuickActions(track: track),
               ],
             ),
           ),

@@ -308,6 +308,38 @@
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
+  "optionsAutoSkipUnavailableTracks": "Lewati Otomatis Lagu yang Tidak Tersedia",
+  "@optionsAutoSkipUnavailableTracks": {
+    "description": "Toggle to skip to the next queue track when current track stream resolution fails"
+  },
+  "optionsAutoSkipUnavailableTracksSubtitleOn": "Otomatis lanjut ke lagu berikutnya di antrean jika stream lagu tidak bisa ditemukan.",
+  "@optionsAutoSkipUnavailableTracksSubtitleOn": {
+    "description": "Subtitle when auto skip on resolve failure is enabled"
+  },
+  "optionsAutoSkipUnavailableTracksSubtitleOff": "Berhenti di lagu yang gagal dan tampilkan pesan error.",
+  "@optionsAutoSkipUnavailableTracksSubtitleOff": {
+    "description": "Subtitle when auto skip on resolve failure is disabled"
+  },
+  "optionsInteractionMode": "Mode Interaksi",
+  "@optionsInteractionMode": {
+    "description": "Tap behavior mode for track lists"
+  },
+  "modeDownloader": "Mode Downloader",
+  "@modeDownloader": {
+    "description": "Interaction mode where taps queue downloads"
+  },
+  "modeDownloaderSubtitle": "Ketuk lagu untuk menambah ke antrean unduhan",
+  "@modeDownloaderSubtitle": {
+    "description": "Subtitle for downloader interaction mode"
+  },
+  "modeStreaming": "Mode Streaming",
+  "@modeStreaming": {
+    "description": "Interaction mode where taps start playback"
+  },
+  "modeStreamingSubtitle": "Ketuk lagu untuk langsung memutar",
+  "@modeStreamingSubtitle": {
+    "description": "Subtitle for streaming interaction mode"
+  },
   "optionsUseExtensionProviders": "Gunakan Provider Ekstensi",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
@@ -1340,6 +1372,10 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
+  "errorSeekNotSupported": "Menggeser posisi lagu tidak didukung untuk live stream ini",
+  "@errorSeekNotSupported": {
+    "description": "Error - seek disabled for live decrypted stream"
+  },
   "errorMissingExtensionSource": "Tidak dapat memuat {item}: sumber ekstensi tidak ada",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
@@ -2016,6 +2052,15 @@
   "downloadAllCount": "Unduh Semua ({count})",
   "@downloadAllCount": {
     "description": "Download all button with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playAllCount": "Putar Semua ({count})",
+  "@playAllCount": {
+    "description": "Play all button with count",
     "placeholders": {
       "count": {
         "type": "int"
@@ -2931,9 +2976,17 @@
   "@discographyDownload": {
     "description": "Button - download artist discography"
   },
+  "discographyPlay": "Putar Diskografi",
+  "@discographyPlay": {
+    "description": "Button - play artist discography"
+  },
   "discographyDownloadAll": "Unduh Semua",
   "@discographyDownloadAll": {
     "description": "Option - download entire discography"
+  },
+  "discographyPlayAll": "Putar Semua",
+  "@discographyPlayAll": {
+    "description": "Option - play entire discography"
   },
   "discographyDownloadAllSubtitle": "{count} tracks from {albumCount} releases",
   "@discographyDownloadAllSubtitle": {
@@ -3015,6 +3068,10 @@
   "discographyDownloadSelected": "Download Selected",
   "@discographyDownloadSelected": {
     "description": "Button - download selected albums"
+  },
+  "discographyPlaySelected": "Putar Terpilih",
+  "@discographyPlaySelected": {
+    "description": "Button - play selected albums"
   },
   "discographyAddedToQueue": "Added {count} tracks to queue",
   "@discographyAddedToQueue": {
@@ -4132,5 +4189,172 @@
   "collectionPlaylistChangeCover": "Ubah gambar sampul",
   "@collectionPlaylistChangeCover": {"description": "Bottom sheet action to pick a custom cover image for a playlist"},
   "collectionPlaylistRemoveCover": "Hapus gambar sampul",
-  "@collectionPlaylistRemoveCover": {"description": "Bottom sheet action to remove custom cover image from a playlist"}
+  "@collectionPlaylistRemoveCover": {"description": "Bottom sheet action to remove custom cover image from a playlist"},
+  "setupModeSelectionTitle": "Pilih Mode Anda",
+  "setupModeSelectionDescription": "Bagaimana Anda ingin menggunakan SpotiFLAC? Anda dapat mengubahnya nanti di Pengaturan.",
+  "setupModeDownloaderTitle": "Pengunduh",
+  "setupModeDownloaderFeature1": "Unduh trek dalam kualitas FLAC lossless",
+  "setupModeDownloaderFeature2": "Simpan musik ke perangkat Anda untuk mendengarkan offline",
+  "setupModeDownloaderFeature3": "Kelola perpustakaan musik lokal Anda",
+  "setupModeStreamingTitle": "Streaming",
+  "setupModeStreamingFeature1": "Streaming trek secara instan tanpa mengunduh",
+  "setupModeStreamingFeature2": "Smart Queue secara otomatis menemukan musik baru untuk Anda",
+  "setupModeStreamingFeature3": "Putar trek apa pun sesuai permintaan dengan kontrol pemutaran",
+  "setupModeChangeableLater": "Anda dapat beralih antar mode kapan saja di Pengaturan.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Secara otomatis temukan dan tambahkan trek serupa ke antrean Anda",
+
+  "selectionShareCount": "Bagikan {count} {count, plural, =1{trek} other{trek}}",
+  "@selectionShareCount": {
+    "description": "Share button text with count in selection mode",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "selectionShareNoFiles": "Tidak ada file yang dapat dibagikan",
+  "@selectionShareNoFiles": {"description": "Snackbar when no selected files exist on disk"},
+  "selectionConvertCount": "Konversi {count} {count, plural, =1{trek} other{trek}}",
+  "@selectionConvertCount": {
+    "description": "Convert button text with count in selection mode",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "selectionConvertNoConvertible": "Tidak ada trek yang dapat dikonversi dipilih",
+  "@selectionConvertNoConvertible": {"description": "Snackbar when no selected tracks support conversion"},
+  "selectionBatchConvertConfirmTitle": "Konversi Massal",
+  "@selectionBatchConvertConfirmTitle": {"description": "Confirmation dialog title for batch conversion"},
+  "selectionBatchConvertConfirmMessage": "Konversi {count} {count, plural, =1{trek} other{trek}} ke {format} pada {bitrate}?\n\nFile asli akan dihapus setelah konversi.",
+  "@selectionBatchConvertConfirmMessage": {
+    "description": "Confirmation dialog message for batch conversion",
+    "placeholders": {
+      "count": {"type": "int"},
+      "format": {"type": "String"},
+      "bitrate": {"type": "String"}
+    }
+  },
+  "selectionBatchConvertProgress": "Mengonversi {current} dari {total}...",
+  "@selectionBatchConvertProgress": {
+    "description": "Snackbar during batch conversion progress",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "selectionBatchConvertSuccess": "Berhasil mengonversi {success} dari {total} trek ke {format}",
+  "@selectionBatchConvertSuccess": {
+    "description": "Snackbar after batch conversion completes",
+    "placeholders": {
+      "success": {"type": "int"},
+      "total": {"type": "int"},
+      "format": {"type": "String"}
+    }
+  },
+
+  "whatsNewTitle": "Yang Baru di 4.0",
+  "@whatsNewTitle": {"description": "Title for the What's New screen"},
+  "whatsNewSubtitle": "SpotiFLAC telah berevolusi — inilah yang berubah sejak 3.x",
+  "@whatsNewSubtitle": {"description": "Subtitle for the What's New screen"},
+  "whatsNewWelcomeTitle": "SpotiFLAC Mobile 4.0",
+  "@whatsNewWelcomeTitle": {"description": "Welcome page title in What's New screen"},
+  "whatsNewWelcomeDesc": "Selamat datang kembali! Ini pembaruan besar dengan banyak fitur baru. Geser untuk melihat apa yang berubah.",
+  "@whatsNewWelcomeDesc": {"description": "Welcome page description in What's New screen"},
+  "whatsNewWelcomeTip1": "Mode streaming baru dengan pemutaran instan",
+  "@whatsNewWelcomeTip1": {"description": "Welcome page tip 1"},
+  "whatsNewWelcomeTip2": "Perpustakaan dan pemutar layar penuh yang didesain ulang",
+  "@whatsNewWelcomeTip2": {"description": "Welcome page tip 2"},
+  "whatsNewWelcomeTip3": "Alat massal, peningkatan performa, dan lainnya",
+  "@whatsNewWelcomeTip3": {"description": "Welcome page tip 3"},
+  "whatsNewStreamingTitle": "Mode Streaming",
+  "@whatsNewStreamingTitle": {"description": "What's New feature: Streaming Mode title"},
+  "whatsNewStreamingDesc": "Ketuk trek apa pun untuk langsung diputar — tanpa perlu mengunduh. Pemutar layar penuh dengan lirik tersinkron dan kontrol media.",
+  "@whatsNewStreamingDesc": {"description": "What's New feature: Streaming Mode description"},
+  "whatsNewSmartQueueTitle": "Smart Queue",
+  "@whatsNewSmartQueueTitle": {"description": "What's New feature: Smart Queue title"},
+  "whatsNewSmartQueueDesc": "Antrean Anda otomatis mengkurasi trek terkait dan penemuan artis. Tak pernah kehabisan musik.",
+  "@whatsNewSmartQueueDesc": {"description": "What's New feature: Smart Queue description"},
+  "whatsNewDualModeTitle": "Mode Ganda",
+  "@whatsNewDualModeTitle": {"description": "What's New feature: Dual Mode title"},
+  "whatsNewDualModeDesc": "Beralih antara mode Pengunduh dan Streaming kapan saja. Semua tombol menyesuaikan secara otomatis.",
+  "@whatsNewDualModeDesc": {"description": "What's New feature: Dual Mode description"},
+  "whatsNewLibraryTitle": "Perpustakaan Baru",
+  "@whatsNewLibraryTitle": {"description": "What's New feature: Library redesign title"},
+  "whatsNewLibraryDesc": "Tata letak berbasis playlist dengan kategorisasi seret-dan-lepas, sampul kustom, dan aksi massal multi-pilih.",
+  "@whatsNewLibraryDesc": {"description": "What's New feature: Library redesign description"},
+  "whatsNewPlayerTitle": "Pemutar Layar Penuh",
+  "@whatsNewPlayerTitle": {"description": "What's New feature: Full-Screen Player title"},
+  "whatsNewPlayerDesc": "Paralaks seni sampul, lirik tersinkron, pemutaran tetap tersimpan saat restart, dan tombol unduh di pemutar.",
+  "@whatsNewPlayerDesc": {"description": "What's New feature: Full-Screen Player description"},
+  "whatsNewContextMenuTitle": "Menu Tekan Lama",
+  "@whatsNewContextMenuTitle": {"description": "What's New feature: Context Menus title"},
+  "whatsNewContextMenuDesc": "Tekan lama trek apa pun untuk aksi cepat — tambah ke playlist, bagikan, konversi, atau perbarui metadata.",
+  "@whatsNewContextMenuDesc": {"description": "What's New feature: Context Menus description"},
+  "whatsNewPerformanceTitle": "Performa",
+  "@whatsNewPerformanceTitle": {"description": "What's New feature: Performance title"},
+  "whatsNewPerformanceDesc": "Startup lebih cepat, penggunaan memori berkurang, penyimpanan berbasis SQLite, dan pembaruan UI yang lebih efisien.",
+  "@whatsNewPerformanceDesc": {"description": "What's New feature: Performance description"},
+  "whatsNewBatchToolsTitle": "Alat Massal",
+  "@whatsNewBatchToolsTitle": {"description": "What's New feature: Batch Tools title"},
+  "whatsNewBatchToolsDesc": "Berbagi multi-pilih, konversi massal ke MP3/Opus, dan perbarui metadata secara massal di seluruh perpustakaan.",
+  "@whatsNewBatchToolsDesc": {"description": "What's New feature: Batch Tools description"},
+  "whatsNewStreamingTip1": "Ketuk trek apa pun untuk langsung memutar",
+  "@whatsNewStreamingTip1": {"description": "What's New tip: streaming instant play"},
+  "whatsNewStreamingTip2": "Lirik tersinkron di pemutar layar penuh",
+  "@whatsNewStreamingTip2": {"description": "What's New tip: streaming synced lyrics"},
+  "whatsNewStreamingTip3": "Unduh trek langsung dari pemutar",
+  "@whatsNewStreamingTip3": {"description": "What's New tip: streaming download from player"},
+  "whatsNewSmartQueueTip1": "Antrean terisi otomatis dengan trek terkait",
+  "@whatsNewSmartQueueTip1": {"description": "What's New tip: smart queue auto-fill"},
+  "whatsNewSmartQueueTip2": "Temukan artis baru saat mendengarkan",
+  "@whatsNewSmartQueueTip2": {"description": "What's New tip: smart queue artist discovery"},
+  "whatsNewSmartQueueTip3": "Tak pernah kehabisan musik untuk diputar",
+  "@whatsNewSmartQueueTip3": {"description": "What's New tip: smart queue endless"},
+  "whatsNewDualModeTip1": "Beralih mode kapan saja di Pengaturan",
+  "@whatsNewDualModeTip1": {"description": "What's New tip: dual mode switch"},
+  "whatsNewDualModeTip2": "Tombol UI menyesuaikan dengan mode Anda",
+  "@whatsNewDualModeTip2": {"description": "What's New tip: dual mode adaptive UI"},
+  "whatsNewDualModeTip3": "Unduh untuk offline, streaming untuk putar langsung",
+  "@whatsNewDualModeTip3": {"description": "What's New tip: dual mode use cases"},
+  "whatsNewLibraryTip1": "Seret dan lepas untuk mengatur playlist",
+  "@whatsNewLibraryTip1": {"description": "What's New tip: library drag and drop"},
+  "whatsNewLibraryTip2": "Atur gambar sampul kustom untuk playlist",
+  "@whatsNewLibraryTip2": {"description": "What's New tip: library custom covers"},
+  "whatsNewLibraryTip3": "Pilih banyak trek untuk aksi massal",
+  "@whatsNewLibraryTip3": {"description": "What's New tip: library multi-select"},
+  "whatsNewPlayerTip1": "Seni sampul dengan efek paralaks",
+  "@whatsNewPlayerTip1": {"description": "What's New tip: player parallax"},
+  "whatsNewPlayerTip2": "Pemutaran tetap tersimpan saat restart",
+  "@whatsNewPlayerTip2": {"description": "What's New tip: player persistence"},
+  "whatsNewPlayerTip3": "Lirik tersinkron saat mendengarkan",
+  "@whatsNewPlayerTip3": {"description": "What's New tip: player lyrics"},
+  "whatsNewContextMenuTip1": "Tambahkan trek ke playlist mana pun langsung",
+  "@whatsNewContextMenuTip1": {"description": "What's New tip: context menu add to playlist"},
+  "whatsNewContextMenuTip2": "Bagikan atau konversi dengan satu ketukan",
+  "@whatsNewContextMenuTip2": {"description": "What's New tip: context menu share/convert"},
+  "whatsNewContextMenuTip3": "Perbarui metadata saat diperlukan",
+  "@whatsNewContextMenuTip3": {"description": "What's New tip: context menu re-enrich"},
+  "whatsNewBatchToolsTip1": "Bagikan banyak trek sekaligus",
+  "@whatsNewBatchToolsTip1": {"description": "What's New tip: batch share"},
+  "whatsNewBatchToolsTip2": "Konversi massal ke format MP3 atau Opus",
+  "@whatsNewBatchToolsTip2": {"description": "What's New tip: batch convert"},
+  "whatsNewBatchToolsTip3": "Perbarui metadata di seluruh perpustakaan",
+  "@whatsNewBatchToolsTip3": {"description": "What's New tip: batch re-enrich"},
+  "whatsNewPerformanceTip1": "Waktu startup aplikasi lebih cepat",
+  "@whatsNewPerformanceTip1": {"description": "What's New tip: performance startup"},
+  "whatsNewPerformanceTip2": "Penggunaan memori berkurang saat pemutaran",
+  "@whatsNewPerformanceTip2": {"description": "What's New tip: performance memory"},
+  "whatsNewPerformanceTip3": "Penyimpanan berbasis SQLite untuk keandalan",
+  "@whatsNewPerformanceTip3": {"description": "What's New tip: performance SQLite"},
+  "whatsNewReadyMessage": "Siap — nikmati SpotiFLAC yang baru!",
+  "@whatsNewReadyMessage": {"description": "Ready card message on last What's New page"},
+  "whatsNewGetStarted": "Ayo Mulai",
+  "@whatsNewGetStarted": {"description": "Button text to dismiss What's New screen"},
+  "whatsNewPageIndicator": "{current} dari {total}",
+  "@whatsNewPageIndicator": {
+    "description": "Page indicator text in What's New screen",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  }
 }

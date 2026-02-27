@@ -551,6 +551,7 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(
       isLoading: true,
       hasSearchText: state.hasSearchText,
+      isShowingRecentAccess: state.isShowingRecentAccess,
       selectedSearchFilter: currentFilter,
     );
 
@@ -713,6 +714,7 @@ class TrackNotifier extends Notifier<TrackState> {
         searchPlaylists: playlists,
         isLoading: false,
         hasSearchText: state.hasSearchText,
+        isShowingRecentAccess: state.isShowingRecentAccess,
         selectedSearchFilter: currentFilter, // Preserve filter in results
       );
     } catch (e, stackTrace) {
@@ -722,6 +724,7 @@ class TrackNotifier extends Notifier<TrackState> {
         isLoading: false,
         error: e.toString(),
         hasSearchText: state.hasSearchText,
+        isShowingRecentAccess: state.isShowingRecentAccess,
         selectedSearchFilter: currentFilter,
       );
     }
@@ -737,6 +740,7 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(
       isLoading: true,
       hasSearchText: state.hasSearchText,
+      isShowingRecentAccess: state.isShowingRecentAccess,
       selectedSearchFilter:
           state.selectedSearchFilter, // Preserve filter during loading
     );
@@ -776,6 +780,7 @@ class TrackNotifier extends Notifier<TrackState> {
         searchArtists: [],
         isLoading: false,
         hasSearchText: state.hasSearchText,
+        isShowingRecentAccess: state.isShowingRecentAccess,
         searchExtensionId: extensionId, // Store which extension was used
         selectedSearchFilter:
             state.selectedSearchFilter, // Preserve selected filter
@@ -787,6 +792,7 @@ class TrackNotifier extends Notifier<TrackState> {
         isLoading: false,
         error: e.toString(),
         hasSearchText: state.hasSearchText,
+        isShowingRecentAccess: state.isShowingRecentAccess,
       );
     }
   }
@@ -808,6 +814,8 @@ class TrackNotifier extends Notifier<TrackState> {
         artistName: track.artistName,
         albumName: track.albumName,
         albumArtist: track.albumArtist,
+        artistId: track.artistId,
+        albumId: track.albumId,
         coverUrl: track.coverUrl,
         isrc: track.isrc,
         duration: track.duration,
@@ -876,19 +884,23 @@ class TrackNotifier extends Notifier<TrackState> {
       playlistName: playlistName,
       coverUrl: coverUrl,
       hasSearchText: state.hasSearchText,
+      isShowingRecentAccess: state.isShowingRecentAccess,
     );
   }
 
   Track _parseTrack(Map<String, dynamic> data) {
+    final durationMs = _extractDurationMs(data);
     return Track(
       id: data['spotify_id'] as String? ?? '',
       name: data['name'] as String? ?? '',
       artistName: data['artists'] as String? ?? '',
       albumName: data['album_name'] as String? ?? '',
       albumArtist: data['album_artist'] as String?,
+      artistId: (data['artist_id'] ?? data['artistId'])?.toString(),
+      albumId: data['album_id']?.toString(),
       coverUrl: data['images'] as String?,
       isrc: data['isrc'] as String?,
-      duration: ((data['duration_ms'] as int? ?? 0) / 1000).round(),
+      duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date'] as String?,
@@ -896,13 +908,7 @@ class TrackNotifier extends Notifier<TrackState> {
   }
 
   Track _parseSearchTrack(Map<String, dynamic> data, {String? source}) {
-    int durationMs = 0;
-    final durationValue = data['duration_ms'];
-    if (durationValue is int) {
-      durationMs = durationValue;
-    } else if (durationValue is double) {
-      durationMs = durationValue.toInt();
-    }
+    final durationMs = _extractDurationMs(data);
 
     final itemType = data['item_type']?.toString();
 
@@ -912,6 +918,8 @@ class TrackNotifier extends Notifier<TrackState> {
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
       albumArtist: data['album_artist']?.toString(),
+      artistId: (data['artist_id'] ?? data['artistId'])?.toString(),
+      albumId: data['album_id']?.toString(),
       coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
@@ -925,6 +933,32 @@ class TrackNotifier extends Notifier<TrackState> {
       albumType: data['album_type']?.toString(),
       itemType: itemType,
     );
+  }
+
+  int _extractDurationMs(Map<String, dynamic> data) {
+    final durationMsRaw = data['duration_ms'];
+    if (durationMsRaw is num && durationMsRaw > 0) {
+      return durationMsRaw.toInt();
+    }
+    if (durationMsRaw is String) {
+      final parsed = num.tryParse(durationMsRaw.trim());
+      if (parsed != null && parsed > 0) {
+        return parsed.toInt();
+      }
+    }
+
+    final durationSecRaw = data['duration'];
+    if (durationSecRaw is num && durationSecRaw > 0) {
+      return (durationSecRaw * 1000).toInt();
+    }
+    if (durationSecRaw is String) {
+      final parsed = num.tryParse(durationSecRaw.trim());
+      if (parsed != null && parsed > 0) {
+        return (parsed * 1000).toInt();
+      }
+    }
+
+    return 0;
   }
 
   ArtistAlbum _parseArtistAlbum(Map<String, dynamic> data) {

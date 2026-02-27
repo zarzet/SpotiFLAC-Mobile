@@ -3868,5 +3868,18 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  }
+  },
+  "setupModeSelectionTitle": "Выберите режим",
+  "setupModeSelectionDescription": "Как вы хотите использовать SpotiFLAC? Вы всегда можете изменить это позже в Настройках.",
+  "setupModeDownloaderTitle": "Загрузчик",
+  "setupModeDownloaderFeature1": "Скачивайте треки в качестве FLAC без потерь",
+  "setupModeDownloaderFeature2": "Сохраняйте музыку на устройство для прослушивания офлайн",
+  "setupModeDownloaderFeature3": "Управляйте своей локальной музыкальной библиотекой",
+  "setupModeStreamingTitle": "Стриминг",
+  "setupModeStreamingFeature1": "Слушайте треки мгновенно без скачивания",
+  "setupModeStreamingFeature2": "Smart Queue автоматически подбирает новую музыку для вас",
+  "setupModeStreamingFeature3": "Воспроизводите любой трек по запросу с элементами управления",
+  "setupModeChangeableLater": "Вы можете переключаться между режимами в любое время в Настройках.",
+  "settingsSmartQueueTitle": "Smart Queue",
+  "settingsSmartQueueSubtitle": "Автоматически находите и добавляйте похожие треки в очередь воспроизведения"
 }

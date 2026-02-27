@@ -80,6 +80,16 @@
 -keep class io.flutter.plugins.pathprovider.** { *; }
 -keep class dev.flutter.pigeon.** { *; }
 
+# Audio Service (media playback notification) - CRITICAL for release builds
+-keep class com.ryanheise.audioservice.** { *; }
+-keep class com.ryanheise.audio_session.** { *; }
+-keep class com.ryanheise.just_audio.** { *; }
+
+# AndroidX Media / MediaSession (used by audio_service)
+-keep class androidx.media.** { *; }
+-keep class android.support.v4.media.** { *; }
+-dontwarn android.support.v4.media.**
+
 # Local Notifications
 -keep class com.dexterous.** { *; }
 -keep class com.dexterous.flutterlocalnotifications.** { *; }

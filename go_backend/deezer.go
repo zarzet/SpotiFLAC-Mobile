@@ -13,12 +13,13 @@ import (
 )
 
 const (
-	deezerBaseURL     = "https://api.deezer.com/2.0"
-	deezerSearchURL   = deezerBaseURL + "/search"
-	deezerTrackURL    = deezerBaseURL + "/track/%s"
-	deezerAlbumURL    = deezerBaseURL + "/album/%s"
-	deezerArtistURL   = deezerBaseURL + "/artist/%s"
-	deezerPlaylistURL = deezerBaseURL + "/playlist/%s"
+	deezerBaseURL          = "https://api.deezer.com/2.0"
+	deezerSearchURL        = deezerBaseURL + "/search"
+	deezerTrackURL         = deezerBaseURL + "/track/%s"
+	deezerAlbumURL         = deezerBaseURL + "/album/%s"
+	deezerArtistURL        = deezerBaseURL + "/artist/%s"
+	deezerArtistRelatedURL = deezerBaseURL + "/artist/%s/related"
+	deezerPlaylistURL      = deezerBaseURL + "/playlist/%s"
 
 	deezerCacheTTL = 10 * time.Minute
 
@@ -234,6 +235,8 @@ func (c *DeezerClient) convertTrack(track deezerTrack) TrackMetadata {
 		DiscNumber:  track.DiskNumber,
 		ExternalURL: track.Link,
 		ISRC:        track.ISRC,
+		AlbumID:     fmt.Sprintf("deezer:%d", track.Album.ID),
+		ArtistID:    fmt.Sprintf("deezer:%d", track.Artist.ID),
 	}
 }
 
@@ -753,6 +756,66 @@ func (c *DeezerClient) GetArtist(ctx context.Context, artistID string) (*ArtistR
 	c.maybeCleanupCachesLocked(now)
 	c.cacheMu.Unlock()
 
+	return result, nil
+}
+
+func (c *DeezerClient) GetRelatedArtists(ctx context.Context, artistID string, limit int) ([]SearchArtistResult, error) {
+	normalizedArtistID := strings.TrimSpace(strings.TrimPrefix(artistID, "deezer:"))
+	if normalizedArtistID == "" {
+		return nil, fmt.Errorf("invalid Deezer artist ID")
+	}
+
+	effectiveLimit := limit
+	if effectiveLimit <= 0 {
+		effectiveLimit = 12
+	}
+
+	relatedURL := fmt.Sprintf("%s?limit=%d", fmt.Sprintf(deezerArtistRelatedURL, normalizedArtistID), effectiveLimit)
+	var relatedResp struct {
+		Data []struct {
+			ID            int64  `json:"id"`
+			Name          string `json:"name"`
+			Picture       string `json:"picture"`
+			PictureMedium string `json:"picture_medium"`
+			PictureBig    string `json:"picture_big"`
+			PictureXL     string `json:"picture_xl"`
+			NbFan         int    `json:"nb_fan"`
+		} `json:"data"`
+		Error *struct {
+			Type    string `json:"type"`
+			Message string `json:"message"`
+			Code    int    `json:"code"`
+		} `json:"error,omitempty"`
+	}
+
+	if err := c.getJSON(ctx, relatedURL, &relatedResp); err != nil {
+		return nil, err
+	}
+	if relatedResp.Error != nil {
+		return nil, fmt.Errorf("deezer related artists error: %s", relatedResp.Error.Message)
+	}
+
+	result := make([]SearchArtistResult, 0, len(relatedResp.Data))
+	for _, artist := range relatedResp.Data {
+		imageURL := artist.PictureXL
+		if imageURL == "" {
+			imageURL = artist.PictureBig
+		}
+		if imageURL == "" {
+			imageURL = artist.PictureMedium
+		}
+		if imageURL == "" {
+			imageURL = artist.Picture
+		}
+
+		result = append(result, SearchArtistResult{
+			ID:         fmt.Sprintf("deezer:%d", artist.ID),
+			Name:       artist.Name,
+			Images:     imageURL,
+			Followers:  artist.NbFan,
+			Popularity: 0,
+		})
+	}
 	return result, nil
 }
 
