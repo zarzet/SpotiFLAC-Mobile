@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
@@ -28,6 +29,7 @@ import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/downloaded_album_screen.dart';
 import 'package:spotiflac_android/screens/library_tracks_folder_screen.dart';
 import 'package:spotiflac_android/screens/local_album_screen.dart';
+import 'package:spotiflac_android/screens/unified_folder_screen.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 enum LibraryItemSource { downloaded, local }
@@ -227,31 +229,70 @@ class _GroupedLocalAlbum {
   String get key => '$albumName|$artistName';
 }
 
+class _GroupedFolder {
+  final String path;
+  final String folderName;
+  final List<UnifiedLibraryItem> tracks;
+  final DateTime latestScanned;
+  final String searchKey;
+
+  _GroupedFolder({
+    required this.path,
+    required this.folderName,
+    required this.tracks,
+    required this.latestScanned,
+  }) : searchKey = folderName.toLowerCase();
+
+  String get key => path;
+}
+
+enum _FolderBrowserEntryType { folder, track }
+
+class _FolderBrowserEntry {
+  final String name;
+  final String path;
+  final _FolderBrowserEntryType type;
+  final UnifiedLibraryItem? track;
+  final List<UnifiedLibraryItem> allDescendantTracks;
+
+  _FolderBrowserEntry({
+    required this.name,
+    required this.path,
+    required this.type,
+    this.track,
+    required this.allDescendantTracks,
+  });
+
+  String get key =>
+      type == _FolderBrowserEntryType.track ? (track?.id ?? path) : path;
+}
+
 class _HistoryStats {
   final Map<String, int> albumCounts;
   final Map<String, int> localAlbumCounts; // For identifying local singles
   final List<_GroupedAlbum> groupedAlbums;
   final List<_GroupedLocalAlbum> groupedLocalAlbums; // Local library albums
+  final List<_GroupedFolder> groupedFolders; // Local folders (flat list)
+  final List<_FolderBrowserEntry>
+  rootFolderEntries; // Hierarchical root entries
   final int albumCount;
-  final int singleTracks;
   // Local library stats
   final int localAlbumCount;
-  final int localSingleTracks;
+  final int folderCount;
 
   const _HistoryStats({
     required this.albumCounts,
     this.localAlbumCounts = const {},
     required this.groupedAlbums,
     this.groupedLocalAlbums = const [],
+    this.groupedFolders = const [],
+    this.rootFolderEntries = const [],
     required this.albumCount,
-    required this.singleTracks,
     this.localAlbumCount = 0,
-    this.localSingleTracks = 0,
+    this.folderCount = 0,
   });
 
   int get totalAlbumCount => albumCount + localAlbumCount;
-
-  int get totalSingleTracks => singleTracks + localSingleTracks;
 }
 
 class _FilterContentData {
@@ -260,6 +301,7 @@ class _FilterContentData {
   final List<UnifiedLibraryItem> filteredUnifiedItems;
   final List<_GroupedAlbum> filteredGroupedAlbums;
   final List<_GroupedLocalAlbum> filteredGroupedLocalAlbums;
+  final List<_FolderBrowserEntry> filteredRootFolderEntries;
   final bool showFilteringIndicator;
 
   const _FilterContentData({
@@ -268,6 +310,7 @@ class _FilterContentData {
     required this.filteredUnifiedItems,
     required this.filteredGroupedAlbums,
     required this.filteredGroupedLocalAlbums,
+    this.filteredRootFolderEntries = const [],
     required this.showFilteringIndicator,
   });
 
@@ -376,7 +419,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   double _playlistSelectionOverlayBottomPadding = 0;
 
   PageController? _filterPageController;
-  final List<String> _filterModes = ['all', 'albums', 'singles'];
+  final List<String> _filterModes = ['all', 'albums', 'folders'];
   bool _isPageControllerInitialized = false;
   static const List<String> _months = [
     'Jan',
@@ -431,6 +474,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   String _groupedAlbumFilterSortMode = 'latest';
   List<_GroupedAlbum> _filteredGroupedAlbumsCache = const [];
   List<_GroupedLocalAlbum> _filteredGroupedLocalAlbumsCache = const [];
+  List<_FolderBrowserEntry> _filteredRootFolderEntriesCache = const [];
   // Advanced filters
   String? _filterSource; // null = all, 'downloaded', 'local'
   String? _filterQuality; // null = all, 'hires', 'cd', 'lossy'
@@ -460,7 +504,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (_isPageControllerInitialized) return;
     _isPageControllerInitialized = true;
     final currentFilter = ref.read(settingsProvider).historyFilterMode;
-    final initialPage = _filterModes.indexOf(currentFilter).clamp(0, 2);
+    final initialPage = _filterModes
+        .indexOf(currentFilter)
+        .clamp(0, _filterModes.length - 1);
     _filterPageController = PageController(initialPage: initialPage);
   }
 
@@ -1571,7 +1617,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return result;
   }
 
-  ({List<_GroupedAlbum> albums, List<_GroupedLocalAlbum> localAlbums})
+  ({
+    List<_GroupedAlbum> albums,
+    List<_GroupedLocalAlbum> localAlbums,
+    List<_FolderBrowserEntry> folders,
+  })
   _resolveFilteredGroupedAlbums(_HistoryStats historyStats) {
     final cacheValid =
         identical(_groupedAlbumFilterHistoryStatsCache, historyStats) &&
@@ -1585,6 +1635,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       return (
         albums: _filteredGroupedAlbumsCache,
         localAlbums: _filteredGroupedLocalAlbumsCache,
+        folders: _filteredRootFolderEntriesCache,
       );
     }
 
@@ -1596,6 +1647,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       historyStats.groupedLocalAlbums,
       _searchQuery,
     );
+    // Applying basic search filter on folders
+    final filteredRootFolderEntries = _searchQuery.isEmpty
+        ? historyStats.rootFolderEntries
+        : historyStats.rootFolderEntries
+              .where((f) => f.name.toLowerCase().contains(_searchQuery))
+              .toList();
 
     _groupedAlbumFilterHistoryStatsCache = historyStats;
     _groupedAlbumFilterSearchQuery = _searchQuery;
@@ -1605,9 +1662,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _groupedAlbumFilterSortMode = _sortMode;
     _filteredGroupedAlbumsCache = filteredGroupedAlbums;
     _filteredGroupedLocalAlbumsCache = filteredGroupedLocalAlbums;
+    _filteredRootFolderEntriesCache = filteredRootFolderEntries;
     return (
       albums: filteredGroupedAlbums,
       localAlbums: filteredGroupedLocalAlbums,
+      folders: filteredRootFolderEntries,
     );
   }
 
@@ -2069,15 +2128,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       albumMap.putIfAbsent(key, () => []).add(item);
     }
 
-    int singleTracks = 0;
-    for (final item in items) {
-      final key =
-          '${item.albumName.toLowerCase()}|${(item.albumArtist ?? item.artistName).toLowerCase()}';
-      if ((albumCounts[key] ?? 0) <= 1) {
-        singleTracks++;
-      }
-    }
-
     final groupedAlbums = <_GroupedAlbum>[];
     albumMap.forEach((_, tracks) {
       if (tracks.length <= 1) return;
@@ -2119,12 +2169,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     }
 
     int localAlbumCount = 0;
-    int localSingleTracks = 0;
     for (final count in localAlbumCounts.values) {
       if (count > 1) {
         localAlbumCount++;
-      } else {
-        localSingleTracks++;
       }
     }
 
@@ -2160,15 +2207,250 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       (a, b) => b.latestScanned.compareTo(a.latestScanned),
     );
 
+    // Build grouped folders
+    final folderMap = <String, List<UnifiedLibraryItem>>{};
+    for (final item in items) {
+      final dir = p.dirname(item.filePath);
+      folderMap
+          .putIfAbsent(dir, () => [])
+          .add(UnifiedLibraryItem.fromDownloadHistory(item));
+    }
+    for (final item in localItems) {
+      final dir = p.dirname(item.filePath);
+      folderMap
+          .putIfAbsent(dir, () => [])
+          .add(UnifiedLibraryItem.fromLocalLibrary(item));
+    }
+
+    final settings = ref.read(settingsProvider);
+    final localRoot = settings.localLibraryPath;
+    final downloadRoot = settings.downloadDirectory;
+
+    final groupedFolders = <_GroupedFolder>[];
+    folderMap.forEach((path, unifiedTracks) {
+      unifiedTracks.sort((a, b) => a.trackName.compareTo(b.trackName));
+
+      String displayName = p.basename(path);
+      try {
+        if (localRoot.isNotEmpty && path.startsWith(localRoot)) {
+          final relative = p.relative(path, from: localRoot);
+          if (relative != '.') {
+            displayName = relative;
+          }
+        } else if (downloadRoot.isNotEmpty && path.startsWith(downloadRoot)) {
+          final relative = p.relative(path, from: downloadRoot);
+          if (relative != '.') {
+            displayName = relative;
+          }
+        }
+      } catch (_) {
+        // Fallback to basename
+      }
+
+      groupedFolders.add(
+        _GroupedFolder(
+          path: path,
+          folderName: displayName,
+          tracks: unifiedTracks,
+          latestScanned: unifiedTracks
+              .map((t) => t.addedAt)
+              .reduce((a, b) => a.isAfter(b) ? a : b),
+        ),
+      );
+    });
+
+    groupedFolders.sort((a, b) => b.latestScanned.compareTo(a.latestScanned));
+
+    // Build hierarchical root entries
+    final rootEntriesMap = <String, _FolderBrowserEntry>{};
+    final allUnifiedTracks = <UnifiedLibraryItem>[];
+    for (final item in items) {
+      allUnifiedTracks.add(UnifiedLibraryItem.fromDownloadHistory(item));
+    }
+    for (final item in localItems) {
+      allUnifiedTracks.add(UnifiedLibraryItem.fromLocalLibrary(item));
+    }
+
+    String safGetRelative(String path, String root) {
+      if (path == root) return '.';
+      if (!path.startsWith('content://')) {
+        return p.relative(path, from: root);
+      }
+
+      try {
+        final pathUri = Uri.parse(path);
+        final rootUri = Uri.parse(root);
+
+        final pathSegments = pathUri.pathSegments;
+        final documentIdx = pathSegments.indexOf('document');
+        if (documentIdx == -1 || documentIdx == pathSegments.length - 1) {
+          return p.relative(path, from: root);
+        }
+
+        final fullDocId = Uri.decodeComponent(
+          pathSegments.sublist(documentIdx + 1).join('/'),
+        ).replaceAll(':', '/');
+
+        // Extract root doc ID. Prefer document ID over tree ID if both exist.
+        String rootDocId = '';
+        final rootSegments = rootUri.pathSegments;
+        final rootDocIdx = rootSegments.indexOf('document');
+        final rootTreeIdx = rootSegments.indexOf('tree');
+
+        if (rootDocIdx != -1 && rootDocIdx < rootSegments.length - 1) {
+          rootDocId = Uri.decodeComponent(
+            rootSegments.sublist(rootDocIdx + 1).join('/'),
+          );
+        } else if (rootTreeIdx != -1 && rootTreeIdx < rootSegments.length - 1) {
+          rootDocId = Uri.decodeComponent(rootSegments[rootTreeIdx + 1]);
+        }
+        rootDocId = rootDocId.replaceAll(':', '/');
+
+        if (fullDocId == rootDocId) return '.';
+        if (fullDocId.startsWith('$rootDocId/')) {
+          return fullDocId.substring(rootDocId.length + 1);
+        } else if (fullDocId.startsWith(rootDocId)) {
+          var relative = fullDocId.substring(rootDocId.length);
+          if (relative.startsWith('/')) relative = relative.substring(1);
+          return relative.isEmpty ? '.' : relative;
+        }
+      } catch (_) {}
+
+      return p.relative(path, from: root);
+    }
+
+    String safJoin(String root, String segment) {
+      if (!root.startsWith('content://')) return p.join(root, segment);
+      try {
+        final uri = Uri.parse(root);
+        final segments = List<String>.from(uri.pathSegments);
+        final documentIdx = segments.indexOf('document');
+        final treeIdx = segments.indexOf('tree');
+
+        if (documentIdx != -1) {
+          if (documentIdx == segments.length - 1) {
+            segments.add(Uri.encodeComponent(segment));
+          } else {
+            final docId = Uri.decodeComponent(segments[documentIdx + 1]);
+            final newDocId = '$docId/$segment'.replaceAll('//', '/');
+            segments[documentIdx + 1] = Uri.encodeComponent(newDocId);
+          }
+        } else if (treeIdx != -1 && treeIdx < segments.length - 1) {
+          // Transition from tree root to document subpath
+          final treeId = Uri.decodeComponent(segments[treeIdx + 1]);
+          final newDocId = '$treeId/$segment';
+          segments.add('document');
+          segments.add(Uri.encodeComponent(newDocId));
+        }
+        return uri.replace(pathSegments: segments).toString();
+      } catch (_) {}
+      return p.join(root, segment);
+    }
+
+    String discoverSmartRoot(String basePath, Iterable<String> paths) {
+      if (basePath.isEmpty || paths.isEmpty) return basePath;
+      String currentRoot = basePath;
+      while (true) {
+        final children = <String>{};
+        bool hasDirectFile = false;
+        for (final path in paths) {
+          if (!path.startsWith(currentRoot)) continue;
+          try {
+            final relative = safGetRelative(path, currentRoot);
+            if (relative == '.' || relative.isEmpty) continue;
+            final parts = p.split(relative);
+            if (parts.length == 1) {
+              hasDirectFile = true;
+              break;
+            } else {
+              children.add(parts[0]);
+            }
+          } catch (_) {}
+        }
+        // If we have branching or files, this is our root.
+        // Special case: don't let "document" be the only child if we can help it
+        if (hasDirectFile || children.length != 1) break;
+        currentRoot = safJoin(currentRoot, children.first);
+      }
+      return currentRoot;
+    }
+
+    final effectiveLocalRoot = discoverSmartRoot(
+      localRoot,
+      localItems.map((i) => i.filePath),
+    );
+    final effectiveDownloadRoot = discoverSmartRoot(
+      downloadRoot,
+      items.map((i) => i.filePath),
+    );
+
+    for (final item in allUnifiedTracks) {
+      String? root;
+      if (localRoot.isNotEmpty && item.filePath.startsWith(localRoot)) {
+        root = effectiveLocalRoot;
+      } else if (downloadRoot.isNotEmpty &&
+          item.filePath.startsWith(downloadRoot)) {
+        root = effectiveDownloadRoot;
+      }
+
+      if (root != null) {
+        try {
+          final relative = safGetRelative(item.filePath, root);
+          final parts = p.split(relative);
+          if (parts.length == 1 && relative != '.') {
+            // It's a track in the root
+            rootEntriesMap[item.id] = _FolderBrowserEntry(
+              name: item.trackName,
+              path: item.filePath,
+              type: _FolderBrowserEntryType.track,
+              track: item,
+              allDescendantTracks: [item],
+            );
+          } else if (parts.length > 1 ||
+              (parts.length == 1 && relative == '.')) {
+            if (relative == '.') continue;
+
+            final folderName = parts[0];
+            // Skip generic names that don't represent real folders
+            if (folderName == 'document' || folderName == 'primary') continue;
+
+            final folderPath = safJoin(root, folderName);
+            if (rootEntriesMap.containsKey(folderPath)) {
+              rootEntriesMap[folderPath]!.allDescendantTracks.add(item);
+            } else {
+              rootEntriesMap[folderPath] = _FolderBrowserEntry(
+                name: folderName,
+                path: folderPath,
+                type: _FolderBrowserEntryType.folder,
+                allDescendantTracks: [item],
+              );
+            }
+          }
+        } catch (_) {
+          // Ignore items outside roots for hierarchical view
+        }
+      }
+    }
+    final rootFolderEntries = rootEntriesMap.values.toList();
+    // Sort: folders first, then tracks (alphabetical)
+    rootFolderEntries.sort((a, b) {
+      if (a.type != b.type) {
+        return a.type == _FolderBrowserEntryType.folder ? -1 : 1;
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
+
     return _HistoryStats(
       albumCounts: albumCounts,
       localAlbumCounts: localAlbumCounts,
       groupedAlbums: groupedAlbums,
       groupedLocalAlbums: groupedLocalAlbums,
+      groupedFolders: groupedFolders,
+      rootFolderEntries: rootFolderEntries,
       albumCount: albumCount,
-      singleTracks: singleTracks,
       localAlbumCount: localAlbumCount,
-      localSingleTracks: localSingleTracks,
+      folderCount:
+          rootFolderEntries.length, // Use root entry count for the chip
     );
   }
 
@@ -2192,49 +2474,17 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   }
 
   void _navigateToLocalAlbum(_GroupedLocalAlbum album) {
-    _searchFocusNode.unfocus();
     Navigator.push(
       context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
-        reverseTransitionDuration: const Duration(milliseconds: 250),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            LocalAlbumScreen(
-              albumName: album.albumName,
-              artistName: album.artistName,
-              coverPath: album.coverPath,
-              tracks: album.tracks,
-            ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            FadeTransition(opacity: animation, child: child),
+      MaterialPageRoute(
+        builder: (context) => LocalAlbumScreen(
+          albumName: album.albumName,
+          artistName: album.artistName,
+          coverPath: album.coverPath,
+          tracks: album.tracks,
+        ),
       ),
-    ).then((_) => _searchFocusNode.unfocus());
-  }
-
-  void _openWishlistFolder() {
-    _searchFocusNode.unfocus();
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => const LibraryTracksFolderScreen(
-              mode: LibraryTracksFolderMode.wishlist,
-            ),
-          ),
-        )
-        .then((_) => _searchFocusNode.unfocus());
-  }
-
-  void _openLovedFolder() {
-    _searchFocusNode.unfocus();
-    Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => const LibraryTracksFolderScreen(
-              mode: LibraryTracksFolderMode.loved,
-            ),
-          ),
-        )
-        .then((_) => _searchFocusNode.unfocus());
+    );
   }
 
   void _openPlaylistById(String playlistId) {
@@ -2542,8 +2792,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final filteredGrouped = _resolveFilteredGroupedAlbums(historyStats);
     final filteredGroupedAlbums = filteredGrouped.albums;
     final filteredGroupedLocalAlbums = filteredGrouped.localAlbums;
+    final filteredRootFolderEntries = filteredGrouped.folders;
     final albumCount = historyStats.totalAlbumCount;
-    final singleCount = historyStats.totalSingleTracks;
     _prepareFilterContentCache(
       allHistoryItems: allHistoryItems,
       historyStats: historyStats,
@@ -2559,6 +2809,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           allHistoryItems: allHistoryItems,
           filteredGroupedAlbums: filteredGroupedAlbums,
           filteredGroupedLocalAlbums: filteredGroupedLocalAlbums,
+          filteredRootFolderEntries: filteredRootFolderEntries,
           albumCounts: historyStats.albumCounts,
           localAlbumCounts: historyStats.localAlbumCounts,
           localLibraryItems: localLibraryItems,
@@ -2717,21 +2968,17 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           // Compute filtered counts for tab chips
                           int filteredAllCount;
                           int filteredAlbumCount;
-                          int filteredSingleCount;
 
                           if (_activeFilterCount == 0 && _searchQuery.isEmpty) {
                             filteredAllCount =
                                 allHistoryItems.length +
                                 localLibraryItems.length;
                             filteredAlbumCount = albumCount;
-                            filteredSingleCount = singleCount;
                           } else {
                             final allData = getFilterData('all');
                             final albumsData = getFilterData('albums');
-                            final singlesData = getFilterData('singles');
                             filteredAllCount = allData.totalTrackCount;
                             filteredAlbumCount = albumsData.totalAlbumCount;
-                            filteredSingleCount = singlesData.totalTrackCount;
                           }
 
                           return SingleChildScrollView(
@@ -2757,9 +3004,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                 ),
                                 const SizedBox(width: 8),
                                 _FilterChip(
-                                  label: context.l10n.historyFilterSingles,
-                                  count: filteredSingleCount,
-                                  isSelected: historyFilterMode == 'singles',
+                                  label: context.l10n.historyFilterFolders,
+                                  count: getFilterData(
+                                    'folders',
+                                  ).filteredRootFolderEntries.length,
+                                  isSelected: historyFilterMode == 'folders',
                                   onTap: () {
                                     _animateToFilterPage(2);
                                   },
@@ -2821,18 +3070,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         .map((item) => UnifiedLibraryItem.fromDownloadHistory(item))
         .toList(growable: false);
 
-    List<LocalLibraryItem> localItemsForMerge;
-    if (filterMode == 'all') {
-      localItemsForMerge = _filterLocalItems(localLibraryItems, query);
-    } else {
-      final localSingles = localLibraryItems
-          .where((item) {
-            final count = localAlbumCounts[item.albumKey] ?? 0;
-            return count == 1;
-          })
-          .toList(growable: false);
-      localItemsForMerge = _filterLocalItems(localSingles, query);
-    }
+    List<LocalLibraryItem> localItemsForMerge = _filterLocalItems(
+      localLibraryItems,
+      query,
+    );
 
     final unifiedLocal = localItemsForMerge
         .map((item) => UnifiedLibraryItem.fromLocalLibrary(item))
@@ -2857,6 +3098,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required List<DownloadHistoryItem> allHistoryItems,
     required List<_GroupedAlbum> filteredGroupedAlbums,
     required List<_GroupedLocalAlbum> filteredGroupedLocalAlbums,
+    required List<_FolderBrowserEntry> filteredRootFolderEntries,
     required Map<String, int> albumCounts,
     required Map<String, int> localAlbumCounts,
     required List<LocalLibraryItem> localLibraryItems,
@@ -2899,6 +3141,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       filteredUnifiedItems: filteredUnifiedItems,
       filteredGroupedAlbums: filteredGroupedAlbums,
       filteredGroupedLocalAlbums: filteredGroupedLocalAlbums,
+      filteredRootFolderEntries: filteredRootFolderEntries,
       showFilteringIndicator: showFilteringIndicator,
     );
   }
@@ -3112,125 +3355,101 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required LibraryCollectionsState collectionState,
     List<UnifiedLibraryItem> filteredUnifiedItems = const [],
   }) {
-    if (index == 0) {
-      return _buildCollectionGridItem(
-        context: context,
-        colorScheme: colorScheme,
-        icon: Icons.add_circle_outline,
-        iconColor: Colors.white,
-        iconBgColor: const Color(0xFF1DB954),
-        title: context.l10n.collectionWishlist,
-        count: collectionState.wishlistCount,
-        onTap: _openWishlistFolder,
-      );
-    } else if (index == 1) {
-      return _buildCollectionGridItem(
-        context: context,
-        colorScheme: colorScheme,
-        icon: Icons.favorite,
-        iconColor: Colors.white,
-        iconBgColor: const Color(0xFF8C67AC),
-        title: context.l10n.collectionLoved,
-        count: collectionState.lovedCount,
-        onTap: _openLovedFolder,
-      );
-    } else {
-      final playlist = collectionState.playlists[index - 2];
-      final isSelected = _selectedPlaylistIds.contains(playlist.id);
-      return DragTarget<UnifiedLibraryItem>(
-        onWillAcceptWithDetails: (_) => !_isPlaylistSelectionMode,
-        onAcceptWithDetails: (details) {
-          _onTrackDroppedOnPlaylist(
-            context,
-            details.data,
-            playlist.id,
-            playlist.name,
-            allItems: filteredUnifiedItems,
-          );
-        },
-        builder: (context, candidateData, rejectedData) {
-          final isHovering = candidateData.isNotEmpty;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: isHovering
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colorScheme.primary, width: 2),
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                  )
-                : null,
-            child: Stack(
-              children: [
-                _buildCollectionGridItem(
-                  context: context,
-                  colorScheme: colorScheme,
-                  coverWidget: _buildPlaylistCover(
-                    context,
-                    playlist,
-                    colorScheme,
-                  ),
-                  title: playlist.name,
-                  count: playlist.tracks.length,
-                  onTap: _isPlaylistSelectionMode
-                      ? () => _togglePlaylistSelection(playlist.id)
-                      : () => _openPlaylistById(playlist.id),
-                  onLongPress: _isPlaylistSelectionMode
-                      ? () => _togglePlaylistSelection(playlist.id)
-                      : () => _enterPlaylistSelectionMode(playlist.id),
+    final playlist = collectionState.playlists[index];
+    final isSelected = _selectedPlaylistIds.contains(playlist.id);
+    return DragTarget<UnifiedLibraryItem>(
+      onWillAcceptWithDetails: (_) => !_isPlaylistSelectionMode,
+      onAcceptWithDetails: (details) {
+        _onTrackDroppedOnPlaylist(
+          context,
+          details.data,
+          playlist.id,
+          playlist.name,
+          allItems: filteredUnifiedItems,
+        );
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: isHovering
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.primary, width: 2),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                )
+              : null,
+          child: Stack(
+            children: [
+              _buildCollectionGridItem(
+                context: context,
+                colorScheme: colorScheme,
+                coverWidget: _buildPlaylistCover(
+                  context,
+                  playlist,
+                  colorScheme,
                 ),
-                if (_isPlaylistSelectionMode)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? colorScheme.primary.withValues(alpha: 0.3)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_isPlaylistSelectionMode)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: IgnorePointer(
+                title: playlist.name,
+                count: playlist.tracks.length,
+                onTap: _isPlaylistSelectionMode
+                    ? () => _togglePlaylistSelection(playlist.id)
+                    : () => _openPlaylistById(playlist.id),
+                onLongPress: _isPlaylistSelectionMode
+                    ? () => _togglePlaylistSelection(playlist.id)
+                    : () => _enterPlaylistSelectionMode(playlist.id),
+              ),
+              if (_isPlaylistSelectionMode)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: AspectRatio(
+                      aspectRatio: 1,
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.surface.withValues(alpha: 0.85),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? colorScheme.primary
-                                : colorScheme.outline,
-                            width: 2,
-                          ),
+                              ? colorScheme.primary.withValues(alpha: 0.3)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: isSelected
-                            ? Icon(
-                                Icons.check,
-                                size: 16,
-                                color: colorScheme.onPrimary,
-                              )
-                            : const SizedBox(width: 16, height: 16),
                       ),
                     ),
                   ),
-              ],
-            ),
-          );
-        },
-      );
-    }
+                ),
+              if (_isPlaylistSelectionMode)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.surface.withValues(alpha: 0.85),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.outline,
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              size: 16,
+                              color: colorScheme.onPrimary,
+                            )
+                          : const SizedBox(width: 16, height: 16),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// Build a collection item at [index] for the unified "All" tab list view.
@@ -3242,113 +3461,87 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     required LibraryCollectionsState collectionState,
     List<UnifiedLibraryItem> filteredUnifiedItems = const [],
   }) {
-    if (index == 0) {
-      return _buildCollectionListItem(
-        context: context,
-        colorScheme: colorScheme,
-        icon: Icons.add_circle_outline,
-        iconColor: Colors.white,
-        iconBgColor: const Color(0xFF1DB954),
-        title: context.l10n.collectionWishlist,
-        subtitle:
-            '${context.l10n.collectionFoldersTitle} • ${collectionState.wishlistCount} ${collectionState.wishlistCount == 1 ? 'track' : 'tracks'}',
-        onTap: _openWishlistFolder,
-      );
-    } else if (index == 1) {
-      return _buildCollectionListItem(
-        context: context,
-        colorScheme: colorScheme,
-        icon: Icons.favorite,
-        iconColor: Colors.white,
-        iconBgColor: const Color(0xFF8C67AC),
-        title: context.l10n.collectionLoved,
-        subtitle:
-            '${context.l10n.collectionFoldersTitle} • ${collectionState.lovedCount} ${collectionState.lovedCount == 1 ? 'track' : 'tracks'}',
-        onTap: _openLovedFolder,
-      );
-    } else {
-      final playlist = collectionState.playlists[index - 2];
-      final isSelected = _selectedPlaylistIds.contains(playlist.id);
-      return DragTarget<UnifiedLibraryItem>(
-        onWillAcceptWithDetails: (_) => !_isPlaylistSelectionMode,
-        onAcceptWithDetails: (details) {
-          _onTrackDroppedOnPlaylist(
-            context,
-            details.data,
-            playlist.id,
-            playlist.name,
-            allItems: filteredUnifiedItems,
-          );
-        },
-        builder: (context, candidateData, rejectedData) {
-          final isHovering = candidateData.isNotEmpty;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: isHovering
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colorScheme.primary, width: 2),
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                  )
-                : null,
-            child: Row(
-              children: [
-                if (_isPlaylistSelectionMode)
-                  GestureDetector(
-                    onTap: () => _togglePlaylistSelection(playlist.id),
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Container(
-                        decoration: BoxDecoration(
+    final playlist = collectionState.playlists[index];
+    final isSelected = _selectedPlaylistIds.contains(playlist.id);
+    return DragTarget<UnifiedLibraryItem>(
+      onWillAcceptWithDetails: (_) => !_isPlaylistSelectionMode,
+      onAcceptWithDetails: (details) {
+        _onTrackDroppedOnPlaylist(
+          context,
+          details.data,
+          playlist.id,
+          playlist.name,
+          allItems: filteredUnifiedItems,
+        );
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: isHovering
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.primary, width: 2),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
+                )
+              : null,
+          child: Row(
+            children: [
+              if (_isPlaylistSelectionMode)
+                GestureDetector(
+                  onTap: () => _togglePlaylistSelection(playlist.id),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                        border: Border.all(
                           color: isSelected
                               ? colorScheme.primary
-                              : Colors.transparent,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected
-                                ? colorScheme.primary
-                                : colorScheme.outline,
-                            width: 2,
-                          ),
+                              : colorScheme.outline,
+                          width: 2,
                         ),
-                        child: isSelected
-                            ? Icon(
-                                Icons.check,
-                                size: 18,
-                                color: colorScheme.onPrimary,
-                              )
-                            : const SizedBox(width: 18, height: 18),
                       ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              size: 18,
+                              color: colorScheme.onPrimary,
+                            )
+                          : const SizedBox(width: 18, height: 18),
                     ),
-                  ),
-                Expanded(
-                  child: _buildCollectionListItem(
-                    context: context,
-                    colorScheme: colorScheme,
-                    coverWidget: _buildPlaylistCover(
-                      context,
-                      playlist,
-                      colorScheme,
-                      56,
-                    ),
-                    title: playlist.name,
-                    subtitle:
-                        '${playlist.tracks.length} ${playlist.tracks.length == 1 ? 'track' : 'tracks'}',
-                    onTap: _isPlaylistSelectionMode
-                        ? () => _togglePlaylistSelection(playlist.id)
-                        : () => _openPlaylistById(playlist.id),
-                    onLongPress: _isPlaylistSelectionMode
-                        ? () => _togglePlaylistSelection(playlist.id)
-                        : () => _enterPlaylistSelectionMode(playlist.id),
                   ),
                 ),
-              ],
-            ),
-          );
-        },
-      );
-    }
+              Expanded(
+                child: _buildCollectionListItem(
+                  context: context,
+                  colorScheme: colorScheme,
+                  coverWidget: _buildPlaylistCover(
+                    context,
+                    playlist,
+                    colorScheme,
+                    56,
+                  ),
+                  title: playlist.name,
+                  subtitle:
+                      '${playlist.tracks.length} ${playlist.tracks.length == 1 ? 'track' : 'tracks'}',
+                  onTap: _isPlaylistSelectionMode
+                      ? () => _togglePlaylistSelection(playlist.id)
+                      : () => _openPlaylistById(playlist.id),
+                  onLongPress: _isPlaylistSelectionMode
+                      ? () => _togglePlaylistSelection(playlist.id)
+                      : () => _enterPlaylistSelectionMode(playlist.id),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildFilterContent({
@@ -3364,6 +3557,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final historyItems = filterData.historyItems;
     final showFilteringIndicator = filterData.showFilteringIndicator;
     final filteredGroupedAlbums = filterData.filteredGroupedAlbums;
+    final filteredRootFolderEntries = filterData.filteredRootFolderEntries;
     final filteredGroupedLocalAlbums = filterData.filteredGroupedLocalAlbums;
     final unifiedItems = filterData.unifiedItems;
     final filteredUnifiedItems = filterData.filteredUnifiedItems;
@@ -3568,6 +3762,31 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             ),
           ),
 
+        // Folders grid
+        if (filterMode == 'folders' && filteredRootFolderEntries.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final entry = filterData.filteredRootFolderEntries[index];
+                return KeyedSubtree(
+                  key: ValueKey('folder_entry_${entry.key}'),
+                  child: _buildFolderBrowserGridItem(
+                    context,
+                    entry,
+                    colorScheme,
+                  ),
+                );
+              }, childCount: filterData.filteredRootFolderEntries.length),
+            ),
+          ),
+
         // Unified list/grid for 'all' filter: collection items + tracks combined
         if (filterMode == 'all') ...[
           if (historyViewMode == 'grid')
@@ -3582,8 +3801,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final collectionCount =
-                        2 + collectionState.playlists.length;
+                    final collectionCount = collectionState.playlists.length;
                     if (index < collectionCount) {
                       return _buildAllTabGridCollectionItem(
                         context: context,
@@ -3624,7 +3842,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                     return const SizedBox.shrink();
                   },
                   childCount:
-                      2 +
                       collectionState.playlists.length +
                       filteredUnifiedItems.length,
                 ),
@@ -3634,7 +3851,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final collectionCount = 2 + collectionState.playlists.length;
+                  final collectionCount = collectionState.playlists.length;
                   if (index < collectionCount) {
                     return _buildAllTabListCollectionItem(
                       context: context,
@@ -3681,92 +3898,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               ),
             ),
         ],
-
-        // Singles filter - show unified items (downloaded + local singles)
-        if (filterMode == 'singles')
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Text(
-                    '$totalTrackCount ${totalTrackCount == 1 ? 'track' : 'tracks'}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (!_isSelectionMode)
-                    GestureDetector(
-                      onLongPress: _activeFilterCount > 0
-                          ? _resetFilters
-                          : null,
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            _showFilterSheet(context, unifiedItems),
-                        icon: Badge(
-                          isLabelVisible: _activeFilterCount > 0,
-                          label: Text('$_activeFilterCount'),
-                          child: const Icon(Icons.filter_list, size: 18),
-                        ),
-                        label: Text(context.l10n.libraryFilterTitle),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-                    ),
-                  if (!_isSelectionMode && filteredUnifiedItems.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () => _showCreatePlaylistDialog(context),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: Text(context.l10n.collectionCreatePlaylist),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-        if (filteredUnifiedItems.isNotEmpty && filterMode == 'singles')
-          historyViewMode == 'grid'
-              ? SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.75,
-                        ),
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final item = filteredUnifiedItems[index];
-                      return KeyedSubtree(
-                        key: ValueKey(item.id),
-                        child: _buildUnifiedGridItem(
-                          context,
-                          item,
-                          colorScheme,
-                        ),
-                      );
-                    }, childCount: filteredUnifiedItems.length),
-                  ),
-                )
-              : SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = filteredUnifiedItems[index];
-                    return KeyedSubtree(
-                      key: ValueKey(item.id),
-                      child: _buildUnifiedLibraryItem(
-                        context,
-                        item,
-                        colorScheme,
-                      ),
-                    );
-                  }, childCount: filteredUnifiedItems.length),
-                ),
 
         if (!hasQueueItems &&
             totalTrackCount == 0 &&
@@ -3874,6 +4005,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         message = 'No single downloads';
         subtitle = 'Single track downloads will appear here';
         icon = Icons.music_note;
+        break;
+      case 'folders':
+        message = context.l10n.historyNoFolders;
+        subtitle = context.l10n.historyNoFoldersSubtitle;
+        icon = Icons.folder;
         break;
       default:
         message = 'No download history';
@@ -4125,6 +4261,109 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Hierarchical folder browser grid item
+  Widget _buildFolderBrowserGridItem(
+    BuildContext context,
+    _FolderBrowserEntry entry,
+    ColorScheme colorScheme,
+  ) {
+    if (entry.type == _FolderBrowserEntryType.track && entry.track != null) {
+      // It's a track in the root, render it as a track item
+      return _buildUnifiedGridItem(context, entry.track!, colorScheme);
+    }
+
+    return GestureDetector(
+      onTap: () {
+        _navigateToFolderBrowser(entry);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    color: colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Icon(
+                        Icons.folder,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 48,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.music_note,
+                          size: 12,
+                          color: colorScheme.onTertiaryContainer,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${entry.allDescendantTracks.length}',
+                          style: TextStyle(
+                            color: colorScheme.onTertiaryContainer,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            entry.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            'Folder',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToFolderBrowser(_FolderBrowserEntry entry) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UnifiedFolderScreen(
+          folderName: entry.name,
+          folderPath: entry.path,
+          tracks: entry.allDescendantTracks,
+        ),
       ),
     );
   }

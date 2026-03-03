@@ -4,11 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
-import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
-import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class TrackCollectionQuickActions extends ConsumerWidget {
@@ -62,13 +60,6 @@ class _TrackOptionsSheet extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final rootContext = Navigator.of(context, rootNavigator: true).context;
     final container = ProviderScope.containerOf(rootContext, listen: false);
-
-    final isLoved = ref.watch(
-      libraryCollectionsProvider.select((state) => state.isLoved(track)),
-    );
-    final isInWishlist = ref.watch(
-      libraryCollectionsProvider.select((state) => state.isInWishlist(track)),
-    );
 
     return SafeArea(
       child: ConstrainedBox(
@@ -214,66 +205,7 @@ class _TrackOptionsSheet extends ConsumerWidget {
                   }
                 },
               ),
-              _OptionTile(
-                icon: isLoved ? Icons.favorite : Icons.favorite_border,
-                iconColor: isLoved ? colorScheme.error : null,
-                title: isLoved
-                    ? context.l10n.trackOptionRemoveFromLoved
-                    : context.l10n.trackOptionAddToLoved,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final added = await ref
-                      .read(libraryCollectionsProvider.notifier)
-                      .toggleLoved(track);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        added
-                            ? context.l10n.collectionAddedToLoved(track.name)
-                            : context.l10n.collectionRemovedFromLoved(
-                                track.name,
-                              ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _OptionTile(
-                icon: isInWishlist
-                    ? Icons.playlist_add_check_circle
-                    : Icons.add_circle_outline,
-                iconColor: isInWishlist ? colorScheme.primary : null,
-                title: isInWishlist
-                    ? context.l10n.trackOptionRemoveFromWishlist
-                    : context.l10n.trackOptionAddToWishlist,
-                onTap: () async {
-                  Navigator.pop(context);
-                  final added = await ref
-                      .read(libraryCollectionsProvider.notifier)
-                      .toggleWishlist(track);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        added
-                            ? context.l10n.collectionAddedToWishlist(track.name)
-                            : context.l10n.collectionRemovedFromWishlist(
-                                track.name,
-                              ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _OptionTile(
-                icon: Icons.playlist_add,
-                title: context.l10n.collectionAddToPlaylist,
-                onTap: () {
-                  Navigator.pop(context);
-                  showAddTrackToPlaylistSheet(context, ref, track);
-                },
-              ),
+              const SizedBox(height: 16),
 
               const SizedBox(height: 16),
             ],
@@ -287,13 +219,11 @@ class _TrackOptionsSheet extends ConsumerWidget {
 /// Styled like _QualityOption in download_service_picker.dart
 class _OptionTile extends StatelessWidget {
   final IconData icon;
-  final Color? iconColor;
   final String title;
   final VoidCallback onTap;
 
   const _OptionTile({
     required this.icon,
-    this.iconColor,
     required this.title,
     required this.onTap,
   });
@@ -309,11 +239,7 @@ class _OptionTile extends StatelessWidget {
           color: colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          color: iconColor ?? colorScheme.onPrimaryContainer,
-          size: 20,
-        ),
+        child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       onTap: onTap,

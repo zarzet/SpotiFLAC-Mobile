@@ -17,6 +17,7 @@ import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
+import 'package:spotiflac_android/models/track.dart';
 
 /// Screen to display downloaded tracks from a specific album
 class DownloadedAlbumScreen extends ConsumerStatefulWidget {
@@ -351,6 +352,35 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     );
   }
 
+  Track _toTrack(DownloadHistoryItem item) {
+    return Track(
+      id: item.id,
+      name: item.trackName,
+      artistName: item.artistName,
+      albumName: item.albumName,
+      albumArtist: item.albumArtist,
+      duration: item.duration ?? 0,
+      trackNumber: item.trackNumber,
+      discNumber: item.discNumber,
+      releaseDate: item.releaseDate,
+      coverUrl: item.coverUrl,
+      source: 'local',
+    );
+  }
+
+  void _playAll(List<DownloadHistoryItem> tracks, {bool shuffle = false}) {
+    final tracksToPlay = tracks.map(_toTrack).toList();
+    if (shuffle) {
+      tracksToPlay.shuffle();
+    } else {
+      tracksToPlay.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
+
+    ref.read(playbackProvider.notifier).playTrackList(tracksToPlay);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -653,8 +683,42 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     ColorScheme colorScheme,
     List<DownloadHistoryItem> tracks,
   ) {
-    // Info is now displayed in the full-screen cover overlay
-    return const SliverToBoxAdapter(child: SizedBox.shrink());
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => _playAll(tracks, shuffle: false),
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Play'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _playAll(tracks, shuffle: true),
+                icon: const Icon(Icons.shuffle),
+                label: const Text('Shuffle'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String? _getCommonQuality(List<DownloadHistoryItem> tracks) {

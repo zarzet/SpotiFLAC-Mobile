@@ -144,6 +144,12 @@ class OptionsSettingsPage extends ConsumerWidget {
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
+                  _InteractionModeSelector(
+                    currentMode: settings.interactionMode,
+                    onChanged: (v) => ref
+                        .read(settingsProvider.notifier)
+                        .setInteractionMode(v),
+                  ),
                   SettingsSwitchItem(
                     icon: Icons.sync,
                     title: context.l10n.optionsAutoFallback,
@@ -1052,26 +1058,26 @@ class _SourceChip extends StatelessWidget {
     return Expanded(
       child: Material(
         color: isSelected ? colorScheme.primaryContainer : unselectedColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   icon,
-                  size: 28,
                   color: isSelected
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onSurfaceVariant,
+                  size: 32,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 12),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
@@ -1085,6 +1091,140 @@ class _SourceChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InteractionModeSelector extends StatelessWidget {
+  final String currentMode;
+  final ValueChanged<String> onChanged;
+
+  const _InteractionModeSelector({
+    required this.currentMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SettingsItem(
+      icon: Icons.touch_app_outlined,
+      title: context.l10n.optionsInteractionMode,
+      subtitle: currentMode == 'stream'
+          ? context.l10n.modeStreaming
+          : context.l10n.modeDownloader,
+      onTap: () => _showModePicker(context),
+      trailing: Text(
+        currentMode == 'stream'
+            ? context.l10n.modeStreaming
+            : context.l10n.modeDownloader,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  void _showModePicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              _ModeOptionTile(
+                title: context.l10n.modeDownloader,
+                subtitle: 'Tap tracks to add them to download queue',
+                icon: Icons.download_rounded,
+                isSelected: currentMode == 'download',
+                onTap: () {
+                  onChanged('download');
+                  Navigator.pop(context);
+                },
+              ),
+              _ModeOptionTile(
+                title: context.l10n.modeStreaming,
+                subtitle: 'Tap tracks to play instantly',
+                icon: Icons.play_circle_filled_rounded,
+                isSelected: currentMode == 'stream',
+                onTap: () {
+                  onChanged('stream');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeOptionTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ModeOptionTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primaryContainer
+              : colorScheme.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: isSelected
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      subtitle: Text(subtitle),
+      trailing: isSelected
+          ? Icon(Icons.check, color: colorScheme.primary)
+          : null,
+      onTap: onTap,
     );
   }
 }

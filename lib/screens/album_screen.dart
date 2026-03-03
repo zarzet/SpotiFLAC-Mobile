@@ -5,6 +5,7 @@ import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
@@ -12,8 +13,6 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
-import 'package:spotiflac_android/providers/library_collections_provider.dart';
-import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class _AlbumCache {
@@ -457,7 +456,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildLoveAllButton(),
+                              _buildPlayAllButton(),
                               const SizedBox(width: 12),
                               FilledButton.icon(
                                 onPressed: () => _downloadAll(context),
@@ -475,7 +474,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              _buildAddToPlaylistButton(context),
+                              _buildShufflePlayButton(),
                             ],
                           ),
                         ],
@@ -520,6 +519,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           key: ValueKey(track.id),
           child: _AlbumTrackItem(
             track: track,
+            tracksList: tracks,
             onDownload: () => _downloadTrack(context, track),
           ),
         );
@@ -590,14 +590,11 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  Widget _buildLoveAllButton() {
-    final collectionsState = ref.watch(libraryCollectionsProvider);
-    final tracks = _tracks;
-    final allLoved =
-        tracks != null &&
-        tracks.isNotEmpty &&
-        tracks.every((t) => collectionsState.isLoved(t));
-
+  Widget _buildCircleButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+  }) {
     return Container(
       width: 48,
       height: 48,
@@ -610,72 +607,44 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         ),
       ),
       child: IconButton(
-        onPressed: tracks == null || tracks.isEmpty
-            ? null
-            : () => _loveAll(tracks),
-        icon: Icon(
-          allLoved ? Icons.favorite : Icons.favorite_border,
-          size: 22,
-          color: allLoved ? Colors.redAccent : Colors.white,
-        ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22, color: Colors.white),
+        tooltip: tooltip,
         padding: EdgeInsets.zero,
       ),
     );
   }
 
-  Widget _buildAddToPlaylistButton(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.15),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: IconButton(
-        onPressed: _tracks == null || _tracks!.isEmpty
-            ? null
-            : () => showAddTracksToPlaylistSheet(context, ref, _tracks!),
-        icon: const Icon(Icons.add, size: 22, color: Colors.white),
-        tooltip: 'Add to Playlist',
-        padding: EdgeInsets.zero,
-      ),
+  Widget _buildPlayAllButton() {
+    return _buildCircleButton(
+      icon: Icons.play_arrow_rounded,
+      tooltip: 'Play All',
+      onPressed: _tracks == null || _tracks!.isEmpty
+          ? null
+          : () {
+              ref.read(playbackProvider.notifier).playTrackList(_tracks!);
+            },
     );
   }
 
-  Future<void> _loveAll(List<Track> tracks) async {
-    final notifier = ref.read(libraryCollectionsProvider.notifier);
-    final state = ref.read(libraryCollectionsProvider);
-    final allLoved = tracks.every((t) => state.isLoved(t));
+  Widget _buildShufflePlayButton() {
+    return _buildCircleButton(
+      icon: Icons.shuffle_rounded,
+      tooltip: 'Shuffle Play',
+      onPressed: _tracks == null || _tracks!.isEmpty ? null : _shufflePlayLocal,
+    );
+  }
 
-    if (allLoved) {
-      for (final track in tracks) {
-        final key = trackCollectionKey(track);
-        await notifier.removeFromLoved(key);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
-        );
-      }
-    } else {
-      int addedCount = 0;
-      for (final track in tracks) {
-        if (!state.isLoved(track)) {
-          await notifier.toggleLoved(track);
-          addedCount++;
-        }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
-        );
-      }
-    }
+  void _shufflePlayLocal() {
+    if (_tracks == null || _tracks!.isEmpty) return;
+    final shuffled = [..._tracks!]..shuffle();
+    final messenger = ScaffoldMessenger.of(context);
+    ref.read(playbackProvider.notifier).playTrackList(shuffled).catchError((e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Cannot shuffle play tracks: $e')),
+      );
+    });
   }
 
   Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
@@ -745,9 +714,14 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
 
 class _AlbumTrackItem extends ConsumerWidget {
   final Track track;
+  final List<Track> tracksList;
   final VoidCallback onDownload;
 
-  const _AlbumTrackItem({required this.track, required this.onDownload});
+  const _AlbumTrackItem({
+    required this.track,
+    required this.tracksList,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -895,6 +869,23 @@ class _AlbumTrackItem extends ConsumerWidget {
           ),
         );
       }
+      return;
+    }
+
+    final settings = ref.read(settingsProvider);
+    if (settings.interactionMode == 'stream') {
+      if (tracksList.isNotEmpty) {
+        final index = tracksList.indexWhere((t) => t.id == track.id);
+        if (index != -1) {
+          ref
+              .read(playbackProvider.notifier)
+              .playTrackList(tracksList, startIndex: index);
+          return;
+        }
+      }
+
+      // Fallback if track list isn't ready or track isn't found
+      ref.read(playbackProvider.notifier).playTrackList([track], startIndex: 0);
       return;
     }
 

@@ -909,8 +909,10 @@ class MainActivity: AudioServiceFragmentActivity() {
                     if (metadataJson.isNotBlank()) {
                         val obj = JSONObject(metadataJson)
                         val lastModified = try { doc.lastModified() } catch (_: Exception) { 0L }
+                        val fileSize = try { doc.length() } catch (_: Exception) { 0L }
                         obj.put("filePath", doc.uri.toString())
                         obj.put("fileModTime", lastModified)
+                        obj.put("fileSize", fileSize)
                         results.put(obj)
                     } else {
                         errors++
@@ -1142,9 +1144,11 @@ class MainActivity: AudioServiceFragmentActivity() {
                     if (metadataJson.isNotBlank()) {
                         val obj = JSONObject(metadataJson)
                         val safeLastModified = try { doc.lastModified() } catch (_: Exception) { lastModified }
+                        val fileSize = try { doc.length() } catch (_: Exception) { 0L }
                         obj.put("filePath", doc.uri.toString())
                         obj.put("fileModTime", safeLastModified)
                         obj.put("lastModified", safeLastModified)
+                        obj.put("fileSize", fileSize)
                         results.put(obj)
                     } else {
                         errors++

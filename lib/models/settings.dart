@@ -56,6 +56,7 @@ class AppSettings {
   networkCompatibilityMode; // Try HTTP + allow invalid TLS cert for API requests
   final String
   songLinkRegion; // SongLink userCountry region code used for platform lookup
+  final String interactionMode; // 'download' or 'stream'
 
   // Local Library Settings
   final bool localLibraryEnabled; // Enable local library scanning
@@ -128,6 +129,7 @@ class AppSettings {
     this.downloadNetworkMode = 'any',
     this.networkCompatibilityMode = false,
     this.songLinkRegion = 'US',
+    this.interactionMode = 'download',
     // Local Library defaults
     this.localLibraryEnabled = false,
     this.localLibraryPath = '',
@@ -197,6 +199,7 @@ class AppSettings {
     String? downloadNetworkMode,
     bool? networkCompatibilityMode,
     String? songLinkRegion,
+    String? interactionMode,
     // Local Library
     bool? localLibraryEnabled,
     String? localLibraryPath,
@@ -268,6 +271,7 @@ class AppSettings {
       networkCompatibilityMode:
           networkCompatibilityMode ?? this.networkCompatibilityMode,
       songLinkRegion: songLinkRegion ?? this.songLinkRegion,
+      interactionMode: interactionMode ?? this.interactionMode,
       // Local Library
       localLibraryEnabled: localLibraryEnabled ?? this.localLibraryEnabled,
       localLibraryPath: localLibraryPath ?? this.localLibraryPath,

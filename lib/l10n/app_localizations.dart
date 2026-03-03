@@ -238,6 +238,12 @@ abstract class AppLocalizations {
   /// **'Singles'**
   String get historyFilterSingles;
 
+  /// Filter chip - show folders only
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get historyFilterFolders;
+
   /// Track count with plural form
   ///
   /// In en, this message translates to:
@@ -285,6 +291,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Single track downloads will appear here'**
   String get historyNoSinglesSubtitle;
+
+  /// Empty state when filtering folders
+  ///
+  /// In en, this message translates to:
+  /// **'No folder downloads'**
+  String get historyNoFolders;
+
+  /// Empty state subtitle for folders filter
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks grouped by folder will appear here'**
+  String get historyNoFoldersSubtitle;
 
   /// Search bar placeholder in history
   ///

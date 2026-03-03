@@ -53,6 +53,8 @@
   "@historyFilterAlbums": {"description": "Filter chip - show albums only"},
   "historyFilterSingles": "Singles",
   "@historyFilterSingles": {"description": "Filter chip - show singles only"},
+  "historyFilterFolders": "Folders",
+  "@historyFilterFolders": {"description": "Filter chip - show folders only"},
   "historyTracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
   "@historyTracksCount": {
     "description": "Track count with plural form",
@@ -79,6 +81,10 @@
   "@historyNoSingles": {"description": "Empty state when filtering singles"},
 "historyNoSinglesSubtitle": "Single track downloads will appear here",
   "@historyNoSinglesSubtitle": {"description": "Empty state subtitle for singles filter"},
+  "historyNoFolders": "No folder downloads",
+  "@historyNoFolders": {"description": "Empty state when filtering folders"},
+  "historyNoFoldersSubtitle": "Tracks grouped by folder will appear here",
+  "@historyNoFoldersSubtitle": {"description": "Empty state subtitle for folders filter"},
   "historySearchHint": "Search history...",
   "@historySearchHint": {"description": "Search bar placeholder in history"},
 

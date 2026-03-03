@@ -55,6 +55,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   downloadNetworkMode: json['downloadNetworkMode'] as String? ?? 'any',
   networkCompatibilityMode: json['networkCompatibilityMode'] as bool? ?? false,
   songLinkRegion: json['songLinkRegion'] as String? ?? 'US',
+  interactionMode: json['interactionMode'] as String? ?? 'download',
   localLibraryEnabled: json['localLibraryEnabled'] as bool? ?? false,
   localLibraryPath: json['localLibraryPath'] as String? ?? '',
   localLibraryShowDuplicates:
@@ -130,6 +131,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'downloadNetworkMode': instance.downloadNetworkMode,
   'networkCompatibilityMode': instance.networkCompatibilityMode,
   'songLinkRegion': instance.songLinkRegion,
+  'interactionMode': instance.interactionMode,
   'localLibraryEnabled': instance.localLibraryEnabled,
   'localLibraryPath': instance.localLibraryPath,
   'localLibraryShowDuplicates': instance.localLibraryShowDuplicates,
