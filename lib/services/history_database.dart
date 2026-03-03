@@ -34,7 +34,7 @@ class HistoryDatabase {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onConfigure: (db) async {
         await db.rawQuery('PRAGMA journal_mode = WAL');
         await db.execute('PRAGMA synchronous = NORMAL');
@@ -99,8 +99,42 @@ class HistoryDatabase {
       await db.execute('ALTER TABLE history ADD COLUMN saf_relative_dir TEXT');
       await db.execute('ALTER TABLE history ADD COLUMN saf_file_name TEXT');
     }
-    if (oldVersion < 3) {
+    if (oldVersion < 4) {
       await db.execute('ALTER TABLE history ADD COLUMN saf_repaired INTEGER');
+
+      // Missing metadata columns
+      final columns = [
+        'isrc',
+        'spotify_id',
+        'track_number',
+        'disc_number',
+        'duration',
+        'release_date',
+        'quality',
+        'bit_depth',
+        'sample_rate',
+        'genre',
+        'label',
+        'copyright',
+      ];
+      for (final col in columns) {
+        try {
+          await db.execute(
+            'ALTER TABLE history ADD COLUMN $col ${col.contains('number') || col.contains('rate') || col.contains('depth') || col.contains('duration') ? 'INTEGER' : 'TEXT'}',
+          );
+          _log.i('Added missing history column: $col');
+        } catch (e) {
+          _log.w('History column $col might already exist: $e');
+        }
+      }
+    }
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE history ADD COLUMN file_size INTEGER');
+        _log.i('Added file_size column to history');
+      } catch (e) {
+        _log.w('History file_size column might already exist: $e');
+      }
     }
   }
 
@@ -289,6 +323,7 @@ class HistoryDatabase {
       'genre': json['genre'],
       'label': json['label'],
       'copyright': json['copyright'],
+      'file_size': json['fileSize'],
     };
   }
 
@@ -322,6 +357,7 @@ class HistoryDatabase {
       'genre': row['genre'],
       'label': row['label'],
       'copyright': row['copyright'],
+      'fileSize': row['file_size'],
     };
   }
 

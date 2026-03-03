@@ -11,7 +11,7 @@ class PlaybackItem {
   final String service;
   final int durationMs;
 
-  // Stream quality metadata
+  final int fileSize;
   final String format;
   final int bitDepth;
   final int sampleRate;
@@ -30,6 +30,7 @@ class PlaybackItem {
     this.isLocal = false,
     this.service = '',
     this.durationMs = 0,
+    this.fileSize = 0,
     this.format = '',
     this.bitDepth = 0,
     this.sampleRate = 0,
@@ -44,6 +45,7 @@ class PlaybackItem {
     int? bitDepth,
     int? sampleRate,
     int? bitrate,
+    int? fileSize,
   }) {
     return PlaybackItem(
       id: id,
@@ -55,6 +57,7 @@ class PlaybackItem {
       isLocal: isLocal,
       service: service ?? this.service,
       durationMs: durationMs,
+      fileSize: fileSize ?? this.fileSize,
       format: format ?? this.format,
       bitDepth: bitDepth ?? this.bitDepth,
       sampleRate: sampleRate ?? this.sampleRate,

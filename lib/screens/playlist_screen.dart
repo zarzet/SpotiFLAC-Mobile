@@ -6,7 +6,6 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
-import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
@@ -304,7 +303,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildLoveAllButton(),
+                              _buildPlayAllButton(),
                               const SizedBox(width: 12),
                               _buildDownloadAllCenterButton(context),
                               const SizedBox(width: 12),
@@ -398,6 +397,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           key: ValueKey(track.id),
           child: _PlaylistTrackItem(
             track: track,
+            tracksList: _tracks,
             onDownload: () => _downloadTrack(context, track),
           ),
         );
@@ -462,32 +462,15 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     );
   }
 
-  Widget _buildLoveAllButton() {
-    final collectionsState = ref.watch(libraryCollectionsProvider);
-    final allLoved =
-        _tracks.isNotEmpty && _tracks.every((t) => collectionsState.isLoved(t));
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.15),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: IconButton(
-        onPressed: _tracks.isEmpty ? null : () => _loveAll(_tracks),
-        icon: Icon(
-          allLoved ? Icons.favorite : Icons.favorite_border,
-          size: 22,
-          color: allLoved ? Colors.redAccent : Colors.white,
-        ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
-        padding: EdgeInsets.zero,
-      ),
+  Widget _buildPlayAllButton() {
+    return _buildCircleButton(
+      icon: Icons.play_arrow_rounded,
+      tooltip: 'Play All',
+      onPressed: _tracks.isEmpty
+          ? null
+          : () {
+              ref.read(playbackProvider.notifier).playTrackList(_tracks);
+            },
     );
   }
 
@@ -553,37 +536,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     );
   }
 
-  Future<void> _loveAll(List<Track> tracks) async {
-    final notifier = ref.read(libraryCollectionsProvider.notifier);
-    final state = ref.read(libraryCollectionsProvider);
-    final allLoved = tracks.every((t) => state.isLoved(t));
-
-    if (allLoved) {
-      for (final track in tracks) {
-        final key = trackCollectionKey(track);
-        await notifier.removeFromLoved(key);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
-        );
-      }
-    } else {
-      int addedCount = 0;
-      for (final track in tracks) {
-        if (!state.isLoved(track)) {
-          await notifier.toggleLoved(track);
-          addedCount++;
-        }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
-        );
-      }
-    }
-  }
-
   void _downloadAll(BuildContext context) {
     _downloadTracks(context, _tracks);
   }
@@ -625,9 +577,14 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 /// Separate Consumer widget for each track - only rebuilds when this specific track's status changes
 class _PlaylistTrackItem extends ConsumerWidget {
   final Track track;
+  final List<Track> tracksList;
   final VoidCallback onDownload;
 
-  const _PlaylistTrackItem({required this.track, required this.onDownload});
+  const _PlaylistTrackItem({
+    required this.track,
+    required this.tracksList,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -786,6 +743,23 @@ class _PlaylistTrackItem extends ConsumerWidget {
           ),
         );
       }
+      return;
+    }
+
+    final settings = ref.read(settingsProvider);
+    if (settings.interactionMode == 'stream') {
+      if (tracksList.isNotEmpty) {
+        final index = tracksList.indexWhere((t) => t.id == track.id);
+        if (index != -1) {
+          ref
+              .read(playbackProvider.notifier)
+              .playTrackList(tracksList, startIndex: index);
+          return;
+        }
+      }
+
+      // Fallback
+      ref.read(playbackProvider.notifier).playTrackList([track], startIndex: 0);
       return;
     }
 

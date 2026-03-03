@@ -8,6 +8,7 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
@@ -1385,6 +1386,23 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           ),
         );
       }
+      return;
+    }
+
+    final settings = ref.read(settingsProvider);
+    if (settings.interactionMode == 'stream') {
+      if (_topTracks != null && _topTracks!.isNotEmpty) {
+        final index = _topTracks!.indexWhere((t) => t.id == track.id);
+        if (index != -1) {
+          ref
+              .read(playbackProvider.notifier)
+              .playTrackList(_topTracks!, startIndex: index);
+          return;
+        }
+      }
+
+      // Fallback
+      ref.read(playbackProvider.notifier).playTrackList([track], startIndex: 0);
       return;
     }
 

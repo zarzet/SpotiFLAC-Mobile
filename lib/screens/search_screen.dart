@@ -5,6 +5,7 @@ import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
@@ -194,7 +195,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ],
       ),
-      onTap: () => _downloadTrack(track),
+      onTap: () {
+        final settings = ref.read(settingsProvider);
+        if (settings.interactionMode == 'stream') {
+          ref.read(playbackProvider.notifier).playTrackList([
+            track,
+          ], startIndex: 0);
+        } else {
+          _downloadTrack(track);
+        }
+      },
     );
   }
 }

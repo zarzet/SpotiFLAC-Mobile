@@ -10,6 +10,7 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/providers/explore_provider.dart';
@@ -1596,7 +1597,24 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     switch (item.type) {
       case 'track':
-        _showTrackBottomSheet(item);
+        final settings = ref.read(settingsProvider);
+        if (settings.interactionMode == 'stream') {
+          final track = Track(
+            id: item.id,
+            name: item.name,
+            artistName: item.artists,
+            albumName: item.albumName ?? '',
+            coverUrl: item.coverUrl,
+            source: extensionId,
+            duration: (item.durationMs / 1000)
+                .round(), // converted to seconds since Track model expects seconds
+          );
+          ref.read(playbackProvider.notifier).playTrackList([
+            track,
+          ], startIndex: 0);
+        } else {
+          _showTrackBottomSheet(item);
+        }
         return;
       case 'album':
         Navigator.push(
@@ -2437,6 +2455,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             searchExtensionId: searchExtensionId,
             showLocalLibraryIndicator: showLocalLibraryIndicator,
             thumbnailSizesByExtensionId: thumbnailSizesByExtensionId,
+            tracksList: realTracks,
           ),
         ),
       );
@@ -3081,6 +3100,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
   final String? searchExtensionId;
   final bool showLocalLibraryIndicator;
   final Map<String, (double, double)> thumbnailSizesByExtensionId;
+  final List<Track>? tracksList;
 
   const _TrackItemWithStatus({
     super.key,
@@ -3091,6 +3111,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
     required this.searchExtensionId,
     required this.showLocalLibraryIndicator,
     required this.thumbnailSizesByExtensionId,
+    this.tracksList,
   });
 
   @override
@@ -3272,6 +3293,20 @@ class _TrackItemWithStatus extends ConsumerWidget {
     required bool isInHistory,
     required bool isInLocalLibrary,
   }) async {
+    final settings = ref.read(settingsProvider);
+    if (settings.interactionMode == 'stream') {
+      if (tracksList != null) {
+        ref
+            .read(playbackProvider.notifier)
+            .playTrackList(tracksList!, startIndex: index);
+      } else {
+        ref.read(playbackProvider.notifier).playTrackList([
+          track,
+        ], startIndex: 0);
+      }
+      return;
+    }
+
     if (isQueued) return;
 
     if (isInLocalLibrary) {

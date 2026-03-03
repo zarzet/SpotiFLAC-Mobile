@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:audio_service/audio_service.dart' as audio_service;
 import 'package:audio_session/audio_session.dart';
@@ -12,11 +16,14 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/artist_utils.dart';
+import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/services/download_request_payload.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final _log = AppLogger('PlaybackProvider');
@@ -393,7 +400,22 @@ class PlaybackController extends Notifier<PlaybackState> {
 
         // Handle track completion
         if (processingState == ProcessingState.completed) {
-          _onTrackCompleted();
+          // Guard against premature completion (e.g. on stream connection reset during seek)
+          final posMs = state.position.inMilliseconds;
+          final durMs = state.duration.inMilliseconds;
+          final remainingMs = durMs - posMs;
+
+          // Only transition if we are actually near the end (within 1 second)
+          // or if duration is unknown (0)
+          if (durMs <= 0 || remainingMs.abs() < 1000) {
+            _onTrackCompleted();
+          } else {
+            _log.w(
+              'Premature ProcessingState.completed detected. Position: $posMs, Duration: $durMs. Ignoring completion transition.',
+            );
+            // Optionally try to recover if we were playing, but usually it means the stream broke.
+            // For now, ignoring ensures we don't skip to the next track or restart if repeat is on.
+          }
         }
       }),
     );
@@ -468,6 +490,7 @@ class PlaybackController extends Notifier<PlaybackState> {
                   isLocal: currentItem.isLocal,
                   service: currentItem.service,
                   durationMs: durationMs,
+                  fileSize: currentItem.fileSize,
                   format: currentItem.format,
                   bitDepth: currentItem.bitDepth,
                   sampleRate: currentItem.sampleRate,
@@ -492,6 +515,7 @@ class PlaybackController extends Notifier<PlaybackState> {
                 isLocal: queueItem.isLocal,
                 service: queueItem.service,
                 durationMs: durationMs,
+                fileSize: queueItem.fileSize,
                 format: queueItem.format,
                 bitDepth: queueItem.bitDepth,
                 sampleRate: queueItem.sampleRate,
@@ -1173,6 +1197,59 @@ class PlaybackController extends Notifier<PlaybackState> {
         isLocal: true,
         service: 'offline',
         durationMs: localDurationMs,
+        format: localItem.format ?? '',
+        bitDepth: localItem.bitDepth ?? 0,
+        sampleRate: localItem.sampleRate ?? 0,
+        bitrate: localItem.bitrate ?? 0,
+        fileSize: localItem.fileSize ?? 0,
+        track: track,
+      );
+    }
+
+    final historyState = ref.read(downloadHistoryProvider);
+    DownloadHistoryItem? historyItem;
+    if (isLocalSource) {
+      for (final item in historyState.items) {
+        if (item.id == track.id) {
+          historyItem = item;
+          break;
+        }
+      }
+    }
+
+    if (historyItem == null) {
+      final isrc = track.isrc?.trim();
+      if (isrc != null && isrc.isNotEmpty) {
+        historyItem = historyState.getByIsrc(isrc);
+      }
+    }
+
+    historyItem ??= historyState.findByTrackAndArtist(
+      track.name,
+      track.artistName,
+    );
+
+    if (historyItem != null && historyItem.filePath.isNotEmpty) {
+      final localUri = _uriFromPath(historyItem.filePath);
+      final localDurationMs =
+          historyItem.duration != null && historyItem.duration! > 0
+          ? historyItem.duration!
+          : _trackDurationMs(track);
+      return PlaybackItem(
+        id: historyItem.id,
+        title: historyItem.trackName,
+        artist: historyItem.artistName,
+        album: historyItem.albumName,
+        coverUrl: historyItem.coverUrl ?? track.coverUrl ?? '',
+        sourceUri: localUri.toString(),
+        isLocal: true,
+        service: 'offline',
+        durationMs: localDurationMs,
+        format: historyItem.quality?.split(' ').first ?? '',
+        bitDepth: historyItem.bitDepth ?? 0,
+        sampleRate: historyItem.sampleRate ?? 0,
+        bitrate: 0, // bitrate is usually not stored separately for lossless
+        fileSize: historyItem.fileSize,
         track: track,
       );
     }
@@ -1355,10 +1432,14 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   // ─── Public: toggle shuffle ──────────────────────────────────────────────
   void toggleShuffle() {
-    final newShuffle = !state.shuffle;
-    state = state.copyWith(shuffle: newShuffle);
+    setShuffle(!state.shuffle);
+  }
 
-    if (newShuffle) {
+  void setShuffle(bool enabled) {
+    if (state.shuffle == enabled) return;
+    state = state.copyWith(shuffle: enabled);
+
+    if (enabled) {
       _regenerateShuffleOrderPreservingCurrentProgress();
     } else {
       _shuffleOrder = [];
@@ -1480,17 +1561,42 @@ class PlaybackController extends Notifier<PlaybackState> {
   Future<void> _playQueueIndex(int index) async {
     if (index < 0 || index >= state.queue.length) return;
 
+    // Stop current playback to prevent old audio bleeding into loading states
+    // Calling this first ensures _playRequestEpoch is incremented before we capture requestEpoch
+    await stop();
+
     final previousItem = state.currentItem;
     final requestEpoch = _startNewPlayRequest();
     _resetPrefetchCycleState();
     final pendingResumePosition = _pendingResumePositionForIndex(index);
-    final item = state.queue[index];
+    var item = state.queue[index];
     if (previousItem != null &&
         _trackKeyFromPlaybackItem(previousItem) !=
             _trackKeyFromPlaybackItem(item)) {
       _rememberRecentPlayed(previousItem);
     }
     _clearLyricsForTrackChange(upcomingItem: item);
+
+    // Fetch missing file size natively before starting playback
+    if (item.isLocal && item.fileSize <= 0 && item.sourceUri.isNotEmpty) {
+      String localPath = item.sourceUri;
+      if (localPath.startsWith('file://')) {
+        try {
+          localPath = Uri.parse(localPath).toFilePath();
+        } catch (_) {}
+      }
+      try {
+        final stat = await fileStat(localPath);
+        if (stat != null && stat.size != null && stat.size! > 0) {
+          item = item.copyWith(fileSize: stat.size!);
+          final updatedQueue = List<PlaybackItem>.from(state.queue);
+          updatedQueue[index] = item;
+          state = state.copyWith(queue: updatedQueue);
+        }
+      } catch (e) {
+        _log.w('Failed to fetch fileStat for local track: $e');
+      }
+    }
     state = state.copyWith(
       currentIndex: index,
       currentItem: item,
@@ -1509,16 +1615,124 @@ class PlaybackController extends Notifier<PlaybackState> {
     await _savePlaybackSnapshot();
 
     if (item.sourceUri.isEmpty) {
-      final skipped = await _handleQueueItemPlaybackFailure(
-        failedIndex: index,
-        expectedRequestEpoch: requestEpoch,
-        error: Exception('Track is not available locally. Download it first.'),
-        fallbackType: 'source_missing',
-      );
-      if (skipped) {
+      if (item.track != null && !item.isLocal) {
+        _log.i('No sourceUri for ${item.track!.name}. Resolving stream...');
+        try {
+          final settings = ref.read(settingsProvider);
+          final defaultService = _resolveService(settings.defaultService);
+          final tempDir = await getTemporaryDirectory();
+          final streamCacheDir = Directory(
+            p.join(tempDir.path, 'stream_cache'),
+          );
+          if (!await streamCacheDir.exists()) {
+            await streamCacheDir.create(recursive: true);
+          }
+          final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+
+          final payload = DownloadRequestPayload(
+            trackName: item.track!.name,
+            artistName: item.track!.artistName,
+            albumName: item.track!.albumName,
+            spotifyId:
+                item.track!.source == 'spotify-web' ||
+                    item.track!.id.length == 22
+                ? item.track!.id
+                : '',
+            deezerId: item.track!.deezerId ?? '',
+            isrc: item.track!.isrc ?? '',
+            service: defaultService,
+            quality: 'HI_RES_LOSSLESS',
+            outputDir: streamCacheDir.path,
+            filenameFormat: 'stream_$tempId.flac',
+            itemId: tempId,
+            embedMetadata: false,
+            embedLyrics: false,
+            embedMaxQualityCover: false,
+            coverUrl: item.track!.coverUrl ?? '',
+          );
+
+          final response = await PlatformBridge.downloadByStrategy(
+            payload: payload,
+            useExtensions: true,
+            useFallback: true,
+          );
+
+          if (response['success'] == true && response['file_path'] != null) {
+            final String filePath = response['file_path'];
+            int resolvedFileSize = response['file_size'] ?? 0;
+
+            // If fileSize is missing or zero, try fetching it from the local file
+            if (resolvedFileSize <= 0) {
+              try {
+                final stat = await fileStat(filePath);
+                if (stat != null && stat.size != null) {
+                  resolvedFileSize = stat.size!;
+                }
+              } catch (_) {}
+            }
+
+            int parseSafeInt(dynamic val) {
+              if (val == null) return 0;
+              if (val is int) return val;
+              if (val is String) return int.tryParse(val) ?? 0;
+              if (val is double) return val.toInt();
+              return 0;
+            }
+
+            item = item.copyWith(
+              sourceUri: filePath,
+              format: response['format'] ?? 'flac',
+              bitrate: parseSafeInt(
+                response['bitrate'] ??
+                    response['bit_rate'] ??
+                    response['actual_bitrate'] ??
+                    0,
+              ),
+              sampleRate: parseSafeInt(
+                response['sample_rate'] ??
+                    response['actual_sample_rate'] ??
+                    response['sample_frequency'] ??
+                    0,
+              ),
+              bitDepth: parseSafeInt(
+                response['bit_depth'] ??
+                    response['actual_bit_depth'] ??
+                    response['bits_per_sample'] ??
+                    0,
+              ),
+              fileSize: resolvedFileSize,
+              service: payload.service,
+            );
+            final updatedQueue = List<PlaybackItem>.from(state.queue);
+            updatedQueue[index] = item;
+            state = state.copyWith(queue: updatedQueue);
+          } else {
+            throw Exception(
+              response['error'] ?? 'Unknown streaming resolution error.',
+            );
+          }
+        } catch (e) {
+          final skipped = await _handleQueueItemPlaybackFailure(
+            failedIndex: index,
+            expectedRequestEpoch: requestEpoch,
+            error: Exception('Stream resolution failed: $e'),
+            fallbackType: 'resolve_failed',
+          );
+          if (skipped) return;
+          return;
+        }
+      } else {
+        final skipped = await _handleQueueItemPlaybackFailure(
+          failedIndex: index,
+          expectedRequestEpoch: requestEpoch,
+          error: Exception(
+            'Track is not available locally. Download it first.',
+          ),
+          fallbackType: 'source_missing',
+        );
+        if (skipped) return;
         return;
       }
-      return;
     }
 
     // Already have a URI
@@ -1602,13 +1816,22 @@ class PlaybackController extends Notifier<PlaybackState> {
           await _player.setFilePath(filePath);
         }
       } else {
+        // Use LockCachingAudioSource for external remote URIs to improve seeking stability.
+        // It caches the stream to a local temporary file as it plays.
+        // We skip this for localhost (FFmpeg tunnels) as they handle their own data flow.
+
+        // Note: LockCachingAudioSource is disabled for remote streams
+        // because it breaks seeking (returning to 0 instead of resuming).
+        // Using AudioSource.uri directly avoids this problem for dynamically proxied HTTP streams.
+        final audioSource = AudioSource.uri(uri);
+
         if (startPosition > Duration.zero) {
           await _player.setAudioSource(
-            AudioSource.uri(uri),
+            audioSource,
             initialPosition: startPosition,
           );
         } else {
-          await _player.setAudioSource(AudioSource.uri(uri));
+          await _player.setAudioSource(audioSource);
         }
       }
       if (expectedRequestEpoch != null &&
@@ -3705,14 +3928,24 @@ class PlaybackController extends Notifier<PlaybackState> {
   }
 
   bool _inferSeekSupportedForQueueItem(PlaybackItem item) {
+    // Local files always support seeking
     if (item.isLocal) return true;
+
+    // If sourceUri points to a local file (resolved stream cached), it supports seeking
+    if (item.sourceUri.startsWith('/') ||
+        item.sourceUri.startsWith('file://')) {
+      return true;
+    }
 
     final service = item.service.trim().toLowerCase();
     final trackSource = (item.track?.source ?? '').trim().toLowerCase();
     final resolvedService = service.isNotEmpty ? service : trackSource;
+
+    // YouTube HLS/DASH streams often have issues with direct seeking via just_audio
     if (resolvedService == 'youtube') return false;
 
     final sourceUri = item.sourceUri.trim();
+    // Live tunnels (ffmpeg -listen) do not support random access seeking
     if (sourceUri.isNotEmpty &&
         FFmpegService.isActiveLiveDecryptedUrl(sourceUri)) {
       return false;

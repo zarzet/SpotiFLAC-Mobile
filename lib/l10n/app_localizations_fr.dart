@@ -71,6 +71,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get historyFilterSingles => 'Titres';
 
   @override
+  String get historyFilterFolders => 'Folders';
+
+  @override
   String historyTracksCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -112,6 +115,13 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get historyNoSinglesSubtitle =>
       'Les téléchargements de pistes uniques apparaîtront ici';
+
+  @override
+  String get historyNoFolders => 'No folder downloads';
+
+  @override
+  String get historyNoFoldersSubtitle =>
+      'Tracks grouped by folder will appear here';
 
   @override
   String get historySearchHint => 'Historique de recherche...';

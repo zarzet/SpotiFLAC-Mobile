@@ -537,40 +537,37 @@ class FFmpegService {
     return const [_LiveDecryptFormat.m4a, _LiveDecryptFormat.flac];
   }
 
-  static Future<bool> _awaitLiveTunnelReady(FFmpegSession session) async {
+  static Future<bool> _awaitLiveFileReady(
+    String path,
+    FFmpegSession session,
+  ) async {
     final deadline = DateTime.now().add(_liveTunnelStartupTimeout);
-    var seenRunning = false;
+    final file = File(path);
 
     while (DateTime.now().isBefore(deadline)) {
       final state = await session.getState();
-      if (state == SessionState.running) {
-        seenRunning = true;
+      if (state == SessionState.failed || state == SessionState.completed) {
         break;
       }
-      if (state != SessionState.created) {
-        return false;
+      if (await file.exists() && await file.length() > 0) {
+        await Future<void>.delayed(_liveTunnelStabilizationDelay);
+        final currentState = await session.getState();
+        return currentState == SessionState.running ||
+            currentState == SessionState.completed;
       }
       await Future<void>.delayed(_liveTunnelStartupPollInterval);
     }
-
-    if (!seenRunning) {
-      return false;
-    }
-
-    await Future<void>.delayed(_liveTunnelStabilizationDelay);
-    return (await session.getState()) == SessionState.running;
+    return false;
   }
 
   static Future<LiveDecryptedStreamResult?> _tryStartLiveDashAttempt({
     required String manifestPath,
     required _LiveDecryptFormat format,
   }) async {
-    final port = await _allocateLoopbackPort();
-    final ext = format == _LiveDecryptFormat.flac ? 'flac' : 'm4a';
-    final mimeType = format == _LiveDecryptFormat.flac
-        ? 'audio/flac'
-        : 'audio/mp4';
-    final localUrl = 'http://localhost:$port/stream.$ext';
+    final tempDir = await getTemporaryDirectory();
+    final ext = 'mp4';
+    final tempPath = _nextTempEmbedPath(tempDir.path, ext);
+    final localUrl = Uri.file(tempPath).toString();
 
     final commandArguments = <String>[
       '-nostdin',
@@ -585,27 +582,22 @@ class FFmpegService {
       '0:a:0',
       '-c:a',
       'copy',
-      if (format == _LiveDecryptFormat.flac) ...['-f', 'flac'],
-      if (format == _LiveDecryptFormat.m4a) ...[
-        '-movflags',
-        '+frag_keyframe+empty_moov+default_base_moof',
-        '-f',
-        'mp4',
-      ],
-      '-content_type',
-      mimeType,
-      '-listen',
-      '1',
-      localUrl,
+      '-movflags',
+      '+frag_keyframe+empty_moov+default_base_moof',
+      '-f',
+      'mp4',
+      '-y',
+      tempPath,
     ];
 
     _log.d(
-      'Starting Tidal DASH tunnel: ${_previewCommandForLog(commandArguments.join(' '))}',
+      'Starting Tidal DASH tunnel to file: ${_previewCommandForLog(commandArguments.join(' '))}',
     );
 
     final session = await FFmpegKit.executeWithArgumentsAsync(commandArguments);
-    final isReady = await _awaitLiveTunnelReady(session);
+    final isReady = await _awaitLiveFileReady(tempPath, session);
     if (isReady) {
+      _activeLiveTempInputPath = tempPath;
       return LiveDecryptedStreamResult(
         localUrl: localUrl,
         format: ext,
@@ -678,12 +670,10 @@ class FFmpegService {
     required String decryptionKey,
     required _LiveDecryptFormat format,
   }) async {
-    final port = await _allocateLoopbackPort();
-    final ext = format == _LiveDecryptFormat.flac ? 'flac' : 'm4a';
-    final mimeType = format == _LiveDecryptFormat.flac
-        ? 'audio/flac'
-        : 'audio/mp4';
-    final localUrl = 'http://localhost:$port/stream.$ext';
+    final tempDir = await getTemporaryDirectory();
+    final ext = 'mp4';
+    final tempPath = _nextTempEmbedPath(tempDir.path, ext);
+    final localUrl = Uri.file(tempPath).toString();
 
     final commandArguments = <String>[
       '-nostdin',
@@ -698,27 +688,22 @@ class FFmpegService {
       '0:a:0',
       '-c:a',
       'copy',
-      if (format == _LiveDecryptFormat.flac) ...['-f', 'flac'],
-      if (format == _LiveDecryptFormat.m4a) ...[
-        '-movflags',
-        '+frag_keyframe+empty_moov+default_base_moof',
-        '-f',
-        'mp4',
-      ],
-      '-content_type',
-      mimeType,
-      '-listen',
-      '1',
-      localUrl,
+      '-movflags',
+      '+frag_keyframe+empty_moov+default_base_moof',
+      '-f',
+      'mp4',
+      '-y',
+      tempPath,
     ];
 
     _log.d(
-      'Starting live decrypt tunnel: ${_previewCommandForLog(commandArguments.join(' '))}',
+      'Starting live decrypt tunnel to file: ${_previewCommandForLog(commandArguments.join(' '))}',
     );
 
     final session = await FFmpegKit.executeWithArgumentsAsync(commandArguments);
-    final isReady = await _awaitLiveTunnelReady(session);
+    final isReady = await _awaitLiveFileReady(tempPath, session);
     if (isReady) {
+      _activeLiveTempInputPath = tempPath;
       return LiveDecryptedStreamResult(
         localUrl: localUrl,
         format: ext,
@@ -738,13 +723,6 @@ class FFmpegService {
       await session.cancel();
     } catch (_) {}
     return null;
-  }
-
-  static Future<int> _allocateLoopbackPort() async {
-    final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
-    final port = socket.port;
-    await socket.close();
-    return port;
   }
 
   static Future<String?> convertFlacToOpus(

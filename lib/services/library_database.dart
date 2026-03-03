@@ -26,6 +26,7 @@ class LocalLibraryItem {
   final int? bitrate; // kbps, for lossy formats (mp3, opus, ogg)
   final String? genre;
   final String? format; // flac, mp3, opus, m4a
+  final int? fileSize;
 
   const LocalLibraryItem({
     required this.id,
@@ -47,6 +48,7 @@ class LocalLibraryItem {
     this.bitrate,
     this.genre,
     this.format,
+    this.fileSize,
   });
 
   Map<String, dynamic> toJson() => {
@@ -69,6 +71,7 @@ class LocalLibraryItem {
     'bitrate': bitrate,
     'genre': genre,
     'format': format,
+    'fileSize': fileSize,
   };
 
   factory LocalLibraryItem.fromJson(Map<String, dynamic> json) =>
@@ -92,6 +95,9 @@ class LocalLibraryItem {
         bitrate: (json['bitrate'] as num?)?.toInt(),
         genre: json['genre'] as String?,
         format: json['format'] as String?,
+        fileSize:
+            (json['fileSize'] ?? json['file_size'] ?? json['size'] as num?)
+                ?.toInt(),
       );
 
   /// Create a unique key for matching tracks
@@ -121,7 +127,7 @@ class LibraryDatabase {
 
     return await openDatabase(
       path,
-      version: 4, // Bumped version for bitrate column
+      version: 7, // Bumped for full metadata migration including fileSize
       onConfigure: (db) async {
         await db.rawQuery('PRAGMA journal_mode = WAL');
         await db.execute('PRAGMA synchronous = NORMAL');
@@ -154,7 +160,8 @@ class LibraryDatabase {
         sample_rate INTEGER,
         bitrate INTEGER,
         genre TEXT,
-        format TEXT
+        format TEXT,
+        file_size INTEGER
       )
     ''');
 
@@ -188,9 +195,49 @@ class LibraryDatabase {
     }
 
     if (oldVersion < 4) {
-      // Add bitrate column for lossy format quality info
-      await db.execute('ALTER TABLE library ADD COLUMN bitrate INTEGER');
-      _log.i('Added bitrate column for lossy format quality');
+      // Version 4 was supposed to have these, but migration was missing
+      final columns = [
+        'isrc',
+        'track_number',
+        'disc_number',
+        'duration',
+        'release_date',
+        'bit_depth',
+        'sample_rate',
+        'bitrate',
+        'genre',
+        'format',
+      ];
+      for (final col in columns) {
+        try {
+          await db.execute(
+            'ALTER TABLE library ADD COLUMN $col ${col.contains('number') || col.contains('rate') || col.contains('depth') || col.contains('bitrate') || col.contains('duration') ? 'INTEGER' : 'TEXT'}',
+          );
+          _log.i('Added missing column: $col');
+        } catch (e) {
+          _log.w('Column $col might already exist: $e');
+        }
+      }
+    }
+
+    if (oldVersion < 5 || oldVersion == 6) {
+      try {
+        await db.execute('ALTER TABLE library ADD COLUMN file_size INTEGER');
+        _log.i('Added file_size column');
+      } catch (e) {
+        _log.w('file_size column might already exist: $e');
+      }
+    }
+
+    if (oldVersion < 7) {
+      // Ensure file_size exists (catch for v6 jumping over v5 logic if modified)
+      try {
+        await db.execute('ALTER TABLE library ADD COLUMN file_size INTEGER');
+        _log.i('Ensured file_size column exists in v7');
+      } catch (e) {
+        _log.d('file_size already exists');
+      }
+      _log.i('Upgraded to v7');
     }
   }
 
@@ -215,6 +262,7 @@ class LibraryDatabase {
       'bitrate': json['bitrate'],
       'genre': json['genre'],
       'format': json['format'],
+      'file_size': json['fileSize'],
     };
   }
 
@@ -239,6 +287,7 @@ class LibraryDatabase {
       'bitrate': row['bitrate'],
       'genre': row['genre'],
       'format': row['format'],
+      'fileSize': row['file_size'],
     };
   }
 

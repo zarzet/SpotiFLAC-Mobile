@@ -532,6 +532,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
+  void setInteractionMode(String mode) {
+    if (mode == 'download' || mode == 'stream') {
+      state = state.copyWith(interactionMode: mode);
+      _saveSettings();
+    }
+  }
+
   void setLocalLibraryEnabled(bool enabled) {
     state = state.copyWith(localLibraryEnabled: enabled);
     _saveSettings();

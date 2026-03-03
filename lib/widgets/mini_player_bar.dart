@@ -9,7 +9,6 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/models/playback_item.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
-import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart'
     as playback_types
@@ -531,7 +530,6 @@ class _FullScreenPlayerState extends ConsumerState<_FullScreenPlayer> {
                       ),
                       child: Row(
                         children: [
-                          const SizedBox(width: 48),
                           Expanded(
                             child: Column(
                               children: [
@@ -587,45 +585,12 @@ class _FullScreenPlayerState extends ConsumerState<_FullScreenPlayer> {
                               ],
                             ),
                           ),
-                          SizedBox(
-                            width: 48,
-                            child: item.track != null
-                                ? Consumer(
-                                    builder: (context, ref, child) {
-                                      final isLoved = ref.watch(
-                                        libraryCollectionsProvider.select(
-                                          (s) => s.isLoved(item.track!),
-                                        ),
-                                      );
-                                      return IconButton(
-                                        icon: Icon(
-                                          isLoved
-                                              ? Icons.favorite
-                                              : Icons.favorite_border,
-                                          size: isCompactLayout ? 24 : 28,
-                                        ),
-                                        color: isLoved
-                                            ? Colors.redAccent
-                                            : colorScheme.onSurfaceVariant,
-                                        onPressed: () => ref
-                                            .read(
-                                              libraryCollectionsProvider
-                                                  .notifier,
-                                            )
-                                            .toggleLoved(item.track!),
-                                      );
-                                    },
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
                         ],
                       ),
                     ),
                     SizedBox(height: verticalGap),
 
-                    // ── Quality + Service badge row
-                    _QualityServiceRow(item: item, colorScheme: colorScheme),
-                    SizedBox(height: verticalGap),
+                    // Removed _QualityServiceRow to place it at the bottom.
 
                     // ── Error message
                     if (playbackError != null)
@@ -734,6 +699,14 @@ class _FullScreenPlayerState extends ConsumerState<_FullScreenPlayer> {
                     // ── Playback controls
                     _PlaybackControls(state: state, compact: isCompactLayout),
                     SizedBox(height: verticalGap),
+
+                    // ── Audio quality footer & Queue button
+                    _AudioQualityFooter(
+                      item: item,
+                      colorScheme: colorScheme,
+                      onQueuePressed: () => _showQueueSheet(context, ref),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -1313,97 +1286,156 @@ class _UnsyncedLyricsView extends StatelessWidget {
   }
 }
 
-// ─── Quality + Service Row ───────────────────────────────────────────────────
-class _QualityServiceRow extends StatelessWidget {
+// ─── Audio Quality Footer & Queue ──────────────────────────────────────────────
+class _AudioQualityFooter extends ConsumerWidget {
   final PlaybackItem item;
   final ColorScheme colorScheme;
+  final VoidCallback onQueuePressed;
 
-  const _QualityServiceRow({required this.item, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    final qualityLabel = item.qualityLabel;
-    final serviceLabel = _serviceDisplayName(item.service);
-
-    if (qualityLabel.isEmpty && serviceLabel.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        alignment: WrapAlignment.center,
-        children: [
-          if (serviceLabel.isNotEmpty)
-            _Chip(
-              icon: Icons.cloud_outlined,
-              label: serviceLabel,
-              colorScheme: colorScheme,
-            ),
-          if (qualityLabel.isNotEmpty)
-            _Chip(
-              icon: Icons.graphic_eq_rounded,
-              label: qualityLabel,
-              colorScheme: colorScheme,
-            ),
-        ],
-      ),
-    );
-  }
-
-  String _serviceDisplayName(String service) {
-    if (service.isEmpty) return '';
-    switch (service.toLowerCase()) {
-      case 'tidal':
-        return 'Tidal';
-      case 'qobuz':
-        return 'Qobuz';
-      case 'amazon':
-        return 'Amazon Music';
-      case 'youtube':
-        return 'YouTube';
-      case 'offline':
-        return 'Local file';
-      default:
-        if (service.isNotEmpty) {
-          return service[0].toUpperCase() + service.substring(1);
-        }
-        return service;
-    }
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final ColorScheme colorScheme;
-
-  const _Chip({
-    required this.icon,
-    required this.label,
+  const _AudioQualityFooter({
+    required this.item,
     required this.colorScheme,
+    required this.onQueuePressed,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final showMetadata =
+        item.format.isNotEmpty || item.bitrate > 0 || item.sampleRate > 0;
+
+    final format = item.format.toLowerCase();
+    final isLossless =
+        format == 'flac' ||
+        format == 'alac' ||
+        format == 'wav' ||
+        format == 'aiff' ||
+        format == 'dsf' ||
+        format == 'dff';
+
+    final sampleRateKhz = item.sampleRate > 0
+        ? '${(item.sampleRate / 1000).toStringAsFixed(item.sampleRate % 1000 == 0 ? 0 : 1)} kHz'
+        : '';
+    final bitDepthStr = item.bitDepth > 0 ? '${item.bitDepth} bit' : '';
+    final bitrateStr = item.bitrate > 0 ? '${item.bitrate} kbps' : '';
+    final fileSizeStr = item.fileSize > 0
+        ? '${(item.fileSize / (1024 * 1024)).toStringAsFixed(1)} MB'
+        : '';
+
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: colorScheme.onPrimaryContainer),
-          const SizedBox(width: 4),
+          if (showMetadata)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (isLossless)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      margin: const EdgeInsets.only(right: 10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'LOSSLESS',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          fontSize: 8,
+                        ),
+                      ),
+                    ),
+                  Flexible(
+                    child: Text(
+                      [
+                        item.format.toUpperCase(),
+                        bitDepthStr,
+                        sampleRateKhz,
+                        bitrateStr,
+                        fileSizeStr,
+                      ].where((s) => s.isNotEmpty).join('  •  '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.8,
+                        ),
+                        letterSpacing: 0.2,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (showMetadata) const SizedBox(height: 12),
           Text(
-            label,
+            'PLAYBACK SOURCE: ${item.service}'.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              fontSize: 7,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Material(
+              color: colorScheme.onSurface.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onQueuePressed,
+                splashColor: colorScheme.onSurface.withValues(alpha: 0.08),
+                highlightColor: colorScheme.onSurface.withValues(alpha: 0.04),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: colorScheme.onSurface.withValues(alpha: 0.05),
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.queue_music_outlined,
+                        size: 20,
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'UP NEXT • VIEW FULL QUEUE',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              fontSize: 10,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
