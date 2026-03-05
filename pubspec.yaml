@@ -60,7 +60,7 @@ dependencies:
   open_filex: ^4.7.0
 
   # Notifications
-  flutter_local_notifications: 20.0.0
+  flutter_local_notifications: 21.0.0
 
 dev_dependencies:
   flutter_test:
