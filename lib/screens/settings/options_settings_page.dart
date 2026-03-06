@@ -144,6 +144,23 @@ class OptionsSettingsPage extends ConsumerWidget {
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
+                  SettingsItem(
+                    icon: Icons.touch_app_outlined,
+                    title: context.l10n.optionsInteractionMode,
+                    subtitle: settings.interactionMode == 'streaming'
+                        ? context.l10n.modeStreamingSubtitle
+                        : context.l10n.modeDownloaderSubtitle,
+                    trailing: Text(
+                      settings.interactionMode == 'streaming'
+                          ? context.l10n.modeStreaming
+                          : context.l10n.modeDownloader,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () => _showInteractionModeSheet(context, ref),
+                  ),
                   SettingsSwitchItem(
                     icon: Icons.sync,
                     title: context.l10n.optionsAutoFallback,
@@ -151,6 +168,32 @@ class OptionsSettingsPage extends ConsumerWidget {
                     value: settings.autoFallback,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setAutoFallback(v),
+                  ),
+                  SettingsSwitchItem(
+                    icon: Icons.skip_next_rounded,
+                    title: context.l10n.optionsAutoSkipUnavailableTracks,
+                    subtitle: settings.autoSkipUnavailableTracks
+                        ? context
+                              .l10n
+                              .optionsAutoSkipUnavailableTracksSubtitleOn
+                        : context
+                              .l10n
+                              .optionsAutoSkipUnavailableTracksSubtitleOff,
+                    value: settings.autoSkipUnavailableTracks,
+                    onChanged: (v) => ref
+                        .read(settingsProvider.notifier)
+                        .setAutoSkipUnavailableTracks(v),
+                  ),
+                  SettingsSwitchItem(
+                    icon: Icons.queue_music_rounded,
+                    title: context.l10n.settingsSmartQueueTitle,
+                    subtitle: settings.interactionMode == 'streaming'
+                        ? context.l10n.settingsSmartQueueSubtitle
+                        : context.l10n.settingsSmartQueueSubtitle,
+                    value: settings.smartQueueEnabled,
+                    onChanged: (v) => ref
+                        .read(settingsProvider.notifier)
+                        .setSmartQueueEnabled(v),
                   ),
                   if (hasExtensions)
                     SettingsSwitchItem(
@@ -323,6 +366,68 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showInteractionModeSheet(BuildContext context, WidgetRef ref) {
+    final settings = ref.read(settingsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.download_rounded),
+                title: Text(context.l10n.modeDownloader),
+                subtitle: Text(context.l10n.modeDownloaderSubtitle),
+                trailing: settings.interactionMode == 'downloader'
+                    ? Icon(Icons.check, color: colorScheme.primary)
+                    : null,
+                onTap: () {
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setInteractionMode('downloader');
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.play_circle_fill_rounded),
+                title: Text(context.l10n.modeStreaming),
+                subtitle: Text(context.l10n.modeStreamingSubtitle),
+                trailing: settings.interactionMode == 'streaming'
+                    ? Icon(Icons.check, color: colorScheme.primary)
+                    : null,
+                onTap: () {
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setInteractionMode('streaming');
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }

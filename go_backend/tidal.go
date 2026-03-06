@@ -514,9 +514,22 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 		return ErrDownloadCancelled
 	}
 
+	// RESUME LOGIC: Check existing file
+	var startByte int64 = 0
+	if outputPath != "" && outputFD <= 0 {
+		if info, err := os.Stat(outputPath); err == nil {
+			startByte = info.Size()
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add Range header if we have existing bytes
+	if startByte > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
 	}
 
 	resp, err := DoRequestWithUserAgent(t.client, req)
@@ -524,29 +537,53 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
+		// Network error -> Keep file
 		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	// Handle Resume Status
+	var out io.WriteCloser
+	var isResuming bool
+
+	if resp.StatusCode == http.StatusPartialContent {
+		isResuming = true
+		GoLog("[Tidal] Resuming download from byte %d", startByte)
+		f, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open file for resume: %w", err)
+		}
+		out = f
+	} else if resp.StatusCode == 200 {
+		if startByte > 0 {
+			GoLog("[Tidal] Server sent 200 OK. Restarting download from 0.")
+		}
+		startByte = 0
+		out, err = openOutputForWrite(outputPath, outputFD)
+		if err != nil {
+			return err
+		}
+	} else if resp.StatusCode == 416 {
+		GoLog("[Tidal] File seems fully downloaded (416).")
+		return nil
+	} else {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
 	}
 
 	expectedSize := resp.ContentLength
 	if expectedSize > 0 && itemID != "" {
-		SetItemBytesTotal(itemID, expectedSize)
-	}
-
-	out, err := openOutputForWrite(outputPath, outputFD)
-	if err != nil {
-		return err
+		totalSize := expectedSize
+		if isResuming {
+			totalSize = startByte + expectedSize
+		}
+		SetItemBytesTotal(itemID, totalSize)
 	}
 
 	bufWriter := bufio.NewWriterSize(out, 256*1024)
 
 	var written int64
 	if itemID != "" {
-		progressWriter := NewItemProgressWriter(bufWriter, itemID)
+		progressWriter := NewItemProgressWriter(bufWriter, itemID, startByte)
 		written, err = io.Copy(progressWriter, resp.Body)
 	} else {
 		written, err = io.Copy(bufWriter, resp.Body)
@@ -556,10 +593,11 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 	closeErr := out.Close()
 
 	if err != nil {
-		cleanupOutputOnError(outputPath, outputFD)
 		if isDownloadCancelled(itemID) {
+			cleanupOutputOnError(outputPath, outputFD)
 			return ErrDownloadCancelled
 		}
+		GoLog("[Tidal] Download interrupted (keeping partial file): %v", err)
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
@@ -572,7 +610,6 @@ func (t *TidalDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 
@@ -591,16 +628,28 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 
 	client := NewHTTPClientWithTimeout(120 * time.Second)
 
+	// --- BTS FORMAT (DIRECT URL) with RESUME ---
 	if directURL != "" {
 		GoLog("[Tidal] BTS format - downloading from direct URL: %s...\n", directURL[:min(80, len(directURL))])
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
 
+		// RESUME LOGIC for BTS
+		var startByte int64 = 0
+		if outputPath != "" && outputFD <= 0 {
+			if info, err := os.Stat(outputPath); err == nil {
+				startByte = info.Size()
+			}
+		}
+
 		req, err := http.NewRequestWithContext(ctx, "GET", directURL, nil)
 		if err != nil {
-			GoLog("[Tidal] BTS request creation failed: %v\n", err)
 			return fmt.Errorf("failed to create request: %w", err)
+		}
+
+		if startByte > 0 {
+			req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
 		}
 
 		resp, err := client.Do(req)
@@ -608,30 +657,49 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 			if isDownloadCancelled(itemID) {
 				return ErrDownloadCancelled
 			}
-			GoLog("[Tidal] BTS download failed: %v\n", err)
 			return fmt.Errorf("failed to download file: %w", err)
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 {
-			GoLog("[Tidal] BTS download HTTP error: %d\n", resp.StatusCode)
+		var out io.WriteCloser
+		var isResuming bool
+
+		if resp.StatusCode == http.StatusPartialContent {
+			isResuming = true
+			GoLog("[Tidal] BTS Resuming download from byte %d", startByte)
+			f, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return fmt.Errorf("failed to open file for resume: %w", err)
+			}
+			out = f
+		} else if resp.StatusCode == 200 {
+			if startByte > 0 {
+				GoLog("[Tidal] BTS Server sent 200 OK. Restarting.")
+			}
+			startByte = 0
+			out, err = openOutputForWrite(outputPath, outputFD)
+			if err != nil {
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+		} else if resp.StatusCode == 416 {
+			return nil
+		} else {
 			return fmt.Errorf("download failed with status %d", resp.StatusCode)
 		}
-		GoLog("[Tidal] BTS response OK, Content-Length: %d\n", resp.ContentLength)
 
 		expectedSize := resp.ContentLength
 		if expectedSize > 0 && itemID != "" {
-			SetItemBytesTotal(itemID, expectedSize)
-		}
-
-		out, err := openOutputForWrite(outputPath, outputFD)
-		if err != nil {
-			return fmt.Errorf("failed to create file: %w", err)
+			totalSize := expectedSize
+			if isResuming {
+				totalSize = startByte + expectedSize
+			}
+			SetItemBytesTotal(itemID, totalSize)
 		}
 
 		var written int64
 		if itemID != "" {
-			progressWriter := NewItemProgressWriter(out, itemID)
+			// Pass startByte for correct progress
+			progressWriter := NewItemProgressWriter(out, itemID, startByte)
 			written, err = io.Copy(progressWriter, resp.Body)
 		} else {
 			written, err = io.Copy(out, resp.Body)
@@ -640,10 +708,12 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		closeErr := out.Close()
 
 		if err != nil {
-			cleanupOutputOnError(outputPath, outputFD)
 			if isDownloadCancelled(itemID) {
+				cleanupOutputOnError(outputPath, outputFD)
 				return ErrDownloadCancelled
 			}
+			// Network error -> Keep file
+			GoLog("[Tidal] BTS Download interrupted: %v", err)
 			return fmt.Errorf("download interrupted: %w", err)
 		}
 		if closeErr != nil {
@@ -652,17 +722,14 @@ func (t *TidalDownloader) downloadFromManifest(ctx context.Context, manifestB64,
 		}
 
 		if expectedSize > 0 && written != expectedSize {
-			cleanupOutputOnError(outputPath, outputFD)
 			return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 		}
 
 		return nil
 	}
 
+	// --- DASH FORMAT (NO RESUME for now, too complex) ---
 	// For DASH format, determine correct M4A path
-	// If outputPath already ends with .m4a, use it directly.
-	// If outputPath ends with .flac, convert .flac to .m4a.
-	// Otherwise (e.g., SAF /proc/self/fd/*), use outputPath as-is.
 	var m4aPath string
 	if strings.HasSuffix(outputPath, ".m4a") {
 		m4aPath = outputPath

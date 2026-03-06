@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:spotiflac_android/screens/main_shell.dart';
 import 'package:spotiflac_android/screens/setup_screen.dart';
 import 'package:spotiflac_android/screens/tutorial_screen.dart';
+import 'package:spotiflac_android/screens/whats_new_screen.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/theme/dynamic_color_wrapper.dart';
 import 'package:spotiflac_android/l10n/app_localizations.dart';
@@ -16,6 +17,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
   final hasCompletedTutorial = ref.watch(
     settingsProvider.select((s) => s.hasCompletedTutorial),
   );
+  final hasSeenWhatsNew = ref.watch(
+    settingsProvider.select((s) => s.hasSeenWhatsNew),
+  );
 
   // Determine initial location based on app state
   String initialLocation;
@@ -23,6 +27,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
     initialLocation = '/setup';
   } else if (!hasCompletedTutorial) {
     initialLocation = '/tutorial';
+  } else if (!hasSeenWhatsNew) {
+    initialLocation = '/whats-new';
   } else {
     initialLocation = '/';
   }
@@ -35,6 +41,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tutorial',
         builder: (context, state) => const TutorialScreen(),
+      ),
+      GoRoute(
+        path: '/whats-new',
+        builder: (context, state) => const WhatsNewScreen(),
       ),
     ],
     // Safety net: if a deep link URL (e.g. Spotify/Deezer) somehow reaches

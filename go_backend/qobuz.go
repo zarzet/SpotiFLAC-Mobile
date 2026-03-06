@@ -1174,9 +1174,23 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 		return ErrDownloadCancelled
 	}
 
+	// RESUME LOGIC: Check if file exists to determine resume point
+	var startByte int64 = 0
+	// We only attempt resume on standard file paths, not direct File Descriptors
+	if outputPath != "" && outputFD <= 0 {
+		if info, err := os.Stat(outputPath); err == nil {
+			startByte = info.Size()
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add Range header if we have existing bytes
+	if startByte > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
 	}
 
 	resp, err := DoRequestWithUserAgent(q.client, req)
@@ -1184,29 +1198,62 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
 		}
+		// Do not clean up output on network error to allow resuming later
 		return err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	// Handle Resume Status Codes
+	var out io.WriteCloser
+	var isResuming bool
+
+	if resp.StatusCode == http.StatusPartialContent {
+		// 206 Partial Content: Server supports resume
+		isResuming = true
+		GoLog("[Qobuz] Resuming download from byte %d", startByte)
+
+		f, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open file for resume: %w", err)
+		}
+		out = f
+	} else if resp.StatusCode == 200 {
+		// 200 OK: Server starting from scratch
+		if startByte > 0 {
+			GoLog("[Qobuz] Server sent 200 OK. Restarting download from 0.")
+		}
+		startByte = 0
+
+		// Use original helper for new files
+		out, err = openOutputForWrite(outputPath, outputFD)
+		if err != nil {
+			return err
+		}
+	} else if resp.StatusCode == 416 {
+		// 416 Range Not Satisfiable: File likely complete
+		GoLog("[Qobuz] File seems fully downloaded (416). Skipping.")
+		return nil
+	} else {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
 	}
 
+	// Update Total Expected Size for Progress Bar
 	expectedSize := resp.ContentLength
-	if expectedSize > 0 && itemID != "" {
-		SetItemBytesTotal(itemID, expectedSize)
-	}
-
-	out, err := openOutputForWrite(outputPath, outputFD)
-	if err != nil {
-		return err
+	if itemID != "" {
+		if expectedSize > 0 {
+			totalSize := expectedSize
+			if isResuming {
+				totalSize = startByte + expectedSize
+			}
+			SetItemBytesTotal(itemID, totalSize)
+		}
 	}
 
 	bufWriter := bufio.NewWriterSize(out, 256*1024)
 
 	var written int64
 	if itemID != "" {
-		progressWriter := NewItemProgressWriter(bufWriter, itemID)
+		progressWriter := NewItemProgressWriter(bufWriter, itemID, startByte)
 		written, err = io.Copy(progressWriter, resp.Body)
 	} else {
 		written, err = io.Copy(bufWriter, resp.Body)
@@ -1216,13 +1263,17 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 	closeErr := out.Close()
 
 	if err != nil {
-		cleanupOutputOnError(outputPath, outputFD)
+		// IMPORTANT: Only clean up if explicitly cancelled by user.
+		// If it's a network error, keep the file for resume.
 		if isDownloadCancelled(itemID) {
+			cleanupOutputOnError(outputPath, outputFD)
 			return ErrDownloadCancelled
 		}
+		GoLog("[Qobuz] Download interrupted (keeping partial file): %v", err)
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
+		// Write errors are usually fatal, safer to clean up or retry
 		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("failed to flush buffer: %w", flushErr)
 	}
@@ -1232,7 +1283,7 @@ func (q *QobuzDownloader) DownloadFile(downloadURL, outputPath string, outputFD 
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		cleanupOutputOnError(outputPath, outputFD)
+		// Incomplete download (network drop at the end), keep file for resume
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 

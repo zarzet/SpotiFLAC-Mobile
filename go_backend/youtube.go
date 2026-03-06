@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -394,9 +395,22 @@ func (y *YouTubeDownloader) DownloadFile(downloadURL, outputPath string, outputF
 		return ErrDownloadCancelled
 	}
 
+	// RESUME LOGIC: Check existing file
+	var startByte int64 = 0
+	if outputPath != "" && outputFD <= 0 {
+		if info, err := os.Stat(outputPath); err == nil {
+			startByte = info.Size()
+		}
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add Range header
+	if startByte > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", startByte))
 	}
 
 	resp, err := DoRequestWithUserAgent(y.client, req)
@@ -408,25 +422,48 @@ func (y *YouTubeDownloader) DownloadFile(downloadURL, outputPath string, outputF
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	// Handle Resume Status
+	var out io.WriteCloser
+	var isResuming bool
+
+	if resp.StatusCode == http.StatusPartialContent {
+		isResuming = true
+		GoLog("[YouTube] Resuming download from byte %d", startByte)
+		f, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to open file for resume: %w", err)
+		}
+		out = f
+	} else if resp.StatusCode == 200 {
+		if startByte > 0 {
+			GoLog("[YouTube] Server sent 200 OK. Restarting download from 0.")
+		}
+		startByte = 0
+		out, err = openOutputForWrite(outputPath, outputFD)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %w", err)
+		}
+	} else if resp.StatusCode == 416 {
+		GoLog("[YouTube] File seems fully downloaded (416).")
+		return nil
+	} else {
 		return fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
 	}
 
 	expectedSize := resp.ContentLength
 	if expectedSize > 0 && itemID != "" {
-		SetItemBytesTotal(itemID, expectedSize)
-	}
-
-	out, err := openOutputForWrite(outputPath, outputFD)
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		totalSize := expectedSize
+		if isResuming {
+			totalSize = startByte + expectedSize
+		}
+		SetItemBytesTotal(itemID, totalSize)
 	}
 
 	bufWriter := bufio.NewWriterSize(out, 256*1024)
 
 	var written int64
 	if itemID != "" {
-		progressWriter := NewItemProgressWriter(bufWriter, itemID)
+		progressWriter := NewItemProgressWriter(bufWriter, itemID, startByte)
 		written, err = io.Copy(progressWriter, resp.Body)
 	} else {
 		written, err = io.Copy(bufWriter, resp.Body)
@@ -436,10 +473,11 @@ func (y *YouTubeDownloader) DownloadFile(downloadURL, outputPath string, outputF
 	closeErr := out.Close()
 
 	if err != nil {
-		cleanupOutputOnError(outputPath, outputFD)
 		if isDownloadCancelled(itemID) {
+			cleanupOutputOnError(outputPath, outputFD)
 			return ErrDownloadCancelled
 		}
+		GoLog("[YouTube] Download interrupted (keeping partial file): %v", err)
 		return fmt.Errorf("download interrupted: %w", err)
 	}
 	if flushErr != nil {
@@ -452,7 +490,6 @@ func (y *YouTubeDownloader) DownloadFile(downloadURL, outputPath string, outputF
 	}
 
 	if expectedSize > 0 && written != expectedSize {
-		cleanupOutputOnError(outputPath, outputFD)
 		return fmt.Errorf("incomplete download: expected %d bytes, got %d bytes", expectedSize, written)
 	}
 

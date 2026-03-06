@@ -14,6 +14,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
 import 'package:spotiflac_android/providers/explore_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
@@ -671,6 +672,20 @@ class _HomeTabState extends ConsumerState<HomeTab>
     if (index >= 0 && index < trackState.tracks.length) {
       final track = trackState.tracks[index];
       final settings = ref.read(settingsProvider);
+
+      if (settings.isStreamingMode) {
+        ref.read(settingsProvider.notifier).setHasSearchedBefore();
+        ref
+            .read(playbackProvider.notifier)
+            .playTrackStreamAndSetQueue(track, trackState.tracks)
+            .catchError((e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Cannot play stream: $e')));
+            });
+        return;
+      }
 
       if (settings.askQualityBeforeDownload) {
         DownloadServicePicker.show(
@@ -1647,6 +1662,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
   void _showTrackBottomSheet(ExploreItem item) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isStreamingMode = ref.read(settingsProvider).isStreamingMode;
 
     showModalBottomSheet(
       context: context,
@@ -1723,8 +1739,13 @@ class _HomeTabState extends ConsumerState<HomeTab>
             ),
             const Divider(height: 1),
             ListTile(
-              leading: Icon(Icons.download, color: colorScheme.primary),
-              title: Text(context.l10n.downloadTitle),
+              leading: Icon(
+                isStreamingMode ? Icons.play_arrow : Icons.download,
+                color: colorScheme.primary,
+              ),
+              title: Text(
+                isStreamingMode ? 'Play Stream' : context.l10n.downloadTitle,
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _handleExploreTrackPrimaryAction(item);
@@ -1762,6 +1783,18 @@ class _HomeTabState extends ConsumerState<HomeTab>
       coverUrl: item.coverUrl,
       source: item.providerId ?? 'spotify-web',
     );
+
+    if (settings.isStreamingMode) {
+      try {
+        await ref.read(playbackProvider.notifier).playTrackStream(track);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Cannot play stream: $e')));
+      }
+      return;
+    }
 
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
@@ -3272,6 +3305,12 @@ class _TrackItemWithStatus extends ConsumerWidget {
     required bool isInHistory,
     required bool isInLocalLibrary,
   }) async {
+    final isStreamingMode = ref.read(settingsProvider).isStreamingMode;
+    if (isStreamingMode) {
+      onDownload();
+      return;
+    }
+
     if (isQueued) return;
 
     if (isInLocalLibrary) {

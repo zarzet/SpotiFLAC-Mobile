@@ -195,16 +195,18 @@ type ItemProgressWriter struct {
 
 const progressUpdateThreshold = 64 * 1024
 
-func NewItemProgressWriter(w interface{ Write([]byte) (int, error) }, itemID string) *ItemProgressWriter {
+// NewItemProgressWriter creates a progress writer.
+// Accepts startByte to correctly report progress when resuming.
+func NewItemProgressWriter(w interface{ Write([]byte) (int, error) }, itemID string, startByte int64) *ItemProgressWriter {
 	now := time.Now()
 	return &ItemProgressWriter{
 		writer:       w,
 		itemID:       itemID,
-		current:      0,
-		lastReported: 0,
+		current:      startByte, // Start counting from existing offset
+		lastReported: startByte,
 		startTime:    now,
 		lastTime:     now,
-		lastBytes:    0,
+		lastBytes:    startByte,
 	}
 }
 
@@ -222,15 +224,24 @@ func (pw *ItemProgressWriter) Write(p []byte) (int, error) {
 		now := time.Now()
 		elapsed := now.Sub(pw.lastTime).Seconds()
 		var speedMBps float64
-		if elapsed > 0 {
+		// Ensure elapsed time is significant to avoid speed spikes or div by zero
+		if elapsed > 0.1 {
 			bytesInInterval := pw.current - pw.lastBytes
 			speedMBps = float64(bytesInInterval) / (1024 * 1024) / elapsed
+
+			// Update lastTime and lastBytes for the next interval
+			pw.lastTime = now
+			pw.lastBytes = pw.current
+		} else if pw.lastBytes == 0 {
+			// Special case for the very first chunk if fast
+			totalElapsed := now.Sub(pw.startTime).Seconds()
+			if totalElapsed > 0 {
+				speedMBps = float64(pw.current) / (1024 * 1024) / totalElapsed
+			}
 		}
 
 		SetItemBytesReceivedWithSpeed(pw.itemID, pw.current, speedMBps)
 		pw.lastReported = pw.current
-		pw.lastTime = now
-		pw.lastBytes = pw.current
 	}
 	return n, nil
 }
