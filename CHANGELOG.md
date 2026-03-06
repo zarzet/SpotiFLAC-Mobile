@@ -4,8 +4,10 @@
 
 ### Added
 
+- **Deezer Download Service**: Deezer is now available as a built-in download service (FLAC CD Quality).
 - **Smarter YouTube Downloads**: If the YouTube Music extension is installed, the app now uses it first to find the correct song — more accurate than SongLink, especially for new releases.
 - **Songs-Only Search Filter**: YouTube Music extension search now filters results server-side, so you only get actual songs — no music videos or covers mixed in.
+- **Qobuz Squid.wtf Fallback**: Added Squid.wtf as an additional Qobuz download provider.
 - **Qobuz Search Fallback**: If Qobuz API search returns nothing, the app now tries the Qobuz web store as a backup to find the track.
 - **Better ISRC Lookup**: Tracks can now be resolved via ISRC even without a Spotify ID, using Deezer as an intermediary.
 

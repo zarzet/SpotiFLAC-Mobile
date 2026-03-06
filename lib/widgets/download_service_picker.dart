@@ -79,6 +79,17 @@ const _builtInServices = [
     ],
   ),
   BuiltInService(
+    id: 'deezer',
+    label: 'Deezer',
+    qualityOptions: [
+      QualityOption(
+        id: 'FLAC',
+        label: 'FLAC Lossless',
+        description: '16-bit / 44.1kHz (CD Quality)',
+      ),
+    ],
+  ),
+  BuiltInService(
     id: 'youtube',
     label: 'YouTube',
     qualityOptions: [

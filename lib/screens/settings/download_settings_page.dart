@@ -23,7 +23,7 @@ class DownloadSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
-  static const _builtInServices = ['tidal', 'qobuz', 'amazon'];
+  static const _builtInServices = ['tidal', 'qobuz', 'amazon', 'deezer'];
   static const _songLinkRegions = [
     'AD',
     'AE',
@@ -2039,7 +2039,7 @@ class _ServiceSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
-    final builtInServiceIds = ['tidal', 'qobuz', 'amazon', 'youtube'];
+    final builtInServiceIds = ['tidal', 'qobuz', 'amazon', 'deezer', 'youtube'];
 
     final extensionProviders = extState.extensions
         .where((e) => e.enabled && e.hasDownloadProvider)
