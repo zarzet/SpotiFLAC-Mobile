@@ -160,38 +160,6 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
-        case "getSpotifyMetadata":
-            let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendGetSpotifyMetadata(url, &error)
-            if let error = error { throw error }
-            return response
-            
-        case "searchSpotify":
-            let args = call.arguments as! [String: Any]
-            let query = args["query"] as! String
-            let limit = args["limit"] as? Int ?? 10
-            let response = GobackendSearchSpotify(query, Int(limit), &error)
-            if let error = error { throw error }
-            return response
-            
-        case "searchSpotifyAll":
-            let args = call.arguments as! [String: Any]
-            let query = args["query"] as! String
-            let trackLimit = args["track_limit"] as? Int ?? 15
-            let artistLimit = args["artist_limit"] as? Int ?? 3
-            let response = GobackendSearchSpotifyAll(query, Int(trackLimit), Int(artistLimit), &error)
-            if let error = error { throw error }
-            return response
-
-        case "getSpotifyRelatedArtists":
-            let args = call.arguments as! [String: Any]
-            let artistId = args["artist_id"] as! String
-            let limit = args["limit"] as? Int ?? 12
-            let response = GobackendGetSpotifyRelatedArtists(artistId, Int(limit), &error)
-            if let error = error { throw error }
-            return response
-            
         case "checkAvailability":
             let args = call.arguments as! [String: Any]
             let spotifyId = args["spotify_id"] as! String
@@ -509,17 +477,6 @@ import Gobackend  // Import Go framework
         case "clearTrackCache":
             GobackendClearTrackCache()
             return nil
-            
-        case "setSpotifyCredentials":
-            let args = call.arguments as! [String: Any]
-            let clientId = args["client_id"] as! String
-            let clientSecret = args["client_secret"] as! String
-            GobackendSetSpotifyAPICredentials(clientId, clientSecret)
-            return nil
-            
-        case "hasSpotifyCredentials":
-            let hasCredentials = GobackendCheckSpotifyCredentials()
-            return hasCredentials
             
         // Log methods
         case "getLogs":
