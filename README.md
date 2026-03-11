@@ -1,19 +1,12 @@
-[![GitHub All Releases](https://img.shields.io/github/downloads/zarzet/SpotiFLAC-Mobile/total?style=for-the-badge&refresh=1)](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/0a2bd2a033551983fc9fcd83f82fd912c83914fd1094cd8d1c7c6a68eb23233f)
-[![Crowdin](https://img.shields.io/badge/HELP%20TRANSLATE%20ON-CROWDIN-%2321252b?style=for-the-badge&logo=crowdin)](https://crowdin.com/project/spotiflac-mobile)
-
 <div align="center">
 
-<img src="icon.png" width="128" />
-
-Download music in true lossless FLAC from Tidal, Qobuz & Amazon Music — no account required.
-
-![Android](https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-14.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/images/banner-readme-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/images/banner-readme-light.png">
+  <img alt="SpotiFLAC Mobile" src="assets/images/banner-readme-light.png" width="650" height="auto">
+</picture>
 
 </div>
-
-### [Download](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
 
 ## Screenshots
 
@@ -23,6 +16,17 @@ Download music in true lossless FLAC from Tidal, Qobuz & Amazon Music — no acc
   <img src="assets/images/3.jpg?v=2" width="200" />
   <img src="assets/images/4.jpg?v=2" width="200" />
 </p>
+
+<div align="center">
+
+[![GitHub All Releases](https://img.shields.io/github/downloads/zarzet/SpotiFLAC-Mobile/total?style=for-the-badge&refresh=1)](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/0a2bd2a033551983fc9fcd83f82fd912c83914fd1094cd8d1c7c6a68eb23233f)
+[![Crowdin](https://img.shields.io/badge/HELP%20TRANSLATE%20ON-CROWDIN-%2321252b?style=for-the-badge&logo=crowdin)](https://crowdin.com/project/spotiflac-mobile)
+
+[![Telegram Channel](https://img.shields.io/badge/CHANNEL-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac)
+[![Telegram Community](https://img.shields.io/badge/COMMUNITY-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac_chat)
+
+</div>
 
 ## Extensions
 
@@ -43,18 +47,13 @@ Want to create your own extension? Check out the [Extension Development Guide](h
 ### [SpotiFLAC (Desktop)](https://github.com/afkarxyz/SpotiFLAC)
 Download music in true lossless FLAC from Tidal, Qobuz & Amazon Music for Windows, macOS & Linux
 
-## Telegram
-
-[![Telegram Channel](https://img.shields.io/badge/CHANNEL-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac)
-[![Telegram Community](https://img.shields.io/badge/COMMUNITY-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac_chat)
-
 ## FAQ
 
 **Q: Why is my download failing with "Song not found"?**  
-A: The track may not be available on Tidal, Qobuz, or Amazon Music. Try enabling more download services in Settings > Download > Provider Priority, or install additional extensions from the Store.
+A: The track may not be available on the streaming services. Try enabling more download services in Settings > Download > Provider Priority, or install additional extensions like Amazon Music from the Store.
 
 **Q: Why are some tracks downloading in lower quality?**  
-A: Quality depends on what's available from the streaming service. Tidal offers up to 24-bit/192kHz, Qobuz up to 24-bit/192kHz, and Amazon up to 24-bit/48kHz. The app automatically selects the best available quality.
+A: Quality depends on what's available from the streaming service and extensions. Built-in providers: Tidal offers up to 24-bit/192kHz, Qobuz up to 24-bit/192kHz, and Deezer up to 16-bit/44.1kHz.
 
 **Q: Can I download playlists?**  
 A: Yes! Just paste the playlist URL in the search bar. The app will fetch all tracks and queue them for download.
@@ -74,23 +73,6 @@ A: Some countries have restricted access to certain streaming service APIs. If d
 _If this software is useful and brings you value, consider supporting the project. Your support helps keep development going._
 
 [![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/zarzet)
-
-
-## Disclaimer
-
-This project is for **educational and private use only**. The developer does not condone or encourage copyright infringement.
-
-**SpotiFLAC** is a third-party tool and is not affiliated with, endorsed by, or connected to Tidal, Qobuz, Amazon Music, Deezer, or any other streaming service.
-
-The application is purely a user interface that facilitates communication between your device and existing third-party services.
-
-You are solely responsible for:
-1. Ensuring your use of this software complies with your local laws.
-2. Reading and adhering to the Terms of Service of the respective platforms.
-3. Any legal consequences resulting from the misuse of this tool.
-
-The software is provided "as is", without warranty of any kind. The author assumes no liability for any bans, damages, or legal issues arising from its use.
-
 
 ## API Credits
 

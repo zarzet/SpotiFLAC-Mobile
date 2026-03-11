@@ -120,7 +120,7 @@ func (c *DeezerClient) DownloadFromYoinkify(spotifyURL, outputPath string, outpu
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := GetDownloadClient().Do(req)
 	if err != nil {
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
@@ -324,7 +324,7 @@ func (c *DeezerClient) DownloadFromMusicDL(deezerTrackURL, outputPath string, ou
 	}
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := GetDownloadClient().Do(req)
 	if err != nil {
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled

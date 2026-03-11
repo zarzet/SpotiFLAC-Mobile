@@ -1,4 +1,3 @@
-// Package gobackend provides Storage and Credentials API for extension runtime
 package gobackend
 
 import (
@@ -16,8 +15,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== Storage API ====================
 
 const (
 	defaultStorageFlushDelay = 400 * time.Millisecond

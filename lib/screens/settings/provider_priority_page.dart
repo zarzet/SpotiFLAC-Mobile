@@ -66,6 +66,7 @@ class _ProviderPriorityPageState extends ConsumerState<ProviderPriorityPage> {
               backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () async {
                   if (_hasChanges) {
@@ -333,12 +334,6 @@ class _ProviderItem extends StatelessWidget {
         );
       case 'qobuz':
         return _ProviderInfo(name: 'Qobuz', icon: Icons.album, isBuiltIn: true);
-      case 'amazon':
-        return _ProviderInfo(
-          name: 'Amazon Music',
-          icon: Icons.shopping_bag,
-          isBuiltIn: true,
-        );
       case 'youtube':
         return _ProviderInfo(
           name: 'YouTube',

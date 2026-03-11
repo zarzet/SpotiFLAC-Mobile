@@ -1,4 +1,3 @@
-// Package gobackend provides extension settings storage
 package gobackend
 
 import (

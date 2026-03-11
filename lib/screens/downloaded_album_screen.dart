@@ -18,7 +18,6 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
 
-/// Screen to display downloaded tracks from a specific album
 class DownloadedAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
   final String artistName;
@@ -361,7 +360,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     );
     final tracks = _getAlbumTracks(allHistoryItems);
 
-    // Show empty state if no tracks found
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
@@ -480,7 +478,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
                 if (embeddedCoverPath != null)
                   Image.file(
                     File(embeddedCoverPath),
@@ -508,7 +505,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -527,7 +523,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -635,6 +630,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         },
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -711,10 +707,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       final discTracks = discMap[discNumber];
       if (discTracks == null || discTracks.isEmpty) continue;
 
-      // Add disc separator
       children.add(_buildDiscSeparator(context, colorScheme, discNumber));
 
-      // Add tracks for this disc
       for (final track in discTracks) {
         children.add(
           KeyedSubtree(
@@ -858,6 +852,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
+                  tooltip: 'Play track',
                   onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(
@@ -897,7 +892,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       return;
     }
 
-    // Share SAF content URIs via native intent
     if (safUris.isNotEmpty) {
       try {
         if (safUris.length == 1) {
@@ -908,13 +902,11 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       } catch (_) {}
     }
 
-    // Share regular files via SharePlus
     if (filesToShare.isNotEmpty) {
       await SharePlus.instance.share(ShareParams(files: filesToShare));
     }
   }
 
-  /// Show batch convert bottom sheet
   void _showBatchConvertSheet(
     BuildContext context,
     List<DownloadHistoryItem> allTracks,
@@ -1336,6 +1328,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                 children: [
                   IconButton.filledTonal(
                     onPressed: _exitSelectionMode,
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -1388,7 +1383,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Action buttons row: Share, Convert
               Row(
                 children: [
                   Expanded(

@@ -1,4 +1,3 @@
-// Package gobackend provides Utility functions for extension runtime
 package gobackend
 
 import (
@@ -16,8 +15,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== Utility Functions ====================
 
 func (r *ExtensionRuntime) base64Encode(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {

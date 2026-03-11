@@ -132,7 +132,23 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       // Fallback for older devices
       final result = await FilePicker.platform.getDirectoryPath();
       if (result != null) {
-        ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+        if (Platform.isIOS) {
+          // On iOS, create a security-scoped bookmark so we can access
+          // this folder across app restarts and from the Go backend.
+          final bookmark =
+              await PlatformBridge.createIosBookmarkFromPath(result);
+          if (bookmark != null && bookmark.isNotEmpty) {
+            ref
+                .read(settingsProvider.notifier)
+                .setLocalLibraryPathAndBookmark(result, bookmark);
+          } else {
+            // Bookmark creation failed; save path anyway (works for
+            // app-internal folders like Documents/).
+            ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+          }
+        } else {
+          ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+        }
       }
     }
   }
@@ -140,6 +156,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   Future<void> _startScan({bool forceFullScan = false}) async {
     final settings = ref.read(settingsProvider);
     final libraryPath = settings.localLibraryPath;
+    final iosBookmark = settings.localLibraryBookmark;
 
     if (libraryPath.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +165,14 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    if (!libraryPath.startsWith('content://') &&
+    // On iOS with a bookmark, try resolving the bookmark first to validate
+    // access instead of checking the path directly (which may fail outside
+    // the app sandbox).
+    if (Platform.isIOS && iosBookmark.isNotEmpty) {
+      // Bookmark will be resolved inside startScan; skip Directory.exists
+      // check since security-scoped paths are not accessible without the
+      // bookmark being activated.
+    } else if (!libraryPath.startsWith('content://') &&
         !await Directory(libraryPath).exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,9 +182,11 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    await ref
-        .read(localLibraryProvider.notifier)
-        .startScan(libraryPath, forceFullScan: forceFullScan);
+    await ref.read(localLibraryProvider.notifier).startScan(
+      libraryPath,
+      forceFullScan: forceFullScan,
+      iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+    );
   }
 
   Future<void> _cancelScan() async {
@@ -200,9 +226,12 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _cleanupMissingFiles() async {
+    final iosBookmark = ref.read(settingsProvider).localLibraryBookmark;
     final removed = await ref
         .read(localLibraryProvider.notifier)
-        .cleanupMissingFiles();
+        .cleanupMissingFiles(
+          iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+        );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -230,6 +259,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
@@ -271,7 +301,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ),
 
-          // Scan Settings Section
           SliverToBoxAdapter(
             child: SettingsSectionHeader(
               title: context.l10n.libraryScanSettings,
@@ -442,7 +471,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ],
 
-          // Info Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -558,7 +586,6 @@ class _LibraryHeroCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background decorative elements
           Positioned(
             right: -20,
             top: -20,
@@ -581,7 +608,6 @@ class _LibraryHeroCard extends StatelessWidget {
             ),
           ),
 
-          // Content
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(

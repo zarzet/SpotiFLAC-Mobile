@@ -91,7 +91,6 @@ func (t *utlsTransport) getPort(u *url.URL) string {
 	return "80"
 }
 
-// Cloudflare bypass client using uTLS Chrome fingerprint
 var cloudflareBypassTransport = newUTLSTransport()
 
 var cloudflareBypassClient = &http.Client{
@@ -111,7 +110,6 @@ func GetCloudflareBypassClient() *http.Client {
 func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
-	// Try with standard client first
 	resp, err := sharedClient.Do(req)
 	if err == nil {
 		// Check for Cloudflare challenge page (403 with specific markers)
@@ -138,11 +136,9 @@ func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
 				if isCloudflare {
 					LogDebug("HTTP", "Cloudflare detected, retrying with Chrome TLS fingerprint...")
 
-					// Clone request for retry
 					reqCopy := req.Clone(req.Context())
 					reqCopy.Header.Set("User-Agent", getRandomUserAgent())
 
-					// Retry with uTLS Chrome fingerprint
 					return cloudflareBypassClient.Do(reqCopy)
 				}
 			}
@@ -168,11 +164,9 @@ func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
 	if tlsRelated {
 		LogDebug("HTTP", "TLS error detected, retrying with Chrome TLS fingerprint: %v", err)
 
-		// Clone request for retry
 		reqCopy := req.Clone(req.Context())
 		reqCopy.Header.Set("User-Agent", getRandomUserAgent())
 
-		// Retry with uTLS Chrome fingerprint
 		return cloudflareBypassClient.Do(reqCopy)
 	}
 

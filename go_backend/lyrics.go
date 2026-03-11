@@ -41,7 +41,6 @@ var DefaultLyricsProviders = []string{
 	LyricsProviderQQMusic,
 }
 
-// Global lyrics provider configuration
 var (
 	lyricsProvidersMu sync.RWMutex
 	lyricsProviders   []string // ordered list of enabled providers
@@ -598,7 +597,6 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 		return lyricsHasUsableText(l)
 	}
 
-	// Try extension lyrics providers first
 	if len(extensionProviders) > 0 {
 		for _, provider := range extensionProviders {
 			GoLog("[Lyrics] Trying extension lyrics provider: %s\n", provider.extension.ID)
@@ -621,7 +619,6 @@ func (c *LyricsClient) FetchLyricsAllSources(spotifyID, trackName, artistName st
 		return &cachedCopy, nil
 	}
 
-	// Get configured provider order
 	providerOrder := GetLyricsProviderOrder()
 	simplifiedTrack := simplifyTrackName(trackName)
 

@@ -1,4 +1,3 @@
-// Package gobackend - YouTube download via Cobalt API (lossy-only provider)
 package gobackend
 
 import (
@@ -161,7 +160,6 @@ func parseYouTubeQualityInput(raw string) (format string, bitrate int, normalize
 	}
 }
 
-// SearchYouTube returns a YouTube Music search URL for the given track
 func (y *YouTubeDownloader) SearchYouTube(trackName, artistName string) (string, error) {
 	query := fmt.Sprintf("%s %s", artistName, trackName)
 	searchQuery := url.QueryEscape(query)
@@ -213,7 +211,6 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 	return resp, nil
 }
 
-// requestCobaltDirect sends a download request to the primary Cobalt API.
 func (y *YouTubeDownloader) requestCobaltDirect(videoURL, audioFormat, audioBitrate string) (*CobaltResponse, error) {
 	reqBody := CobaltRequest{
 		URL:             videoURL,
@@ -470,7 +467,6 @@ func BuildYouTubeWatchURL(videoID string) string {
 	return fmt.Sprintf("https://music.youtube.com/watch?v=%s", videoID)
 }
 
-// isYouTubeVideoID checks if s is an 11-char YouTube video ID
 func isYouTubeVideoID(s string) bool {
 	if len(s) != 11 {
 		return false
@@ -707,7 +703,6 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 
 	GoLog("[YouTube] Downloading to: %s\n", outputPath)
 
-	// Parallel fetch cover art + lyrics
 	var parallelResult *ParallelDownloadResult
 	if req.EmbedLyrics || req.CoverURL != "" {
 		GoLog("[YouTube] Starting parallel fetch for cover and lyrics...\n")

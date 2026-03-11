@@ -204,7 +204,6 @@ class TrackNotifier extends Notifier<TrackState> {
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
-      // Step 1: Check for extension URL handlers first (handles YT Music, etc.)
       final extensionHandler = await PlatformBridge.findURLHandler(url);
       if (extensionHandler != null) {
         _log.i('Found extension URL handler: $extensionHandler for URL: $url');
@@ -215,7 +214,6 @@ class TrackNotifier extends Notifier<TrackState> {
           result = await PlatformBridge.handleURLWithExtension(url);
           if (!_isRequestValid(requestId)) return;
 
-          // Check if we got valid data
           if (result != null &&
               result['type'] == 'track' &&
               result['track'] != null) {
@@ -321,7 +319,6 @@ class TrackNotifier extends Notifier<TrackState> {
         }
       }
 
-      // Step 2: Try Deezer URL parsing
       if (url.contains('deezer.com') || url.contains('deezer.page.link')) {
         _log.i('Detected Deezer URL, parsing...');
         final parsed = await PlatformBridge.parseDeezerUrl(url);
@@ -387,7 +384,6 @@ class TrackNotifier extends Notifier<TrackState> {
         return;
       }
 
-      // Step 3: Try Tidal URL parsing
       if (url.contains('tidal.com')) {
         _log.i('Detected Tidal URL, parsing...');
         final parsed = await PlatformBridge.parseTidalUrl(url);
@@ -461,7 +457,20 @@ class TrackNotifier extends Notifier<TrackState> {
         return;
       }
 
-      // Step 4: Fall back to Spotify parsing
+      // If URL doesn't match any known service, it's unrecognized
+      final isSpotifyUrl =
+          url.contains('open.spotify.com') ||
+          url.contains('spotify.link') ||
+          url.startsWith('spotify:');
+      if (!isSpotifyUrl) {
+        state = TrackState(
+          isLoading: false,
+          error: 'url_not_recognized',
+          hasSearchText: state.hasSearchText,
+        );
+        return;
+      }
+
       final parsed = await PlatformBridge.parseSpotifyUrl(url);
       if (!_isRequestValid(requestId)) return;
 
@@ -538,11 +547,7 @@ class TrackNotifier extends Notifier<TrackState> {
     }
   }
 
-  Future<void> search(
-    String query, {
-    String? metadataSource,
-    String? filterOverride,
-  }) async {
+  Future<void> search(String query, {String? filterOverride}) async {
     final requestId = ++_currentRequestId;
 
     // Preserve selected filter during loading
@@ -568,7 +573,7 @@ class TrackNotifier extends Notifier<TrackState> {
           searchProvider != null &&
           searchProvider.isNotEmpty;
 
-      final source = metadataSource ?? 'deezer';
+      const source = 'deezer';
 
       _log.i(
         'Search started: source=$source, query="$query", useExtensions=$useExtensions, filter=$currentFilter',
@@ -594,32 +599,20 @@ class TrackNotifier extends Notifier<TrackState> {
             }
           }
         } catch (e) {
-          _log.w('Extension search failed, falling back to built-in: $e');
+          _log.w('Extension search failed, falling back to Deezer: $e');
         }
       }
 
-      if (source == 'deezer') {
-        _log.d('Calling Deezer search API...');
-        results = await PlatformBridge.searchDeezerAll(
-          query,
-          trackLimit: 20,
-          artistLimit: 2,
-          filter: currentFilter,
-        );
-        _log.i(
-          'Deezer returned ${(results['tracks'] as List?)?.length ?? 0} tracks, ${(results['artists'] as List?)?.length ?? 0} artists, ${(results['albums'] as List?)?.length ?? 0} albums',
-        );
-      } else {
-        _log.d('Calling Spotify search API...');
-        results = await PlatformBridge.searchSpotifyAll(
-          query,
-          trackLimit: 20,
-          artistLimit: 2,
-        );
-        _log.i(
-          'Spotify returned ${(results['tracks'] as List?)?.length ?? 0} tracks, ${(results['artists'] as List?)?.length ?? 0} artists',
-        );
-      }
+      _log.d('Calling Deezer search API...');
+      results = await PlatformBridge.searchDeezerAll(
+        query,
+        trackLimit: 20,
+        artistLimit: 2,
+        filter: currentFilter,
+      );
+      _log.i(
+        'Deezer returned ${(results['tracks'] as List?)?.length ?? 0} tracks, ${(results['artists'] as List?)?.length ?? 0} artists, ${(results['albums'] as List?)?.length ?? 0} albums',
+      );
 
       if (!_isRequestValid(requestId)) {
         _log.w('Search request cancelled (requestId=$requestId)');
@@ -823,6 +816,7 @@ class TrackNotifier extends Notifier<TrackState> {
         discNumber: track.discNumber,
         releaseDate: track.releaseDate,
         albumType: track.albumType,
+        totalTracks: track.totalTracks,
         source: track.source,
         availability: ServiceAvailability(
           tidal: availability['tidal'] as bool? ?? false,
@@ -904,6 +898,8 @@ class TrackNotifier extends Notifier<TrackState> {
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date'] as String?,
+      albumType: data['album_type'] as String?,
+      totalTracks: data['total_tracks'] as int?,
     );
   }
 
@@ -926,6 +922,7 @@ class TrackNotifier extends Notifier<TrackState> {
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date']?.toString(),
+      totalTracks: data['total_tracks'] as int?,
       source:
           source ??
           data['source']?.toString() ??

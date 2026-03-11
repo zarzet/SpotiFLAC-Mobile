@@ -1,4 +1,3 @@
-// Package gobackend provides Auth API and PKCE support for extension runtime
 package gobackend
 
 import (
@@ -15,8 +14,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== Auth API (OAuth Support) ====================
 
 func validateExtensionAuthURL(urlStr string) error {
 	parsed, err := url.Parse(urlStr)
@@ -204,9 +201,6 @@ func (r *ExtensionRuntime) authGetTokens(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(result)
 }
 
-// ==================== PKCE Support ====================
-
-// generatePKCEVerifier generates a cryptographically random code verifier
 // Length should be between 43-128 characters (RFC 7636)
 func generatePKCEVerifier(length int) (string, error) {
 	if length < 43 {
@@ -394,9 +388,7 @@ func (r *ExtensionRuntime) authStartOAuthWithPKCE(call goja.FunctionCall) goja.V
 	})
 }
 
-// authExchangeCodeWithPKCE exchanges auth code for tokens using PKCE
 // config: { tokenUrl, clientId, redirectUri, code, extraParams }
-// Uses the stored PKCE verifier automatically
 func (r *ExtensionRuntime) authExchangeCodeWithPKCE(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		return r.vm.ToValue(map[string]interface{}{
@@ -414,7 +406,6 @@ func (r *ExtensionRuntime) authExchangeCodeWithPKCE(call goja.FunctionCall) goja
 		})
 	}
 
-	// Required fields
 	tokenURL, _ := config["tokenUrl"].(string)
 	clientID, _ := config["clientId"].(string)
 	redirectURI, _ := config["redirectUri"].(string)

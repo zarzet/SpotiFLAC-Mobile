@@ -1,4 +1,3 @@
-// Package gobackend provides timeout execution for extension JS code
 package gobackend
 
 import (

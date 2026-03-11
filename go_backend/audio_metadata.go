@@ -12,7 +12,6 @@ import (
 	"strings"
 )
 
-// AudioMetadata represents common audio file metadata
 type AudioMetadata struct {
 	Title       string
 	Artist      string
@@ -31,7 +30,6 @@ type AudioMetadata struct {
 	Comment     string
 }
 
-// MP3Quality represents MP3 specific quality info
 type MP3Quality struct {
 	SampleRate int
 	BitDepth   int
@@ -39,17 +37,12 @@ type MP3Quality struct {
 	Bitrate    int
 }
 
-// OggQuality represents Ogg/Opus specific quality info
 type OggQuality struct {
 	SampleRate int
 	BitDepth   int
 	Duration   int
 	Bitrate    int // estimated bitrate in bps
 }
-
-// =============================================================================
-// ID3 Tag Reading (MP3)
-// =============================================================================
 
 func ReadID3Tags(filePath string) (*AudioMetadata, error) {
 	file, err := os.Open(filePath)
@@ -1210,10 +1203,6 @@ func readLastOggGranulePosition(file *os.File, fileSize int64) int64 {
 	return 0
 }
 
-// =============================================================================
-// ID3v1 Genre List
-// =============================================================================
-
 var id3v1Genres = []string{
 	"Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge",
 	"Hip-Hop", "Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B",
@@ -1243,10 +1232,6 @@ var id3v1Genres = []string{
 	"Contemporary Christian", "Christian Rock", "Merengue", "Salsa",
 	"Thrash Metal", "Anime", "J-Pop", "Synthpop",
 }
-
-// =============================================================================
-// Cover Art Extraction
-// =============================================================================
 
 func extractMP3CoverArt(filePath string) ([]byte, string, error) {
 	file, err := os.Open(filePath)

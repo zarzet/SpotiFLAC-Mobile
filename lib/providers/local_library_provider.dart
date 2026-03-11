@@ -9,6 +9,7 @@ import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/path_match_keys.dart';
 
 final _log = AppLogger('LocalLibrary');
 
@@ -193,74 +194,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await _loadFromDatabase();
   }
 
-  Set<String> _buildPathMatchKeys(String? filePath) {
-    final raw = filePath?.trim() ?? '';
-    if (raw.isEmpty) return const {};
-
-    final cleaned = raw.startsWith('EXISTS:') ? raw.substring(7) : raw;
-    final keys = <String>{};
-
-    void addNormalized(String value) {
-      final trimmed = value.trim();
-      if (trimmed.isEmpty) return;
-      keys.add(trimmed);
-      keys.add(trimmed.toLowerCase());
-      if (trimmed.contains('\\')) {
-        final slash = trimmed.replaceAll('\\', '/');
-        keys.add(slash);
-        keys.add(slash.toLowerCase());
-      }
-      if (trimmed.contains('%')) {
-        try {
-          final decoded = Uri.decodeFull(trimmed);
-          keys.add(decoded);
-          keys.add(decoded.toLowerCase());
-        } catch (_) {}
-      }
-
-      Uri? parsed;
-      try {
-        parsed = Uri.parse(trimmed);
-      } catch (_) {}
-
-      if (parsed != null && parsed.hasScheme) {
-        final noQueryOrFragment = parsed.replace(query: null, fragment: null);
-        keys.add(noQueryOrFragment.toString());
-        keys.add(noQueryOrFragment.toString().toLowerCase());
-
-        if (parsed.scheme == 'file') {
-          try {
-            final fileOnly = parsed.toFilePath();
-            if (fileOnly.isNotEmpty) {
-              keys.add(fileOnly);
-              keys.add(fileOnly.toLowerCase());
-              if (fileOnly.contains('\\')) {
-                final slash = fileOnly.replaceAll('\\', '/');
-                keys.add(slash);
-                keys.add(slash.toLowerCase());
-              }
-            }
-          } catch (_) {}
-        }
-      } else if (trimmed.startsWith('/')) {
-        try {
-          final asFileUri = Uri.file(trimmed).toString();
-          keys.add(asFileUri);
-          keys.add(asFileUri.toLowerCase());
-        } catch (_) {}
-      }
-    }
-
-    addNormalized(cleaned);
-
-    return keys;
-  }
-
   bool _isDownloadedPath(String? filePath, Set<String> downloadedPathKeys) {
     if (filePath == null || filePath.isEmpty || downloadedPathKeys.isEmpty) {
       return false;
     }
-    final candidateKeys = _buildPathMatchKeys(filePath);
+    final candidateKeys = buildPathMatchKeys(filePath);
     for (final key in candidateKeys) {
       if (downloadedPathKeys.contains(key)) {
         return true;
@@ -272,6 +210,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   Future<void> startScan(
     String folderPath, {
     bool forceFullScan = false,
+    String? iosBookmark,
   }) async {
     if (state.isScanning) {
       _log.w('Scan already in progress');
@@ -316,8 +255,28 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
     _startProgressPolling();
 
+    // On iOS, start accessing the security-scoped bookmark so the Go backend
+    // can read files outside the app sandbox.
+    String? resolvedPath;
+    bool didStartSecurityAccess = false;
+    if (Platform.isIOS && iosBookmark != null && iosBookmark.isNotEmpty) {
+      resolvedPath = await PlatformBridge.startAccessingIosBookmark(
+        iosBookmark,
+      );
+      if (resolvedPath != null) {
+        didStartSecurityAccess = true;
+        _log.i('Started iOS security-scoped access: $resolvedPath');
+      } else {
+        _log.w(
+          'Failed to start iOS security-scoped access, '
+          'falling back to original path',
+        );
+      }
+    }
+    final effectiveFolderPath = resolvedPath ?? folderPath;
+
     try {
-      final isSaf = folderPath.startsWith('content://');
+      final isSaf = effectiveFolderPath.startsWith('content://');
 
       // Get all file paths from download history to exclude them.
       // Merge DB + in-memory state to avoid race when a fresh download has not
@@ -334,7 +293,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       };
       final downloadedPathKeys = <String>{};
       for (final path in allHistoryPaths) {
-        downloadedPathKeys.addAll(_buildPathMatchKeys(path));
+        downloadedPathKeys.addAll(buildPathMatchKeys(path));
       }
       _log.i(
         'Excluding ${allHistoryPaths.length} downloaded files from library scan '
@@ -344,8 +303,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       if (forceFullScan) {
         // Full scan path - ignores existing data
         final results = isSaf
-            ? await PlatformBridge.scanSafTree(folderPath)
-            : await PlatformBridge.scanLibraryFolder(folderPath);
+            ? await PlatformBridge.scanSafTree(effectiveFolderPath)
+            : await PlatformBridge.scanLibraryFolder(effectiveFolderPath);
         if (_scanCancelRequested) {
           state = state.copyWith(isScanning: false, scanWasCancelled: true);
           await _showScanCancelledNotification();
@@ -424,12 +383,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         final Map<String, dynamic> result;
         if (isSaf) {
           result = await PlatformBridge.scanSafTreeIncremental(
-            folderPath,
+            effectiveFolderPath,
             existingFiles,
           );
         } else {
           result = await PlatformBridge.scanLibraryFolderIncremental(
-            folderPath,
+            effectiveFolderPath,
             existingFiles,
           );
         }
@@ -553,6 +512,10 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       state = state.copyWith(isScanning: false, scanWasCancelled: false);
       await _showScanFailedNotification(e.toString());
     } finally {
+      if (didStartSecurityAccess) {
+        await PlatformBridge.stopAccessingIosBookmark();
+        _log.i('Stopped iOS security-scoped access');
+      }
       _stopProgressPolling();
     }
   }
@@ -807,12 +770,27 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     return decoded;
   }
 
-  Future<int> cleanupMissingFiles() async {
-    final removed = await _db.cleanupMissingFiles();
-    if (removed > 0) {
-      await reloadFromStorage();
+  Future<int> cleanupMissingFiles({String? iosBookmark}) async {
+    bool didStartSecurityAccess = false;
+    if (Platform.isIOS && iosBookmark != null && iosBookmark.isNotEmpty) {
+      final resolved = await PlatformBridge.startAccessingIosBookmark(
+        iosBookmark,
+      );
+      if (resolved != null) {
+        didStartSecurityAccess = true;
+      }
     }
-    return removed;
+    try {
+      final removed = await _db.cleanupMissingFiles();
+      if (removed > 0) {
+        await reloadFromStorage();
+      }
+      return removed;
+    } finally {
+      if (didStartSecurityAccess) {
+        await PlatformBridge.stopAccessingIosBookmark();
+      }
+    }
   }
 
   Future<void> clearLibrary() async {

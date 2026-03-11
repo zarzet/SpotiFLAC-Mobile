@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
-import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
@@ -32,6 +31,7 @@ class OptionsSettingsPage extends ConsumerWidget {
               backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -43,7 +43,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                       ((constraints.maxHeight - minHeight) /
                               (maxHeight - minHeight))
                           .clamp(0.0, 1.0);
-                  final leftPadding = 56 - (32 * expandRatio); // 56 -> 24
+                  final leftPadding = 56 - (32 * expandRatio);
                   return FlexibleSpaceBar(
                     expandedTitleScale: 1.0,
                     titlePadding: EdgeInsets.only(
@@ -53,7 +53,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                     title: Text(
                       context.l10n.optionsTitle,
                       style: TextStyle(
-                        fontSize: 20 + (8 * expandRatio), // 20 -> 28
+                        fontSize: 20 + (8 * expandRatio),
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                       ),
@@ -72,68 +72,10 @@ class OptionsSettingsPage extends ConsumerWidget {
               child: SettingsGroup(
                 children: [
                   _MetadataSourceSelector(
-                    currentSource: settings.metadataSource,
                     onChanged: (v) => ref
                         .read(settingsProvider.notifier)
                         .setMetadataSource(v),
                   ),
-                  if (settings.metadataSource == 'spotify') ...[
-                    if (settings.spotifyClientId.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                        child: Card(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onErrorContainer,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    context.l10n.optionsSpotifyWarning,
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onErrorContainer,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    SettingsItem(
-                      icon: Icons.key,
-                      title: context.l10n.optionsSpotifyCredentials,
-                      subtitle: settings.spotifyClientId.isNotEmpty
-                          ? context.l10n.optionsSpotifyCredentialsConfigured(
-                              settings.spotifyClientId.length > 8
-                                  ? settings.spotifyClientId.substring(0, 8)
-                                  : settings.spotifyClientId,
-                            )
-                          : context.l10n.optionsSpotifyCredentialsRequired,
-                      onTap: () =>
-                          _showSpotifyCredentialsDialog(context, ref, settings),
-                      trailing: Icon(
-                        settings.spotifyClientId.isNotEmpty
-                            ? Icons.check_circle
-                            : Icons.error_outline,
-                        color: settings.spotifyClientId.isNotEmpty
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.error,
-                        size: 20,
-                      ),
-                      showDivider: false,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -331,7 +273,6 @@ class OptionsSettingsPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -371,214 +312,6 @@ class OptionsSettingsPage extends ConsumerWidget {
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
-  }
-
-  void _showSpotifyCredentialsDialog(
-    BuildContext context,
-    WidgetRef ref,
-    AppSettings settings,
-  ) {
-    final clientIdController = TextEditingController(
-      text: settings.spotifyClientId,
-    );
-    final clientSecretController = TextEditingController(
-      text: settings.spotifyClientSecret,
-    );
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SingleChildScrollView(
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 32,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: colorScheme.outlineVariant,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    context.l10n.credentialsTitle,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.l10n.credentialsDescription,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-
-                  TextField(
-                    controller: clientIdController,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.credentialsClientId,
-                      hintText: context.l10n.credentialsClientIdHint,
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.3,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      prefixIcon: const Icon(Icons.person_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: clientSecretController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.credentialsClientSecret,
-                      hintText: context.l10n.credentialsClientSecretHint,
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.3,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      prefixIcon: const Icon(Icons.lock_outline),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  FilledButton(
-                    onPressed: () {
-                      final clientId = clientIdController.text.trim();
-                      final clientSecret = clientSecretController.text.trim();
-
-                      if (clientId.isNotEmpty && clientSecret.isNotEmpty) {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .setSpotifyCredentials(clientId, clientSecret);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              context.l10n.snackbarCredentialsSaved,
-                            ),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(context.l10n.snackbarFillAllFields),
-                          ),
-                        );
-                      }
-                    },
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      context.l10n.actionSaveCredentials,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-
-                  if (settings.spotifyClientId.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .clearSpotifyCredentials();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              context.l10n.snackbarCredentialsCleared,
-                            ),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: colorScheme.error,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(context.l10n.actionRemoveCredentials),
-                    ),
-                  ],
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -875,12 +608,8 @@ class _ChannelChip extends StatelessWidget {
 }
 
 class _MetadataSourceSelector extends ConsumerWidget {
-  final String currentSource;
   final ValueChanged<String> onChanged;
-  const _MetadataSourceSelector({
-    required this.currentSource,
-    required this.onChanged,
-  });
+  const _MetadataSourceSelector({required this.onChanged});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -930,24 +659,12 @@ class _MetadataSourceSelector extends ConsumerWidget {
               _SourceChip(
                 icon: Icons.graphic_eq,
                 label: 'Deezer',
-                isSelected: currentSource == 'deezer' && !hasExtensionSearch,
+                isSelected: !hasExtensionSearch,
                 onTap: () {
                   if (hasExtensionSearch) {
                     ref.read(settingsProvider.notifier).setSearchProvider(null);
                   }
                   onChanged('deezer');
-                },
-              ),
-              const SizedBox(width: 12),
-              _SourceChip(
-                icon: Icons.music_note,
-                label: 'Spotify',
-                isSelected: currentSource == 'spotify' && !hasExtensionSearch,
-                onTap: () {
-                  if (hasExtensionSearch) {
-                    ref.read(settingsProvider.notifier).setSearchProvider(null);
-                  }
-                  onChanged('spotify');
                 },
               ),
             ],
@@ -964,31 +681,10 @@ class _MetadataSourceSelector extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    context.l10n.optionsSwitchBack,
+                    'Tap Deezer to switch back from extension',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (currentSource == 'spotify' && !hasExtensionSearch) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 16,
-                  color: colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    context.l10n.optionsSpotifyDeprecationWarning,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: colorScheme.error),
                   ),
                 ),
               ],

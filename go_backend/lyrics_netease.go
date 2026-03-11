@@ -15,7 +15,6 @@ type NeteaseClient struct {
 	httpClient *http.Client
 }
 
-// Netease API response models
 type neteaseSearchResponse struct {
 	Result struct {
 		Songs []struct {
@@ -172,7 +171,6 @@ func (c *NeteaseClient) FetchLyrics(
 		return nil, err
 	}
 
-	// Parse the LRC text into LyricsResponse
 	lines := parseSyncedLyrics(lrcText)
 	if len(lines) == 0 {
 		// May be plain text lyrics without timestamps

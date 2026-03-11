@@ -1,4 +1,3 @@
-// Package gobackend provides Browser-like Polyfills for extension runtime
 package gobackend
 
 import (
@@ -13,12 +12,10 @@ import (
 	"github.com/dop251/goja"
 )
 
-// ==================== Browser-like Polyfills ====================
 // These polyfills make porting browser/Node.js libraries easier
-// without compromising sandbox security
+// without compromising sandbox security.
 
-// fetchPolyfill implements browser-compatible fetch() API
-// Returns a Promise-like object with json(), text() methods
+// Returns a Promise-like object with json(), text() methods.
 func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		return r.createFetchError("URL is required")
@@ -141,7 +138,6 @@ func (r *ExtensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	return responseObj
 }
 
-// createFetchError creates a fetch error response
 func (r *ExtensionRuntime) createFetchError(message string) goja.Value {
 	errorObj := r.vm.NewObject()
 	errorObj.Set("ok", false)
@@ -157,7 +153,6 @@ func (r *ExtensionRuntime) createFetchError(message string) goja.Value {
 	return errorObj
 }
 
-// atobPolyfill implements browser atob() - decode base64 to string
 func (r *ExtensionRuntime) atobPolyfill(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		return r.vm.ToValue("")
@@ -174,7 +169,6 @@ func (r *ExtensionRuntime) atobPolyfill(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(string(decoded))
 }
 
-// btoaPolyfill implements browser btoa() - encode string to base64
 func (r *ExtensionRuntime) btoaPolyfill(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 1 {
 		return r.vm.ToValue("")
@@ -183,7 +177,6 @@ func (r *ExtensionRuntime) btoaPolyfill(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(base64.StdEncoding.EncodeToString([]byte(input)))
 }
 
-// registerTextEncoderDecoder registers TextEncoder and TextDecoder classes
 func (r *ExtensionRuntime) registerTextEncoderDecoder(vm *goja.Runtime) {
 	vm.Set("TextEncoder", func(call goja.ConstructorCall) *goja.Object {
 		encoder := call.This
@@ -429,9 +422,8 @@ func (r *ExtensionRuntime) registerURLClass(vm *goja.Runtime) {
 	})
 }
 
-// registerJSONGlobal ensures JSON global is properly set up
+// JSON is already built-in to Goja; this ensures a fallback exists.
 func (r *ExtensionRuntime) registerJSONGlobal(vm *goja.Runtime) {
-	// JSON is already built-in to Goja, but we can enhance it
 	jsonScript := `
 		if (typeof JSON === 'undefined') {
 			var JSON = {

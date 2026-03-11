@@ -1,4 +1,3 @@
-// Package gobackend provides Track Matching API for extension runtime
 package gobackend
 
 import (
@@ -6,8 +5,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== Track Matching API ====================
 
 func (r *ExtensionRuntime) matchingCompareStrings(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 2 {

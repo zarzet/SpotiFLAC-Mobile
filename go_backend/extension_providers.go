@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -99,15 +100,16 @@ type ExtDownloadResult struct {
 	ErrorMessage string `json:"error_message,omitempty"`
 	ErrorType    string `json:"error_type,omitempty"`
 
-	Title       string `json:"title,omitempty"`
-	Artist      string `json:"artist,omitempty"`
-	Album       string `json:"album,omitempty"`
-	AlbumArtist string `json:"album_artist,omitempty"`
-	TrackNumber int    `json:"track_number,omitempty"`
-	DiscNumber  int    `json:"disc_number,omitempty"`
-	ReleaseDate string `json:"release_date,omitempty"`
-	CoverURL    string `json:"cover_url,omitempty"`
-	ISRC        string `json:"isrc,omitempty"`
+	Title         string `json:"title,omitempty"`
+	Artist        string `json:"artist,omitempty"`
+	Album         string `json:"album,omitempty"`
+	AlbumArtist   string `json:"album_artist,omitempty"`
+	TrackNumber   int    `json:"track_number,omitempty"`
+	DiscNumber    int    `json:"disc_number,omitempty"`
+	ReleaseDate   string `json:"release_date,omitempty"`
+	CoverURL      string `json:"cover_url,omitempty"`
+	ISRC          string `json:"isrc,omitempty"`
+	DecryptionKey string `json:"decryption_key,omitempty"`
 }
 
 type ExtensionProviderWrapper struct {
@@ -388,7 +390,7 @@ func (p *ExtensionProviderWrapper) EnrichTrack(track *ExtTrackMetadata) (*ExtTra
 	return &enrichedTrack, nil
 }
 
-func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName string) (*ExtAvailabilityResult, error) {
+func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName, spotifyID, deezerID string) (*ExtAvailabilityResult, error) {
 	if !p.extension.Manifest.IsDownloadProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a download provider", p.extension.ID)
 	}
@@ -403,11 +405,11 @@ func (p *ExtensionProviderWrapper) CheckAvailability(isrc, trackName, artistName
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.checkAvailability === 'function') {
-				return extension.checkAvailability(%q, %q, %q);
+				return extension.checkAvailability(%q, %q, %q, {spotify_id: %q, deezer_id: %q});
 			}
 			return null;
 		})()
-	`, isrc, trackName, artistName)
+	`, isrc, trackName, artistName, spotifyID, deezerID)
 
 	result, err := RunWithTimeoutAndRecover(p.vm, script, DefaultJSTimeout)
 	if err != nil {
@@ -631,7 +633,7 @@ func GetProviderPriority() []string {
 	defer providerPriorityMu.RUnlock()
 
 	if len(providerPriority) == 0 {
-		return []string{"tidal", "qobuz", "amazon", "deezer"}
+		return []string{"tidal", "qobuz", "deezer"}
 	}
 
 	result := make([]string, len(providerPriority))
@@ -642,8 +644,26 @@ func GetProviderPriority() []string {
 func SetMetadataProviderPriority(providerIDs []string) {
 	metadataProviderPriorityMu.Lock()
 	defer metadataProviderPriorityMu.Unlock()
-	metadataProviderPriority = providerIDs
-	GoLog("[Extension] Metadata provider priority set: %v\n", providerIDs)
+
+	sanitized := make([]string, 0, len(providerIDs)+1)
+	seen := map[string]struct{}{}
+	for _, providerID := range providerIDs {
+		providerID = strings.TrimSpace(providerID)
+		if providerID == "" || providerID == "spotify" {
+			continue
+		}
+		if _, exists := seen[providerID]; exists {
+			continue
+		}
+		seen[providerID] = struct{}{}
+		sanitized = append(sanitized, providerID)
+	}
+	if _, exists := seen["deezer"]; !exists {
+		sanitized = append([]string{"deezer"}, sanitized...)
+	}
+
+	metadataProviderPriority = sanitized
+	GoLog("[Extension] Metadata provider priority set: %v\n", sanitized)
 }
 
 func GetMetadataProviderPriority() []string {
@@ -651,7 +671,7 @@ func GetMetadataProviderPriority() []string {
 	defer metadataProviderPriorityMu.RUnlock()
 
 	if len(metadataProviderPriority) == 0 {
-		return []string{"deezer", "spotify"}
+		return []string{"deezer"}
 	}
 
 	result := make([]string, len(metadataProviderPriority))
@@ -661,7 +681,7 @@ func GetMetadataProviderPriority() []string {
 
 func isBuiltInProvider(providerID string) bool {
 	switch providerID {
-	case "tidal", "qobuz", "amazon", "deezer":
+	case "tidal", "qobuz", "deezer":
 		return true
 	default:
 		return false
@@ -693,6 +713,27 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 		}
 		priority = newPriority
+		GoLog("[DownloadWithExtensionFallback] New priority order: %v\n", priority)
+	} else if !strictMode && req.Service != "" && !isBuiltInProvider(strings.ToLower(req.Service)) {
+		found := false
+		for _, p := range priority {
+			if strings.EqualFold(p, req.Service) {
+				found = true
+				break
+			}
+		}
+		newPriority := []string{req.Service}
+		for _, p := range priority {
+			if !strings.EqualFold(p, req.Service) {
+				newPriority = append(newPriority, p)
+			}
+		}
+		priority = newPriority
+		if !found {
+			GoLog("[DownloadWithExtensionFallback] Extension service '%s' added to priority front\n", req.Service)
+		} else {
+			GoLog("[DownloadWithExtensionFallback] Extension service '%s' moved to priority front\n", req.Service)
+		}
 		GoLog("[DownloadWithExtensionFallback] New priority order: %v\n", priority)
 	}
 
@@ -777,7 +818,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			GoLog("[DownloadWithExtensionFallback] Downloading from source extension with trackID: %s (skipBuiltInFallback: %v)\n", trackID, skipBuiltIn)
 
-			outputPath := buildOutputPath(req)
+			outputPath := buildOutputPathForExtension(req, ext)
 			if req.ItemID != "" {
 				StartItemProgress(req.ItemID)
 			}
@@ -813,6 +854,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Genre:            req.Genre,
 					Label:            req.Label,
 					Copyright:        req.Copyright,
+					DecryptionKey:    result.DecryptionKey,
 				}
 
 				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
@@ -966,7 +1008,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 			provider := NewExtensionProviderWrapper(ext)
 
-			availability, err := provider.CheckAvailability(req.ISRC, req.TrackName, req.ArtistName)
+			availability, err := provider.CheckAvailability(req.ISRC, req.TrackName, req.ArtistName, req.SpotifyID, req.DeezerID)
 			if err != nil || !availability.Available {
 				GoLog("[DownloadWithExtensionFallback] %s: not available\n", providerID)
 				if err != nil {
@@ -975,7 +1017,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				continue
 			}
 
-			outputPath := buildOutputPath(req)
+			outputPath := buildOutputPathForExtension(req, ext)
 			if req.ItemID != "" {
 				StartItemProgress(req.ItemID)
 			}
@@ -1011,6 +1053,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Genre:            req.Genre,
 					Label:            req.Label,
 					Copyright:        req.Copyright,
+					DecryptionKey:    result.DecryptionKey,
 				}
 
 				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
@@ -1128,25 +1171,6 @@ func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadRespon
 			}
 		}
 		err = qobuzErr
-	case "amazon":
-		amazonResult, amazonErr := downloadFromAmazon(req)
-		if amazonErr == nil {
-			result = DownloadResult{
-				FilePath:      amazonResult.FilePath,
-				BitDepth:      amazonResult.BitDepth,
-				SampleRate:    amazonResult.SampleRate,
-				Title:         amazonResult.Title,
-				Artist:        amazonResult.Artist,
-				Album:         amazonResult.Album,
-				ReleaseDate:   amazonResult.ReleaseDate,
-				TrackNumber:   amazonResult.TrackNumber,
-				DiscNumber:    amazonResult.DiscNumber,
-				ISRC:          amazonResult.ISRC,
-				LyricsLRC:     amazonResult.LyricsLRC,
-				DecryptionKey: amazonResult.DecryptionKey,
-			}
-		}
-		err = amazonErr
 	case "deezer":
 		deezerResult, deezerErr := downloadFromDeezer(req)
 		if deezerErr == nil {
@@ -1226,7 +1250,58 @@ func buildOutputPath(req DownloadRequest) string {
 		ext = "." + ext
 	}
 
-	return fmt.Sprintf("%s/%s%s", req.OutputDir, filename, ext)
+	outputDir := req.OutputDir
+	if strings.TrimSpace(outputDir) == "" {
+		outputDir = filepath.Join(os.TempDir(), "spotiflac-downloads")
+		os.MkdirAll(outputDir, 0755)
+		AddAllowedDownloadDir(outputDir)
+	}
+
+	return filepath.Join(outputDir, filename+ext)
+}
+
+func buildOutputPathForExtension(req DownloadRequest, ext *LoadedExtension) string {
+	if strings.TrimSpace(req.OutputPath) != "" {
+		return strings.TrimSpace(req.OutputPath)
+	}
+
+	if strings.TrimSpace(req.OutputDir) != "" {
+		return buildOutputPath(req)
+	}
+
+	// SAF mode: use extension's data dir as writable temp location
+	tempDir := filepath.Join(ext.DataDir, "downloads")
+	os.MkdirAll(tempDir, 0755)
+	AddAllowedDownloadDir(tempDir)
+
+	metadata := map[string]interface{}{
+		"title":        req.TrackName,
+		"artist":       req.ArtistName,
+		"album":        req.AlbumName,
+		"album_artist": req.AlbumArtist,
+		"track":        req.TrackNumber,
+		"track_number": req.TrackNumber,
+		"disc":         req.DiscNumber,
+		"disc_number":  req.DiscNumber,
+		"year":         extractYear(req.ReleaseDate),
+		"date":         req.ReleaseDate,
+		"release_date": req.ReleaseDate,
+		"isrc":         req.ISRC,
+	}
+
+	filename := buildFilenameFromTemplate(req.FilenameFormat, metadata)
+	if filename == "" {
+		filename = sanitizeFilename(fmt.Sprintf("%s - %s", req.ArtistName, req.TrackName))
+	}
+
+	outputExt := strings.TrimSpace(req.OutputExt)
+	if outputExt == "" {
+		outputExt = ".flac"
+	} else if !strings.HasPrefix(outputExt, ".") {
+		outputExt = "." + outputExt
+	}
+
+	return filepath.Join(tempDir, filename+outputExt)
 }
 
 func (p *ExtensionProviderWrapper) CustomSearch(query string, options map[string]interface{}) ([]ExtTrackMetadata, error) {
@@ -1653,7 +1728,6 @@ func (m *ExtensionManager) HandleURLWithExtension(url string) (*ExtURLHandleResu
 	}, nil
 }
 
-// GetPostProcessingProviders returns all extensions that provide post-processing
 func (m *ExtensionManager) GetPostProcessingProviders() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -1667,7 +1741,6 @@ func (m *ExtensionManager) GetPostProcessingProviders() []*ExtensionProviderWrap
 	return providers
 }
 
-// RunPostProcessing runs all enabled post-processing hooks on a file
 func (m *ExtensionManager) RunPostProcessing(filePath string, metadata map[string]interface{}) (*PostProcessResult, error) {
 	providers := m.GetPostProcessingProviders()
 	if len(providers) == 0 {
@@ -1713,7 +1786,6 @@ func (m *ExtensionManager) RunPostProcessing(filePath string, metadata map[strin
 	return &PostProcessResult{Success: true, NewFilePath: currentPath}, nil
 }
 
-// RunPostProcessingV2 runs all enabled post-processing hooks on a file input.
 func (m *ExtensionManager) RunPostProcessingV2(input PostProcessInput, metadata map[string]interface{}) (*PostProcessResult, error) {
 	providers := m.GetPostProcessingProviders()
 	if len(providers) == 0 {
@@ -1768,9 +1840,6 @@ func (m *ExtensionManager) RunPostProcessingV2(input PostProcessInput, metadata 
 	return &PostProcessResult{Success: true, NewFilePath: currentInput.Path, NewFileURI: currentInput.URI}, nil
 }
 
-// ==================== Lyrics Provider ====================
-
-// ExtLyricsResult represents lyrics data returned from an extension
 type ExtLyricsResult struct {
 	Lines        []ExtLyricsLine `json:"lines"`
 	SyncType     string          `json:"syncType"`
@@ -1785,7 +1854,6 @@ type ExtLyricsLine struct {
 	EndTimeMs   int64  `json:"endTimeMs"`
 }
 
-// FetchLyrics calls the extension's fetchLyrics function
 func (p *ExtensionProviderWrapper) FetchLyrics(trackName, artistName, albumName string, durationSec float64) (*LyricsResponse, error) {
 	if !p.extension.Manifest.IsLyricsProvider() {
 		return nil, fmt.Errorf("extension '%s' is not a lyrics provider", p.extension.ID)
@@ -1885,7 +1953,6 @@ func (p *ExtensionProviderWrapper) FetchLyrics(trackName, artistName, albumName 
 	return response, nil
 }
 
-// GetLyricsProviders returns all enabled extensions that provide lyrics
 func (m *ExtensionManager) GetLyricsProviders() []*ExtensionProviderWrapper {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

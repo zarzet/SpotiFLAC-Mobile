@@ -309,32 +309,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Full history needed for git-cliff
 
-      - name: Extract changelog for version
+      - name: Generate changelog with git-cliff
         id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTPUT: /tmp/changelog.txt
+
+      - name: Show generated changelog
         run: |
-          VERSION=${{ needs.get-version.outputs.version }}
-          VERSION_NUM=${VERSION#v}  # Remove 'v' prefix
-
-          echo "Looking for version: $VERSION_NUM"
-
-          # Extract changelog section for this version using sed
-          # Find the line with version, then print until next version header or end
-          CHANGELOG=$(sed -n "/^## \[$VERSION_NUM\]/,/^## \[/{ /^## \[$VERSION_NUM\]/d; /^## \[/d; p; }" CHANGELOG.md)
-
-          # If no changelog found, use default message
-          if [ -z "$CHANGELOG" ]; then
-            echo "No changelog found for version $VERSION_NUM"
-            CHANGELOG="See CHANGELOG.md for details."
-          else
-            echo "Found changelog content"
-            # Remove trailing --- separator if present (CHANGELOG uses --- between versions)
-            CHANGELOG=$(echo "$CHANGELOG" | sed '/^---$/d')
-          fi
-
-          # Save to file for multiline support
-          echo "$CHANGELOG" > /tmp/changelog.txt
-          echo "Extracted changelog:"
+          echo "Generated changelog:"
           cat /tmp/changelog.txt
 
       - name: Download Android APK
@@ -352,15 +342,13 @@ jobs:
       - name: Prepare release body
         run: |
           VERSION=${{ needs.get-version.outputs.version }}
-          cat > /tmp/release_body.txt << 'HEADER'
-          ### What's New
-          HEADER
-
-          cat /tmp/changelog.txt >> /tmp/release_body.txt
-
           REPO_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.event.repository.name }}"
-          
+
+          # Start with git-cliff changelog
+          cp /tmp/changelog.txt /tmp/release_body.txt
+
+          # Append download section
           cat >> /tmp/release_body.txt << FOOTER
 
           ---
@@ -404,6 +392,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Download Android APK
         uses: actions/download-artifact@v7
@@ -417,52 +407,40 @@ jobs:
           name: ios-ipa
           path: ./release
 
-      - name: Extract changelog for version
+      - name: Generate changelog with git-cliff for Telegram
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip all
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTPUT: /tmp/cliff_tg.txt
+
+      - name: Convert changelog for Telegram
         id: changelog
         run: |
-          VERSION=${{ needs.get-version.outputs.version }}
-          VERSION_NUM=${VERSION#v}
-
-          # Extract changelog, limit to ~2500 chars for Telegram (4096 limit minus message overhead)
-          # Use tr -d '\r' to handle CRLF line endings from Windows
-          FULL_CHANGELOG=$(cat CHANGELOG.md | tr -d '\r' | sed -n "/^## \[$VERSION_NUM\]/,/^## \[/{ /^## \[$VERSION_NUM\]/d; /^## \[/d; p; }" | sed '/^---$/d')
-          
-          echo "DEBUG: Extracted changelog length: ${#FULL_CHANGELOG}"
-          echo "DEBUG: First 200 chars: ${FULL_CHANGELOG:0:200}"
-          
-          if [ -z "$FULL_CHANGELOG" ]; then
-            CHANGELOG="See release notes on GitHub for details."
+          if [ ! -s /tmp/cliff_tg.txt ]; then
+            echo "See release notes on GitHub for details." > /tmp/changelog.txt
           else
-            # Convert GitHub Markdown to Telegram HTML:
-            # - **text** → <b>text</b>
-            # - `code` → <code>code</code>
-            # - ### Header → <b>Header</b>
-            # - Escape HTML special chars first
-            # - Remove > blockquote prefix
-            CHANGELOG=$(echo "$FULL_CHANGELOG" | \
-              sed 's/^> //' | \
+            # Convert Markdown to Telegram HTML
+            CHANGELOG=$(cat /tmp/cliff_tg.txt | \
+              sed '/^\*\*Full Changelog\*\*/d' | \
+              sed 's/\[#\([0-9]*\)\]([^)]*)/#\1/g' | \
+              sed 's/\[@\([^]]*\)\]([^)]*)/@\1/g' | \
               sed 's/&/\&amp;/g' | \
               sed 's/</\&lt;/g' | \
               sed 's/>/\&gt;/g' | \
-              sed 's/`\([^`]*\)`/<code>\1<\/code>/g' | \
               sed 's/\*\*\([^*]*\)\*\*/<b>\1<\/b>/g' | \
               sed 's/^### \(.*\)$/<b>\1<\/b>/g' | \
               sed 's/^## \(.*\)$/<b>\1<\/b>/g' | \
-              sed 's/^- /• /g' | \
-              sed 's/^  - /  ◦ /g')
-            
-            # Take first 2500 characters, then cut at last complete line
+              sed 's/^- /• /g')
+
+            # Truncate for Telegram 4096 char limit
             CHANGELOG=$(echo "$CHANGELOG" | head -c 2500 | sed '$d')
-            
-            # Check if truncated
-            FULL_LEN=${#FULL_CHANGELOG}
-            if [ $FULL_LEN -gt 2500 ]; then
-              CHANGELOG="${CHANGELOG}"$'\n\n... (see full changelog on GitHub)'
-            fi
+            echo "$CHANGELOG" > /tmp/changelog.txt
           fi
 
-          echo "$CHANGELOG" > /tmp/changelog.txt
-          echo "DEBUG: Final changelog:"
+          echo "Telegram changelog:"
           cat /tmp/changelog.txt
 
       - name: Send to Telegram Channel

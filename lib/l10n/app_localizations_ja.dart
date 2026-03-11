@@ -15,7 +15,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navHome => 'ホーム';
 
   @override
-  String get navLibrary => 'Library';
+  String get navLibrary => 'ライブラリ';
 
   @override
   String get navSettings => '設定';
@@ -160,7 +160,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String optionsConcurrentParallel(int count) {
-    return '$count parallel downloads';
+    return '$count 件の分割ダウンロード';
   }
 
   @override
@@ -684,6 +684,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get errorNoTracksFound => 'トラックがありません';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return '$item を読み込めません: 拡張ソースがありません';
   }
@@ -755,6 +766,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get folderOrganizationNone => '構成がありません';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'アーティスト別';
@@ -1111,7 +1129,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trackLyricsLoadFailed => '歌詞の読み込みに失敗しました';
 
   @override
-  String get trackEmbedLyrics => 'Embed Lyrics';
+  String get trackEmbedLyrics => '歌詞を埋め込む';
 
   @override
   String get trackLyricsEmbedded => 'Lyrics embedded successfully';
@@ -1325,10 +1343,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'YouTube provides lossy audio only. Not part of lossless fallback.';
 
   @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+  String get youtubeOpusBitrateTitle => 'YouTube Opus のビットレート';
 
   @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 のビットレート';
 
   @override
   String get downloadAskBeforeDownload => 'ダウンロード前に確認する';
@@ -1375,20 +1393,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get queueClearAllMessage => 'すべてのダウンロードを消去してもよろしいですか？';
 
   @override
-  String get settingsAutoExportFailed => 'Auto-export failed downloads';
+  String get settingsAutoExportFailed => 'ダウンロードの自動エクスポートに失敗しました';
 
   @override
   String get settingsAutoExportFailedSubtitle =>
       'Save failed downloads to TXT file automatically';
 
   @override
-  String get settingsDownloadNetwork => 'Download Network';
+  String get settingsDownloadNetwork => 'ダウンロードネットワーク';
 
   @override
-  String get settingsDownloadNetworkAny => 'WiFi + Mobile Data';
+  String get settingsDownloadNetworkAny => 'Wi-Fi + モバイルデータ';
 
   @override
-  String get settingsDownloadNetworkWifiOnly => 'WiFi Only';
+  String get settingsDownloadNetworkWifiOnly => 'Wi-Fi のみ';
 
   @override
   String get settingsDownloadNetworkSubtitle =>
@@ -1419,7 +1437,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get albumFolderYearAlbumSubtitle => 'アルバム/[2005] アルバム名/';
 
   @override
-  String get albumFolderArtistAlbumSingles => 'Artist / Album + Singles';
+  String get albumFolderArtistAlbumSingles => 'アーティスト / アルバム + シングル';
 
   @override
   String get albumFolderArtistAlbumSinglesSubtitle =>
@@ -1485,7 +1503,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get recentEmpty => 'No recent items yet';
 
   @override
-  String get recentShowAllDownloads => 'Show All Downloads';
+  String get recentShowAllDownloads => 'すべてのダウンロードを表示';
 
   @override
   String recentPlaylistInfo(String name) {
@@ -1559,10 +1577,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get discographyFailedToFetch => '一部のアルバムの取得に失敗しました';
 
   @override
-  String get sectionStorageAccess => 'Storage Access';
+  String get sectionStorageAccess => 'ストレージアクセス';
 
   @override
-  String get allFilesAccess => 'All Files Access';
+  String get allFilesAccess => 'すべてのファイルへのアクセス';
 
   @override
   String get allFilesAccessEnabledSubtitle => 'Can write to any folder';
@@ -1583,35 +1601,35 @@ class AppLocalizationsJa extends AppLocalizations {
       'All Files Access disabled. The app will use limited storage access.';
 
   @override
-  String get settingsLocalLibrary => 'Local Library';
+  String get settingsLocalLibrary => 'ローカルライブラリ';
 
   @override
   String get settingsLocalLibrarySubtitle => 'Scan music & detect duplicates';
 
   @override
-  String get settingsCache => 'Storage & Cache';
+  String get settingsCache => 'ストレージとキャッシュ';
 
   @override
   String get settingsCacheSubtitle => 'View size and clear cached data';
 
   @override
-  String get libraryTitle => 'Local Library';
+  String get libraryTitle => 'ローカルライブラリ';
 
   @override
-  String get libraryScanSettings => 'Scan Settings';
+  String get libraryScanSettings => 'スキャン設定';
 
   @override
-  String get libraryEnableLocalLibrary => 'Enable Local Library';
+  String get libraryEnableLocalLibrary => 'ローカルライブラリを有効';
 
   @override
   String get libraryEnableLocalLibrarySubtitle =>
       'Scan and track your existing music';
 
   @override
-  String get libraryFolder => 'Library Folder';
+  String get libraryFolder => 'ライブラリのフォルダ';
 
   @override
-  String get libraryFolderHint => 'Tap to select folder';
+  String get libraryFolderHint => 'タップでフォルダを選択';
 
   @override
   String get libraryShowDuplicateIndicator => 'Show Duplicate Indicator';
@@ -1621,13 +1639,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'Show when searching for existing tracks';
 
   @override
-  String get libraryActions => 'Actions';
+  String get libraryActions => 'アクション';
 
   @override
-  String get libraryScan => 'Scan Library';
+  String get libraryScan => 'ライブラリをスキャン';
 
   @override
-  String get libraryScanSubtitle => 'Scan for audio files';
+  String get libraryScanSubtitle => 'オーディオファイルをスキャン';
 
   @override
   String get libraryScanSelectFolderFirst => 'Select a folder first';
@@ -1640,20 +1658,20 @@ class AppLocalizationsJa extends AppLocalizations {
       'Remove entries for files that no longer exist';
 
   @override
-  String get libraryClear => 'Clear Library';
+  String get libraryClear => 'ライブラリを消去';
 
   @override
   String get libraryClearSubtitle => 'Remove all scanned tracks';
 
   @override
-  String get libraryClearConfirmTitle => 'Clear Library';
+  String get libraryClearConfirmTitle => 'ライブラリを消去';
 
   @override
   String get libraryClearConfirmMessage =>
       'This will remove all scanned tracks from your library. Your actual music files will not be deleted.';
 
   @override
-  String get libraryAbout => 'About Local Library';
+  String get libraryAbout => 'ローカルライブラリについて';
 
   @override
   String get libraryAboutDescription =>
@@ -1672,14 +1690,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String libraryLastScanned(String time) {
-    return 'Last scanned: $time';
+    return '最終スキャン: $time';
   }
 
   @override
   String get libraryLastScannedNever => 'Never';
 
   @override
-  String get libraryScanning => 'Scanning...';
+  String get libraryScanning => 'スキャン中...';
 
   @override
   String libraryScanProgress(String progress, int total) {
@@ -1687,7 +1705,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get libraryInLibrary => 'In Library';
+  String get libraryInLibrary => 'ライブラリ内';
 
   @override
   String libraryRemovedMissingFiles(int count) {
@@ -1698,7 +1716,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryCleared => 'Library cleared';
 
   @override
-  String get libraryStorageAccessRequired => 'Storage Access Required';
+  String get libraryStorageAccessRequired => 'ストレージアクセスが必要です';
 
   @override
   String get libraryStorageAccessMessage =>
@@ -1708,37 +1726,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryFolderNotExist => 'Selected folder does not exist';
 
   @override
-  String get librarySourceDownloaded => 'Downloaded';
+  String get librarySourceDownloaded => 'ダウンロード済み';
 
   @override
-  String get librarySourceLocal => 'Local';
+  String get librarySourceLocal => 'ローカル';
 
   @override
-  String get libraryFilterAll => 'All';
+  String get libraryFilterAll => 'すべて';
 
   @override
-  String get libraryFilterDownloaded => 'Downloaded';
+  String get libraryFilterDownloaded => 'ダウンロード済み';
 
   @override
-  String get libraryFilterLocal => 'Local';
+  String get libraryFilterLocal => 'ローカル';
 
   @override
-  String get libraryFilterTitle => 'Filters';
+  String get libraryFilterTitle => 'フィルター';
 
   @override
-  String get libraryFilterReset => 'Reset';
+  String get libraryFilterReset => 'リセット';
 
   @override
-  String get libraryFilterApply => 'Apply';
+  String get libraryFilterApply => '適用';
 
   @override
-  String get libraryFilterSource => 'Source';
+  String get libraryFilterSource => 'ソース';
 
   @override
-  String get libraryFilterQuality => 'Quality';
+  String get libraryFilterQuality => '品質';
 
   @override
-  String get libraryFilterQualityHiRes => 'Hi-Res (24bit)';
+  String get libraryFilterQualityHiRes => 'ハイレゾ (24bit)';
 
   @override
   String get libraryFilterQualityCD => 'CD (16bit)';
@@ -1747,7 +1765,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get libraryFilterQualityLossy => 'Lossy';
 
   @override
-  String get libraryFilterFormat => 'Format';
+  String get libraryFilterFormat => '形式';
 
   @override
   String get libraryFilterSort => 'Sort';
@@ -1766,8 +1784,8 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count minutes ago',
-      one: '1 minute ago',
+      other: '$count 分前',
+      one: '1 分前',
     );
     return '$_temp0';
   }
@@ -1777,14 +1795,14 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count hours ago',
-      one: '1 hour ago',
+      other: '$count 時間前',
+      one: '1 時間前',
     );
     return '$_temp0';
   }
 
   @override
-  String get tutorialWelcomeTitle => 'Welcome to SpotiFLAC!';
+  String get tutorialWelcomeTitle => 'SpotiFLAC へようこそ！';
 
   @override
   String get tutorialWelcomeDesc =>
@@ -1810,14 +1828,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'There are two easy ways to find music you want to download.';
 
   @override
-  String get tutorialDownloadTitle => 'Downloading Music';
+  String get tutorialDownloadTitle => '音楽をダウンロード中';
 
   @override
   String get tutorialDownloadDesc =>
       'Downloading music is simple and fast. Here\'s how it works.';
 
   @override
-  String get tutorialLibraryTitle => 'Your Library';
+  String get tutorialLibraryTitle => 'あなたのライブラリ';
 
   @override
   String get tutorialLibraryDesc =>
@@ -1836,7 +1854,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Switch between list and grid view for better browsing';
 
   @override
-  String get tutorialExtensionsTitle => 'Extensions';
+  String get tutorialExtensionsTitle => '拡張';
 
   @override
   String get tutorialExtensionsDesc =>
@@ -1877,7 +1895,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'You\'re all set! Start downloading your favorite music now.';
 
   @override
-  String get libraryForceFullScan => 'Force Full Scan';
+  String get libraryForceFullScan => '強制フルスキャン';
 
   @override
   String get libraryForceFullScanSubtitle => 'Rescan all files, ignoring cache';
@@ -1898,10 +1916,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cleanupOrphanedDownloadsNone => 'No orphaned entries found';
 
   @override
-  String get cacheTitle => 'Storage & Cache';
+  String get cacheTitle => 'ストレージとキャッシュ';
 
   @override
-  String get cacheSummaryTitle => 'Cache overview';
+  String get cacheSummaryTitle => 'キャッシュの概要';
 
   @override
   String get cacheSummarySubtitle =>
@@ -1913,34 +1931,34 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get cacheSectionStorage => 'Cached Data';
+  String get cacheSectionStorage => 'キャッシュ済みデータ';
 
   @override
-  String get cacheSectionMaintenance => 'Maintenance';
+  String get cacheSectionMaintenance => 'メンテナンス';
 
   @override
-  String get cacheAppDirectory => 'App cache directory';
+  String get cacheAppDirectory => 'アプリキャッシュのディレクトリ';
 
   @override
   String get cacheAppDirectoryDesc =>
       'HTTP responses, WebView data, and other temporary app data.';
 
   @override
-  String get cacheTempDirectory => 'Temporary directory';
+  String get cacheTempDirectory => '一時ディレクトリ';
 
   @override
   String get cacheTempDirectoryDesc =>
       'Temporary files from downloads and audio conversion.';
 
   @override
-  String get cacheCoverImage => 'Cover image cache';
+  String get cacheCoverImage => 'カバー画像のキャッシュ';
 
   @override
   String get cacheCoverImageDesc =>
       'Downloaded album and track cover art. Will re-download when viewed.';
 
   @override
-  String get cacheLibraryCover => 'Library cover cache';
+  String get cacheLibraryCover => 'ライブラリのカバーキャッシュ';
 
   @override
   String get cacheLibraryCoverDesc =>
@@ -1965,7 +1983,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Remove orphaned download history and library entries for missing files.';
 
   @override
-  String get cacheNoData => 'No cached data';
+  String get cacheNoData => 'キャッシュデータはありません';
 
   @override
   String cacheSizeWithFiles(String size, int count) {
@@ -1979,16 +1997,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String cacheEntries(int count) {
-    return '$count entries';
+    return '$count 個のエントリ';
   }
 
   @override
   String cacheClearSuccess(String target) {
-    return 'Cleared: $target';
+    return '消去済み: $target';
   }
 
   @override
-  String get cacheClearConfirmTitle => 'Clear cache?';
+  String get cacheClearConfirmTitle => 'キャッシュを消去しますか？';
 
   @override
   String cacheClearConfirmMessage(String target) {
@@ -1996,17 +2014,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get cacheClearAllConfirmTitle => 'Clear all cache?';
+  String get cacheClearAllConfirmTitle => 'すべてのキャッシュを消去しますか？';
 
   @override
   String get cacheClearAllConfirmMessage =>
       'This will clear all cache categories on this page. Downloaded music files will not be deleted.';
 
   @override
-  String get cacheClearAll => 'Clear all cache';
+  String get cacheClearAll => 'すべてのキャッシュを消去';
 
   @override
-  String get cacheCleanupUnused => 'Cleanup unused data';
+  String get cacheCleanupUnused => '未使用のデータを削除';
 
   @override
   String get cacheCleanupUnusedSubtitle =>
@@ -2018,16 +2036,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get cacheRefreshStats => 'Refresh stats';
+  String get cacheRefreshStats => '状態を更新';
 
   @override
-  String get trackSaveCoverArt => 'Save Cover Art';
+  String get trackSaveCoverArt => 'カバー画像を保存';
 
   @override
   String get trackSaveCoverArtSubtitle => 'Save album art as .jpg file';
 
   @override
-  String get trackSaveLyrics => 'Save Lyrics (.lrc)';
+  String get trackSaveLyrics => '歌詞を保存 (.lrc)';
 
   @override
   String get trackSaveLyricsSubtitle => 'Fetch and save lyrics as .lrc file';
@@ -2043,7 +2061,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Search metadata online and embed into file';
 
   @override
-  String get trackEditMetadata => 'Edit Metadata';
+  String get trackEditMetadata => 'メタデータを編集';
 
   @override
   String trackCoverSaved(String fileName) {
@@ -2072,26 +2090,26 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trackSaveFailed(String error) {
-    return 'Failed: $error';
+    return '失敗: $error';
   }
 
   @override
-  String get trackConvertFormat => 'Convert Format';
+  String get trackConvertFormat => '変換の形式';
 
   @override
-  String get trackConvertFormatSubtitle => 'Convert to MP3 or Opus';
+  String get trackConvertFormatSubtitle => 'MP3 または Opus に変換';
 
   @override
-  String get trackConvertTitle => 'Convert Audio';
+  String get trackConvertTitle => 'オーディオを変換';
 
   @override
-  String get trackConvertTargetFormat => 'Target Format';
+  String get trackConvertTargetFormat => 'ターゲットの形式';
 
   @override
-  String get trackConvertBitrate => 'Bitrate';
+  String get trackConvertBitrate => 'ビットレート';
 
   @override
-  String get trackConvertConfirmTitle => 'Confirm Conversion';
+  String get trackConvertConfirmTitle => '変換を確認';
 
   @override
   String trackConvertConfirmMessage(
@@ -2103,7 +2121,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get trackConvertConverting => 'Converting audio...';
+  String get trackConvertConverting => 'オーディオを変換中...';
 
   @override
   String trackConvertSuccess(String format) {
@@ -2111,7 +2129,55 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get trackConvertFailed => 'Conversion failed';
+  String get trackConvertFailed => '変換に失敗しました';
+
+  @override
+  String get cueSplitTitle => 'Split CUE Sheet';
+
+  @override
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';

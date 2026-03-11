@@ -16,7 +16,6 @@ type MusixmatchClient struct {
 	baseURL    string
 }
 
-// Musixmatch proxy response models
 type musixmatchSearchResponse struct {
 	ID                 int64                     `json:"id"`
 	SongName           string                    `json:"songName"`
@@ -116,7 +115,6 @@ func (c *MusixmatchClient) FetchLyricsInLanguage(songID int64, language string) 
 		return nil, fmt.Errorf("failed to decode musixmatch language response: %w", err)
 	}
 
-	// Prefer synced lyrics for selected language
 	if result.SyncedLyrics != nil && strings.TrimSpace(result.SyncedLyrics.Lyrics) != "" {
 		lines := parseSyncedLyrics(result.SyncedLyrics.Lyrics)
 		if len(lines) > 0 {
@@ -129,7 +127,6 @@ func (c *MusixmatchClient) FetchLyricsInLanguage(songID int64, language string) 
 		}
 	}
 
-	// Fall back to unsynced lyrics for selected language
 	if result.UnsyncedLyrics != nil && strings.TrimSpace(result.UnsyncedLyrics.Lyrics) != "" {
 		lines := plainTextLyricsLines(result.UnsyncedLyrics.Lyrics)
 
@@ -162,7 +159,6 @@ func (c *MusixmatchClient) FetchLyrics(trackName, artistName string, durationSec
 		GoLog("[Musixmatch] Language override '%s' failed: %v\n", preferred, localizedErr)
 	}
 
-	// Prefer synced lyrics
 	if result.SyncedLyrics != nil && strings.TrimSpace(result.SyncedLyrics.Lyrics) != "" {
 		lines := parseSyncedLyrics(result.SyncedLyrics.Lyrics)
 		if len(lines) > 0 {
@@ -175,7 +171,6 @@ func (c *MusixmatchClient) FetchLyrics(trackName, artistName string, durationSec
 		}
 	}
 
-	// Fall back to unsynced lyrics
 	if result.UnsyncedLyrics != nil && strings.TrimSpace(result.UnsyncedLyrics.Lyrics) != "" {
 		lines := plainTextLyricsLines(result.UnsyncedLyrics.Lyrics)
 

@@ -1,4 +1,3 @@
-// Package gobackend provides FFmpeg API for extension runtime
 package gobackend
 
 import (
@@ -10,9 +9,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-// ==================== FFmpeg API (Post-Processing) ====================
-
-// FFmpegCommand holds a pending FFmpeg command for Flutter to execute
+// FFmpegCommand holds a pending FFmpeg command for Flutter to execute.
 type FFmpegCommand struct {
 	ExtensionID string
 	Command     string
@@ -24,7 +21,6 @@ type FFmpegCommand struct {
 	Output      string
 }
 
-// Global FFmpeg command queue
 var (
 	ffmpegCommands   = make(map[string]*FFmpegCommand)
 	ffmpegCommandsMu sync.RWMutex

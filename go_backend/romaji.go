@@ -170,11 +170,9 @@ func JapaneseToRomaji(text string) string {
 }
 
 func BuildSearchQuery(trackName, artistName string) string {
-	// Convert Japanese to romaji
 	trackRomaji := JapaneseToRomaji(trackName)
 	artistRomaji := JapaneseToRomaji(artistName)
 
-	// Clean up the query - remove special characters that might interfere with search
 	trackClean := cleanSearchQuery(trackRomaji)
 	artistClean := cleanSearchQuery(artistRomaji)
 
@@ -196,16 +194,13 @@ func cleanSearchQuery(s string) string {
 func CleanToASCII(s string) string {
 	var result strings.Builder
 	for _, r := range s {
-		// Keep only ASCII letters, numbers, spaces, and basic punctuation
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
 			(r >= '0' && r <= '9') || r == ' ' || r == '-' || r == '\'' {
 			result.WriteRune(r)
 		} else if r == ',' || r == '.' {
-			// Convert punctuation to space
 			result.WriteRune(' ')
 		}
 	}
-	// Clean up multiple spaces
 	cleaned := strings.Join(strings.Fields(result.String()), " ")
 	return strings.TrimSpace(cleaned)
 }

@@ -37,7 +37,6 @@ class _LibraryTracksFolderScreenState
   bool _showTitleInAppBar = false;
   final ScrollController _scrollController = ScrollController();
 
-  // ── Multi-select state ──
   bool _isSelectionMode = false;
   final Set<String> _selectedKeys = {};
 
@@ -145,8 +144,6 @@ class _LibraryTracksFolderScreenState
     return url;
   }
 
-  // ── Selection helpers ──
-
   void _enterSelectionMode(String key) {
     HapticFeedback.mediumImpact();
     setState(() {
@@ -180,8 +177,6 @@ class _LibraryTracksFolderScreenState
       _selectedKeys.addAll(entries.map((e) => e.key));
     });
   }
-
-  // ── Batch actions ──
 
   Future<void> _removeSelected(List<CollectionTrackEntry> entries) async {
     final keysToRemove = _selectedKeys.toSet();
@@ -426,7 +421,6 @@ class _LibraryTracksFolderScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 32,
                 height: 4,
@@ -437,11 +431,13 @@ class _LibraryTracksFolderScreenState
                 ),
               ),
 
-              // Header: [X close] [count] [Select All / Deselect]
               Row(
                 children: [
                   IconButton.filledTonal(
                     onPressed: _exitSelectionMode,
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -493,7 +489,6 @@ class _LibraryTracksFolderScreenState
 
               const SizedBox(height: 12),
 
-              // Action buttons row
               Row(
                 children: [
                   if (isWishlist)
@@ -525,7 +520,6 @@ class _LibraryTracksFolderScreenState
 
               const SizedBox(height: 8),
 
-              // Remove button (full width, red)
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -714,7 +708,6 @@ class _LibraryTracksFolderScreenState
                         )
                 else
                   coverFallback,
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -733,7 +726,6 @@ class _LibraryTracksFolderScreenState
                     ),
                   ),
                 ),
-                // Title and track count overlay
                 Positioned(
                   left: 20,
                   right: 20,
@@ -811,6 +803,9 @@ class _LibraryTracksFolderScreenState
         },
       ),
       leading: IconButton(
+        tooltip: _isSelectionMode
+            ? MaterialLocalizations.of(context).closeButtonTooltip
+            : MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -829,9 +824,8 @@ class _LibraryTracksFolderScreenState
     );
   }
 
-  // ── Header actions ──
-
-  Widget _buildHeaderActionPlaceholder() => const SizedBox(width: 48, height: 48);
+  Widget _buildHeaderActionPlaceholder() =>
+      const SizedBox(width: 48, height: 48);
 
   Widget _buildDownloadAllCenterButton(List<CollectionTrackEntry> entries) {
     final tracks = entries.map((e) => e.track).toList(growable: false);
@@ -1152,6 +1146,7 @@ class _CollectionTrackTile extends ConsumerWidget {
           trailing: isSelectionMode
               ? null
               : IconButton(
+                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
                   icon: Icon(
                     Icons.more_vert,
                     color: colorScheme.onSurfaceVariant,
@@ -1263,7 +1258,6 @@ class _CollectionTrackTile extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header: drag handle + cover + track info
             Column(
               children: [
                 const SizedBox(height: 8),

@@ -12,6 +12,9 @@ Thumbs.db
 # Kiro specs (development only)
 .kiro/
 
+# Design assets (banners, mockups)
+design/
+
 # Reference folder (development only)
 referensi/
 

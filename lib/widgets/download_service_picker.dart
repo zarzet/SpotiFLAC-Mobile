@@ -68,24 +68,13 @@ const _builtInServices = [
     ],
   ),
   BuiltInService(
-    id: 'amazon',
-    label: 'Amazon',
-    qualityOptions: [
-      QualityOption(
-        id: 'LOSSLESS',
-        label: 'FLAC Best Available',
-        description: 'Amazon API delivers the best available lossless quality',
-      ),
-    ],
-  ),
-  BuiltInService(
     id: 'deezer',
     label: 'Deezer',
     qualityOptions: [
       QualityOption(
         id: 'FLAC',
-        label: 'FLAC Lossless',
-        description: '16-bit / 44.1kHz (CD Quality)',
+        label: 'FLAC Best Quality',
+        description: 'Up to 24-bit / 48kHz+',
       ),
     ],
   ),
@@ -209,7 +198,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
       return ext.qualityOptions;
     }
 
-    // Default fallback options
     return [
       const QualityOption(
         id: 'DEFAULT',

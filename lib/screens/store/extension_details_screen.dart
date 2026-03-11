@@ -17,7 +17,6 @@ class ExtensionDetailsScreen extends ConsumerStatefulWidget {
 
 class _ExtensionDetailsScreenState
     extends ConsumerState<ExtensionDetailsScreen> {
-
   @override
   Widget build(BuildContext context) {
     final storeState = ref.watch(storeProvider);
@@ -116,6 +115,7 @@ class _ExtensionDetailsScreenState
         ),
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: const Icon(Icons.arrow_back),
         onPressed: () => Navigator.pop(context),
       ),
@@ -171,7 +171,7 @@ class _ExtensionDetailsScreenState
                                   color: colorScheme.onSurface,
                                 ),
                           ),
-                        const SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             context.l10n.extensionsAuthor(ext.author),
                             style: Theme.of(context).textTheme.bodyLarge
@@ -222,7 +222,9 @@ class _ExtensionDetailsScreenState
                     FilledButton.icon(
                       onPressed: () => _updateExtension(ext),
                       icon: const Icon(Icons.update),
-                      label: Text('${context.l10n.storeUpdate} v${ext.version}'),
+                      label: Text(
+                        '${context.l10n.storeUpdate} v${ext.version}',
+                      ),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
@@ -405,7 +407,8 @@ class _ExtensionDetailsScreenState
     StoreExtension ext,
     ColorScheme colorScheme,
   ) {
-    final isMetadataProvider = ext.category == 'metadata' || ext.category == 'integration';
+    final isMetadataProvider =
+        ext.category == 'metadata' || ext.category == 'integration';
     final isDownloadProvider = ext.category == 'download';
     final isLyricsProvider = ext.category == 'lyrics';
     final isUtility = ext.category == 'utility';
@@ -458,7 +461,7 @@ class _ExtensionDetailsScreenState
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();
       final diff = now.difference(date);
-      
+
       if (diff.inDays == 0) {
         return context.l10n.dateToday;
       } else if (diff.inDays == 1) {
@@ -560,7 +563,9 @@ class _ExtensionDetailsScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.dialogUninstallExtension),
-        content: Text(context.l10n.dialogUninstallExtensionMessage(ext.displayName)),
+        content: Text(
+          context.l10n.dialogUninstallExtensionMessage(ext.displayName),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -718,10 +723,7 @@ class _CapabilityRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: colorScheme.onSurface, fontSize: 14),
                 ),
               ),
               Icon(

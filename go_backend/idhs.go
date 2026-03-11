@@ -22,13 +22,11 @@ var (
 	idhsRateLimiter  = NewRateLimiter(8, time.Minute) // 8 req/min (below 10 limit)
 )
 
-// IDHSSearchRequest represents the request body for IDHS API
 type IDHSSearchRequest struct {
 	Link     string   `json:"link"`
 	Adapters []string `json:"adapters,omitempty"`
 }
 
-// IDHSSearchResponse represents the response from IDHS API
 type IDHSSearchResponse struct {
 	ID            string     `json:"id"`
 	Type          string     `json:"type"` // song, album, artist, podcast, show
@@ -41,7 +39,6 @@ type IDHSSearchResponse struct {
 	Links         []IDHSLink `json:"links"`
 }
 
-// IDHSLink represents a link to a streaming platform
 type IDHSLink struct {
 	Type         string `json:"type"` // spotify, youTube, appleMusic, deezer, soundCloud, tidal
 	URL          string `json:"url"`
@@ -49,7 +46,6 @@ type IDHSLink struct {
 	NotAvailable bool   `json:"notAvailable,omitempty"`
 }
 
-// NewIDHSClient creates a new IDHS client
 func NewIDHSClient() *IDHSClient {
 	idhsClientOnce.Do(func() {
 		globalIDHSClient = &IDHSClient{
@@ -117,7 +113,6 @@ func (c *IDHSClient) Search(link string, adapters []string) (*IDHSSearchResponse
 func (c *IDHSClient) GetAvailabilityFromSpotify(spotifyTrackID string) (*TrackAvailability, error) {
 	spotifyURL := fmt.Sprintf("https://open.spotify.com/track/%s", spotifyTrackID)
 
-	// Request only the platforms we need
 	adapters := []string{"tidal", "deezer"}
 
 	result, err := c.Search(spotifyURL, adapters)
@@ -151,11 +146,9 @@ func (c *IDHSClient) GetAvailabilityFromSpotify(spotifyTrackID string) (*TrackAv
 	return availability, nil
 }
 
-// GetAvailabilityFromDeezer checks track availability using IDHS
 func (c *IDHSClient) GetAvailabilityFromDeezer(deezerTrackID string) (*TrackAvailability, error) {
 	deezerURL := fmt.Sprintf("https://www.deezer.com/track/%s", deezerTrackID)
 
-	// Request only the platforms we need
 	adapters := []string{"spotify", "tidal"}
 
 	result, err := c.Search(deezerURL, adapters)

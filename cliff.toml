@@ -1,0 +1,105 @@
+# git-cliff configuration for SpotiFLAC Mobile
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# Template for the changelog body
+body = """
+{%- macro remote_url() -%}
+  https://github.com/zarzet/SpotiFLAC-Mobile
+{%- endmacro -%}
+
+{% if version %}\
+    ## {{ version | trim_start_matches(pat="v") }}
+{% else %}\
+    ## Unreleased
+{% endif %}\
+
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.scope %}**{{ commit.scope }}**: {% endif %}\
+            {{ commit.message | upper_first }}\
+            {% if commit.github.pr_number %} \
+                ([#{{ commit.github.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.github.pr_number }}))\
+            {% endif %}\
+            {%- if commit.github.username %} by [@{{ commit.github.username }}](https://github.com/{{ commit.github.username }}){%- endif %}
+    {%- endfor %}
+{% endfor %}
+
+{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+
+  ### New Contributors
+{%- for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
+{%- endfor %}
+{%- endif -%}
+
+{% if version %}
+    {% if previous.version %}
+      **Full Changelog**: [{{ previous.version }}...{{ version }}]({{ self::remote_url() }}/compare/{{ previous.version }}...{{ version }})
+    {% endif %}
+{% else -%}
+    {% raw %}\n{% endraw %}
+{% endif %}
+"""
+# Remove leading and trailing whitespace
+trim = true
+
+[git]
+# Parse conventional commits
+conventional_commits = true
+filter_unconventional = true
+
+# Process each line of a commit as an individual commit
+split_commits = false
+
+# Regex for preprocessing the commit messages
+commit_preprocessors = [
+  # Remove PR number from message (we add it back via GitHub integration)
+  { pattern = '\(#(\d+)\)', replace = '' },
+  # Strip conventional commit prefix for cleaner messages
+  # (group header already shows the type)
+]
+
+# Regex for parsing and grouping commits
+commit_parsers = [
+  # Skip noise: translation commits from Crowdin
+  { message = "^New translations", skip = true },
+  { message = "^Update source file", skip = true },
+  # Skip merge commits
+  { message = "^Merge", skip = true },
+  # Skip version bump commits
+  { message = "^v\\d+", skip = true },
+  { message = "^chore: update VirusTotal", skip = true },
+
+  # Group by conventional commit type
+  { message = "^feat", group = "<!-- 0 -->New Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance" },
+  { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+  { message = "^doc", group = "<!-- 4 -->Documentation" },
+  { message = "^style", group = "<!-- 5 -->Styling" },
+  { message = "^test", group = "<!-- 6 -->Testing" },
+  { message = "^chore\\(deps\\)", group = "<!-- 7 -->Dependencies" },
+  { message = "^chore\\(l10n\\)", skip = true },
+  { message = "^chore|^ci", group = "<!-- 8 -->Chores" },
+]
+
+# Protect breaking changes from being skipped
+protect_breaking_commits = true
+
+# Filter out commits by matching patterns
+filter_commits = false
+
+# Tag pattern for version detection
+tag_pattern = "v[0-9].*"
+
+# Sort commits by newest first
+sort_commits = "newest"
+
+[remote.github]
+owner = "zarzet"
+repo = "SpotiFLAC-Mobile"

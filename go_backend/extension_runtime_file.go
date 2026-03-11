@@ -1,4 +1,3 @@
-// Package gobackend provides File API for extension runtime
 package gobackend
 
 import (
@@ -12,8 +11,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== File API (Sandboxed) ====================
 
 var (
 	allowedDownloadDirs   []string

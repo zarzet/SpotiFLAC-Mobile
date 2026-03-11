@@ -24,6 +24,9 @@ class PlaybackController extends Notifier<PlaybackState> {
     String coverUrl = '',
     Track? track,
   }) async {
+    if (isCueVirtualPath(path)) {
+      throw Exception(cueVirtualTrackRequiresSplitMessage);
+    }
     _log.d('Opening external player for "$title" by $artist: $path');
     await openFile(path);
   }
@@ -32,9 +35,14 @@ class PlaybackController extends Notifier<PlaybackState> {
     if (tracks.isEmpty) return;
 
     final orderedTracks = _orderedTracksFromStartIndex(tracks, startIndex);
+    var skippedCueVirtualTrack = false;
     for (final track in orderedTracks) {
       final resolvedPath = await _resolveTrackPath(track);
       if (resolvedPath == null) {
+        continue;
+      }
+      if (isCueVirtualPath(resolvedPath)) {
+        skippedCueVirtualTrack = true;
         continue;
       }
 
@@ -44,6 +52,10 @@ class PlaybackController extends Notifier<PlaybackState> {
       );
       await openFile(resolvedPath);
       return;
+    }
+
+    if (skippedCueVirtualTrack) {
+      throw Exception(cueVirtualTrackRequiresSplitMessage);
     }
 
     throw Exception(

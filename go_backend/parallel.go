@@ -10,7 +10,6 @@ import (
 type TrackIDCacheEntry struct {
 	TidalTrackID  int64
 	QobuzTrackID  int64
-	AmazonURL     string
 	ExpiresAt     time.Time
 }
 
@@ -98,25 +97,6 @@ func (c *TrackIDCache) SetQobuz(isrc string, trackID int64) {
 		c.cache[isrc] = entry
 	}
 	entry.QobuzTrackID = trackID
-	now := time.Now()
-	entry.ExpiresAt = now.Add(c.ttl)
-
-	if c.cleanupInterval > 0 && (c.lastCleanup.IsZero() || now.Sub(c.lastCleanup) >= c.cleanupInterval) {
-		c.pruneExpiredLocked(now)
-		c.lastCleanup = now
-	}
-}
-
-func (c *TrackIDCache) SetAmazonURL(isrc string, amazonURL string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	entry, exists := c.cache[isrc]
-	if !exists {
-		entry = &TrackIDCacheEntry{}
-		c.cache[isrc] = entry
-	}
-	entry.AmazonURL = amazonURL
 	now := time.Now()
 	entry.ExpiresAt = now.Add(c.ttl)
 
@@ -235,8 +215,6 @@ func PreWarmTrackCache(requests []PreWarmCacheRequest) {
 				preWarmTidalCache(r.ISRC, r.TrackName, r.ArtistName)
 			case "qobuz":
 				preWarmQobuzCache(r.ISRC, r.SpotifyID)
-			case "amazon":
-				preWarmAmazonCache(r.ISRC, r.SpotifyID)
 			}
 		}(req)
 	}
@@ -256,12 +234,10 @@ func preWarmTidalCache(isrc, _, _ string) {
 // 1. From SongLink (fast, no Qobuz API call needed)
 // 2. Direct ISRC search on Qobuz API (slower, may fail if ISRC not in Qobuz database)
 func preWarmQobuzCache(isrc, spotifyID string) {
-	// First, try to get QobuzID from SongLink - this is faster and more reliable
 	if spotifyID != "" {
 		client := NewSongLinkClient()
 		availability, err := client.CheckTrackAvailability(spotifyID, isrc)
 		if err == nil && availability != nil && availability.QobuzID != "" {
-			// Parse QobuzID to int64
 			var trackID int64
 			if _, parseErr := fmt.Sscanf(availability.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
 				GoLog("[Qobuz] Pre-warm cache: Got Qobuz ID %d from SongLink for ISRC %s\n", trackID, isrc)
@@ -271,20 +247,11 @@ func preWarmQobuzCache(isrc, spotifyID string) {
 		}
 	}
 
-	// Fallback: Direct ISRC search on Qobuz API
 	downloader := NewQobuzDownloader()
 	track, err := downloader.SearchTrackByISRC(isrc)
 	if err == nil && track != nil {
 		GoLog("[Qobuz] Pre-warm cache: Got Qobuz ID %d from direct ISRC search for %s\n", track.ID, isrc)
 		GetTrackIDCache().SetQobuz(isrc, track.ID)
-	}
-}
-
-func preWarmAmazonCache(isrc, spotifyID string) {
-	client := NewSongLinkClient()
-	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
-	if err == nil && availability != nil && availability.AmazonURL != "" {
-		GetTrackIDCache().SetAmazonURL(isrc, availability.AmazonURL)
 	}
 }
 

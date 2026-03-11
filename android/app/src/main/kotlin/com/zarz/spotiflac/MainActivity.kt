@@ -766,6 +766,27 @@ class MainActivity: FlutterFragmentActivity() {
             val response = downloader(req.toString())
             val respObj = JSONObject(response)
             if (respObj.optBoolean("success", false)) {
+                // Extension providers write to a local temp path instead of the SAF FD.
+                // Copy the local file into the SAF document so it is not empty.
+                val goFilePath = respObj.optString("file_path", "")
+                if (goFilePath.isNotEmpty() &&
+                    !goFilePath.startsWith("content://") &&
+                    !goFilePath.startsWith("/proc/self/fd/")
+                ) {
+                    try {
+                        val srcFile = java.io.File(goFilePath)
+                        if (srcFile.exists() && srcFile.length() > 0) {
+                            contentResolver.openOutputStream(document.uri, "wt")?.use { output ->
+                                srcFile.inputStream().use { input ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            srcFile.delete()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("SpotiFLAC", "Failed to copy extension output to SAF: ${e.message}")
+                    }
+                }
                 respObj.put("file_path", document.uri.toString())
                 respObj.put("file_name", document.name ?: fileName)
             } else {
@@ -786,6 +807,72 @@ class MainActivity: FlutterFragmentActivity() {
         }
     }
 
+    /**
+     * Get the parent DocumentFile directory for a SAF document URI.
+     * The child URI must be a tree-based document URI (e.g. from SAF tree scan).
+     * Returns a DocumentFile that supports findFile() for sibling lookup.
+     */
+    private fun safParentDir(childUri: Uri): DocumentFile? {
+        try {
+            val docId = android.provider.DocumentsContract.getDocumentId(childUri)
+            if (docId.isNullOrEmpty()) return null
+
+            // Document IDs typically look like "primary:Music/Album/file.cue"
+            // Parent would be "primary:Music/Album"
+            val lastSlash = docId.lastIndexOf('/')
+            if (lastSlash <= 0) return null
+
+            val parentDocId = docId.substring(0, lastSlash)
+
+            // Build a tree document URI for the parent so it supports listing/findFile
+            val treeDocId = android.provider.DocumentsContract.getTreeDocumentId(childUri)
+            if (treeDocId.isNullOrEmpty()) return null
+
+            val parentUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(
+                childUri, parentDocId
+            )
+            return DocumentFile.fromTreeUri(this, parentUri)
+                ?: DocumentFile.fromSingleUri(this, parentUri)
+        } catch (e: Exception) {
+            android.util.Log.w("SpotiFLAC", "Failed to get SAF parent dir: ${e.message}")
+            return null
+        }
+    }
+
+    /**
+     * Extract the audio filename referenced by a CUE sheet file.
+     * Reads the FILE "name" TYPE line from the .cue text.
+     * Returns just the filename (no path), or null if not found.
+     */
+    private fun extractCueAudioFileName(cueTempPath: String): String? {
+        try {
+            val lines = File(cueTempPath).readLines()
+            for (line in lines) {
+                val trimmed = line.trim().let { l ->
+                    // Strip BOM
+                    if (l.startsWith("\uFEFF")) l.removePrefix("\uFEFF").trim() else l
+                }
+                if (trimmed.uppercase(Locale.ROOT).startsWith("FILE ")) {
+                    val rest = trimmed.substring(5).trim()
+                    // Parse: "filename" TYPE  or  filename TYPE
+                    val filename = if (rest.startsWith("\"")) {
+                        val endQuote = rest.indexOf('"', 1)
+                        if (endQuote > 0) rest.substring(1, endQuote) else rest
+                    } else {
+                        // Last word is the type, everything else is the filename
+                        val parts = rest.split("\\s+".toRegex())
+                        if (parts.size >= 2) parts.dropLast(1).joinToString(" ") else rest
+                    }
+                    // Return just the filename (strip any path separators)
+                    return filename.substringAfterLast("/").substringAfterLast("\\")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("SpotiFLAC", "Failed to extract audio filename from CUE: ${e.message}")
+        }
+        return null
+    }
+
     private fun scanSafTree(treeUriStr: String): String {
         if (treeUriStr.isBlank()) return "[]"
 
@@ -799,8 +886,10 @@ class MainActivity: FlutterFragmentActivity() {
             it.currentFile = "Scanning folders..."
         }
 
-        val supportedExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
+        val supportedAudioExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
         val audioFiles = mutableListOf<Pair<DocumentFile, String>>()
+        // CUE files: (cueDoc, parentDir) — we need the parent to find sibling audio
+        val cueFiles = mutableListOf<Pair<DocumentFile, DocumentFile>>()
         val visitedDirUris = mutableSetOf<String>()
         var traversalErrors = 0
 
@@ -849,7 +938,9 @@ class MainActivity: FlutterFragmentActivity() {
                     } else if (child.isFile) {
                         val name = child.name ?: continue
                         val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                        if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+                        if (ext == "cue") {
+                            cueFiles.add(child to dir)
+                        } else if (ext.isNotBlank() && supportedAudioExt.contains(".$ext")) {
                             audioFiles.add(child to path)
                         }
                     }
@@ -864,11 +955,12 @@ class MainActivity: FlutterFragmentActivity() {
             }
         }
 
+        val totalItems = audioFiles.size + cueFiles.size
         updateSafScanProgress {
-            it.totalFiles = audioFiles.size
+            it.totalFiles = totalItems
         }
 
-        if (audioFiles.isEmpty()) {
+        if (audioFiles.isEmpty() && cueFiles.isEmpty()) {
             updateSafScanProgress {
                 it.isComplete = true
                 it.progressPct = 100.0
@@ -880,10 +972,136 @@ class MainActivity: FlutterFragmentActivity() {
         var scanned = 0
         var errors = traversalErrors
 
+        // --- CUE first pass: parse CUE sheets, expand to tracks, track referenced audio ---
+        val cueReferencedAudioUris = mutableSetOf<String>()
+
+        for ((cueDoc, parentDir) in cueFiles) {
+            if (safScanCancel) {
+                updateSafScanProgress { it.isComplete = true }
+                return "[]"
+            }
+
+            val cueName = try { cueDoc.name ?: "" } catch (_: Exception) { "" }
+            updateSafScanProgress { it.currentFile = cueName }
+
+            var tempCuePath: String? = null
+            var tempAudioPath: String? = null
+            try {
+                // Copy CUE to temp
+                tempCuePath = copyUriToTemp(cueDoc.uri, ".cue")
+                if (tempCuePath == null) {
+                    errors++
+                    android.util.Log.w("SpotiFLAC", "SAF scan: failed to copy CUE ${cueDoc.uri}")
+                    scanned++
+                    continue
+                }
+
+                // Extract the audio filename from the CUE sheet text
+                val audioFileName = extractCueAudioFileName(tempCuePath)
+
+                // Find the referenced audio file as a sibling in the same SAF directory
+                var audioDoc: DocumentFile? = null
+                if (!audioFileName.isNullOrBlank()) {
+                    audioDoc = try { parentDir.findFile(audioFileName) } catch (_: Exception) { null }
+                }
+
+                // Fallback: try common audio extensions with the CUE base name
+                if (audioDoc == null) {
+                    val cueBaseName = cueName.substringBeforeLast('.')
+                    val commonExts = listOf(".flac", ".wav", ".ape", ".mp3", ".ogg", ".wv", ".m4a")
+                    for (ext in commonExts) {
+                        audioDoc = try { parentDir.findFile(cueBaseName + ext) } catch (_: Exception) { null }
+                        if (audioDoc != null) break
+                        // Try uppercase
+                        audioDoc = try { parentDir.findFile(cueBaseName + ext.uppercase(Locale.ROOT)) } catch (_: Exception) { null }
+                        if (audioDoc != null) break
+                    }
+                }
+
+                if (audioDoc == null) {
+                    android.util.Log.w("SpotiFLAC", "SAF scan: no audio file found for CUE $cueName")
+                    errors++
+                    scanned++
+                    continue
+                }
+
+                // Mark this audio file so we skip it in the regular audio pass
+                cueReferencedAudioUris.add(audioDoc.uri.toString())
+
+                // Copy audio to same temp dir so Go can resolve it
+                val tempDir = File(tempCuePath).parent ?: cacheDir.absolutePath
+                val audioName = try { audioDoc.name ?: "audio.flac" } catch (_: Exception) { "audio.flac" }
+                val audioExt = audioName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                val fallbackAudioExt = if (audioExt.isNotBlank()) ".$audioExt" else null
+
+                tempAudioPath = copyUriToTemp(audioDoc.uri, fallbackAudioExt)
+                if (tempAudioPath == null) {
+                    android.util.Log.w("SpotiFLAC", "SAF scan: failed to copy audio for CUE $cueName")
+                    errors++
+                    scanned++
+                    continue
+                }
+
+                // Rename temp audio to its original name so Go can find it by name
+                val renamedAudio = File(tempDir, audioName)
+                val tempAudioFile = File(tempAudioPath)
+                if (renamedAudio.absolutePath != tempAudioFile.absolutePath) {
+                    tempAudioFile.renameTo(renamedAudio)
+                    tempAudioPath = renamedAudio.absolutePath
+                }
+
+                val cueLastModified = try { cueDoc.lastModified() } catch (_: Exception) { 0L }
+
+                // Call Go to produce library scan entries for each CUE track
+                val cueResultsJson = Gobackend.scanCueSheetForLibrary(
+                    tempCuePath,
+                    tempDir,
+                    cueDoc.uri.toString(),
+                    cueLastModified
+                )
+
+                val cueArray = JSONArray(cueResultsJson)
+                for (j in 0 until cueArray.length()) {
+                    results.put(cueArray.getJSONObject(j))
+                }
+
+                android.util.Log.d(
+                    "SpotiFLAC",
+                    "SAF scan: CUE $cueName -> ${cueArray.length()} tracks"
+                )
+            } catch (e: Exception) {
+                errors++
+                android.util.Log.w("SpotiFLAC", "SAF scan: error processing CUE $cueName: ${e.message}")
+            } finally {
+                try { tempCuePath?.let { File(it).delete() } } catch (_: Exception) {}
+                try { tempAudioPath?.let { File(it).delete() } } catch (_: Exception) {}
+            }
+
+            scanned++
+            val pct = scanned.toDouble() / totalItems.toDouble() * 100.0
+            updateSafScanProgress {
+                it.scannedFiles = scanned
+                it.errorCount = errors
+                it.progressPct = pct
+            }
+        }
+
+        // --- Regular audio file pass: skip files referenced by CUE sheets ---
         for ((doc, _) in audioFiles) {
             if (safScanCancel) {
                 updateSafScanProgress { it.isComplete = true }
                 return "[]"
+            }
+
+            // Skip audio files that are represented by CUE track entries
+            if (cueReferencedAudioUris.contains(doc.uri.toString())) {
+                scanned++
+                val pct = scanned.toDouble() / totalItems.toDouble() * 100.0
+                updateSafScanProgress {
+                    it.scannedFiles = scanned
+                    it.progressPct = pct
+                }
+                continue
             }
 
             val name = try { doc.name ?: "" } catch (_: Exception) { "" }
@@ -926,7 +1144,7 @@ class MainActivity: FlutterFragmentActivity() {
             }
 
             scanned++
-            val pct = scanned.toDouble() / audioFiles.size.toDouble() * 100.0
+            val pct = scanned.toDouble() / totalItems.toDouble() * 100.0
             updateSafScanProgress {
                 it.scannedFiles = scanned
                 it.errorCount = errors
@@ -944,6 +1162,8 @@ class MainActivity: FlutterFragmentActivity() {
 
     /**
      * Incremental SAF tree scan - only scans new or modified files.
+     * Supports .cue sheets: expands them into virtual track entries and
+     * deduplicates audio files referenced by CUE sheets.
      * @param treeUriStr The SAF tree URI to scan
      * @param existingFilesJson JSON object mapping file URI -> lastModified timestamp
      * @return JSON object with new/changed files and removed URIs
@@ -986,13 +1206,29 @@ class MainActivity: FlutterFragmentActivity() {
             it.currentFile = "Scanning folders..."
         }
 
-        val supportedExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
+        val supportedAudioExt = setOf(".flac", ".m4a", ".mp3", ".opus", ".ogg")
         val audioFiles = mutableListOf<Triple<DocumentFile, String, Long>>() // doc, path, lastModified
+        // CUE files to scan: (cueDoc, parentDir, lastModified)
+        val cueFilesToScan = mutableListOf<Triple<DocumentFile, DocumentFile, Long>>()
+        // Unchanged CUE files: (cueDoc, parentDir) — need to discover audio siblings for skip set
+        val unchangedCueFiles = mutableListOf<Pair<DocumentFile, DocumentFile>>()
         val currentUris = mutableSetOf<String>()
         val visitedDirUris = mutableSetOf<String>()
         var traversalErrors = 0
 
-        // Collect all audio files with lastModified
+        // Build a map of CUE base URIs -> existing virtual track URIs from the database.
+        // Virtual paths look like "content://...album.cue#track01".
+        // We need this to preserve virtual paths for unchanged CUE files.
+        val existingCueVirtualPaths = mutableMapOf<String, MutableList<String>>() // cueUri -> [virtualPaths]
+        for (key in existingFiles.keys) {
+            val hashIdx = key.indexOf("#track")
+            if (hashIdx > 0) {
+                val baseCueUri = key.substring(0, hashIdx)
+                existingCueVirtualPaths.getOrPut(baseCueUri) { mutableListOf() }.add(key)
+            }
+        }
+
+        // Collect all files with lastModified
         val queue: ArrayDeque<Pair<DocumentFile, String>> = ArrayDeque()
         queue.add(root to "")
 
@@ -1055,7 +1291,27 @@ class MainActivity: FlutterFragmentActivity() {
 
                         val name = child.name ?: continue
                         val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                        if (ext.isNotBlank() && supportedExt.contains(".$ext")) {
+
+                        if (ext == "cue") {
+                            val lastModified = try {
+                                child.lastModified()
+                            } catch (_: Exception) { 0L }
+
+                            // Check if any virtual track from this CUE exists with matching modTime
+                            val virtualPaths = existingCueVirtualPaths[uriStr]
+                            val existingModified = virtualPaths?.firstOrNull()?.let { existingFiles[it] }
+
+                            if (existingModified != null && existingModified == lastModified) {
+                                // CUE is unchanged — mark virtual paths as current so they aren't removed
+                                unchangedCueFiles.add(child to dir)
+                                for (vp in virtualPaths) {
+                                    currentUris.add(vp)
+                                }
+                            } else {
+                                // CUE is new or modified — needs scanning
+                                cueFilesToScan.add(Triple(child, dir, lastModified))
+                            }
+                        } else if (ext.isNotBlank() && supportedAudioExt.contains(".$ext")) {
                             val existingModified = existingFiles[uriStr]
                             val lastModified = try {
                                 child.lastModified()
@@ -1083,13 +1339,14 @@ class MainActivity: FlutterFragmentActivity() {
         // Find removed files (in existing but not in current)
         val removedUris = existingFiles.keys.filter { !currentUris.contains(it) }
         val totalFiles = currentUris.size
-        val skippedCount = (totalFiles - audioFiles.size).coerceAtLeast(0)
+        val filesToProcess = audioFiles.size + cueFilesToScan.size
+        val skippedCount = (totalFiles - filesToProcess).coerceAtLeast(0)
 
         updateSafScanProgress {
             it.totalFiles = totalFiles
         }
 
-        if (audioFiles.isEmpty()) {
+        if (audioFiles.isEmpty() && cueFilesToScan.isEmpty()) {
             updateSafScanProgress {
                 it.isComplete = true
                 it.scannedFiles = totalFiles
@@ -1107,6 +1364,173 @@ class MainActivity: FlutterFragmentActivity() {
         var scanned = 0
         var errors = traversalErrors
 
+        // --- CUE first pass: parse new/modified CUE sheets ---
+        val cueReferencedAudioUris = mutableSetOf<String>()
+
+        for ((cueDoc, parentDir, cueLastModified) in cueFilesToScan) {
+            if (safScanCancel) {
+                updateSafScanProgress { it.isComplete = true }
+                val result = JSONObject()
+                result.put("files", JSONArray())
+                result.put("removedUris", JSONArray())
+                result.put("skippedCount", skippedCount)
+                result.put("totalFiles", totalFiles)
+                result.put("cancelled", true)
+                return result.toString()
+            }
+
+            val cueName = try { cueDoc.name ?: "" } catch (_: Exception) { "" }
+            updateSafScanProgress { it.currentFile = cueName }
+
+            var tempCuePath: String? = null
+            var tempAudioPath: String? = null
+            try {
+                // Copy CUE to temp
+                tempCuePath = copyUriToTemp(cueDoc.uri, ".cue")
+                if (tempCuePath == null) {
+                    errors++
+                    android.util.Log.w("SpotiFLAC", "SAF incremental scan: failed to copy CUE ${cueDoc.uri}")
+                    scanned++
+                    continue
+                }
+
+                // Extract the audio filename from the CUE sheet text
+                val audioFileName = extractCueAudioFileName(tempCuePath)
+
+                // Find the referenced audio file as a sibling in the same SAF directory
+                var audioDoc: DocumentFile? = null
+                if (!audioFileName.isNullOrBlank()) {
+                    audioDoc = try { parentDir.findFile(audioFileName) } catch (_: Exception) { null }
+                }
+
+                // Fallback: try common audio extensions with the CUE base name
+                if (audioDoc == null) {
+                    val cueBaseName = cueName.substringBeforeLast('.')
+                    val commonExts = listOf(".flac", ".wav", ".ape", ".mp3", ".ogg", ".wv", ".m4a")
+                    for (ext in commonExts) {
+                        audioDoc = try { parentDir.findFile(cueBaseName + ext) } catch (_: Exception) { null }
+                        if (audioDoc != null) break
+                        audioDoc = try { parentDir.findFile(cueBaseName + ext.uppercase(Locale.ROOT)) } catch (_: Exception) { null }
+                        if (audioDoc != null) break
+                    }
+                }
+
+                if (audioDoc == null) {
+                    android.util.Log.w("SpotiFLAC", "SAF incremental scan: no audio file found for CUE $cueName")
+                    errors++
+                    scanned++
+                    continue
+                }
+
+                // Mark this audio file so we skip it in the regular audio pass
+                cueReferencedAudioUris.add(audioDoc.uri.toString())
+
+                // Copy audio to same temp dir so Go can resolve it
+                val tempDir = File(tempCuePath).parent ?: cacheDir.absolutePath
+                val audioName = try { audioDoc.name ?: "audio.flac" } catch (_: Exception) { "audio.flac" }
+                val audioExt = audioName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                val fallbackAudioExt = if (audioExt.isNotBlank()) ".$audioExt" else null
+
+                tempAudioPath = copyUriToTemp(audioDoc.uri, fallbackAudioExt)
+                if (tempAudioPath == null) {
+                    android.util.Log.w("SpotiFLAC", "SAF incremental scan: failed to copy audio for CUE $cueName")
+                    errors++
+                    scanned++
+                    continue
+                }
+
+                // Rename temp audio to its original name so Go can find it by name
+                val renamedAudio = File(tempDir, audioName)
+                val tempAudioFile = File(tempAudioPath)
+                if (renamedAudio.absolutePath != tempAudioFile.absolutePath) {
+                    tempAudioFile.renameTo(renamedAudio)
+                    tempAudioPath = renamedAudio.absolutePath
+                }
+
+                // Call Go to produce library scan entries for each CUE track
+                val cueResultsJson = Gobackend.scanCueSheetForLibrary(
+                    tempCuePath,
+                    tempDir,
+                    cueDoc.uri.toString(),
+                    cueLastModified
+                )
+
+                val cueArray = JSONArray(cueResultsJson)
+                for (j in 0 until cueArray.length()) {
+                    val trackObj = cueArray.getJSONObject(j)
+                    results.put(trackObj)
+                    // Register each virtual path as current so deletion detection works
+                    val virtualPath = trackObj.optString("filePath", "")
+                    if (virtualPath.isNotBlank()) {
+                        currentUris.add(virtualPath)
+                    }
+                }
+
+                android.util.Log.d(
+                    "SpotiFLAC",
+                    "SAF incremental scan: CUE $cueName -> ${cueArray.length()} tracks"
+                )
+            } catch (e: Exception) {
+                errors++
+                android.util.Log.w("SpotiFLAC", "SAF incremental scan: error processing CUE $cueName: ${e.message}")
+            } finally {
+                try { tempCuePath?.let { File(it).delete() } } catch (_: Exception) {}
+                try { tempAudioPath?.let { File(it).delete() } } catch (_: Exception) {}
+            }
+
+            scanned++
+            val processed = skippedCount + scanned
+            val pct = if (totalFiles > 0) {
+                processed.toDouble() / totalFiles.toDouble() * 100.0
+            } else {
+                100.0
+            }
+            updateSafScanProgress {
+                it.scannedFiles = processed
+                it.errorCount = errors
+                it.progressPct = pct
+            }
+        }
+
+        // Discover audio siblings for unchanged CUE files so we skip them
+        // in the regular audio pass. Copy the .cue to temp (tiny file) to extract
+        // the audio filename, then find the sibling by name.
+        for ((cueDoc, parentDir) in unchangedCueFiles) {
+            var tempCue: String? = null
+            try {
+                tempCue = copyUriToTemp(cueDoc.uri, ".cue")
+                if (tempCue != null) {
+                    val audioFileName = extractCueAudioFileName(tempCue)
+                    var audioDoc: DocumentFile? = null
+                    if (!audioFileName.isNullOrBlank()) {
+                        audioDoc = try { parentDir.findFile(audioFileName) } catch (_: Exception) { null }
+                    }
+                    // Fallback: try common extensions with CUE base name
+                    if (audioDoc == null) {
+                        val cueName = try { cueDoc.name ?: "" } catch (_: Exception) { "" }
+                        val cueBaseName = cueName.substringBeforeLast('.')
+                        if (cueBaseName.isNotBlank()) {
+                            val commonExts = listOf(".flac", ".wav", ".ape", ".mp3", ".ogg", ".wv", ".m4a")
+                            for (ext in commonExts) {
+                                audioDoc = try { parentDir.findFile(cueBaseName + ext) } catch (_: Exception) { null }
+                                if (audioDoc != null) break
+                                audioDoc = try { parentDir.findFile(cueBaseName + ext.uppercase(Locale.ROOT)) } catch (_: Exception) { null }
+                                if (audioDoc != null) break
+                            }
+                        }
+                    }
+                    if (audioDoc != null) {
+                        cueReferencedAudioUris.add(audioDoc.uri.toString())
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("SpotiFLAC", "SAF incremental scan: failed to resolve audio for unchanged CUE: ${e.message}")
+            } finally {
+                try { tempCue?.let { File(it).delete() } } catch (_: Exception) {}
+            }
+        }
+
+        // --- Regular audio file pass: skip files referenced by CUE sheets ---
         for ((doc, _, lastModified) in audioFiles) {
             if (safScanCancel) {
                 updateSafScanProgress { it.isComplete = true }
@@ -1117,6 +1541,22 @@ class MainActivity: FlutterFragmentActivity() {
                 result.put("totalFiles", totalFiles)
                 result.put("cancelled", true)
                 return result.toString()
+            }
+
+            // Skip audio files that are represented by CUE track entries
+            if (cueReferencedAudioUris.contains(doc.uri.toString())) {
+                scanned++
+                val processed = skippedCount + scanned
+                val pct = if (totalFiles > 0) {
+                    processed.toDouble() / totalFiles.toDouble() * 100.0
+                } else {
+                    100.0
+                }
+                updateSafScanProgress {
+                    it.scannedFiles = processed
+                    it.progressPct = pct
+                }
+                continue
             }
 
             val name = try { doc.name ?: "" } catch (_: Exception) { "" }
@@ -1173,6 +1613,9 @@ class MainActivity: FlutterFragmentActivity() {
             }
         }
 
+        // Recalculate removedUris now that CUE virtual paths have been registered
+        val finalRemovedUris = existingFiles.keys.filter { !currentUris.contains(it) }
+
         updateSafScanProgress {
             it.isComplete = true
             it.progressPct = 100.0
@@ -1180,7 +1623,7 @@ class MainActivity: FlutterFragmentActivity() {
 
         val result = JSONObject()
         result.put("files", results)
-        result.put("removedUris", JSONArray(removedUris))
+        result.put("removedUris", JSONArray(finalRemovedUris))
         result.put("skippedCount", skippedCount)
         result.put("totalFiles", totalFiles)
         return result.toString()
@@ -1431,38 +1874,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val url = call.argument<String>("url") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.parseSpotifyURL(url)
-                            }
-                            result.success(response)
-                        }
-                        "getSpotifyMetadata" -> {
-                            val url = call.argument<String>("url") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getSpotifyMetadata(url)
-                            }
-                            result.success(response)
-                        }
-                        "searchSpotify" -> {
-                            val query = call.argument<String>("query") ?: ""
-                            val limit = call.argument<Int>("limit") ?: 10
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.searchSpotify(query, limit.toLong())
-                            }
-                            result.success(response)
-                        }
-                        "searchSpotifyAll" -> {
-                            val query = call.argument<String>("query") ?: ""
-                            val trackLimit = call.argument<Int>("track_limit") ?: 15
-                            val artistLimit = call.argument<Int>("artist_limit") ?: 3
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.searchSpotifyAll(query, trackLimit.toLong(), artistLimit.toLong())
-                            }
-                            result.success(response)
-                        }
-                        "getSpotifyRelatedArtists" -> {
-                            val artistId = call.argument<String>("artist_id") ?: ""
-                            val limit = call.argument<Int>("limit") ?: 12
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getSpotifyRelatedArtists(artistId, limit.toLong())
                             }
                             result.success(response)
                         }
@@ -2099,20 +2510,6 @@ class MainActivity: FlutterFragmentActivity() {
                         "isDownloadServiceRunning" -> {
                             result.success(DownloadService.isServiceRunning())
                         }
-                        "setSpotifyCredentials" -> {
-                            val clientId = call.argument<String>("client_id") ?: ""
-                            val clientSecret = call.argument<String>("client_secret") ?: ""
-                            withContext(Dispatchers.IO) {
-                                Gobackend.setSpotifyAPICredentials(clientId, clientSecret)
-                            }
-                            result.success(null)
-                        }
-                        "hasSpotifyCredentials" -> {
-                            val hasCredentials = withContext(Dispatchers.IO) {
-                                Gobackend.checkSpotifyCredentials()
-                            }
-                            result.success(hasCredentials)
-                        }
                         "preWarmTrackCache" -> {
                             val tracksJson = call.argument<String>("tracks") ?: "[]"
                             withContext(Dispatchers.IO) {
@@ -2236,13 +2633,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val deezerTrackId = call.argument<String>("deezer_track_id") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.getTidalURLFromDeezerTrack(deezerTrackId)
-                            }
-                            result.success(response)
-                        }
-                        "getAmazonURLFromDeezerTrack" -> {
-                            val deezerTrackId = call.argument<String>("deezer_track_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getAmazonURLFromDeezerTrack(deezerTrackId)
                             }
                             result.success(response)
                         }
@@ -2735,6 +3125,89 @@ class MainActivity: FlutterFragmentActivity() {
                                         }
                                     } else {
                                         Gobackend.readAudioMetadataJSON(filePath)
+                                    }
+                                } catch (e: Exception) {
+                                    """{"error":"${e.message?.replace("\"", "'")}"}"""
+                                }
+                            }
+                            result.success(response)
+                        }
+                        // CUE Sheet Parsing
+                        "parseCueSheet" -> {
+                            val cuePath = call.argument<String>("cue_path") ?: ""
+                            val audioDir = call.argument<String>("audio_dir") ?: ""
+                            val response = withContext(Dispatchers.IO) {
+                                try {
+                                    if (cuePath.startsWith("content://")) {
+                                        val uri = Uri.parse(cuePath)
+                                        val tempCuePath = copyUriToTemp(uri, ".cue")
+                                            ?: return@withContext """{"error":"Failed to copy CUE file to temp"}"""
+                                        var tempAudioPath: String? = null
+                                        try {
+                                            // Extract audio filename from CUE text
+                                            val audioFileName = extractCueAudioFileName(tempCuePath)
+
+                                            // Try to find the audio sibling in SAF
+                                            var audioDoc: DocumentFile? = null
+                                            val parentDir = safParentDir(uri)
+                                            if (parentDir != null && !audioFileName.isNullOrBlank()) {
+                                                audioDoc = try { parentDir.findFile(audioFileName) } catch (_: Exception) { null }
+                                            }
+
+                                            // Fallback: try common extensions with the CUE base name
+                                            if (audioDoc == null && parentDir != null) {
+                                                val cueName = try {
+                                                    DocumentFile.fromSingleUri(this@MainActivity, uri)?.name ?: ""
+                                                } catch (_: Exception) { "" }
+                                                val cueBaseName = cueName.substringBeforeLast('.')
+                                                if (cueBaseName.isNotBlank()) {
+                                                    val commonExts = listOf(".flac", ".wav", ".ape", ".mp3", ".ogg", ".wv", ".m4a")
+                                                    for (ext in commonExts) {
+                                                        audioDoc = try { parentDir.findFile(cueBaseName + ext) } catch (_: Exception) { null }
+                                                        if (audioDoc != null) break
+                                                        audioDoc = try { parentDir.findFile(cueBaseName + ext.uppercase(Locale.ROOT)) } catch (_: Exception) { null }
+                                                        if (audioDoc != null) break
+                                                    }
+                                                }
+                                            }
+
+                                            val tempDir = File(tempCuePath).parent ?: cacheDir.absolutePath
+                                            if (audioDoc != null) {
+                                                // Copy audio to same temp dir with original name
+                                                val audioName = try { audioDoc.name ?: "audio.flac" } catch (_: Exception) { "audio.flac" }
+                                                val audioExt = audioName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+                                                val fallbackExt = if (audioExt.isNotBlank()) ".$audioExt" else null
+                                                val copiedAudio = copyUriToTemp(audioDoc.uri, fallbackExt)
+                                                if (copiedAudio != null) {
+                                                    val renamedAudio = File(tempDir, audioName)
+                                                    val copiedFile = File(copiedAudio)
+                                                    if (renamedAudio.absolutePath != copiedFile.absolutePath) {
+                                                        copiedFile.renameTo(renamedAudio)
+                                                    }
+                                                    tempAudioPath = renamedAudio.absolutePath
+                                                }
+                                            }
+
+                                            // Parse with audio in temp dir; Go will resolve there
+                                            val resultJson = Gobackend.parseCueSheet(tempCuePath, tempDir)
+
+                                            // Replace the temp audio_path with the SAF content:// URI
+                                            // so Dart knows it's a SAF file and handles it accordingly
+                                            if (audioDoc != null) {
+                                                val resultObj = JSONObject(resultJson)
+                                                resultObj.put("audio_path", audioDoc.uri.toString())
+                                                // Also pass the original CUE URI for reference
+                                                resultObj.put("cue_path", cuePath)
+                                                resultObj.toString()
+                                            } else {
+                                                resultJson
+                                            }
+                                        } finally {
+                                            try { File(tempCuePath).delete() } catch (_: Exception) {}
+                                            try { tempAudioPath?.let { File(it).delete() } } catch (_: Exception) {}
+                                        }
+                                    } else {
+                                        Gobackend.parseCueSheet(cuePath, audioDir)
                                     }
                                 } catch (e: Exception) {
                                     """{"error":"${e.message?.replace("\"", "'")}"}"""

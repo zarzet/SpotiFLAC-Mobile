@@ -212,16 +212,39 @@ bool isContentUri(String? path) {
   return path != null && path.startsWith('content://');
 }
 
+/// Pattern matching CUE virtual path suffixes like #track01, #track12, etc.
+final _cueTrackSuffix = RegExp(r'#track\d+$');
+
+const cueVirtualTrackRequiresSplitMessage =
+    'This CUE track is virtual. Use Split into Tracks first.';
+
+/// Whether the path is a CUE virtual path (contains #trackNN suffix).
+bool isCueVirtualPath(String? path) {
+  return path != null && _cueTrackSuffix.hasMatch(path);
+}
+
+/// Strip the #trackNN suffix from a CUE virtual path to get the base .cue path.
+/// Returns the path unchanged if it's not a CUE virtual path.
+String stripCueTrackSuffix(String path) {
+  return path.replaceFirst(_cueTrackSuffix, '');
+}
+
 Future<bool> fileExists(String? path) async {
   if (path == null || path.isEmpty) return false;
-  if (isContentUri(path)) {
-    return PlatformBridge.safExists(path);
+  // For CUE virtual paths, check if the base .cue file exists
+  final realPath = isCueVirtualPath(path) ? stripCueTrackSuffix(path) : path;
+  if (isContentUri(realPath)) {
+    return PlatformBridge.safExists(realPath);
   }
-  return File(path).exists();
+  return File(realPath).exists();
 }
 
 Future<void> deleteFile(String? path) async {
   if (path == null || path.isEmpty) return;
+  // CUE virtual paths should NOT be deleted through this function —
+  // deleting album.cue would remove ALL tracks. Callers should handle
+  // CUE deletion specially (e.g. only delete when all tracks are removed).
+  if (isCueVirtualPath(path)) return;
   if (isContentUri(path)) {
     await PlatformBridge.safDelete(path);
     return;
@@ -233,8 +256,10 @@ Future<void> deleteFile(String? path) async {
 
 Future<FileAccessStat?> fileStat(String? path) async {
   if (path == null || path.isEmpty) return null;
-  if (isContentUri(path)) {
-    final stat = await PlatformBridge.safStat(path);
+  // For CUE virtual paths, stat the base .cue file
+  final realPath = isCueVirtualPath(path) ? stripCueTrackSuffix(path) : path;
+  if (isContentUri(realPath)) {
+    final stat = await PlatformBridge.safStat(realPath);
     final exists = stat['exists'] as bool? ?? true;
     if (!exists) return null;
     return FileAccessStat(
@@ -245,18 +270,23 @@ Future<FileAccessStat?> fileStat(String? path) async {
     );
   }
 
-  final stat = await FileStat.stat(path);
+  final stat = await FileStat.stat(realPath);
   if (stat.type == FileSystemEntityType.notFound) return null;
   return FileAccessStat(size: stat.size, modified: stat.modified);
 }
 
 Future<void> openFile(String path) async {
-  if (isContentUri(path)) {
-    await PlatformBridge.openContentUri(path, mimeType: '');
+  if (isCueVirtualPath(path)) {
+    throw Exception(cueVirtualTrackRequiresSplitMessage);
+  }
+
+  final realPath = path;
+  if (isContentUri(realPath)) {
+    await PlatformBridge.openContentUri(realPath, mimeType: '');
     return;
   }
-  final mimeType = audioMimeTypeForPath(path);
-  final result = await OpenFilex.open(path, type: mimeType);
+  final mimeType = audioMimeTypeForPath(realPath);
+  final result = await OpenFilex.open(realPath, type: mimeType);
   if (result.type != ResultType.done) {
     throw Exception(result.message);
   }

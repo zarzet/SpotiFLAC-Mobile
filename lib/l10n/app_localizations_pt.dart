@@ -356,7 +356,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -689,6 +689,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorNoTracksFound => 'No tracks found';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Cannot load $item: missing extension source';
   }
@@ -760,6 +771,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get folderOrganizationNone => 'No organization';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'By Artist';
@@ -1809,7 +1827,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2125,6 +2143,54 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get cueSplitTitle => 'Split CUE Sheet';
+
+  @override
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';
@@ -2705,7 +2771,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get aboutAppDescription =>
-      'Baixe faixas do Spotify em qualidade sem perdas do Tidal, Qobuz e Amazon Music.';
+      'Baixe faixas do Spotify em qualidade sem perdas do Tidal e Qobuz.';
 
   @override
   String get artistAlbums => 'Álbuns';
@@ -4147,7 +4213,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Obtenha áudio em qualidade FLAC do Tidal, Qobuz ou Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>

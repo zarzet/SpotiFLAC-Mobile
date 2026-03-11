@@ -1,4 +1,3 @@
-// Package gobackend provides extension manifest parsing and validation
 package gobackend
 
 import (

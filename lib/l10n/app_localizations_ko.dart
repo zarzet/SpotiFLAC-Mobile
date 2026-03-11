@@ -45,41 +45,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get historyFilterSingles => 'Singles';
 
   @override
-  String get historySearchHint => 'Search history...';
+  String get historySearchHint => '검색 기록...';
 
   @override
   String get settingsTitle => 'Settings';
 
   @override
-  String get settingsDownload => 'Download';
+  String get settingsDownload => '다운로드';
 
   @override
-  String get settingsAppearance => 'Appearance';
+  String get settingsAppearance => '외관';
 
   @override
-  String get settingsOptions => 'Options';
+  String get settingsOptions => '옵션';
 
   @override
-  String get settingsExtensions => 'Extensions';
+  String get settingsExtensions => '확장 기능';
 
   @override
-  String get settingsAbout => 'About';
+  String get settingsAbout => '정보';
 
   @override
-  String get downloadTitle => 'Download';
+  String get downloadTitle => '다운로드';
 
   @override
-  String get downloadAskQualitySubtitle =>
-      'Show quality picker for each download';
+  String get downloadAskQualitySubtitle => '다운로드를 할 때마다 품질을 선택하도록 합니다';
 
   @override
-  String get downloadFilenameFormat => 'Filename Format';
+  String get downloadFilenameFormat => '파일 이름 형식';
 
   @override
-  String get downloadFolderOrganization => 'Folder Organization';
+  String get downloadFolderOrganization => '폴더 분류 형식';
 
   @override
-  String get appearanceTitle => 'Appearance';
+  String get appearanceTitle => '외관';
 
   @override
   String get appearanceThemeSystem => 'System';
@@ -94,10 +93,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appearanceDynamicColor => 'Dynamic Color';
 
   @override
-  String get appearanceDynamicColorSubtitle => 'Use colors from your wallpaper';
+  String get appearanceDynamicColorSubtitle => '배경 화면을 참고하여 강조 색상이 지정됩니다';
 
   @override
-  String get appearanceHistoryView => 'History View';
+  String get appearanceHistoryView => '기록 정렬 방식';
 
   @override
   String get appearanceHistoryViewList => 'List';
@@ -106,112 +105,104 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appearanceHistoryViewGrid => 'Grid';
 
   @override
-  String get optionsTitle => 'Options';
+  String get optionsTitle => '옵션';
 
   @override
-  String get optionsPrimaryProvider => 'Primary Provider';
+  String get optionsPrimaryProvider => '기본 제공자';
 
   @override
-  String get optionsPrimaryProviderSubtitle =>
-      'Service used when searching by track name.';
+  String get optionsPrimaryProviderSubtitle => '음반 이름으로 검색할 때 사용되는 서비스';
 
   @override
   String optionsUsingExtension(String extensionName) {
-    return 'Using extension: $extensionName';
+    return '확장 기능을 사용: $extensionName';
   }
 
   @override
-  String get optionsSwitchBack =>
-      'Tap Deezer or Spotify to switch back from extension';
+  String get optionsSwitchBack => 'Deezer 또는 Spotify를 탭하여 확장 기능에서 다시 전환하세요.';
 
   @override
-  String get optionsAutoFallback => 'Auto Fallback';
+  String get optionsAutoFallback => '자동 재시도';
 
   @override
   String get optionsAutoFallbackSubtitle => '다운로드가 실패한 경우, 다른 서비스로 재시도';
 
   @override
-  String get optionsUseExtensionProviders => 'Use Extension Providers';
+  String get optionsUseExtensionProviders => '확장 기능 사용';
 
   @override
   String get optionsUseExtensionProvidersOn => '확장 기능을 우선적으로 사용합니다';
 
   @override
-  String get optionsUseExtensionProvidersOff => 'Using built-in providers only';
+  String get optionsUseExtensionProvidersOff => '기본으로 제공되는 기능만 사용';
 
   @override
-  String get optionsEmbedLyrics => 'Embed Lyrics';
+  String get optionsEmbedLyrics => '가사 삽입';
 
   @override
-  String get optionsEmbedLyricsSubtitle =>
-      'Embed synced lyrics into FLAC files';
+  String get optionsEmbedLyricsSubtitle => 'FLAC 파일에 동기화된 가사를 삽입합니다';
 
   @override
-  String get optionsMaxQualityCover => 'Max Quality Cover';
+  String get optionsMaxQualityCover => '고품질 커버 이미지';
 
   @override
-  String get optionsMaxQualityCoverSubtitle =>
-      'Download highest resolution cover art';
+  String get optionsMaxQualityCoverSubtitle => '최고 품질의 커버 이미지를 다운로드';
 
   @override
-  String get optionsConcurrentDownloads => 'Concurrent Downloads';
+  String get optionsConcurrentDownloads => '동시 다운로드';
 
   @override
-  String get optionsConcurrentSequential => 'Sequential (1 at a time)';
+  String get optionsConcurrentSequential => '순차 다운로드 (한 번에 하나)';
 
   @override
   String optionsConcurrentParallel(int count) {
-    return '$count parallel downloads';
+    return '$count개 동시 다운로드';
   }
 
   @override
-  String get optionsConcurrentWarning =>
-      'Parallel downloads may trigger rate limiting';
+  String get optionsConcurrentWarning => '동시에 다수의 음반을 다운로드하면 속도 제한이 발생할 수 있습니다';
 
   @override
-  String get optionsExtensionStore => 'Extension Store';
+  String get optionsExtensionStore => '확장 기능 스토어';
 
   @override
-  String get optionsExtensionStoreSubtitle => 'Show Store tab in navigation';
+  String get optionsExtensionStoreSubtitle => '탐색 메뉴에 스토어 탭 표시';
 
   @override
-  String get optionsCheckUpdates => 'Check for Updates';
+  String get optionsCheckUpdates => '업데이트 확인';
 
   @override
-  String get optionsCheckUpdatesSubtitle =>
-      'Notify when new version is available';
+  String get optionsCheckUpdatesSubtitle => '새로운 버전이 출시되면 알림';
 
   @override
-  String get optionsUpdateChannel => 'Update Channel';
+  String get optionsUpdateChannel => '업데이트 채널';
 
   @override
-  String get optionsUpdateChannelStable => 'Stable releases only';
+  String get optionsUpdateChannelStable => '안정적인 버전만 수령';
 
   @override
-  String get optionsUpdateChannelPreview => 'Get preview releases';
+  String get optionsUpdateChannelPreview => '미리보기 버전을 수령';
 
   @override
-  String get optionsUpdateChannelWarning =>
-      'Preview may contain bugs or incomplete features';
+  String get optionsUpdateChannelWarning => '미리보기 버전은 불안정할 수 있습니다';
 
   @override
-  String get optionsClearHistory => 'Clear Download History';
+  String get optionsClearHistory => '다운로드 기록 삭제';
 
   @override
-  String get optionsClearHistorySubtitle =>
-      'Remove all downloaded tracks from history';
+  String get optionsClearHistorySubtitle => '기록에서 모든 다운로드 음반을 제거합니다';
 
   @override
-  String get optionsDetailedLogging => 'Detailed Logging';
+  String get optionsDetailedLogging => '상세 로깅';
 
   @override
-  String get optionsDetailedLoggingOn => 'Detailed logs are being recorded';
+  String get optionsDetailedLoggingOn => '상세한 로그가 기록되고 있습니다';
 
   @override
-  String get optionsDetailedLoggingOff => 'Enable for bug reports';
+  String get optionsDetailedLoggingOff => '버그 신고를 위한 기능입니다';
 
   @override
-  String get optionsSpotifyCredentials => 'Spotify Credentials';
+  String get optionsSpotifyCredentials => 'Spotify 자격 증명';
 
   @override
   String optionsSpotifyCredentialsConfigured(String clientId) {
@@ -219,21 +210,21 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get optionsSpotifyCredentialsRequired => 'Required - tap to configure';
+  String get optionsSpotifyCredentialsRequired => '탭하여 설정';
 
   @override
   String get optionsSpotifyWarning =>
-      'Spotify requires your own API credentials. Get them free from developer.spotify.com';
+      'Spotify는 사용자 고유의 API 자격 증명을 요구합니다. developer.spotify.com에서 무료로 발급받으세요';
 
   @override
   String get optionsSpotifyDeprecationWarning =>
-      'Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.';
+      'Spotify API 변경으로 인해 Spotify 검색 기능은 2026년 3월 3일부터 더 이상 지원되지 않습니다. Deezer로 전환해 주세요';
 
   @override
-  String get extensionsTitle => 'Extensions';
+  String get extensionsTitle => '확장 기능';
 
   @override
-  String get extensionsDisabled => 'Disabled';
+  String get extensionsDisabled => '비활성화';
 
   @override
   String extensionsVersion(String version) {
@@ -246,80 +237,79 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get extensionsUninstall => 'Uninstall';
+  String get extensionsUninstall => '삭제';
 
   @override
-  String get storeTitle => 'Extension Store';
+  String get storeTitle => '확장 기능 스토어';
 
   @override
-  String get storeSearch => 'Search extensions...';
+  String get storeSearch => '확장 기능 검색';
 
   @override
-  String get storeInstall => 'Install';
+  String get storeInstall => '설치';
 
   @override
-  String get storeInstalled => 'Installed';
+  String get storeInstalled => '설치됨';
 
   @override
-  String get storeUpdate => 'Update';
+  String get storeUpdate => '업데이트';
 
   @override
-  String get aboutTitle => 'About';
+  String get aboutTitle => '정보';
 
   @override
-  String get aboutContributors => 'Contributors';
+  String get aboutContributors => '기여자';
 
   @override
-  String get aboutMobileDeveloper => 'Mobile version developer';
+  String get aboutMobileDeveloper => '모바일 버전 개발자';
 
   @override
-  String get aboutOriginalCreator => 'Creator of the original SpotiFLAC';
+  String get aboutOriginalCreator => '오리지널 SpotiFLAC 제작자';
 
   @override
-  String get aboutLogoArtist =>
-      'The talented artist who created our beautiful app logo!';
+  String get aboutLogoArtist => '아름다운 로고를 만들어주신 재능 있는 아티스트!';
 
   @override
-  String get aboutTranslators => 'Translators';
+  String get aboutTranslators => '번역가들';
 
   @override
-  String get aboutSpecialThanks => 'Special Thanks';
+  String get aboutSpecialThanks => '특별 감사';
 
   @override
-  String get aboutLinks => 'Links';
+  String get aboutLinks => '바로가기';
 
   @override
   String get aboutMobileSource => 'Mobile source code';
 
   @override
-  String get aboutPCSource => 'PC source code';
+  String get aboutPCSource => 'PC 소스 코드';
 
   @override
-  String get aboutReportIssue => 'Report an issue';
+  String get aboutReportIssue => '문제 신고';
 
   @override
-  String get aboutReportIssueSubtitle => 'Report any problems you encounter';
+  String get aboutReportIssueSubtitle => '발생하는 모든 문제를 신고하여 주세요.';
 
   @override
-  String get aboutFeatureRequest => 'Feature request';
+  String get aboutFeatureRequest => '기능 요청';
 
   @override
-  String get aboutFeatureRequestSubtitle => 'Suggest new features for the app';
+  String get aboutFeatureRequestSubtitle => '앱의 새로운 기능을 제안하여 주세요.';
 
   @override
   String get aboutTelegramChannel => 'Telegram Channel';
 
   @override
-  String get aboutTelegramChannelSubtitle => 'Announcements and updates';
+  String get aboutTelegramChannelSubtitle => '공지 및 업데이트 안내';
 
   @override
   String get aboutTelegramChat => 'Telegram Community';
 
   @override
-  String get aboutTelegramChatSubtitle => 'Chat with other users';
+  String get aboutTelegramChatSubtitle => '다른 이용자와 소통';
 
   @override
-  String get aboutSocial => 'Social';
+  String get aboutSocial => '소셜';
 
   @override
   String get aboutApp => 'App';
@@ -329,244 +319,239 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get aboutBinimumDesc =>
-      'The creator of QQDL & HiFi API. Without this API, Tidal downloads wouldn\'t exist!';
+      'QQDL 및 HiFi API 개발자입니다. 이 API가 없었다면 Tidal 다운로드는 불가능했을 것입니다!';
 
   @override
-  String get aboutSachinsenalDesc =>
-      'The original HiFi project creator. The foundation of Tidal integration!';
+  String get aboutSachinsenalDesc => '최초의 하이파이 프로젝트 창시자. 타이달 연동의 기반을 마련한 사람!';
 
   @override
   String get aboutSjdonadoDesc =>
-      'Creator of I Don\'t Have Spotify (IDHS). The fallback link resolver that saves the day!';
+      'I Don\'t Have Spotify(IDHS) 개발자입니다. 위급 상황 발생 시 해결해 주는 대체 링크 해결 도구를 만들었습니다!';
 
   @override
   String get aboutDabMusic => 'DAB Music';
 
   @override
   String get aboutDabMusicDesc =>
-      'The best Qobuz streaming API. Hi-Res downloads wouldn\'t be possible without this!';
+      '최고의 Qobuz 스트리밍 API입니다. 이 API가 없었다면 고해상도 다운로드는 불가능했을 겁니다!';
 
   @override
   String get aboutSpotiSaver => 'SpotiSaver';
 
   @override
   String get aboutSpotiSaverDesc =>
-      'Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!';
+      'Tidal Hi-Res FLAC 스트리밍 엔드포인트. 무손실 음원 재생의 핵심 요소!';
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Tidal, Qobuz, Amazon Music에서 Spotify 트랙을 무손실 음질로 다운로드하세요.';
 
   @override
-  String get artistAlbums => 'Albums';
+  String get artistAlbums => '앨범';
 
   @override
-  String get artistSingles => 'Singles & EPs';
+  String get artistSingles => '싱글 및 EP';
 
   @override
-  String get artistCompilations => 'Compilations';
+  String get artistCompilations => '편집';
 
   @override
-  String get artistPopular => 'Popular';
+  String get artistPopular => '인기순';
 
   @override
   String artistMonthlyListeners(String count) {
-    return '$count monthly listeners';
+    return '월간 청취자: $count';
   }
 
   @override
-  String get trackMetadataService => 'Service';
+  String get trackMetadataService => '제공업체';
 
   @override
-  String get trackMetadataPlay => 'Play';
+  String get trackMetadataPlay => '재생';
 
   @override
-  String get trackMetadataShare => 'Share';
+  String get trackMetadataShare => '공유';
 
   @override
-  String get trackMetadataDelete => 'Delete';
+  String get trackMetadataDelete => '삭제';
 
   @override
-  String get setupGrantPermission => 'Grant Permission';
+  String get setupGrantPermission => '권한을 제공해 주세요.';
 
   @override
-  String get setupSkip => 'Skip for now';
+  String get setupSkip => '다음에 할래요';
 
   @override
-  String get setupStorageAccessRequired => 'Storage Access Required';
+  String get setupStorageAccessRequired => '스토리지 접근 권한 필요';
 
   @override
   String get setupStorageAccessMessageAndroid11 =>
-      'Android 11+ requires \"All files access\" permission to save files to your chosen download folder.';
+      'Android 11 이상 버전에서는 선택한 다운로드 폴더에 파일을 저장하려면 \"모든 파일 접근\" 권한이 필요합니다.';
 
   @override
-  String get setupOpenSettings => 'Open Settings';
+  String get setupOpenSettings => '설정으로 이동';
 
   @override
   String get setupPermissionDeniedMessage =>
-      'Permission denied. Please grant all permissions to continue.';
+      '권한이 거부되었습니다. 계속하려면 모든 권한을 허용해 주세요.';
 
   @override
   String setupPermissionRequired(String permissionType) {
-    return '$permissionType Permission Required';
+    return '$permissionType 권한 필요';
   }
 
   @override
   String setupPermissionRequiredMessage(String permissionType) {
-    return '$permissionType permission is required for the best experience. You can change this later in Settings.';
+    return '최상의 사용 경험을 위해 $permissionType 권한이 필요합니다. 설정에서 나중에 변경할 수 있습니다.';
   }
 
   @override
-  String get setupUseDefaultFolder => 'Use Default Folder?';
+  String get setupUseDefaultFolder => '기본 폴더를 사용하시겠습니까?';
 
   @override
-  String get setupNoFolderSelected =>
-      'No folder selected. Would you like to use the default Music folder?';
+  String get setupNoFolderSelected => '선택된 폴더가 없습니다. 기본 음악 폴더를 사용하시겠습니까?';
 
   @override
-  String get setupUseDefault => 'Use Default';
+  String get setupUseDefault => '기본값 사용';
 
   @override
-  String get setupDownloadLocationTitle => 'Download Location';
+  String get setupDownloadLocationTitle => '다운로드 경로';
 
   @override
   String get setupDownloadLocationIosMessage =>
-      'On iOS, downloads are saved to the app\'s Documents folder. You can access them via the Files app.';
+      'iOS에서는 다운로드한 파일이 앱의 문서 폴더에 저장됩니다. 파일 앱을 통해 해당 파일에 접근할 수 있습니다.';
 
   @override
-  String get setupAppDocumentsFolder => 'App Documents Folder';
+  String get setupAppDocumentsFolder => '앱 문서 폴더';
 
   @override
-  String get setupAppDocumentsFolderSubtitle =>
-      'Recommended - accessible via Files app';
+  String get setupAppDocumentsFolderSubtitle => '권장 사항 - 파일 앱을 통해 접근 가능';
 
   @override
-  String get setupChooseFromFiles => 'Choose from Files';
+  String get setupChooseFromFiles => '파일 탐색기에서 선택';
 
   @override
-  String get setupChooseFromFilesSubtitle => 'Select iCloud or other location';
+  String get setupChooseFromFilesSubtitle => 'iCloud 또는 다른 위치를 선택하세요';
 
   @override
   String get setupIosEmptyFolderWarning =>
-      'iOS limitation: Empty folders cannot be selected. Choose a folder with at least one file.';
+      'iOS 제한 사항: 빈 폴더는 선택할 수 없습니다. 파일이 하나 이상 있는 폴더를 선택하세요.';
 
   @override
   String get setupIcloudNotSupported =>
-      'iCloud Drive is not supported. Please use the app Documents folder.';
+      'iCloud Drive는 지원되지 않습니다. 앱의 문서 폴더를 사용해 주세요.';
 
   @override
-  String get setupDownloadInFlac => 'Download Spotify tracks in FLAC';
+  String get setupDownloadInFlac => 'Spotify 음악을 FLAC 형식으로 다운로드하세요.';
 
   @override
-  String get setupStorageGranted => 'Storage Permission Granted!';
+  String get setupStorageGranted => '저장소 접근 권한이 부여되었습니다!';
 
   @override
-  String get setupStorageRequired => 'Storage Permission Required';
+  String get setupStorageRequired => '저장소 접근 권한이 필요합니다.';
 
   @override
   String get setupStorageDescription =>
-      'SpotiFLAC needs storage permission to save your downloaded music files.';
+      'SpotiFLAC은 다운로드한 음악 파일을 저장하기 위해 저장소 접근 권한이 필요합니다.';
 
   @override
-  String get setupNotificationGranted => 'Notification Permission Granted!';
+  String get setupNotificationGranted => '알림 권한이 부여되었습니다!';
 
   @override
-  String get setupNotificationEnable => 'Enable Notifications';
+  String get setupNotificationEnable => '알림 활성화';
 
   @override
-  String get setupFolderChoose => 'Choose Download Folder';
+  String get setupFolderChoose => '다운로드 폴더를 선택하세요';
 
   @override
-  String get setupFolderDescription =>
-      'Select a folder where your downloaded music will be saved.';
+  String get setupFolderDescription => '다운로드한 음악 파일이 저장될 폴더를 선택하세요.';
 
   @override
-  String get setupSelectFolder => 'Select Folder';
+  String get setupSelectFolder => '폴더 선택';
 
   @override
-  String get setupEnableNotifications => 'Enable Notifications';
+  String get setupEnableNotifications => '알림 활성화';
 
   @override
   String get setupNotificationBackgroundDescription =>
-      'Get notified about download progress and completion. This helps you track downloads when the app is in background.';
+      '알림으로 다운로드 진행 상황을 확인하세요. 앱이 백그라운드에서 실행 중일 때 다운로드 상태와 완료 여부를 확인할 수 있습니다.';
 
   @override
-  String get setupSkipForNow => 'Skip for now';
+  String get setupSkipForNow => '다음에 할래요.';
 
   @override
-  String get setupNext => 'Next';
+  String get setupNext => '다음';
 
   @override
-  String get setupGetStarted => 'Get Started';
+  String get setupGetStarted => '시작하기';
 
   @override
   String get setupAllowAccessToManageFiles =>
-      'Please enable \"Allow access to manage all files\" in the next screen.';
+      '다음 화면에서 \"모든 파일 관리 권한 허용\"을 활성화해 주세요.';
 
   @override
-  String get dialogCancel => 'Cancel';
+  String get dialogCancel => '취소';
 
   @override
-  String get dialogSave => 'Save';
+  String get dialogSave => '저장';
 
   @override
-  String get dialogDelete => 'Delete';
+  String get dialogDelete => '삭제';
 
   @override
-  String get dialogRetry => 'Retry';
+  String get dialogRetry => '재시도';
 
   @override
-  String get dialogClear => 'Clear';
+  String get dialogClear => '지우기';
 
   @override
-  String get dialogDone => 'Done';
+  String get dialogDone => '완료';
 
   @override
-  String get dialogImport => 'Import';
+  String get dialogImport => '불러오기';
 
   @override
-  String get dialogDiscard => 'Discard';
+  String get dialogDiscard => '취소';
 
   @override
-  String get dialogRemove => 'Remove';
+  String get dialogRemove => '제거';
 
   @override
-  String get dialogUninstall => 'Uninstall';
+  String get dialogUninstall => '삭제';
 
   @override
-  String get dialogDiscardChanges => 'Discard Changes?';
+  String get dialogDiscardChanges => '변경사항 취소';
 
   @override
-  String get dialogUnsavedChanges =>
-      'You have unsaved changes. Do you want to discard them?';
+  String get dialogUnsavedChanges => '저장되지 않은 변경 사항이 있습니다. 삭제하시겠습니까?';
 
   @override
-  String get dialogClearAll => 'Clear All';
+  String get dialogClearAll => '모두 제거:';
 
   @override
-  String get dialogRemoveExtension => 'Remove Extension';
+  String get dialogRemoveExtension => '확장 프로그램 제거';
 
   @override
   String get dialogRemoveExtensionMessage =>
-      'Are you sure you want to remove this extension? This cannot be undone.';
+      '이 확장 프로그램을 정말로 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
 
   @override
-  String get dialogUninstallExtension => 'Uninstall Extension?';
+  String get dialogUninstallExtension => '확장 프로그램을 제거하시겠습니까?';
 
   @override
   String dialogUninstallExtensionMessage(String extensionName) {
-    return 'Are you sure you want to remove $extensionName?';
+    return '$extensionName을 정말로 삭제하시겠습니까?';
   }
 
   @override
-  String get dialogClearHistoryTitle => 'Clear History';
+  String get dialogClearHistoryTitle => '기록 삭제';
 
   @override
   String get dialogClearHistoryMessage =>
-      'Are you sure you want to clear all download history? This cannot be undone.';
+      '다운로드 기록을 모두 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
 
   @override
-  String get dialogDeleteSelectedTitle => 'Delete Selected';
+  String get dialogDeleteSelectedTitle => '선택한 항목 삭제';
 
   @override
   String dialogDeleteSelectedMessage(int count) {
@@ -576,50 +561,50 @@ class AppLocalizationsKo extends AppLocalizations {
       other: 'tracks',
       one: 'track',
     );
-    return 'Delete $count $_temp0 from history?\n\nThis will also delete the files from storage.';
+    return '기록에서 $count $_temp0를 삭제하시겠습니까?';
   }
 
   @override
-  String get dialogImportPlaylistTitle => 'Import Playlist';
+  String get dialogImportPlaylistTitle => '재생 목록 가져오기';
 
   @override
   String dialogImportPlaylistMessage(int count) {
-    return 'Found $count tracks in CSV. Add them to download queue?';
+    return 'CSV 파일에서 $count개의 트랙을 찾았습니다. 다운로드 대기열에 추가하시겠습니까?';
   }
 
   @override
   String csvImportTracks(int count) {
-    return '$count tracks from CSV';
+    return 'CSV 파일의 트랙: $count';
   }
 
   @override
   String snackbarAddedToQueue(String trackName) {
-    return 'Added \"$trackName\" to queue';
+    return '\"$trackName\"(을)를 대기열에 추가했습니다.';
   }
 
   @override
   String snackbarAddedTracksToQueue(int count) {
-    return 'Added $count tracks to queue';
+    return '대기열에 $count개의 트랙을 추가했습니다.';
   }
 
   @override
   String snackbarAlreadyDownloaded(String trackName) {
-    return '\"$trackName\" already downloaded';
+    return '\"$trackName\"(은)는 이미 다운로드되었습니다.';
   }
 
   @override
   String snackbarAlreadyInLibrary(String trackName) {
-    return '\"$trackName\" already exists in your library';
+    return '라이브러리에 \"$trackName\"(은)는 이미 존재합니다.';
   }
 
   @override
-  String get snackbarHistoryCleared => 'History cleared';
+  String get snackbarHistoryCleared => '기록 삭제됨';
 
   @override
-  String get snackbarCredentialsSaved => 'Credentials saved';
+  String get snackbarCredentialsSaved => '자격 증명이 저장되었습니다.';
 
   @override
-  String get snackbarCredentialsCleared => 'Credentials cleared';
+  String get snackbarCredentialsCleared => '자격 증명이 제거되었습니다.';
 
   @override
   String snackbarDeletedTracks(int count) {
@@ -629,136 +614,152 @@ class AppLocalizationsKo extends AppLocalizations {
       other: 'tracks',
       one: 'track',
     );
-    return 'Deleted $count $_temp0';
+    return '$count$_temp0 제거됨';
   }
 
   @override
   String snackbarCannotOpenFile(String error) {
-    return 'Cannot open file: $error';
+    return '파일을 열 수 없습니다: $error';
   }
 
   @override
-  String get snackbarFillAllFields => 'Please fill all fields';
+  String get snackbarFillAllFields => '모든 항목을 입력해 주세요.';
 
   @override
   String get snackbarViewQueue => 'View Queue';
 
   @override
   String snackbarUrlCopied(String platform) {
-    return '$platform URL copied to clipboard';
+    return '$platform 링크가 클립보드에 저장됨';
   }
 
   @override
-  String get snackbarFileNotFound => 'File not found';
+  String get snackbarFileNotFound => '파일을 찾을 수 없음';
 
   @override
-  String get snackbarSelectExtFile => 'Please select a .spotiflac-ext file';
+  String get snackbarSelectExtFile => '.spotiflac-ext 확장자 파일을 선택';
 
   @override
-  String get snackbarProviderPrioritySaved => 'Provider priority saved';
+  String get snackbarProviderPrioritySaved => '제공자 우선순위 저장됨';
 
   @override
-  String get snackbarMetadataProviderSaved =>
-      'Metadata provider priority saved';
+  String get snackbarMetadataProviderSaved => '메타데이터 제공자 우선순위 저장됨';
 
   @override
   String snackbarExtensionInstalled(String extensionName) {
-    return '$extensionName installed.';
+    return '$extensionName(이)가 설치됨';
   }
 
   @override
   String snackbarExtensionUpdated(String extensionName) {
-    return '$extensionName updated.';
+    return '$extensionName(이)가 설치됨.';
   }
 
   @override
-  String get snackbarFailedToInstall => 'Failed to install extension';
+  String get snackbarFailedToInstall => '확장 프로그램 설치 실패';
 
   @override
-  String get snackbarFailedToUpdate => 'Failed to update extension';
+  String get snackbarFailedToUpdate => '확장 프로그램 업데이트 실패';
 
   @override
   String get errorRateLimited => 'Rate Limited';
 
   @override
-  String get errorRateLimitedMessage =>
-      'Too many requests. Please wait a moment before searching again.';
+  String get errorRateLimitedMessage => '요청이 너무 많습니다. 잠시 후 다시 검색해 주세요.';
 
   @override
-  String get errorNoTracksFound => 'No tracks found';
+  String get errorNoTracksFound => '트랙을 찾을 수 없습니다';
+
+  @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
 
   @override
   String errorMissingExtensionSource(String item) {
-    return 'Cannot load $item: missing extension source';
+    return '확장 소스가 누락되어, $item(을)를 로드할 수 없습니다';
   }
 
   @override
-  String get actionPause => 'Pause';
+  String get actionPause => '멈추기';
 
   @override
-  String get actionResume => 'Resume';
+  String get actionResume => '재시작';
 
   @override
-  String get actionCancel => 'Cancel';
+  String get actionCancel => '취소';
 
   @override
-  String get actionSelectAll => 'Select All';
+  String get actionSelectAll => '모두 선택';
 
   @override
-  String get actionDeselect => 'Deselect';
+  String get actionDeselect => '선택 해제';
 
   @override
-  String get actionRemoveCredentials => 'Remove Credentials';
+  String get actionRemoveCredentials => '자격 증명 제거';
 
   @override
-  String get actionSaveCredentials => 'Save Credentials';
+  String get actionSaveCredentials => '자격 증명 저장';
 
   @override
   String selectionSelected(int count) {
-    return '$count selected';
+    return '$count개 선택됨';
   }
 
   @override
-  String get selectionAllSelected => 'All tracks selected';
+  String get selectionAllSelected => '모든 트랙 선택됨';
 
   @override
-  String get selectionSelectToDelete => 'Select tracks to delete';
+  String get selectionSelectToDelete => '삭제할 트랙을 선택';
 
   @override
   String progressFetchingMetadata(int current, int total) {
-    return 'Fetching metadata... $current/$total';
+    return '메타데이터 가져오는 중... $current/$total';
   }
 
   @override
-  String get progressReadingCsv => 'Reading CSV...';
+  String get progressReadingCsv => 'CSV 파일을 읽는 중...';
 
   @override
-  String get searchSongs => 'Songs';
+  String get searchSongs => '곡들';
 
   @override
-  String get searchArtists => 'Artists';
+  String get searchArtists => '아티스트들';
 
   @override
-  String get searchAlbums => 'Albums';
+  String get searchAlbums => '앨범들';
 
   @override
-  String get searchPlaylists => 'Playlists';
+  String get searchPlaylists => '재생목록들';
 
   @override
-  String get tooltipPlay => 'Play';
+  String get tooltipPlay => '재생';
 
   @override
-  String get filenameFormat => 'Filename Format';
+  String get filenameFormat => '';
 
   @override
-  String get filenameShowAdvancedTags => 'Show advanced tags';
+  String get filenameShowAdvancedTags => '고급 태그 표시';
 
   @override
   String get filenameShowAdvancedTagsDescription =>
-      'Enable formatted tags for track padding and date patterns';
+      '트랙 패딩 및 날짜 패턴에 대한 서식 있는 태그를 활성화합니다.';
 
   @override
-  String get folderOrganizationNone => 'No organization';
+  String get folderOrganizationNone => '정리하지 않음';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'By Artist';
@@ -877,116 +878,114 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logShareLogs => 'Share logs';
 
   @override
-  String get logClearLogs => 'Clear logs';
+  String get logClearLogs => '로그 제거';
 
   @override
-  String get logClearLogsTitle => 'Clear Logs';
+  String get logClearLogsTitle => '로그 제거';
 
   @override
-  String get logClearLogsMessage => 'Are you sure you want to clear all logs?';
+  String get logClearLogsMessage => '모든 로그를 삭제하시겠습니까?';
 
   @override
-  String get logFilterBySeverity => 'Filter logs by severity';
+  String get logFilterBySeverity => '심각성에 따라 로그 분류';
 
   @override
-  String get logNoLogsYet => 'No logs yet';
+  String get logNoLogsYet => '어떠한 로그도 없음';
 
   @override
-  String get logNoLogsYetSubtitle => 'Logs will appear here as you use the app';
+  String get logNoLogsYetSubtitle => '앱을 사용하는 동안 로그가 여기에 표시됩니다.';
 
   @override
   String logEntriesFiltered(int count) {
-    return 'Entries ($count filtered)';
+    return '($count filtered)개 항목 필터링';
   }
 
   @override
   String logEntries(int count) {
-    return 'Entries ($count)';
+    return '항목 수: ($count)';
   }
 
   @override
-  String get credentialsTitle => 'Spotify Credentials';
+  String get credentialsTitle => 'Spotify 자격 증명';
 
   @override
   String get credentialsDescription =>
-      'Enter your Client ID and Secret to use your own Spotify application quota.';
+      'Spotify 애플리케이션 할당량을 사용하려면 클라이언트 ID와 비밀키를 입력하세요.';
 
   @override
   String get credentialsClientId => 'Client ID';
 
   @override
-  String get credentialsClientIdHint => 'Paste Client ID';
+  String get credentialsClientIdHint => 'Client ID를 붙여넣으세요';
 
   @override
-  String get credentialsClientSecret => 'Client Secret';
+  String get credentialsClientSecret => '비밀키';
 
   @override
-  String get credentialsClientSecretHint => 'Paste Client Secret';
+  String get credentialsClientSecretHint => '비밀키를 붙여넣으세요';
 
   @override
-  String get channelStable => 'Stable';
+  String get channelStable => '안정';
 
   @override
-  String get channelPreview => 'Preview';
+  String get channelPreview => '베타';
 
   @override
-  String get sectionSearchSource => 'Search Source';
+  String get sectionSearchSource => '검색 소스';
 
   @override
-  String get sectionDownload => 'Download';
+  String get sectionDownload => '다운로드';
 
   @override
-  String get sectionPerformance => 'Performance';
+  String get sectionPerformance => '성능';
 
   @override
-  String get sectionApp => 'App';
+  String get sectionApp => '앱';
 
   @override
-  String get sectionData => 'Data';
+  String get sectionData => '데이터';
 
   @override
   String get sectionDebug => 'Debug';
 
   @override
-  String get sectionService => 'Service';
+  String get sectionService => '서비스';
 
   @override
-  String get sectionAudioQuality => 'Audio Quality';
+  String get sectionAudioQuality => '오디오 품질';
 
   @override
-  String get sectionFileSettings => 'File Settings';
+  String get sectionFileSettings => '파일 설정';
 
   @override
-  String get sectionLyrics => 'Lyrics';
+  String get sectionLyrics => '가사';
 
   @override
-  String get lyricsMode => 'Lyrics Mode';
+  String get lyricsMode => '가사 설정';
 
   @override
-  String get lyricsModeDescription =>
-      'Choose how lyrics are saved with your downloads';
+  String get lyricsModeDescription => '다운로드한 파일에 가사를 저장하는 방법을 선택하세요.';
 
   @override
-  String get lyricsModeEmbed => 'Embed in file';
+  String get lyricsModeEmbed => '파일에 포함';
 
   @override
-  String get lyricsModeEmbedSubtitle => 'Lyrics stored inside FLAC metadata';
+  String get lyricsModeEmbedSubtitle => 'FLAC 메타데이터 내에 저장됩니다.';
 
   @override
-  String get lyricsModeExternal => 'External .lrc file';
+  String get lyricsModeExternal => '외부 .lrc 파일';
 
   @override
-  String get lyricsModeExternalSubtitle =>
-      'Separate .lrc file for players like Samsung Music';
+  String get lyricsModeExternalSubtitle => '삼성 뮤직과 같은 플레이어용 별도 .lrc 파일';
 
   @override
-  String get lyricsModeBoth => 'Both';
+  String get lyricsModeBoth => '둘 다';
 
   @override
-  String get lyricsModeBothSubtitle => 'Embed and save .lrc file';
+  String get lyricsModeBothSubtitle => '.lrc 파일을 삽입하고 저장합니다.';
 
   @override
-  String get sectionColor => 'Color';
+  String get sectionColor => '색상';
 
   @override
   String get sectionTheme => 'Theme';
@@ -2124,6 +2123,54 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get cueSplitTitle => 'Split CUE Sheet';
+
+  @override
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';

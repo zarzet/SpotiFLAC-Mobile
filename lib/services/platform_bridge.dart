@@ -20,51 +20,6 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> getSpotifyMetadata(String url) async {
-    _log.d('getSpotifyMetadata: $url');
-    final result = await _channel.invokeMethod('getSpotifyMetadata', {
-      'url': url,
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> searchSpotify(
-    String query, {
-    int limit = 10,
-  }) async {
-    _log.d('searchSpotify: "$query" (limit: $limit)');
-    final result = await _channel.invokeMethod('searchSpotify', {
-      'query': query,
-      'limit': limit,
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> searchSpotifyAll(
-    String query, {
-    int trackLimit = 15,
-    int artistLimit = 3,
-  }) async {
-    _log.d('searchSpotifyAll: "$query"');
-    final result = await _channel.invokeMethod('searchSpotifyAll', {
-      'query': query,
-      'track_limit': trackLimit,
-      'artist_limit': artistLimit,
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> getSpotifyRelatedArtists(
-    String artistId, {
-    int limit = 12,
-  }) async {
-    final result = await _channel.invokeMethod('getSpotifyRelatedArtists', {
-      'artist_id': artistId,
-      'limit': limit,
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
   static Future<Map<String, dynamic>> checkAvailability(
     String spotifyId,
     String isrc,
@@ -403,8 +358,6 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  // ==================== LYRICS PROVIDER SETTINGS ====================
-
   /// Sets the lyrics provider order. Providers not in the list are disabled.
   static Future<void> setLyricsProviders(List<String> providers) async {
     final providersJSON = jsonEncode(providers);
@@ -516,21 +469,6 @@ class PlatformBridge {
 
   static Future<bool> isDownloadServiceRunning() async {
     final result = await _channel.invokeMethod('isDownloadServiceRunning');
-    return result as bool;
-  }
-
-  static Future<void> setSpotifyCredentials(
-    String clientId,
-    String clientSecret,
-  ) async {
-    await _channel.invokeMethod('setSpotifyCredentials', {
-      'client_id': clientId,
-      'client_secret': clientSecret,
-    });
-  }
-
-  static Future<bool> hasSpotifyCredentials() async {
-    final result = await _channel.invokeMethod('hasSpotifyCredentials');
     return result as bool;
   }
 
@@ -1060,8 +998,6 @@ class PlatformBridge {
     }
   }
 
-  // ==================== LOCAL LIBRARY SCANNING ====================
-
   /// Set the directory for caching extracted cover art
   static Future<void> setLibraryCoverCacheDir(String cacheDir) async {
     _log.i('setLibraryCoverCacheDir: $cacheDir');
@@ -1157,6 +1093,47 @@ class PlatformBridge {
   /// Cancel ongoing library scan
   static Future<void> cancelLibraryScan() async {
     await _channel.invokeMethod('cancelLibraryScan');
+  }
+
+  // MARK: - iOS Security-Scoped Bookmark
+
+  /// Create a security-scoped bookmark from a filesystem path picked by
+  /// FilePicker on iOS. Must be called while the picker session is still active.
+  /// Returns base64-encoded bookmark data, or null on failure.
+  static Future<String?> createIosBookmarkFromPath(String path) async {
+    try {
+      final result = await _channel.invokeMethod('createIosBookmarkFromPath', {
+        'path': path,
+      });
+      return result as String?;
+    } catch (e) {
+      _log.w('Failed to create iOS bookmark from path: $e');
+      return null;
+    }
+  }
+
+  /// Resolve a base64-encoded iOS security-scoped bookmark and start accessing
+  /// the resource. Returns the resolved filesystem path.
+  /// The resource stays accessed until [stopAccessingIosBookmark] is called.
+  static Future<String?> startAccessingIosBookmark(String bookmark) async {
+    try {
+      final result = await _channel.invokeMethod('startAccessingIosBookmark', {
+        'bookmark': bookmark,
+      });
+      return result as String?;
+    } catch (e) {
+      _log.w('Failed to start accessing iOS bookmark: $e');
+      return null;
+    }
+  }
+
+  /// Stop accessing the currently active iOS security-scoped resource.
+  static Future<void> stopAccessingIosBookmark() async {
+    try {
+      await _channel.invokeMethod('stopAccessingIosBookmark');
+    } catch (e) {
+      _log.w('Failed to stop accessing iOS bookmark: $e');
+    }
   }
 
   /// Read metadata from a single audio file
@@ -1261,5 +1238,19 @@ class PlatformBridge {
     await _channel.invokeMethod('clearStoreCache');
   }
 
-  // ==================== YOUTUBE / COBALT ====================
+  /// Parse a .cue file and return split information (track listing, timing, metadata).
+  /// Returns a map with: cue_path, audio_path, album, artist, genre, date, tracks[]
+  /// Each track has: number, title, artist, isrc, composer, start_sec, end_sec
+  /// [audioDir] optionally overrides the directory for audio file resolution (used for SAF).
+  static Future<Map<String, dynamic>> parseCueSheet(
+    String cuePath, {
+    String audioDir = '',
+  }) async {
+    _log.i('parseCueSheet: $cuePath (audioDir: $audioDir)');
+    final result = await _channel.invokeMethod('parseCueSheet', {
+      'cue_path': cuePath,
+      'audio_dir': audioDir,
+    });
+    return jsonDecode(result as String) as Map<String, dynamic>;
+  }
 }

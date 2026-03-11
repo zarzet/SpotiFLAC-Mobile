@@ -32,6 +32,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
@@ -158,7 +159,6 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header: drag handle + thumbnail + playlist info
             Column(
               children: [
                 const SizedBox(height: 8),
@@ -210,7 +210,6 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
 
-            // Rename
             _PlaylistOptionTile(
               icon: Icons.edit_outlined,
               title: context.l10n.collectionRenamePlaylist,
@@ -225,7 +224,6 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               },
             ),
 
-            // Change cover
             _PlaylistOptionTile(
               icon: Icons.image_outlined,
               title: context.l10n.collectionPlaylistChangeCover,
@@ -235,7 +233,6 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               },
             ),
 
-            // Delete
             _PlaylistOptionTile(
               icon: Icons.delete_outline,
               iconColor: colorScheme.error,

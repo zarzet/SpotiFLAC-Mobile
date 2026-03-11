@@ -9,7 +9,7 @@
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "Pustaka",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
@@ -49,7 +49,7 @@
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historySearchHint": "Search history...",
+  "historySearchHint": "Cari riwayat...",
   "@historySearchHint": {
     "description": "Search bar placeholder in history"
   },
@@ -125,7 +125,7 @@
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
-  "appearanceHistoryViewGrid": "Grid",
+  "appearanceHistoryViewGrid": "Kisi",
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
@@ -154,7 +154,7 @@
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
-  "optionsAutoFallback": "Auto Fallback",
+  "optionsAutoFallback": "Cadangan Otomatis",
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
@@ -267,7 +267,7 @@
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
-  "optionsSpotifyCredentialsConfigured": "Client ID: {clientId}...",
+  "optionsSpotifyCredentialsConfigured": "ID Klien: {clientId}...",
   "@optionsSpotifyCredentialsConfigured": {
     "description": "Shows configured client ID preview",
     "placeholders": {
@@ -284,7 +284,7 @@
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
+  "optionsSpotifyDeprecationWarning": "Pencarian Spotify akan dihentikan pada 3 Maret 2026 karena perubahan API Spotify. Silakan beralih ke Deezer.",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
@@ -358,7 +358,7 @@
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutTranslators": "Translators",
+  "aboutTranslators": "Penerjemah",
   "@aboutTranslators": {
     "description": "Section for translators"
   },
@@ -394,23 +394,23 @@
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
-  "aboutTelegramChannel": "Telegram Channel",
+  "aboutTelegramChannel": "Saluran Telegram",
   "@aboutTelegramChannel": {
     "description": "Link to Telegram channel"
   },
-  "aboutTelegramChannelSubtitle": "Announcements and updates",
+  "aboutTelegramChannelSubtitle": "Pengumuman dan pembaruan",
   "@aboutTelegramChannelSubtitle": {
     "description": "Subtitle for Telegram channel"
   },
-  "aboutTelegramChat": "Telegram Community",
+  "aboutTelegramChat": "Komunitas Telegram",
   "@aboutTelegramChat": {
     "description": "Link to Telegram chat group"
   },
-  "aboutTelegramChatSubtitle": "Chat with other users",
+  "aboutTelegramChatSubtitle": "Berbincang dengan pengguna lain",
   "@aboutTelegramChatSubtitle": {
     "description": "Subtitle for Telegram chat"
   },
-  "aboutSocial": "Social",
+  "aboutSocial": "Sosial",
   "@aboutSocial": {
     "description": "Section for social links"
   },
@@ -430,7 +430,7 @@
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
-  "aboutSjdonadoDesc": "Creator of I Don't Have Spotify (IDHS). The fallback link resolver that saves the day!",
+  "aboutSjdonadoDesc": "Pencipta I Don't Have Spotify (IDHS). Penyelesai tautan cadangan yang menyelamatkan keadaan!",
   "@aboutSjdonadoDesc": {
     "description": "Credit description for sjdonado"
   },
@@ -446,7 +446,7 @@
   "@aboutSpotiSaver": {
     "description": "Name of SpotiSaver API service - DO NOT TRANSLATE"
   },
-  "aboutSpotiSaverDesc": "Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!",
+  "aboutSpotiSaverDesc": "Tidal perangkat streaming FLAC resolusi tinggi. Bagian penting dari teka-teki tanpa kehilangan kualitas!",
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
@@ -579,7 +579,7 @@
   "@setupIosEmptyFolderWarning": {
     "description": "iOS folder selection warning"
   },
-  "setupIcloudNotSupported": "iCloud Drive is not supported. Please use the app Documents folder.",
+  "setupIcloudNotSupported": "iCloud Drive tidak didukung. Silakan gunakan folder Dokumen di aplikasi.",
   "@setupIcloudNotSupported": {
     "description": "Error when user selects iCloud Drive on iOS"
   },
@@ -742,7 +742,7 @@
     "description": "Dialog title - import CSV playlist"
   },
   "dialogImportPlaylistMessage": "Ditemukan {count} lagu di CSV. Tambahkan ke antrian unduhan?",
-  "csvImportTracks": "{count} tracks from CSV",
+  "csvImportTracks": "{count} trek dari CSV",
   "@csvImportTracks": {
     "description": "Label shown in quality picker for CSV import",
     "placeholders": {
@@ -786,7 +786,7 @@
       }
     }
   },
-  "snackbarAlreadyInLibrary": "\"{trackName}\" already exists in your library",
+  "snackbarAlreadyInLibrary": "\"{trackName}\" sudah ada di perpustakaan Anda",
   "@snackbarAlreadyInLibrary": {
     "description": "Snackbar - track already exists in local library",
     "placeholders": {
@@ -897,6 +897,18 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
+  "errorUrlNotRecognized": "Link tidak dikenali",
+  "@errorUrlNotRecognized": {
+    "description": "Error title - URL not handled by any extension or service"
+  },
+  "errorUrlNotRecognizedMessage": "Link ini tidak didukung. Pastikan URL benar dan ekstensi yang kompatibel sudah terpasang.",
+  "@errorUrlNotRecognizedMessage": {
+    "description": "Error message - URL not recognized explanation"
+  },
+  "errorUrlFetchFailed": "Gagal memuat konten dari link ini. Silakan coba lagi.",
+  "@errorUrlFetchFailed": {
+    "description": "Error message - generic URL fetch failure"
+  },
   "errorMissingExtensionSource": "Tidak dapat memuat {item}: sumber ekstensi tidak ada",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
@@ -991,11 +1003,11 @@
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },
-  "filenameShowAdvancedTags": "Tampilkan tag lanjutan",
+  "filenameShowAdvancedTags": "Show advanced tags",
   "@filenameShowAdvancedTags": {
     "description": "Toggle label for showing advanced filename tags"
   },
-  "filenameShowAdvancedTagsDescription": "Aktifkan tag format untuk padding nomor lagu dan pola tanggal",
+  "filenameShowAdvancedTagsDescription": "Enable formatted tags for track padding and date patterns",
   "@filenameShowAdvancedTagsDescription": {
     "description": "Description for advanced filename tag toggle"
   },
@@ -1757,11 +1769,11 @@
   "@youtubeQualityNote": {
     "description": "Note for YouTube service explaining lossy-only quality"
   },
-  "youtubeOpusBitrateTitle": "Bitrate Opus YouTube",
+  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
   "@youtubeOpusBitrateTitle": {
     "description": "Title for YouTube Opus bitrate setting"
   },
-  "youtubeMp3BitrateTitle": "Bitrate MP3 YouTube",
+  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
   "@youtubeMp3BitrateTitle": {
     "description": "Title for YouTube MP3 bitrate setting"
   },
@@ -2214,7 +2226,7 @@
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
-  "libraryTracksUnit": "{count, plural, =1{trek} other{trek}}",
+  "libraryTracksUnit": "{count, plural, =1{track} other{tracks}}",
   "@libraryTracksUnit": {
     "description": "Unit label for tracks count (without the number itself)",
     "placeholders": {
@@ -2808,11 +2820,11 @@
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
   },
-  "actionCreate": "Buat",
+  "actionCreate": "Create",
   "@actionCreate": {
     "description": "Generic action button - create"
   },
-  "collectionFoldersTitle": "Folder saya",
+  "collectionFoldersTitle": "My folders",
   "@collectionFoldersTitle": {
     "description": "Library section title for custom folders"
   },
@@ -2824,7 +2836,7 @@
   "@collectionLoved": {
     "description": "Custom folder for favorite tracks"
   },
-  "collectionPlaylists": "Playlist",
+  "collectionPlaylists": "Playlists",
   "@collectionPlaylists": {
     "description": "Custom user playlists folder"
   },
@@ -2832,23 +2844,23 @@
   "@collectionPlaylist": {
     "description": "Single playlist label"
   },
-  "collectionAddToPlaylist": "Tambahkan ke playlist",
+  "collectionAddToPlaylist": "Add to playlist",
   "@collectionAddToPlaylist": {
     "description": "Action to add a track to user playlist"
   },
-  "collectionCreatePlaylist": "Buat playlist",
+  "collectionCreatePlaylist": "Create playlist",
   "@collectionCreatePlaylist": {
     "description": "Action to create a new playlist"
   },
-  "collectionNoPlaylistsYet": "Belum ada playlist",
+  "collectionNoPlaylistsYet": "No playlists yet",
   "@collectionNoPlaylistsYet": {
     "description": "Empty state title when user has no playlists"
   },
-  "collectionNoPlaylistsSubtitle": "Buat playlist untuk mulai mengategorikan lagu",
+  "collectionNoPlaylistsSubtitle": "Create a playlist to start categorizing tracks",
   "@collectionNoPlaylistsSubtitle": {
     "description": "Empty state subtitle when user has no playlists"
   },
-  "collectionPlaylistTracks": "{count, plural, =1{1 lagu} other{{count} lagu}}",
+  "collectionPlaylistTracks": "{count, plural, =1{1 track} other{{count} tracks}}",
   "@collectionPlaylistTracks": {
     "description": "Track count label for custom playlists",
     "placeholders": {
@@ -2857,7 +2869,7 @@
       }
     }
   },
-  "collectionAddedToPlaylist": "Ditambahkan ke \"{playlistName}\"",
+  "collectionAddedToPlaylist": "Added to \"{playlistName}\"",
   "@collectionAddedToPlaylist": {
     "description": "Snackbar after adding track to playlist",
     "placeholders": {
@@ -2866,7 +2878,7 @@
       }
     }
   },
-  "collectionAlreadyInPlaylist": "Sudah ada di \"{playlistName}\"",
+  "collectionAlreadyInPlaylist": "Already in \"{playlistName}\"",
   "@collectionAlreadyInPlaylist": {
     "description": "Snackbar when track already exists in playlist",
     "placeholders": {
@@ -2875,27 +2887,27 @@
       }
     }
   },
-  "collectionPlaylistCreated": "Playlist berhasil dibuat",
+  "collectionPlaylistCreated": "Playlist created",
   "@collectionPlaylistCreated": {
     "description": "Snackbar after creating playlist"
   },
-  "collectionPlaylistNameHint": "Nama playlist",
+  "collectionPlaylistNameHint": "Playlist name",
   "@collectionPlaylistNameHint": {
     "description": "Hint text for playlist name input"
   },
-  "collectionPlaylistNameRequired": "Nama playlist wajib diisi",
+  "collectionPlaylistNameRequired": "Playlist name is required",
   "@collectionPlaylistNameRequired": {
     "description": "Validation error for empty playlist name"
   },
-  "collectionRenamePlaylist": "Ubah nama playlist",
+  "collectionRenamePlaylist": "Rename playlist",
   "@collectionRenamePlaylist": {
     "description": "Action to rename playlist"
   },
-  "collectionDeletePlaylist": "Hapus playlist",
+  "collectionDeletePlaylist": "Delete playlist",
   "@collectionDeletePlaylist": {
     "description": "Action to delete playlist"
   },
-  "collectionDeletePlaylistMessage": "Hapus \"{playlistName}\" beserta semua lagunya?",
+  "collectionDeletePlaylistMessage": "Delete \"{playlistName}\" and all tracks inside it?",
   "@collectionDeletePlaylistMessage": {
     "description": "Confirmation message for deleting playlist",
     "placeholders": {
@@ -2904,47 +2916,47 @@
       }
     }
   },
-  "collectionPlaylistDeleted": "Playlist dihapus",
+  "collectionPlaylistDeleted": "Playlist deleted",
   "@collectionPlaylistDeleted": {
     "description": "Snackbar after deleting playlist"
   },
-  "collectionPlaylistRenamed": "Nama playlist diperbarui",
+  "collectionPlaylistRenamed": "Playlist renamed",
   "@collectionPlaylistRenamed": {
     "description": "Snackbar after renaming playlist"
   },
-  "collectionWishlistEmptyTitle": "Wishlist masih kosong",
+  "collectionWishlistEmptyTitle": "Wishlist is empty",
   "@collectionWishlistEmptyTitle": {
     "description": "Wishlist empty state title"
   },
-  "collectionWishlistEmptySubtitle": "Tap + di lagu untuk menyimpan yang ingin diunduh nanti",
+  "collectionWishlistEmptySubtitle": "Tap + on tracks to save what you want to download later",
   "@collectionWishlistEmptySubtitle": {
     "description": "Wishlist empty state subtitle"
   },
-  "collectionLovedEmptyTitle": "Folder Loved masih kosong",
+  "collectionLovedEmptyTitle": "Loved folder is empty",
   "@collectionLovedEmptyTitle": {
     "description": "Loved empty state title"
   },
-  "collectionLovedEmptySubtitle": "Tap love di lagu untuk menyimpan favoritmu",
+  "collectionLovedEmptySubtitle": "Tap love on tracks to keep your favorites",
   "@collectionLovedEmptySubtitle": {
     "description": "Loved empty state subtitle"
   },
-  "collectionPlaylistEmptyTitle": "Playlist masih kosong",
+  "collectionPlaylistEmptyTitle": "Playlist is empty",
   "@collectionPlaylistEmptyTitle": {
     "description": "Playlist empty state title"
   },
-  "collectionPlaylistEmptySubtitle": "Tekan lama tombol + pada lagu untuk menambahkannya ke sini",
+  "collectionPlaylistEmptySubtitle": "Long-press + on any track to add it here",
   "@collectionPlaylistEmptySubtitle": {
     "description": "Playlist empty state subtitle"
   },
-  "collectionRemoveFromPlaylist": "Hapus dari playlist",
+  "collectionRemoveFromPlaylist": "Remove from playlist",
   "@collectionRemoveFromPlaylist": {
     "description": "Tooltip for removing track from playlist"
   },
-  "collectionRemoveFromFolder": "Hapus dari folder",
+  "collectionRemoveFromFolder": "Remove from folder",
   "@collectionRemoveFromFolder": {
     "description": "Tooltip for removing track from wishlist/loved folder"
   },
-  "collectionRemoved": "\"{trackName}\" dihapus",
+  "collectionRemoved": "\"{trackName}\" removed",
   "@collectionRemoved": {
     "description": "Snackbar after removing a track from a collection",
     "placeholders": {
@@ -2953,7 +2965,7 @@
       }
     }
   },
-  "collectionAddedToLoved": "\"{trackName}\" ditambahkan ke Loved",
+  "collectionAddedToLoved": "\"{trackName}\" added to Loved",
   "@collectionAddedToLoved": {
     "description": "Snackbar after adding track to loved folder",
     "placeholders": {
@@ -2962,7 +2974,7 @@
       }
     }
   },
-  "collectionRemovedFromLoved": "\"{trackName}\" dihapus dari Loved",
+  "collectionRemovedFromLoved": "\"{trackName}\" removed from Loved",
   "@collectionRemovedFromLoved": {
     "description": "Snackbar after removing track from loved folder",
     "placeholders": {
@@ -2971,7 +2983,7 @@
       }
     }
   },
-  "collectionAddedToWishlist": "\"{trackName}\" ditambahkan ke Wishlist",
+  "collectionAddedToWishlist": "\"{trackName}\" added to Wishlist",
   "@collectionAddedToWishlist": {
     "description": "Snackbar after adding track to wishlist",
     "placeholders": {
@@ -2980,7 +2992,7 @@
       }
     }
   },
-  "collectionRemovedFromWishlist": "\"{trackName}\" dihapus dari Wishlist",
+  "collectionRemovedFromWishlist": "\"{trackName}\" removed from Wishlist",
   "@collectionRemovedFromWishlist": {
     "description": "Snackbar after removing track from wishlist",
     "placeholders": {
@@ -2989,31 +3001,31 @@
       }
     }
   },
-  "trackOptionAddToLoved": "Tambahkan ke Loved",
+  "trackOptionAddToLoved": "Add to Loved",
   "@trackOptionAddToLoved": {
     "description": "Bottom sheet action label - add track to loved folder"
   },
-  "trackOptionRemoveFromLoved": "Hapus dari Loved",
+  "trackOptionRemoveFromLoved": "Remove from Loved",
   "@trackOptionRemoveFromLoved": {
     "description": "Bottom sheet action label - remove track from loved folder"
   },
-  "trackOptionAddToWishlist": "Tambahkan ke Wishlist",
+  "trackOptionAddToWishlist": "Add to Wishlist",
   "@trackOptionAddToWishlist": {
     "description": "Bottom sheet action label - add track to wishlist"
   },
-  "trackOptionRemoveFromWishlist": "Hapus dari Wishlist",
+  "trackOptionRemoveFromWishlist": "Remove from Wishlist",
   "@trackOptionRemoveFromWishlist": {
     "description": "Bottom sheet action label - remove track from wishlist"
   },
-  "collectionPlaylistChangeCover": "Ubah gambar sampul",
+  "collectionPlaylistChangeCover": "Change cover image",
   "@collectionPlaylistChangeCover": {
     "description": "Bottom sheet action to pick a custom cover image for a playlist"
   },
-  "collectionPlaylistRemoveCover": "Hapus gambar sampul",
+  "collectionPlaylistRemoveCover": "Remove cover image",
   "@collectionPlaylistRemoveCover": {
     "description": "Bottom sheet action to remove custom cover image from a playlist"
   },
-  "selectionShareCount": "Bagikan {count} {count, plural, =1{trek} other{trek}}",
+  "selectionShareCount": "Share {count} {count, plural, =1{track} other{tracks}}",
   "@selectionShareCount": {
     "description": "Share button text with count in selection mode",
     "placeholders": {
@@ -3022,11 +3034,11 @@
       }
     }
   },
-  "selectionShareNoFiles": "Tidak ada file yang dapat dibagikan",
+  "selectionShareNoFiles": "No shareable files found",
   "@selectionShareNoFiles": {
     "description": "Snackbar when no selected files exist on disk"
   },
-  "selectionConvertCount": "Konversi {count} {count, plural, =1{trek} other{trek}}",
+  "selectionConvertCount": "Convert {count} {count, plural, =1{track} other{tracks}}",
   "@selectionConvertCount": {
     "description": "Convert button text with count in selection mode",
     "placeholders": {
@@ -3035,15 +3047,15 @@
       }
     }
   },
-  "selectionConvertNoConvertible": "Tidak ada trek yang dapat dikonversi dipilih",
+  "selectionConvertNoConvertible": "No convertible tracks selected",
   "@selectionConvertNoConvertible": {
     "description": "Snackbar when no selected tracks support conversion"
   },
-  "selectionBatchConvertConfirmTitle": "Konversi Massal",
+  "selectionBatchConvertConfirmTitle": "Batch Convert",
   "@selectionBatchConvertConfirmTitle": {
     "description": "Confirmation dialog title for batch conversion"
   },
-  "selectionBatchConvertConfirmMessage": "Konversi {count} {count, plural, =1{trek} other{trek}} ke {format} pada {bitrate}?\n\nFile asli akan dihapus setelah konversi.",
+  "selectionBatchConvertConfirmMessage": "Convert {count} {count, plural, =1{track} other{tracks}} to {format} at {bitrate}?\n\nOriginal files will be deleted after conversion.",
   "@selectionBatchConvertConfirmMessage": {
     "description": "Confirmation dialog message for batch conversion",
     "placeholders": {
@@ -3058,7 +3070,7 @@
       }
     }
   },
-  "selectionBatchConvertProgress": "Mengonversi {current} dari {total}...",
+  "selectionBatchConvertProgress": "Converting {current} of {total}...",
   "@selectionBatchConvertProgress": {
     "description": "Snackbar during batch conversion progress",
     "placeholders": {
@@ -3070,7 +3082,7 @@
       }
     }
   },
-  "selectionBatchConvertSuccess": "Berhasil mengonversi {success} dari {total} trek ke {format}",
+  "selectionBatchConvertSuccess": "Converted {success} of {total} tracks to {format}",
   "@selectionBatchConvertSuccess": {
     "description": "Snackbar after batch conversion completes",
     "placeholders": {

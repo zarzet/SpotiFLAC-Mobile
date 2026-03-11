@@ -31,7 +31,12 @@ class ShareIntentService {
 
   // YouTube Music patterns
   static final RegExp _ytMusicUrlPattern = RegExp(
-    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/)[a-zA-Z0-9_-]+(\&[^\s]*)?',
+    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/|browse/)[a-zA-Z0-9_-]+([?&][^\s]*)?',
+  );
+
+  // Standard YouTube patterns (youtu.be short links and www.youtube.com/watch)
+  static final RegExp _youtubeUrlPattern = RegExp(
+    r'https?://(youtu\.be/[a-zA-Z0-9_-]+|www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]+)([?&][^\s]*)?',
   );
 
   final _sharedUrlController = StreamController<String>.broadcast();
@@ -101,14 +106,15 @@ class ShareIntentService {
       _deezerShortLinkPattern,
       _tidalUrlPattern,
       _ytMusicUrlPattern,
+      _youtubeUrlPattern,
     ];
 
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         final fullUrl = match.group(0)!;
-        // Remove query params for cleaner URL (except for YT Music which needs them)
-        if (pattern == _ytMusicUrlPattern) {
+        // Keep query params for YouTube URLs (needed for ?v=, ?list=, etc.)
+        if (pattern == _ytMusicUrlPattern || pattern == _youtubeUrlPattern) {
           return fullUrl;
         }
         final queryIndex = fullUrl.indexOf('?');

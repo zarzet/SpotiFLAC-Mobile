@@ -104,8 +104,6 @@ class HistoryDatabase {
     }
   }
 
-  // ==================== iOS Path Normalization ====================
-
   /// Pattern to match iOS container paths
   /// Example: /var/mobile/Containers/Data/Application/UUID-HERE/Documents/...
   static final _iosContainerPattern = RegExp(
@@ -325,8 +323,6 @@ class HistoryDatabase {
     };
   }
 
-  // ==================== CRUD Operations ====================
-
   /// Insert or update a history item
   Future<void> upsert(Map<String, dynamic> json) async {
     final db = await database;
@@ -498,6 +494,29 @@ class HistoryDatabase {
       if (newSampleRate != null) {
         values['sample_rate'] = newSampleRate;
       }
+    }
+    await db.update('history', values, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateAudioMetadata(
+    String id, {
+    String? newQuality,
+    int? newBitDepth,
+    int? newSampleRate,
+  }) async {
+    final db = await database;
+    final values = <String, dynamic>{};
+    if (newQuality != null) {
+      values['quality'] = newQuality;
+    }
+    if (newBitDepth != null) {
+      values['bit_depth'] = newBitDepth;
+    }
+    if (newSampleRate != null) {
+      values['sample_rate'] = newSampleRate;
+    }
+    if (values.isEmpty) {
+      return;
     }
     await db.update('history', values, where: 'id = ?', whereArgs: [id]);
   }

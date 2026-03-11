@@ -402,7 +402,7 @@
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
-  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal and Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1005,7 +1005,7 @@
   },
   "providerBuiltIn": "Built-in",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Extension",
   "@providerExtension": {

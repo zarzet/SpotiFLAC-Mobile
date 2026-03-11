@@ -224,6 +224,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date'] as String?,
+      albumType: data['album_type'] as String?,
+      totalTracks: data['total_tracks'] as int?,
     );
   }
 
@@ -305,7 +307,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background (no blur, full resolution)
                 if (widget.coverUrl != null)
                   CachedNetworkImage(
                     imageUrl:
@@ -326,7 +327,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -345,7 +345,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -491,6 +490,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         },
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(

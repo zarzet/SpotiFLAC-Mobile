@@ -251,9 +251,11 @@ class DownloadHistoryState {
 class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
   static const int _safRepairBatchSize = 20;
   static const int _safRepairMaxPerLaunch = 60;
+  static const int _audioMetadataBackfillMaxPerLaunch = 24;
   final HistoryDatabase _db = HistoryDatabase.instance;
   bool _isLoaded = false;
   bool _isSafRepairInProgress = false;
+  bool _isAudioMetadataBackfillInProgress = false;
 
   @override
   DownloadHistoryState build() {
@@ -298,9 +300,19 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
             maxItems: _safRepairMaxPerLaunch,
           );
           await cleanupOrphanedDownloads();
+          await _backfillAudioMetadata(
+            state.items,
+            maxItems: _audioMetadataBackfillMaxPerLaunch,
+          );
         });
       } else {
-        Future.microtask(() => cleanupOrphanedDownloads());
+        Future.microtask(() async {
+          await cleanupOrphanedDownloads();
+          await _backfillAudioMetadata(
+            state.items,
+            maxItems: _audioMetadataBackfillMaxPerLaunch,
+          );
+        });
       }
     } catch (e, stack) {
       _historyLog.e('Failed to load history from database: $e', e, stack);
@@ -429,6 +441,157 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     }
   }
 
+  int? _readPositiveInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) {
+      final asInt = value.toInt();
+      return asInt > 0 ? asInt : null;
+    }
+    final parsed = int.tryParse(value.toString());
+    if (parsed == null || parsed <= 0) return null;
+    return parsed;
+  }
+
+  bool _supportsAudioMetadataProbe(String filePath) {
+    final trimmed = filePath.trim().toLowerCase();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.startsWith('content://')) return true;
+    return trimmed.endsWith('.flac') ||
+        trimmed.endsWith('.m4a') ||
+        trimmed.endsWith('.aac') ||
+        trimmed.endsWith('.mp3') ||
+        trimmed.endsWith('.opus') ||
+        trimmed.endsWith('.ogg');
+  }
+
+  bool _shouldBackfillAudioMetadata(DownloadHistoryItem item) {
+    if (!_supportsAudioMetadataProbe(item.filePath)) {
+      return false;
+    }
+
+    final trimmedPath = item.filePath.trim().toLowerCase();
+    final hasResolvedSpecs =
+        item.bitDepth != null &&
+        item.bitDepth! > 0 &&
+        item.sampleRate != null &&
+        item.sampleRate! > 0;
+    final needsLosslessSpecProbe =
+        !hasResolvedSpecs &&
+        (trimmedPath.endsWith('.flac') ||
+            trimmedPath.endsWith('.m4a') ||
+            trimmedPath.endsWith('.aac') ||
+            trimmedPath.startsWith('content://'));
+
+    if (hasResolvedSpecs && !isPlaceholderQualityLabel(item.quality)) {
+      return false;
+    }
+
+    return needsLosslessSpecProbe ||
+        isPlaceholderQualityLabel(item.quality) ||
+        normalizeOptionalString(item.quality) == null;
+  }
+
+  Future<Map<String, dynamic>?> _probeAudioMetadata(
+    String filePath, {
+    String? fallbackQuality,
+  }) async {
+    if (!_supportsAudioMetadataProbe(filePath)) {
+      return null;
+    }
+
+    try {
+      final result = await PlatformBridge.readFileMetadata(filePath);
+      if (result['error'] != null) {
+        return null;
+      }
+
+      final bitDepth = _readPositiveInt(result['bit_depth']);
+      final sampleRate = _readPositiveInt(result['sample_rate']);
+      final quality = buildDisplayAudioQuality(
+        bitDepth: bitDepth,
+        sampleRate: sampleRate,
+        storedQuality: fallbackQuality,
+      );
+
+      if (quality == null && bitDepth == null && sampleRate == null) {
+        return null;
+      }
+
+      return {
+        'quality': quality,
+        'bitDepth': bitDepth,
+        'sampleRate': sampleRate,
+      };
+    } catch (e) {
+      _historyLog.d('Audio metadata probe failed for $filePath: $e');
+      return null;
+    }
+  }
+
+  Future<void> _backfillAudioMetadata(
+    List<DownloadHistoryItem> items, {
+    required int maxItems,
+  }) async {
+    if (_isAudioMetadataBackfillInProgress || items.isEmpty) {
+      return;
+    }
+    _isAudioMetadataBackfillInProgress = true;
+
+    try {
+      var refreshedCount = 0;
+
+      for (final item in items) {
+        if (refreshedCount >= maxItems) {
+          break;
+        }
+        if (!_shouldBackfillAudioMetadata(item)) {
+          continue;
+        }
+
+        final probed = await _probeAudioMetadata(
+          item.filePath,
+          fallbackQuality: item.quality,
+        );
+        if (probed == null) {
+          continue;
+        }
+
+        final resolvedQuality = normalizeOptionalString(
+          probed['quality'] as String?,
+        );
+        final resolvedBitDepth = probed['bitDepth'] as int?;
+        final resolvedSampleRate = probed['sampleRate'] as int?;
+
+        final qualityChanged =
+            resolvedQuality != null && resolvedQuality != item.quality;
+        final bitDepthChanged =
+            resolvedBitDepth != null && resolvedBitDepth != item.bitDepth;
+        final sampleRateChanged =
+            resolvedSampleRate != null && resolvedSampleRate != item.sampleRate;
+
+        if (!qualityChanged && !bitDepthChanged && !sampleRateChanged) {
+          continue;
+        }
+
+        await updateAudioMetadataForItem(
+          id: item.id,
+          quality: resolvedQuality,
+          bitDepth: resolvedBitDepth,
+          sampleRate: resolvedSampleRate,
+        );
+        refreshedCount++;
+      }
+
+      if (refreshedCount > 0) {
+        _historyLog.i(
+          'Audio metadata backfill refreshed $refreshedCount items',
+        );
+      }
+    } finally {
+      _isAudioMetadataBackfillInProgress = false;
+    }
+  }
+
   Future<void> reloadFromStorage() async {
     await _loadFromDatabase();
   }
@@ -507,6 +670,39 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     final json = await _db.getBySpotifyId(spotifyId);
     if (json == null) return null;
     return DownloadHistoryItem.fromJson(json);
+  }
+
+  Future<void> updateAudioMetadataForItem({
+    required String id,
+    String? quality,
+    int? bitDepth,
+    int? sampleRate,
+  }) async {
+    final index = state.items.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+
+    final current = state.items[index];
+    final updated = current.copyWith(
+      quality: quality,
+      bitDepth: bitDepth,
+      sampleRate: sampleRate,
+    );
+
+    if (updated.quality == current.quality &&
+        updated.bitDepth == current.bitDepth &&
+        updated.sampleRate == current.sampleRate) {
+      return;
+    }
+
+    final updatedItems = [...state.items];
+    updatedItems[index] = updated;
+    state = state.copyWith(items: updatedItems);
+    await _db.updateAudioMetadata(
+      id,
+      newQuality: quality,
+      newBitDepth: bitDepth,
+      newSampleRate: sampleRate,
+    );
   }
 
   Future<void> updateMetadataForItem({
@@ -592,10 +788,8 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       return 0;
     }
 
-    // Delete from database
     final deletedCount = await _db.deleteByIds(orphanedIds);
 
-    // Update in-memory state
     final orphanedSet = orphanedIds.toSet();
     state = state.copyWith(
       items: state.items
@@ -1379,6 +1573,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     bool useAlbumArtistForFolders = true,
     bool usePrimaryArtistOnly = false,
     bool filterContributingArtistsInAlbumArtist = false,
+    String? playlistName,
   }) async {
     String baseDir = state.outputDir;
     final normalizedAlbumArtist = normalizeOptionalString(track.albumArtist);
@@ -1453,6 +1648,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     String subPath = '';
     switch (folderOrganization) {
+      case 'playlist':
+        if (playlistName != null && playlistName.isNotEmpty) {
+          subPath = _sanitizeFolderName(playlistName);
+        }
+        break;
       case 'artist':
         final artistName = _sanitizeFolderName(folderArtist);
         subPath = artistName;
@@ -1531,6 +1731,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     bool useAlbumArtistForFolders = true,
     bool usePrimaryArtistOnly = false,
     bool filterContributingArtistsInAlbumArtist = false,
+    String? playlistName,
   }) async {
     final normalizedAlbumArtist = normalizeOptionalString(track.albumArtist);
     var folderArtist = useAlbumArtistForFolders
@@ -1582,6 +1783,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
 
     switch (folderOrganization) {
+      case 'playlist':
+        if (playlistName != null && playlistName.isNotEmpty) {
+          return _sanitizeFolderName(playlistName);
+        }
+        return '';
       case 'artist':
         return _sanitizeFolderName(folderArtist);
       case 'album':
@@ -1596,17 +1802,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   String _determineOutputExt(String quality, String service) {
-    // YouTube provider - lossy only (Opus or MP3)
     if (service.toLowerCase() == 'youtube') {
       if (quality.toLowerCase().contains('mp3')) {
         return '.mp3';
       }
       return '.opus';
-    }
-    // Amazon stream is delivered as MP4/M4A container (may contain FLAC audio),
-    // so SAF should keep .m4a before decrypt/convert pipeline.
-    if (service.toLowerCase() == 'amazon') {
-      return '.m4a';
     }
     if (service.toLowerCase() == 'tidal' && quality == 'HIGH') {
       return '.m4a';
@@ -1712,7 +1912,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     );
   }
 
-  String addToQueue(Track track, String service, {String? qualityOverride}) {
+  String addToQueue(Track track, String service, {String? qualityOverride, String? playlistName}) {
     final settings = ref.read(settingsProvider);
     updateSettings(settings);
 
@@ -1724,6 +1924,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       service: service,
       createdAt: DateTime.now(),
       qualityOverride: qualityOverride,
+      playlistName: playlistName,
     );
 
     state = state.copyWith(items: [...state.items, item]);
@@ -1740,6 +1941,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     List<Track> tracks,
     String service, {
     String? qualityOverride,
+    String? playlistName,
   }) {
     final settings = ref.read(settingsProvider);
     updateSettings(settings);
@@ -1754,6 +1956,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         service: service,
         createdAt: DateTime.now(),
         qualityOverride: qualityOverride,
+        playlistName: playlistName,
       );
     }).toList();
 
@@ -2159,6 +2362,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       deezerId: baseTrack.deezerId,
       availability: baseTrack.availability,
       albumType: baseTrack.albumType,
+      totalTracks: baseTrack.totalTracks,
       source: baseTrack.source,
     );
   }
@@ -2903,7 +3107,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         failedCount: _failedInSession,
       );
 
-      // Auto-export failed downloads if enabled
       final settings = ref.read(settingsProvider);
       if (settings.autoExportFailedDownloads && _failedInSession > 0) {
         final exportPath = await exportFailedDownloads();
@@ -3072,6 +3275,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 albumType:
                     (data['album_type'] as String?) ??
                     trackToDownload.albumType,
+                totalTracks:
+                    data['total_tracks'] as int? ?? trackToDownload.totalTracks,
                 source: trackToDownload.source,
               );
               _log.d(
@@ -3130,6 +3335,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
               filterContributingArtistsInAlbumArtist:
                   settings.filterContributingArtistsInAlbumArtist,
+              playlistName: item.playlistName,
             )
           : '';
       String? appOutputDir;
@@ -3144,6 +3350,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
               filterContributingArtistsInAlbumArtist:
                   settings.filterContributingArtistsInAlbumArtist,
+              playlistName: item.playlistName,
             );
       var effectiveOutputDir = initialOutputDir;
       var effectiveSafMode = isSafMode;
@@ -3206,7 +3413,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           !trackToDownload.id.startsWith('deezer:') &&
           !trackToDownload.id.startsWith('extension:')) {
         try {
-          // Extract clean Spotify ID (remove spotify: prefix if present)
           String spotifyId = trackToDownload.id;
           if (spotifyId.startsWith('spotify:track:')) {
             spotifyId = spotifyId.split(':').last;
@@ -3285,6 +3491,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 deezerId: deezerTrackId,
                 availability: trackToDownload.availability,
                 albumType: trackToDownload.albumType,
+                totalTracks: trackToDownload.totalTracks,
                 source: trackToDownload.source,
               );
               _log.d(
@@ -3506,11 +3713,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final decryptionKey =
             (result['decryption_key'] as String?)?.trim() ?? '';
 
-        if (!wasExisting &&
-            decryptionKey.isNotEmpty &&
-            filePath != null &&
-            actualService == 'amazon') {
-          _log.i('Amazon encrypted stream detected, decrypting via FFmpeg...');
+        if (!wasExisting && decryptionKey.isNotEmpty && filePath != null) {
+          _log.i('Encrypted stream detected, decrypting via FFmpeg...');
           updateItemStatus(item.id, DownloadStatus.downloading, progress: 0.9);
 
           if (effectiveSafMode && isContentUri(filePath)) {
@@ -3539,7 +3743,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 updateItemStatus(
                   item.id,
                   DownloadStatus.failed,
-                  error: 'Failed to decrypt Amazon stream',
+                  error: 'Failed to decrypt encrypted stream',
                   errorType: DownloadErrorType.unknown,
                 );
                 return;
@@ -3564,7 +3768,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               );
 
               if (newUri == null) {
-                _log.e('Failed to write decrypted Amazon stream back to SAF');
+                _log.e('Failed to write decrypted stream back to SAF');
                 updateItemStatus(
                   item.id,
                   DownloadStatus.failed,
@@ -3579,7 +3783,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
               filePath = newUri;
               finalSafFileName = newFileName;
-              _log.i('Amazon SAF decryption completed');
+              _log.i('SAF decryption completed');
             } finally {
               try {
                 await File(tempPath).delete();
@@ -3601,7 +3805,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               updateItemStatus(
                 item.id,
                 DownloadStatus.failed,
-                error: 'Failed to decrypt Amazon stream',
+                error: 'Failed to decrypt encrypted stream',
                 errorType: DownloadErrorType.unknown,
               );
               try {
@@ -3610,7 +3814,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               return;
             }
             filePath = decryptedPath;
-            _log.i('Amazon local decryption completed');
+            _log.i('Local decryption completed');
           }
         }
 
@@ -3832,7 +4036,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
             }
           } else {
-            // Local file path flow (original)
             if (quality == 'HIGH') {
               final tidalHighFormat = settings.tidalHighFormat;
               _log.i(
@@ -4049,10 +4252,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             !effectiveSafMode &&
             isFlacFile &&
             !wasExisting &&
-            actualService == 'amazon' &&
             decryptionKey.isNotEmpty) {
           _log.d(
-            'Local FLAC after Amazon decrypt detected, embedding metadata and cover...',
+            'Local FLAC after decrypt detected, embedding metadata and cover...',
           );
           try {
             updateItemStatus(
@@ -4112,7 +4314,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
             final isContentUriPath = isContentUri(filePath);
             if (isContentUriPath && effectiveSafMode) {
-              // SAF mode: copy to temp, embed, write back
               final tempPath = await _copySafToTemp(filePath);
               if (tempPath != null) {
                 try {
@@ -4133,7 +4334,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                       copyright: backendCopyright,
                     );
                   }
-                  // Write back to SAF
                   final ext = isMp3File ? '.mp3' : '.opus';
                   final newFileName = '${safBaseName ?? 'track'}$ext';
                   final newUri = await _writeTempToSaf(
@@ -4162,7 +4362,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 }
               }
             } else {
-              // Non-SAF mode: embed directly
               try {
                 if (isMp3File) {
                   await _embedMetadataToMp3(
@@ -4347,6 +4546,50 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               normalizeOptionalString(copyright) ??
               normalizeOptionalString(existingInHistory?.copyright);
 
+          int? finalBitDepth = backendBitDepth;
+          int? finalSampleRate = backendSampleRate;
+          final lowerFilePath = filePath.toLowerCase();
+          final canProbeFinalMetadata =
+              filePath.startsWith('content://') ||
+              lowerFilePath.endsWith('.flac') ||
+              lowerFilePath.endsWith('.m4a') ||
+              lowerFilePath.endsWith('.aac') ||
+              lowerFilePath.endsWith('.mp3') ||
+              lowerFilePath.endsWith('.opus') ||
+              lowerFilePath.endsWith('.ogg');
+
+          if (canProbeFinalMetadata) {
+            try {
+              final metadata = await PlatformBridge.readFileMetadata(filePath);
+              if (metadata['error'] == null) {
+                final probedBitDepth = metadata['bit_depth'] is num
+                    ? (metadata['bit_depth'] as num).toInt()
+                    : int.tryParse(metadata['bit_depth']?.toString() ?? '');
+                final probedSampleRate = metadata['sample_rate'] is num
+                    ? (metadata['sample_rate'] as num).toInt()
+                    : int.tryParse(metadata['sample_rate']?.toString() ?? '');
+
+                if (probedBitDepth != null && probedBitDepth > 0) {
+                  finalBitDepth = probedBitDepth;
+                }
+                if (probedSampleRate != null && probedSampleRate > 0) {
+                  finalSampleRate = probedSampleRate;
+                }
+
+                final resolvedQuality = buildDisplayAudioQuality(
+                  bitDepth: finalBitDepth,
+                  sampleRate: finalSampleRate,
+                  storedQuality: actualQuality,
+                );
+                if (resolvedQuality != null) {
+                  actualQuality = resolvedQuality;
+                }
+              }
+            } catch (e) {
+              _log.d('Final audio metadata probe failed for $filePath: $e');
+            }
+          }
+
           _log.d('Saving to history - coverUrl: ${trackToDownload.coverUrl}');
 
           final historyAlbumArtist =
@@ -4354,9 +4597,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               ? resolvedAlbumArtist
               : null;
 
-          final isMp3 = filePath.endsWith('.mp3');
-          final historyBitDepth = isMp3 ? null : backendBitDepth;
-          final historySampleRate = isMp3 ? null : backendSampleRate;
+          final isLossyOutput =
+              lowerFilePath.endsWith('.mp3') ||
+              lowerFilePath.endsWith('.opus') ||
+              lowerFilePath.endsWith('.ogg');
+          final historyBitDepth = isLossyOutput ? null : finalBitDepth;
+          final historySampleRate = isLossyOutput ? null : finalSampleRate;
 
           ref
               .read(downloadHistoryProvider.notifier)

@@ -28,14 +28,12 @@ class _KofiPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
 
-    // Cup body
     final cup = RRect.fromRectAndRadius(
       Rect.fromLTWH(s * 0.08, s * 0.28, s * 0.62, s * 0.52),
       Radius.circular(s * 0.12),
     );
     canvas.drawRRect(cup, paint);
 
-    // Handle
     final handlePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke

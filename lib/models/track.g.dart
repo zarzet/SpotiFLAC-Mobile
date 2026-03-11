@@ -28,6 +28,7 @@ Track _$TrackFromJson(Map<String, dynamic> json) => Track(
         ),
   source: json['source'] as String?,
   albumType: json['albumType'] as String?,
+  totalTracks: (json['totalTracks'] as num?)?.toInt(),
   itemType: json['itemType'] as String?,
 );
 
@@ -49,6 +50,7 @@ Map<String, dynamic> _$TrackToJson(Track instance) => <String, dynamic>{
   'availability': instance.availability,
   'source': instance.source,
   'albumType': instance.albumType,
+  'totalTracks': instance.totalTracks,
   'itemType': instance.itemType,
 };
 

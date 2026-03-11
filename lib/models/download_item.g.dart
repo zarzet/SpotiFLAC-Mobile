@@ -21,6 +21,7 @@ DownloadItem _$DownloadItemFromJson(Map<String, dynamic> json) => DownloadItem(
   errorType: $enumDecodeNullable(_$DownloadErrorTypeEnumMap, json['errorType']),
   createdAt: DateTime.parse(json['createdAt'] as String),
   qualityOverride: json['qualityOverride'] as String?,
+  playlistName: json['playlistName'] as String?,
 );
 
 Map<String, dynamic> _$DownloadItemToJson(DownloadItem instance) =>
@@ -37,6 +38,7 @@ Map<String, dynamic> _$DownloadItemToJson(DownloadItem instance) =>
       'errorType': _$DownloadErrorTypeEnumMap[instance.errorType],
       'createdAt': instance.createdAt.toIso8601String(),
       'qualityOverride': instance.qualityOverride,
+      'playlistName': instance.playlistName,
     };
 
 const _$DownloadStatusEnumMap = {

@@ -9,7 +9,7 @@ import 'package:spotiflac_android/utils/logger.dart';
 
 const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
-const _currentMigrationVersion = 4;
+const _currentMigrationVersion = 5;
 const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
@@ -41,9 +41,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       await _normalizeSongLinkRegionIfNeeded();
     }
 
-    await _loadSpotifyClientSecret(prefs);
-
-    _applySpotifyCredentials();
+    await _retireBuiltInSpotifyProvider();
 
     LogBuffer.loggingEnabled = state.enableLogging;
 
@@ -104,6 +102,17 @@ class SettingsNotifier extends Notifier<AppSettings> {
           updatedProviders.add('spotify_api');
         }
         state = state.copyWith(lyricsProviders: updatedProviders);
+      }
+      if (state.metadataSource != 'deezer' ||
+          state.spotifyClientId.isNotEmpty ||
+          state.spotifyClientSecret.isNotEmpty ||
+          state.useCustomSpotifyCredentials) {
+        state = state.copyWith(
+          metadataSource: 'deezer',
+          spotifyClientId: '',
+          spotifyClientSecret: '',
+          useCustomSpotifyCredentials: false,
+        );
       }
       state = state.copyWith(lastSeenVersion: AppInfo.version);
       await prefs.setInt(_migrationVersionKey, _currentMigrationVersion);
@@ -193,49 +202,28 @@ class SettingsNotifier extends Notifier<AppSettings> {
     await _saveSettings();
   }
 
-  Future<void> _loadSpotifyClientSecret(SharedPreferences prefs) async {
+  Future<void> _retireBuiltInSpotifyProvider() async {
     final storedSecret = await _secureStorage.read(
       key: _spotifyClientSecretKey,
     );
-    final prefsSecret = state.spotifyClientSecret;
-
-    if ((storedSecret == null || storedSecret.isEmpty) &&
-        prefsSecret.isNotEmpty) {
-      await _secureStorage.write(
-        key: _spotifyClientSecretKey,
-        value: prefsSecret,
-      );
-    }
-
-    final effectiveSecret = (storedSecret != null && storedSecret.isNotEmpty)
-        ? storedSecret
-        : (prefsSecret.isNotEmpty ? prefsSecret : '');
-
-    if (effectiveSecret != state.spotifyClientSecret) {
-      state = state.copyWith(spotifyClientSecret: effectiveSecret);
-    }
-
-    if (prefsSecret.isNotEmpty) {
-      await _saveSettings();
-    }
-  }
-
-  Future<void> _storeSpotifyClientSecret(String secret) async {
-    if (secret.isEmpty) {
+    if (storedSecret != null && storedSecret.isNotEmpty) {
       await _secureStorage.delete(key: _spotifyClientSecretKey);
-    } else {
-      await _secureStorage.write(key: _spotifyClientSecretKey, value: secret);
     }
-  }
 
-  Future<void> _applySpotifyCredentials() async {
-    if (state.spotifyClientId.isNotEmpty &&
-        state.spotifyClientSecret.isNotEmpty) {
-      await PlatformBridge.setSpotifyCredentials(
-        state.spotifyClientId,
-        state.spotifyClientSecret,
-      );
+    if (state.metadataSource == 'deezer' &&
+        state.spotifyClientId.isEmpty &&
+        state.spotifyClientSecret.isEmpty &&
+        !state.useCustomSpotifyCredentials) {
+      return;
     }
+
+    state = state.copyWith(
+      metadataSource: 'deezer',
+      spotifyClientId: '',
+      spotifyClientSecret: '',
+      useCustomSpotifyCredentials: false,
+    );
+    await _saveSettings();
   }
 
   void setDefaultService(String service) {
@@ -396,45 +384,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
     _saveSettings();
   }
 
-  void setSpotifyClientId(String clientId) {
-    state = state.copyWith(spotifyClientId: clientId);
-    _saveSettings();
-  }
-
-  Future<void> setSpotifyClientSecret(String clientSecret) async {
-    state = state.copyWith(spotifyClientSecret: clientSecret);
-    await _storeSpotifyClientSecret(clientSecret);
-    _saveSettings();
-  }
-
-  Future<void> setSpotifyCredentials(
-    String clientId,
-    String clientSecret,
-  ) async {
-    state = state.copyWith(
-      spotifyClientId: clientId,
-      spotifyClientSecret: clientSecret,
-    );
-    await _storeSpotifyClientSecret(clientSecret);
-    _saveSettings();
-    _applySpotifyCredentials();
-  }
-
-  Future<void> clearSpotifyCredentials() async {
-    state = state.copyWith(spotifyClientId: '', spotifyClientSecret: '');
-    await _storeSpotifyClientSecret('');
-    _saveSettings();
-    _applySpotifyCredentials();
-  }
-
-  void setUseCustomSpotifyCredentials(bool enabled) {
-    state = state.copyWith(useCustomSpotifyCredentials: enabled);
-    _saveSettings();
-    _applySpotifyCredentials();
-  }
-
   void setMetadataSource(String source) {
-    state = state.copyWith(metadataSource: source);
+    final normalized = source == 'deezer' ? 'deezer' : 'deezer';
+    state = state.copyWith(metadataSource: normalized);
     _saveSettings();
   }
 
@@ -529,6 +481,19 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setLocalLibraryPath(String path) {
     state = state.copyWith(localLibraryPath: path);
+    _saveSettings();
+  }
+
+  void setLocalLibraryBookmark(String bookmark) {
+    state = state.copyWith(localLibraryBookmark: bookmark);
+    _saveSettings();
+  }
+
+  void setLocalLibraryPathAndBookmark(String path, String bookmark) {
+    state = state.copyWith(
+      localLibraryPath: path,
+      localLibraryBookmark: bookmark,
+    );
     _saveSettings();
   }
 

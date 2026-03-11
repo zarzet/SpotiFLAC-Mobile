@@ -291,7 +291,7 @@ func extractDeezerIDFromURL(deezerURL string) string {
 	return ""
 }
 
-// extractQobuzIDFromURL extracts Qobuz track ID from URL
+// extractQobuzIDFromURL extracts Qobuz track ID from URL.
 // URL formats:
 //   - https://www.qobuz.com/us-en/album/.../12345678 (album page with track highlight)
 //   - https://open.qobuz.com/track/12345678
@@ -302,29 +302,24 @@ func extractQobuzIDFromURL(qobuzURL string) string {
 		return ""
 	}
 
-	// Try to find /track/ID pattern first
 	if strings.Contains(qobuzURL, "/track/") {
 		parts := strings.Split(qobuzURL, "/track/")
 		if len(parts) > 1 {
 			idPart := parts[1]
-			// Remove query parameters
 			if idx := strings.Index(idPart, "?"); idx > 0 {
 				idPart = idPart[:idx]
 			}
-			// Remove trailing slash or path
 			if idx := strings.Index(idPart, "/"); idx > 0 {
 				idPart = idPart[:idx]
 			}
 			idPart = strings.TrimSpace(idPart)
-			// Validate it's a number
 			if idPart != "" && isNumeric(idPart) {
 				return idPart
 			}
 		}
 	}
 
-	// Try to extract from album URL with track highlight
-	// Format: /album/albumname/trackid or ?trackId=12345678
+	// Try to extract from album URL with track highlight (e.g. ?trackId=12345678)
 	if strings.Contains(qobuzURL, "trackId=") {
 		parts := strings.Split(qobuzURL, "trackId=")
 		if len(parts) > 1 {
@@ -343,7 +338,6 @@ func extractQobuzIDFromURL(qobuzURL string) string {
 	parts := strings.Split(qobuzURL, "/")
 	for i := len(parts) - 1; i >= 0; i-- {
 		part := parts[i]
-		// Remove query parameters
 		if idx := strings.Index(part, "?"); idx > 0 {
 			part = part[:idx]
 		}
@@ -386,7 +380,6 @@ func extractYouTubeIDFromURL(youtubeURL string) string {
 		return ""
 	}
 
-	// Handle youtu.be short URLs
 	if strings.Contains(youtubeURL, "youtu.be/") {
 		parts := strings.Split(youtubeURL, "youtu.be/")
 		if len(parts) >= 2 {
@@ -401,7 +394,6 @@ func extractYouTubeIDFromURL(youtubeURL string) string {
 		}
 	}
 
-	// Handle youtube.com URLs with ?v= parameter
 	parsed, err := url.Parse(youtubeURL)
 	if err != nil {
 		return ""
@@ -411,7 +403,6 @@ func extractYouTubeIDFromURL(youtubeURL string) string {
 		return v
 	}
 
-	// Handle /embed/ format
 	if strings.Contains(parsed.Path, "/embed/") {
 		parts := strings.Split(parsed.Path, "/embed/")
 		if len(parts) >= 2 {
@@ -540,7 +531,6 @@ func (s *SongLinkClient) CheckAvailabilityFromDeezer(deezerTrackID string) (*Tra
 	return availability, nil
 }
 
-// checkAvailabilityFromDeezerSongLink is the original SongLink implementation for Deezer
 func (s *SongLinkClient) checkAvailabilityFromDeezerSongLink(deezerTrackID string) (*TrackAvailability, error) {
 	songLinkRateLimiter.WaitForSlot()
 

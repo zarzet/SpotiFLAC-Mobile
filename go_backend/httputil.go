@@ -489,7 +489,6 @@ func IsISPBlocking(err error, requestURL string) *ISPBlockingError {
 		}
 	}
 
-	// Check error message patterns for common ISP blocking indicators
 	blockingPatterns := []struct {
 		pattern string
 		reason  string
@@ -532,7 +531,6 @@ func CheckAndLogISPBlocking(err error, requestURL string, tag string) bool {
 	return false
 }
 
-// extractDomain extracts the domain from a URL string
 func extractDomain(rawURL string) string {
 	if rawURL == "" {
 		return "unknown"

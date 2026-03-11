@@ -33,7 +33,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   spotifyClientId: json['spotifyClientId'] as String? ?? '',
   spotifyClientSecret: json['spotifyClientSecret'] as String? ?? '',
   useCustomSpotifyCredentials:
-      json['useCustomSpotifyCredentials'] as bool? ?? true,
+      json['useCustomSpotifyCredentials'] as bool? ?? false,
   metadataSource: json['metadataSource'] as String? ?? 'deezer',
   enableLogging: json['enableLogging'] as bool? ?? false,
   useExtensionProviders: json['useExtensionProviders'] as bool? ?? true,
@@ -55,6 +55,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   songLinkRegion: json['songLinkRegion'] as String? ?? 'US',
   localLibraryEnabled: json['localLibraryEnabled'] as bool? ?? false,
   localLibraryPath: json['localLibraryPath'] as String? ?? '',
+  localLibraryBookmark: json['localLibraryBookmark'] as String? ?? '',
   localLibraryShowDuplicates:
       json['localLibraryShowDuplicates'] as bool? ?? true,
   hasCompletedTutorial: json['hasCompletedTutorial'] as bool? ?? false,
@@ -128,6 +129,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'songLinkRegion': instance.songLinkRegion,
   'localLibraryEnabled': instance.localLibraryEnabled,
   'localLibraryPath': instance.localLibraryPath,
+  'localLibraryBookmark': instance.localLibraryBookmark,
   'localLibraryShowDuplicates': instance.localLibraryShowDuplicates,
   'hasCompletedTutorial': instance.hasCompletedTutorial,
   'lyricsProviders': instance.lyricsProviders,

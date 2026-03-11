@@ -103,7 +103,7 @@ type MPD struct {
 func NewTidalDownloader() *TidalDownloader {
 	tidalDownloaderOnce.Do(func() {
 		globalTidalDownloader = &TidalDownloader{
-			client: NewHTTPClientWithTimeout(DefaultTimeout), // 60s timeout
+			client: NewHTTPClientWithTimeout(DefaultTimeout),
 		}
 
 		apis := globalTidalDownloader.GetAvailableAPIs()
@@ -116,7 +116,7 @@ func NewTidalDownloader() *TidalDownloader {
 
 func (t *TidalDownloader) GetAvailableAPIs() []string {
 	return []string{
-		"https://tidal-api.binimum.org", // priority
+		"https://tidal-api.binimum.org",
 		"https://tidal.kinoplus.online",
 		"https://triton.squid.wtf",
 		"https://vogel.qqdl.site",
@@ -195,7 +195,6 @@ func (t *TidalDownloader) SearchTrackByISRC(isrc string) (*TidalTrack, error) {
 	return nil, fmt.Errorf("tidal ISRC search API disabled: no client credentials mode")
 }
 
-// Now includes romaji conversion for Japanese text (4 search strategies like PC)
 func (t *TidalDownloader) SearchTrackByMetadataWithISRC(trackName, artistName, albumName, spotifyISRC string, expectedDuration int) (*TidalTrack, error) {
 	return nil, fmt.Errorf("tidal metadata search API disabled: no client credentials mode")
 }
@@ -204,7 +203,6 @@ func (t *TidalDownloader) SearchTrackByMetadata(trackName, artistName string) (*
 	return nil, fmt.Errorf("tidal metadata search API disabled: no client credentials mode")
 }
 
-// TidalDownloadInfo contains download URL and quality info
 type TidalDownloadInfo struct {
 	URL        string
 	BitDepth   int
@@ -218,15 +216,13 @@ type tidalAPIResult struct {
 	duration time.Duration
 }
 
-// Tidal API timeout configuration
 // Mobile networks are more unstable, so we use longer timeouts
 const (
 	tidalAPITimeoutMobile = 25 * time.Second
-	tidalMaxRetries       = 2 // Number of retries per API
+	tidalMaxRetries       = 2
 	tidalRetryDelay       = 500 * time.Millisecond
 )
 
-// fetchTidalURLWithRetry fetches download URL from a single Tidal API with retry logic
 func fetchTidalURLWithRetry(api string, trackID int64, quality string, timeout time.Duration) (TidalDownloadInfo, error) {
 	var lastErr error
 	retryDelay := tidalRetryDelay
@@ -235,7 +231,7 @@ func fetchTidalURLWithRetry(api string, trackID int64, quality string, timeout t
 		if attempt > 0 {
 			GoLog("[Tidal] Retry %d/%d for %s after %v\n", attempt, tidalMaxRetries, api, retryDelay)
 			time.Sleep(retryDelay)
-			retryDelay *= 2 // Exponential backoff
+			retryDelay *= 2
 		}
 
 		client := NewHTTPClientWithTimeout(timeout)
@@ -250,17 +246,15 @@ func fetchTidalURLWithRetry(api string, trackID int64, quality string, timeout t
 		resp, err := client.Do(req)
 		if err != nil {
 			lastErr = err
-			// Check for retryable errors (timeout, connection reset)
 			errStr := strings.ToLower(err.Error())
 			if strings.Contains(errStr, "timeout") ||
 				strings.Contains(errStr, "reset") ||
 				strings.Contains(errStr, "connection refused") ||
 				strings.Contains(errStr, "eof") {
-				continue // Retry
+				continue
 			}
-			break // Non-retryable error
+			break
 		}
-		// Server errors are retryable
 		if resp.StatusCode >= 500 {
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
@@ -273,7 +267,7 @@ func fetchTidalURLWithRetry(api string, trackID int64, quality string, timeout t
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 			lastErr = fmt.Errorf("rate limited")
-			retryDelay = 2 * time.Second // Wait longer for rate limit
+			retryDelay = 2 * time.Second
 			continue
 		}
 

@@ -923,18 +923,14 @@ type qobuzAPIResult struct {
 	duration time.Duration
 }
 
-// Qobuz API timeout configuration
 // Mobile networks are more unstable, so we use longer timeouts
 const (
 	qobuzAPITimeoutMobile = 25 * time.Second
-	qobuzMaxRetries       = 2 // Number of retries per API
+	qobuzMaxRetries       = 2
 	qobuzRetryDelay       = 500 * time.Millisecond
 )
 
-// getQobuzAPITimeout returns appropriate timeout based on platform
-// For mobile (gomobile builds), we use longer timeouts
 func getQobuzAPITimeout() time.Duration {
-	// Since this runs in gomobile context, we always use mobile timeout
 	// The Go backend is only used on mobile (Android/iOS)
 	return qobuzAPITimeoutMobile
 }
@@ -944,7 +940,6 @@ func fetchQobuzURLWithRetry(provider qobuzAPIProvider, trackID int64, quality st
 	return fetchQobuzURLSingleAttempt(provider, trackID, quality, timeout, "")
 }
 
-// fetchQobuzURLSingleAttempt fetches download URL with retry logic for a single API+country combination
 func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, quality string, timeout time.Duration, country string) (qobuzDownloadInfo, error) {
 	var lastErr error
 	retryDelay := qobuzRetryDelay
@@ -967,7 +962,7 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 		if attempt > 0 {
 			GoLog("[Qobuz] Retry %d/%d for %s after %v\n", attempt, qobuzMaxRetries, provider.Name, retryDelay)
 			time.Sleep(retryDelay)
-			retryDelay *= 2 // Exponential backoff
+			retryDelay *= 2
 		}
 
 		client := NewHTTPClientWithTimeout(timeout)
@@ -1014,11 +1009,10 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 				strings.Contains(errStr, "reset") ||
 				strings.Contains(errStr, "connection refused") ||
 				strings.Contains(errStr, "eof") {
-				continue // Retry
+				continue
 			}
-			break // Non-retryable error
+			break
 		}
-		// Server errors are retryable
 		if resp.StatusCode >= 500 {
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
@@ -1031,7 +1025,7 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 			lastErr = fmt.Errorf("rate limited")
-			retryDelay = 2 * time.Second // Wait longer for rate limit
+			retryDelay = 2 * time.Second
 			continue
 		}
 
@@ -1308,7 +1302,6 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 					track = nil
 				} else if track != nil {
 					GoLog("[%s] Successfully found track via SongLink ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
-					// Cache for future use
 					if req.ISRC != "" {
 						GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
 					}

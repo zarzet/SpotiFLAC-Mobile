@@ -122,6 +122,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: value.text.isNotEmpty
                             ? IconButton(
+                                tooltip: 'Clear search',
                                 icon: const Icon(Icons.clear),
                                 onPressed: () {
                                   _searchController.clear();

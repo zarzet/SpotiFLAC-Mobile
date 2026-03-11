@@ -21,7 +21,6 @@ import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
-/// Simple in-memory cache for artist data
 class _ArtistCache {
   static final Map<String, _CacheEntry> _cache = {};
   static const Duration _ttl = Duration(minutes: 10);
@@ -69,7 +68,6 @@ class _CacheEntry {
   });
 }
 
-/// Artist screen with Spotify-like design
 class ArtistScreen extends ConsumerStatefulWidget {
   final String artistId;
   final String artistName;
@@ -296,7 +294,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     }
   }
 
-  Track _parseTrack(Map<String, dynamic> data) {
+  Track _parseTrack(Map<String, dynamic> data, {ArtistAlbum? album}) {
     int durationMs = 0;
     final durationValue = data['duration_ms'];
     if (durationValue is int) {
@@ -309,18 +307,22 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       id: (data['spotify_id'] ?? data['id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
-      albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
-      albumArtist: data['album_artist']?.toString(),
+      albumName: (data['album_name'] ?? data['album'] ?? album?.name ?? '')
+          .toString(),
+      albumArtist: data['album_artist']?.toString() ?? widget.artistName,
       artistId:
           (data['artist_id'] ?? data['artistId'])?.toString() ??
           widget.artistId,
-      albumId: data['album_id']?.toString(),
-      coverUrl: (data['cover_url'] ?? data['images'])?.toString(),
+      albumId: data['album_id']?.toString() ?? album?.id,
+      coverUrl: (data['cover_url'] ?? data['images'] ?? album?.coverUrl)
+          ?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date']?.toString(),
+      albumType: data['album_type']?.toString() ?? album?.albumType,
+      totalTracks: data['total_tracks'] as int? ?? album?.totalTracks,
       source: data['provider_id']?.toString(),
     );
   }
@@ -345,7 +347,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         .where((a) => a.albumType == 'album')
         .toList(growable: false);
     _singlesBucket = albums
-        .where((a) => a.albumType == 'single')
+        .where((a) => a.albumType == 'single' || a.albumType == 'ep')
         .toList(growable: false);
     _compilationsBucket = albums
         .where((a) => a.albumType == 'compilation')
@@ -416,6 +418,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                         context.l10n.artistSingles,
                         singles,
                         colorScheme,
+                        showTypeBadge: true,
                       ),
                     ),
                   if (compilations.isNotEmpty)
@@ -670,7 +673,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     List<ArtistAlbum> albums,
   ) {
     final albumsOnly = albums.where((a) => a.albumType == 'album').toList();
-    final singles = albums.where((a) => a.albumType == 'single').toList();
+    final singles = albums
+        .where((a) => a.albumType == 'single' || a.albumType == 'ep')
+        .toList();
 
     final totalTracks = albums.fold<int>(0, (sum, a) => sum + a.totalTracks);
     final albumTracks = albumsOnly.fold<int>(
@@ -717,7 +722,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                 ),
               ),
               const Divider(height: 1),
-              // Options
               if (albums.isNotEmpty)
                 _DiscographyOptionTile(
                   icon: Icons.library_music,
@@ -830,7 +834,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     int failedCount = 0;
 
     for (final album in albums) {
-      if (!_isFetchingDiscography) break; // Cancelled
+      if (!_isFetchingDiscography) break;
 
       try {
         final tracks = await _fetchAlbumTracks(album);
@@ -942,7 +946,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       if (result != null && result['tracks'] != null) {
         final tracksList = result['tracks'] as List<dynamic>;
         return tracksList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
             .toList();
       }
     } else if (album.id.startsWith('deezer:')) {
@@ -963,7 +967,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       if (result != null && result['tracks'] != null) {
         final tracksList = result['tracks'] as List<dynamic>;
         return tracksList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
             .toList();
       }
 
@@ -972,7 +976,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       if (metadata['tracks'] != null) {
         final tracksList = metadata['tracks'] as List<dynamic>;
         return tracksList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
             .toList();
       }
     }
@@ -1006,6 +1010,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       discNumber: data['disk_number'] as int? ?? data['disc_number'] as int?,
       releaseDate: album.releaseDate,
       albumType: album.albumType,
+      totalTracks: album.totalTracks,
     );
   }
 
@@ -1066,7 +1071,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                alignment: Alignment.topCenter, // Show top of image (faces)
+                alignment: Alignment.topCenter,
                 memCacheWidth: 800,
                 cacheManager: CoverCacheManager.instance,
                 placeholder: (context, url) =>
@@ -1155,7 +1160,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                       ],
                     ),
                   ),
-                  // Download Discography button (icon only, right-aligned)
                   if (hasDiscography && !_isSelectionMode) ...[
                     const SizedBox(width: 12),
                     Container(
@@ -1188,6 +1192,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         ],
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -1201,7 +1206,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     );
   }
 
-  /// Build Popular tracks section like Spotify
   Widget _buildPopularSection(ColorScheme colorScheme) {
     if (_topTracks == null || _topTracks!.isEmpty) {
       return const SizedBox.shrink();
@@ -1416,7 +1420,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     );
   }
 
-  /// Handle tap on popular track item
   void _handlePopularTrackTap(Track track, {required bool isQueued}) async {
     if (isQueued) return;
 
@@ -1528,8 +1531,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   Widget _buildAlbumSection(
     String title,
     List<ArtistAlbum> albums,
-    ColorScheme colorScheme,
-  ) {
+    ColorScheme colorScheme, {
+    bool showTypeBadge = false,
+  }) {
     final sectionHeight = _artistAlbumSectionHeight();
     final tileSize = _artistAlbumTileSize();
 
@@ -1560,6 +1564,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   colorScheme,
                   tileSize: tileSize,
                   sectionHeight: sectionHeight,
+                  showTypeBadge: showTypeBadge,
                 ),
               );
             },
@@ -1574,47 +1579,65 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     ColorScheme colorScheme, {
     required double tileSize,
     required double sectionHeight,
+    bool showTypeBadge = false,
   }) {
     final isSelected = _selectedAlbumIds.contains(album.id);
 
-    return GestureDetector(
-      onTap: () {
-        if (_isSelectionMode) {
-          _toggleAlbumSelection(album.id);
-        } else {
-          _navigateToAlbum(album);
-        }
-      },
-      onLongPress: () {
-        if (!_isSelectionMode) {
-          _enterSelectionMode(album.id);
-        }
-      },
-      child: Container(
-        width: tileSize,
-        height: sectionHeight,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: album.coverUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: album.coverUrl!,
-                          width: tileSize,
-                          height: tileSize,
-                          fit: BoxFit.cover,
-                          memCacheWidth: (tileSize * 2).round(),
-                          cacheManager: CoverCacheManager.instance,
-                          placeholder: (context, url) => Container(
+    return Semantics(
+      button: true,
+      selected: _isSelectionMode && isSelected,
+      label: _isSelectionMode
+          ? 'Select album ${album.name}'
+          : 'Open album ${album.name}',
+      child: GestureDetector(
+        onTap: () {
+          if (_isSelectionMode) {
+            _toggleAlbumSelection(album.id);
+          } else {
+            _navigateToAlbum(album);
+          }
+        },
+        onLongPress: () {
+          if (!_isSelectionMode) {
+            _enterSelectionMode(album.id);
+          }
+        },
+        child: Container(
+          width: tileSize,
+          height: sectionHeight,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: album.coverUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: album.coverUrl!,
                             width: tileSize,
                             height: tileSize,
-                            color: colorScheme.surfaceContainerHighest,
-                          ),
-                          errorWidget: (context, url, error) => Container(
+                            fit: BoxFit.cover,
+                            memCacheWidth: (tileSize * 2).round(),
+                            cacheManager: CoverCacheManager.instance,
+                            placeholder: (context, url) => Container(
+                              width: tileSize,
+                              height: tileSize,
+                              color: colorScheme.surfaceContainerHighest,
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              width: tileSize,
+                              height: tileSize,
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.album,
+                                color: colorScheme.onSurfaceVariant,
+                                size: 40,
+                              ),
+                            ),
+                          )
+                        : Container(
                             width: tileSize,
                             height: tileSize,
                             color: colorScheme.surfaceContainerHighest,
@@ -1624,99 +1647,110 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                               size: 40,
                             ),
                           ),
-                        )
-                      : Container(
-                          width: tileSize,
-                          height: tileSize,
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.album,
-                            color: colorScheme.onSurfaceVariant,
-                            size: 40,
+                  ),
+                  if (_isSelectionMode)
+                    Positioned.fill(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: isSelected
+                              ? colorScheme.primary.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.1),
+                          border: isSelected
+                              ? Border.all(color: colorScheme.primary, width: 3)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  if (_isSelectionMode)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.surface.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline,
+                            width: 2,
                           ),
                         ),
-                ),
-                // Selection overlay
-                if (_isSelectionMode)
-                  Positioned.fill(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: isSelected
-                            ? colorScheme.primary.withValues(alpha: 0.3)
-                            : Colors.black.withValues(alpha: 0.1),
-                        border: isSelected
-                            ? Border.all(color: colorScheme.primary, width: 3)
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color: colorScheme.onPrimary,
+                                size: 18,
+                              )
                             : null,
                       ),
                     ),
-                  ),
-                // Checkbox
-                if (_isSelectionMode)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.surface.withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.outline,
-                          width: 2,
+                  if (showTypeBadge)
+                    Positioned(
+                      left: 6,
+                      bottom: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          album.albumType == 'ep' ? 'EP' : 'Single',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      child: isSelected
-                          ? Icon(
-                              Icons.check,
-                              color: colorScheme.onPrimary,
-                              size: 18,
-                            )
-                          : null,
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      album.name,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    album.totalTracks > 0
-                        ? '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} ${context.l10n.tracksCount(album.totalTracks)}'
-                        : album.releaseDate.length >= 4
-                        ? album.releaseDate.substring(0, 4)
-                        : album.releaseDate,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        album.name,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      album.totalTracks > 0
+                          ? '${album.releaseDate.length >= 4 ? album.releaseDate.substring(0, 4) : album.releaseDate} ${context.l10n.tracksCount(album.totalTracks)}'
+                          : album.releaseDate.length >= 4
+                          ? album.releaseDate.substring(0, 4)
+                          : album.releaseDate,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

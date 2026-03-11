@@ -21,6 +21,7 @@ class Track {
   final ServiceAvailability? availability;
   final String? source;
   final String? albumType;
+  final int? totalTracks;
   final String? itemType;
 
   const Track({
@@ -41,10 +42,21 @@ class Track {
     this.availability,
     this.source,
     this.albumType,
+    this.totalTracks,
     this.itemType,
   });
 
-  bool get isSingle => albumType == 'single' || albumType == 'ep';
+  bool get isSingle {
+    switch (albumType?.toLowerCase()) {
+      case 'single':
+        return true;
+      case 'ep':
+        final count = totalTracks;
+        return count == null || count <= 1;
+      default:
+        return false;
+    }
+  }
   
   bool get isAlbumItem => itemType == 'album';
   

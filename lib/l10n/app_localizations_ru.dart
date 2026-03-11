@@ -67,7 +67,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsAbout => 'О программе';
 
   @override
-  String get downloadTitle => 'Скачивание';
+  String get downloadTitle => 'Скачать';
 
   @override
   String get downloadAskQualitySubtitle =>
@@ -146,11 +146,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Использование только встроенных провайдеров';
 
   @override
-  String get optionsEmbedLyrics => 'Вставить текст песни';
+  String get optionsEmbedLyrics => 'Вписать текст песни';
 
   @override
   String get optionsEmbedLyricsSubtitle =>
-      'Вставить синхронизированные тексты в FLAC файлы';
+      'Вписать синхронизированные тексты во FLAC файлы';
 
   @override
   String get optionsMaxQualityCover => 'Максимальное качество обложки';
@@ -337,7 +337,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutBinimumDesc =>
-      'Создатель QQDL & HiFi API. Без этого API загрузки Tidal не существовали бы!';
+      'Создатель QQDL & HiFi API. Без него API загрузки Tidal не существовали бы!';
 
   @override
   String get aboutSachinsenalDesc =>
@@ -601,7 +601,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String csvImportTracks(int count) {
-    return '$count треков из CSV';
+    return '$count трек(-ов) из CSV';
   }
 
   @override
@@ -703,6 +703,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorNoTracksFound => 'Треки не найдены';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Невозможно загрузить $item: отсутствует источник расширения';
   }
@@ -766,14 +777,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filenameFormat => 'Формат имени файла';
 
   @override
-  String get filenameShowAdvancedTags => 'Show advanced tags';
+  String get filenameShowAdvancedTags => 'Показать расширенные теги';
 
   @override
   String get filenameShowAdvancedTagsDescription =>
-      'Enable formatted tags for track padding and date patterns';
+      'Включить форматированные теги для отслеживания заполнения и шаблонов дат';
 
   @override
   String get folderOrganizationNone => 'Без организации';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'По исполнителю';
@@ -983,7 +1001,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Выберите как сохранить тексты песен при скачивании';
 
   @override
-  String get lyricsModeEmbed => 'Вставить в файл';
+  String get lyricsModeEmbed => 'Вписать в файл';
 
   @override
   String get lyricsModeEmbedSubtitle => 'Встроить текст в метаданные FLAC';
@@ -999,7 +1017,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lyricsModeBoth => 'Оба варианта';
 
   @override
-  String get lyricsModeBothSubtitle => 'Вставить и сохранить файл .lrc';
+  String get lyricsModeBothSubtitle => 'Вписать и сохранить .lrc файл';
 
   @override
   String get sectionColor => 'Цвет';
@@ -1138,7 +1156,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trackLyricsLoadFailed => 'Не удалось загрузить текст песни';
 
   @override
-  String get trackEmbedLyrics => 'Вставить текст песни';
+  String get trackEmbedLyrics => 'Вписать текст песни';
 
   @override
   String get trackLyricsEmbedded => 'Текст успешно добавлен';
@@ -1361,10 +1379,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'YouTube обеспечивает только звук с потерями(Lossy).';
 
   @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+  String get youtubeOpusBitrateTitle => 'Битрейт YouTube Opus';
 
   @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
+  String get youtubeMp3BitrateTitle => 'Битрейт YouTube MP3';
 
   @override
   String get downloadAskBeforeDownload => 'Спрашивать перед скачиванием';
@@ -1383,7 +1401,8 @@ class AppLocalizationsRu extends AppLocalizations {
       'Использовать исполнителя альбома для папок';
 
   @override
-  String get downloadUsePrimaryArtistOnly => 'Primary artist only for folders';
+  String get downloadUsePrimaryArtistOnly =>
+      'Основной исполнитель только для папок';
 
   @override
   String get downloadUsePrimaryArtistOnlyEnabled =>
@@ -1391,7 +1410,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get downloadUsePrimaryArtistOnlyDisabled =>
-      'Full artist string used for folder name';
+      'Полная строка исполнителя, используемая для имени папки';
 
   @override
   String get downloadSelectQuality => 'Выбор качества';
@@ -1423,7 +1442,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsDownloadNetwork => 'Сеть для скачивания';
 
   @override
-  String get settingsDownloadNetworkAny => 'WiFi и мобильная сеть';
+  String get settingsDownloadNetworkAny => 'WiFi и Мобильная сеть';
 
   @override
   String get settingsDownloadNetworkWifiOnly => 'Только WiFi';
@@ -1712,8 +1731,10 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'треков',
+      many: 'треков',
+      few: 'трека',
+      one: 'трек',
     );
     return '$_temp0';
   }
@@ -1800,7 +1821,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get libraryFilterQualityCD => 'CD (16 бит)';
 
   @override
-  String get libraryFilterQualityLossy => 'С потерями';
+  String get libraryFilterQualityLossy => 'Lossy';
 
   @override
   String get libraryFilterFormat => 'Формат';
@@ -1904,7 +1925,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tutorialExtensionsTip1 =>
-      'Browse the Store tab to discover useful extensions';
+      'Просмотрите вкладку Магазина, чтобы найти полезные расширения';
 
   @override
   String get tutorialExtensionsTip2 =>
@@ -1912,14 +1933,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tutorialExtensionsTip3 =>
-      'Get lyrics, enhanced metadata, and more features';
+      'Получайте тексты песен, улучшенные метаданные и другие возможности';
 
   @override
   String get tutorialSettingsTitle => 'Настройте приложение под себя';
 
   @override
   String get tutorialSettingsDesc =>
-      'Personalize the app in Settings to match your preferences.';
+      'Персонализируйте приложение в Настройках, чтобы оно соответствовало вашим предпочтениям.';
 
   @override
   String get tutorialSettingsTip1 =>
@@ -1944,11 +1965,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Пересканировать все файлы, игнорировать кэш';
 
   @override
-  String get cleanupOrphanedDownloads => 'Cleanup Orphaned Downloads';
+  String get cleanupOrphanedDownloads => 'Очистка отложенных скачиваний';
 
   @override
   String get cleanupOrphanedDownloadsSubtitle =>
-      'Remove history entries for files that no longer exist';
+      'Удалить историю записи для файлов, которых больше не существует';
 
   @override
   String cleanupOrphanedDownloadsResult(int count) {
@@ -1956,7 +1977,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get cleanupOrphanedDownloadsNone => 'No orphaned entries found';
+  String get cleanupOrphanedDownloadsNone => 'Записей без описания не найдено';
 
   @override
   String get cacheTitle => 'Хранилище и кэш';
@@ -1966,11 +1987,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cacheSummarySubtitle =>
-      'Clearing cache will not remove downloaded music files.';
+      'Очистка кэша не приведет к удалению загруженных музыкальных файлов.';
 
   @override
   String cacheEstimatedTotal(String size) {
-    return 'Estimated cache usage: $size';
+    return 'Приблизительное использование кэша: $size';
   }
 
   @override
@@ -1984,42 +2005,42 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cacheAppDirectoryDesc =>
-      'HTTP responses, WebView data, and other temporary app data.';
+      'HTTP-ответы, данные WebView и другие временные данные приложения.';
 
   @override
-  String get cacheTempDirectory => 'Temporary directory';
+  String get cacheTempDirectory => 'Временная директория';
 
   @override
   String get cacheTempDirectoryDesc =>
-      'Temporary files from downloads and audio conversion.';
+      'Временные файлы из загрузок и аудио конвертации.';
 
   @override
-  String get cacheCoverImage => 'Cover image cache';
+  String get cacheCoverImage => 'Кэш обложек';
 
   @override
   String get cacheCoverImageDesc =>
-      'Downloaded album and track cover art. Will re-download when viewed.';
+      'Скачанный альбом и трек обложки. Будет заново скачан после просмотра.';
 
   @override
-  String get cacheLibraryCover => 'Library cover cache';
+  String get cacheLibraryCover => 'Кэш обложек библиотеки';
 
   @override
   String get cacheLibraryCoverDesc =>
-      'Cover art extracted from local music files. Will re-extract on next scan.';
+      'Обложка извлечена из локальных музыкальных файлов. Будет повторно извлечено при следующем сканировании.';
 
   @override
-  String get cacheExploreFeed => 'Explore feed cache';
+  String get cacheExploreFeed => 'Просмотреть кэш ленты';
 
   @override
   String get cacheExploreFeedDesc =>
-      'Explore tab content (new releases, trending). Will refresh on next visit.';
+      'Изучите содержимое вкладки (новые релизы, тренды). Они обновятся при следующем посещении.';
 
   @override
-  String get cacheTrackLookup => 'Track lookup cache';
+  String get cacheTrackLookup => 'Отслеживать кэш поиска';
 
   @override
   String get cacheTrackLookupDesc =>
-      'Spotify/Deezer track ID lookups. Clearing may slow next few searches.';
+      'Поиск ID трека в Spotify/Deezer. Очистка может замедлить следующие несколько поисков.';
 
   @override
   String get cacheCleanupUnusedDesc =>
@@ -2040,7 +2061,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String cacheEntries(int count) {
-    return '$count entries';
+    return '$count записей';
   }
 
   @override
@@ -2053,7 +2074,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String cacheClearConfirmMessage(String target) {
-    return 'This will clear cached data for $target. Downloaded music files will not be deleted.';
+    return 'Это очистит кэш для $target. Загруженные музыкальные файлы не будут удалены.';
   }
 
   @override
@@ -2075,7 +2096,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String cacheCleanupResult(int downloadCount, int libraryCount) {
-    return 'Cleanup completed: $downloadCount orphaned downloads, $libraryCount missing library entries';
+    return 'Очистка завершена: $downloadCount потерянных загрузок, $libraryCount отсутствующих записей в библиотеке';
   }
 
   @override
@@ -2095,14 +2116,14 @@ class AppLocalizationsRu extends AppLocalizations {
       'Получить и сохранить текст песни в формате .lrc';
 
   @override
-  String get trackSaveLyricsProgress => 'Saving lyrics...';
+  String get trackSaveLyricsProgress => 'Сохранение текста...';
 
   @override
-  String get trackReEnrich => 'Re-enrich';
+  String get trackReEnrich => 'Обновить';
 
   @override
   String get trackReEnrichOnlineSubtitle =>
-      'Search metadata online and embed into file';
+      'Поиск в сети метаданных и встраивание в файл';
 
   @override
   String get trackEditMetadata => 'Редактировать метаданные';
@@ -2121,13 +2142,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get trackReEnrichProgress => 'Re-enriching metadata...';
+  String get trackReEnrichProgress => 'Обновление метаданных...';
 
   @override
   String get trackReEnrichSearching => 'Поиск метаданных в сети...';
 
   @override
-  String get trackReEnrichSuccess => 'Metadata re-enriched successfully';
+  String get trackReEnrichSuccess => 'Метаданные успешно обновлены';
 
   @override
   String get trackReEnrichFfmpegFailed =>
@@ -2139,22 +2160,22 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get trackConvertFormat => 'Convert Format';
+  String get trackConvertFormat => 'Переконвертировать формат';
 
   @override
-  String get trackConvertFormatSubtitle => 'Convert to MP3 or Opus';
+  String get trackConvertFormatSubtitle => 'Конвертировать в MP3 или Opus';
 
   @override
-  String get trackConvertTitle => 'Convert Audio';
+  String get trackConvertTitle => 'Конвертировать аудио';
 
   @override
-  String get trackConvertTargetFormat => 'Target Format';
+  String get trackConvertTargetFormat => 'Целевой формат';
 
   @override
-  String get trackConvertBitrate => 'Bitrate';
+  String get trackConvertBitrate => 'Битрейт';
 
   @override
-  String get trackConvertConfirmTitle => 'Confirm Conversion';
+  String get trackConvertConfirmTitle => 'Подтвердить конвертацию';
 
   @override
   String trackConvertConfirmMessage(
@@ -2162,177 +2183,229 @@ class AppLocalizationsRu extends AppLocalizations {
     String targetFormat,
     String bitrate,
   ) {
-    return 'Convert from $sourceFormat to $targetFormat at $bitrate?\n\nThe original file will be deleted after conversion.';
+    return 'Конвертировать из $sourceFormat в $targetFormat $bitrate?\n\nОригинальный файл будет удален после конвертации.';
   }
 
   @override
-  String get trackConvertConverting => 'Converting audio...';
+  String get trackConvertConverting => 'Конвертация аудио...';
 
   @override
   String trackConvertSuccess(String format) {
-    return 'Converted to $format successfully';
+    return 'Успешно конвертировано в $format';
   }
 
   @override
-  String get trackConvertFailed => 'Conversion failed';
+  String get trackConvertFailed => 'Ошибка конвертации';
 
   @override
-  String get actionCreate => 'Create';
+  String get cueSplitTitle => 'Split CUE Sheet';
 
   @override
-  String get collectionFoldersTitle => 'My folders';
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
 
   @override
-  String get collectionWishlist => 'Wishlist';
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
 
   @override
-  String get collectionLoved => 'Loved';
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
 
   @override
-  String get collectionPlaylists => 'Playlists';
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
 
   @override
-  String get collectionPlaylist => 'Playlist';
+  String get cueSplitConfirmTitle => 'Split CUE Album';
 
   @override
-  String get collectionAddToPlaylist => 'Add to playlist';
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
 
   @override
-  String get collectionCreatePlaylist => 'Create playlist';
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
 
   @override
-  String get collectionNoPlaylistsYet => 'No playlists yet';
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
+
+  @override
+  String get actionCreate => 'Создать';
+
+  @override
+  String get collectionFoldersTitle => 'Мои папки';
+
+  @override
+  String get collectionWishlist => 'Список желаемого';
+
+  @override
+  String get collectionLoved => 'Любимые';
+
+  @override
+  String get collectionPlaylists => 'Плейлисты';
+
+  @override
+  String get collectionPlaylist => 'Плейлист';
+
+  @override
+  String get collectionAddToPlaylist => 'Добавить в плейлист';
+
+  @override
+  String get collectionCreatePlaylist => 'Создать плейлист';
+
+  @override
+  String get collectionNoPlaylistsYet => 'Плейлисты отсутствуют';
 
   @override
   String get collectionNoPlaylistsSubtitle =>
-      'Create a playlist to start categorizing tracks';
+      'Создайте плейлист, чтобы начать классифицировать треки';
 
   @override
   String collectionPlaylistTracks(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
+      other: '$count треков',
+      many: '$count треков',
+      few: '$count трека',
+      one: '$count трек',
     );
     return '$_temp0';
   }
 
   @override
   String collectionAddedToPlaylist(String playlistName) {
-    return 'Added to \"$playlistName\"';
+    return 'Добавлено в \"$playlistName\"';
   }
 
   @override
   String collectionAlreadyInPlaylist(String playlistName) {
-    return 'Already in \"$playlistName\"';
+    return 'Уже в \"$playlistName\"';
   }
 
   @override
-  String get collectionPlaylistCreated => 'Playlist created';
+  String get collectionPlaylistCreated => 'Плейлист создан';
 
   @override
-  String get collectionPlaylistNameHint => 'Playlist name';
+  String get collectionPlaylistNameHint => 'Название плейлиста';
 
   @override
-  String get collectionPlaylistNameRequired => 'Playlist name is required';
+  String get collectionPlaylistNameRequired => 'Имя плейлиста обязательно';
 
   @override
-  String get collectionRenamePlaylist => 'Rename playlist';
+  String get collectionRenamePlaylist => 'Переименовать плейлист';
 
   @override
-  String get collectionDeletePlaylist => 'Delete playlist';
+  String get collectionDeletePlaylist => 'Удалить плейлист';
 
   @override
   String collectionDeletePlaylistMessage(String playlistName) {
-    return 'Delete \"$playlistName\" and all tracks inside it?';
+    return 'Удалить \"$playlistName\" и все треки внутри него?';
   }
 
   @override
-  String get collectionPlaylistDeleted => 'Playlist deleted';
+  String get collectionPlaylistDeleted => 'Плейлист удалён';
 
   @override
-  String get collectionPlaylistRenamed => 'Playlist renamed';
+  String get collectionPlaylistRenamed => 'Плейлист переименован';
 
   @override
-  String get collectionWishlistEmptyTitle => 'Wishlist is empty';
+  String get collectionWishlistEmptyTitle => 'Список желаний пуст';
 
   @override
   String get collectionWishlistEmptySubtitle =>
-      'Tap + on tracks to save what you want to download later';
+      'Нажмите + на треках, чтобы сохранить то, что вы хотите скачать позже';
 
   @override
-  String get collectionLovedEmptyTitle => 'Loved folder is empty';
+  String get collectionLovedEmptyTitle => 'Папка Любимые пуста';
 
   @override
   String get collectionLovedEmptySubtitle =>
-      'Tap love on tracks to keep your favorites';
+      'Нажмите \"любовь\" на треках, чтобы сохранить ваши избранные';
 
   @override
-  String get collectionPlaylistEmptyTitle => 'Playlist is empty';
+  String get collectionPlaylistEmptyTitle => 'Плейлист пуст';
 
   @override
   String get collectionPlaylistEmptySubtitle =>
-      'Long-press + on any track to add it here';
+      'Удерживайте + на любом треке, чтобы добавить его сюда';
 
   @override
-  String get collectionRemoveFromPlaylist => 'Remove from playlist';
+  String get collectionRemoveFromPlaylist => 'Удалить из плейлиста';
 
   @override
-  String get collectionRemoveFromFolder => 'Remove from folder';
+  String get collectionRemoveFromFolder => 'Убрать из папки';
 
   @override
   String collectionRemoved(String trackName) {
-    return '\"$trackName\" removed';
+    return '\"$trackName\" удалён';
   }
 
   @override
   String collectionAddedToLoved(String trackName) {
-    return '\"$trackName\" added to Loved';
+    return '\"$trackName\" добавлен в Любимые';
   }
 
   @override
   String collectionRemovedFromLoved(String trackName) {
-    return '\"$trackName\" removed from Loved';
+    return '\"$trackName\" удалено из Любимых';
   }
 
   @override
   String collectionAddedToWishlist(String trackName) {
-    return '\"$trackName\" added to Wishlist';
+    return '\"$trackName\" добавлен в список желаний';
   }
 
   @override
   String collectionRemovedFromWishlist(String trackName) {
-    return '\"$trackName\" removed from Wishlist';
+    return '\"$trackName\" удалён из списка желаний';
   }
 
   @override
-  String get trackOptionAddToLoved => 'Add to Loved';
+  String get trackOptionAddToLoved => 'Добавить в Любимое';
 
   @override
-  String get trackOptionRemoveFromLoved => 'Remove from Loved';
+  String get trackOptionRemoveFromLoved => 'Исключить из Любимых';
 
   @override
-  String get trackOptionAddToWishlist => 'Add to Wishlist';
+  String get trackOptionAddToWishlist => 'Добавить в список желаний';
 
   @override
-  String get trackOptionRemoveFromWishlist => 'Remove from Wishlist';
+  String get trackOptionRemoveFromWishlist => 'Удалить из списка желаний';
 
   @override
-  String get collectionPlaylistChangeCover => 'Change cover image';
+  String get collectionPlaylistChangeCover => 'Изменить обложку';
 
   @override
-  String get collectionPlaylistRemoveCover => 'Remove cover image';
+  String get collectionPlaylistRemoveCover => 'Удалить обложку';
 
   @override
   String selectionShareCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'треков',
+      many: 'треков',
+      few: 'трека',
+      one: 'трек',
     );
-    return 'Share $count $_temp0';
+    return 'Отправить $count $_temp0';
   }
 
   @override
@@ -2343,17 +2416,19 @@ class AppLocalizationsRu extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'треков',
+      many: 'треков',
+      few: 'трека',
+      one: 'трек',
     );
-    return 'Convert $count $_temp0';
+    return 'Конвертировать $count $_temp0';
   }
 
   @override
-  String get selectionConvertNoConvertible => 'No convertible tracks selected';
+  String get selectionConvertNoConvertible => 'Не выбраны конвертируемые треки';
 
   @override
-  String get selectionBatchConvertConfirmTitle => 'Batch Convert';
+  String get selectionBatchConvertConfirmTitle => 'Пакетная конвертация';
 
   @override
   String selectionBatchConvertConfirmMessage(
@@ -2372,12 +2447,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String selectionBatchConvertProgress(int current, int total) {
-    return 'Converting $current of $total...';
+    return 'Конвертация $current из $total...';
   }
 
   @override
   String selectionBatchConvertSuccess(int success, int total, String format) {
-    return 'Converted $success of $total tracks to $format';
+    return 'Конвертировано $success треков $total в $format';
   }
 
   @override
@@ -2387,7 +2462,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get downloadUseAlbumArtistForFoldersAlbumSubtitle =>
-      'Artist folders use Album Artist when available';
+      'Для папок исполнителей используется исполнитель альбома, если он указан';
 
   @override
   String get downloadUseAlbumArtistForFoldersTrackSubtitle =>

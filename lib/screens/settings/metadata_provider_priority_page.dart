@@ -228,13 +228,6 @@ class _MetadataProviderItem extends StatelessWidget {
           description: context.l10n.metadataNoRateLimits,
           isBuiltIn: true,
         );
-      case 'spotify':
-        return _MetadataProviderInfo(
-          name: 'Spotify',
-          icon: Icons.music_note,
-          description: context.l10n.metadataMayRateLimit,
-          isBuiltIn: true,
-        );
       default:
         return _MetadataProviderInfo(
           name: provider,

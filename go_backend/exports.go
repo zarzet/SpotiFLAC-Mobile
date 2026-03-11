@@ -32,126 +32,6 @@ func ParseSpotifyURL(url string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-func SetSpotifyAPICredentials(clientID, clientSecret string) {
-	SetSpotifyCredentials(clientID, clientSecret)
-}
-
-func CheckSpotifyCredentials() bool {
-	return HasSpotifyCredentials()
-}
-
-func GetSpotifyMetadata(spotifyURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		if shouldTrySpotFetchFallback(err) {
-			data, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
-			if apiErr == nil {
-				jsonBytes, marshalErr := json.Marshal(data)
-				if marshalErr != nil {
-					return "", marshalErr
-				}
-				return string(jsonBytes), nil
-			}
-		}
-		return "", err
-	}
-	data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
-	if err != nil {
-		if shouldTrySpotFetchFallback(err) {
-			fallbackData, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
-			if apiErr == nil {
-				jsonBytes, marshalErr := json.Marshal(fallbackData)
-				if marshalErr != nil {
-					return "", marshalErr
-				}
-				return string(jsonBytes), nil
-			}
-		}
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func SearchSpotify(query string, limit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-	results, err := client.SearchTracks(ctx, query, limit)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func SearchSpotifyAll(query string, trackLimit, artistLimit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func GetSpotifyRelatedArtists(artistID string, limit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-
-	normalizedArtistID := strings.TrimSpace(strings.TrimPrefix(artistID, "spotify:"))
-	if normalizedArtistID == "" {
-		return "", fmt.Errorf("invalid Spotify artist ID")
-	}
-
-	artists, err := client.GetRelatedArtists(ctx, normalizedArtistID, limit)
-	if err != nil {
-		return "", err
-	}
-
-	resp := map[string]interface{}{
-		"artists": artists,
-	}
-	jsonBytes, err := json.Marshal(resp)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
 func CheckAvailability(spotifyID, isrc string) (string, error) {
 	client := NewSongLinkClient()
 	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
@@ -478,25 +358,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = qobuzErr
-	case "amazon":
-		amazonResult, amazonErr := downloadFromAmazon(req)
-		if amazonErr == nil {
-			result = DownloadResult{
-				FilePath:      amazonResult.FilePath,
-				BitDepth:      amazonResult.BitDepth,
-				SampleRate:    amazonResult.SampleRate,
-				Title:         amazonResult.Title,
-				Artist:        amazonResult.Artist,
-				Album:         amazonResult.Album,
-				ReleaseDate:   amazonResult.ReleaseDate,
-				TrackNumber:   amazonResult.TrackNumber,
-				DiscNumber:    amazonResult.DiscNumber,
-				ISRC:          amazonResult.ISRC,
-				LyricsLRC:     amazonResult.LyricsLRC,
-				DecryptionKey: amazonResult.DecryptionKey,
-			}
-		}
-		err = amazonErr
 	case "deezer":
 		deezerResult, deezerErr := downloadFromDeezer(req)
 		if deezerErr == nil {
@@ -640,7 +501,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	enrichRequestExtendedMetadata(&req)
 
-	allServices := []string{"tidal", "qobuz", "amazon", "deezer"}
+	allServices := []string{"tidal", "qobuz", "deezer"}
 	preferredService := req.Service
 	if preferredService == "" {
 		preferredService = "tidal"
@@ -707,27 +568,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
 			}
 			err = qobuzErr
-		case "amazon":
-			amazonResult, amazonErr := downloadFromAmazon(req)
-			if amazonErr == nil {
-				result = DownloadResult{
-					FilePath:      amazonResult.FilePath,
-					BitDepth:      amazonResult.BitDepth,
-					SampleRate:    amazonResult.SampleRate,
-					Title:         amazonResult.Title,
-					Artist:        amazonResult.Artist,
-					Album:         amazonResult.Album,
-					ReleaseDate:   amazonResult.ReleaseDate,
-					TrackNumber:   amazonResult.TrackNumber,
-					DiscNumber:    amazonResult.DiscNumber,
-					ISRC:          amazonResult.ISRC,
-					LyricsLRC:     amazonResult.LyricsLRC,
-					DecryptionKey: amazonResult.DecryptionKey,
-				}
-			} else if !errors.Is(amazonErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Amazon error: %v\n", amazonErr)
-			}
-			err = amazonErr
 		case "deezer":
 			deezerResult, deezerErr := downloadFromDeezer(req)
 			if deezerErr == nil {
@@ -824,6 +664,7 @@ func CleanupConnections() {
 func ReadFileMetadata(filePath string) (string, error) {
 	lower := strings.ToLower(filePath)
 	isFlac := strings.HasSuffix(lower, ".flac")
+	isM4A := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".aac")
 	isMp3 := strings.HasSuffix(lower, ".mp3")
 	isOgg := strings.HasSuffix(lower, ".opus") || strings.HasSuffix(lower, ".ogg")
 
@@ -872,6 +713,12 @@ func ReadFileMetadata(filePath string) (string, error) {
 			if quality.SampleRate > 0 && quality.TotalSamples > 0 {
 				result["duration"] = int(quality.TotalSamples / int64(quality.SampleRate))
 			}
+		}
+	} else if isM4A {
+		quality, qualityErr := GetM4AQuality(filePath)
+		if qualityErr == nil {
+			result["bit_depth"] = quality.BitDepth
+			result["sample_rate"] = quality.SampleRate
 		}
 	} else if isMp3 {
 		meta, err := ReadID3Tags(filePath)
@@ -931,6 +778,32 @@ func ReadFileMetadata(filePath string) (string, error) {
 		return "", err
 	}
 
+	return string(jsonBytes), nil
+}
+
+// ParseCueSheet parses a .cue file and returns JSON with split information.
+// This is called from Dart to get track listing and timing data for CUE splitting.
+// audioDir, if non-empty, overrides the directory used for resolving the
+// referenced audio file (useful for SAF temp file scenarios).
+func ParseCueSheet(cuePath string, audioDir string) (string, error) {
+	return ParseCueFileJSON(cuePath, audioDir)
+}
+
+// ScanCueSheetForLibrary parses a .cue file and returns a JSON array of
+// LibraryScanResult entries (one per track). This is the SAF-friendly variant:
+//   - audioDir overrides where the referenced audio file is resolved
+//   - virtualPathPrefix replaces cuePath in filePath / id fields (e.g. a content:// URI)
+//   - fileModTime is stamped on every result (pass 0 to stat cuePath instead)
+func ScanCueSheetForLibrary(cuePath, audioDir, virtualPathPrefix string, fileModTime int64) (string, error) {
+	scanTime := time.Now().UTC().Format(time.RFC3339)
+	results, err := ScanCueFileForLibraryExt(cuePath, audioDir, virtualPathPrefix, fileModTime, scanTime)
+	if err != nil {
+		return "[]", err
+	}
+	jsonBytes, err := json.Marshal(results)
+	if err != nil {
+		return "[]", fmt.Errorf("failed to marshal cue scan results: %w", err)
+	}
 	return string(jsonBytes), nil
 }
 
@@ -1446,28 +1319,6 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var spotifyErr error
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		LogWarn("Spotify", "Credentials not configured, falling back to Deezer")
-		spotifyErr = err
-	} else {
-		data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
-		if err == nil {
-			jsonBytes, err := json.Marshal(data)
-			if err != nil {
-				return "", err
-			}
-			return string(jsonBytes), nil
-		}
-
-		spotifyErr = err
-		if !shouldTrySpotFetchFallback(err) {
-			return "", err
-		}
-	}
-
 	spotFetchData, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
 	if apiErr == nil {
 		GoLog("[Fallback] Spotify metadata fetched via SpotFetch API\n")
@@ -1481,9 +1332,6 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 
 	parsed, parseErr := parseSpotifyURI(spotifyURL)
 	if parseErr != nil {
-		if spotifyErr != nil {
-			return "", fmt.Errorf("spotify failed (%v), SpotFetch fallback failed (%v), and URL parsing failed: %w", spotifyErr, apiErr, parseErr)
-		}
 		return "", fmt.Errorf("SpotFetch fallback failed (%v) and URL parsing failed: %w", apiErr, parseErr)
 	}
 
@@ -1494,15 +1342,9 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	}
 
 	if parsed.Type == "artist" {
-		if spotifyErr != nil {
-			return "", fmt.Errorf("spotify metadata unavailable (%v) and SpotFetch fallback failed (%v). Artist pages require Spotify/SpotFetch API", spotifyErr, apiErr)
-		}
-		return "", fmt.Errorf("SpotFetch fallback failed (%v). Artist pages require Spotify/SpotFetch API", apiErr)
+		return "", fmt.Errorf("SpotFetch fallback failed (%v). Artist pages now require SpotFetch or a metadata extension such as spotify-web", apiErr)
 	}
 
-	if spotifyErr != nil {
-		return "", fmt.Errorf("spotify metadata unavailable (%v), SpotFetch fallback failed (%v), and Deezer conversion is unavailable for playlists", spotifyErr, apiErr)
-	}
 	return "", fmt.Errorf("SpotFetch fallback failed (%v), and Deezer conversion is unavailable for playlists", apiErr)
 }
 
@@ -1577,11 +1419,6 @@ func GetSpotifyIDFromDeezerTrack(deezerTrackID string) (string, error) {
 func GetTidalURLFromDeezerTrack(deezerTrackID string) (string, error) {
 	client := NewSongLinkClient()
 	return client.GetTidalURLFromDeezer(deezerTrackID)
-}
-
-func GetAmazonURLFromDeezerTrack(deezerTrackID string) (string, error) {
-	client := NewSongLinkClient()
-	return client.GetAmazonURLFromDeezer(deezerTrackID)
 }
 
 func errorResponse(msg string) (string, error) {
@@ -1838,8 +1675,8 @@ func ReEnrichFile(requestJSON string) (string, error) {
 
 	GoLog("[ReEnrich] Starting re-enrichment for: %s\n", req.FilePath)
 
-	// When search_online is true, search for metadata from internet
-	// Priority: 1) Deezer (reliable, no credentials) 2) Extension providers (spotify-web etc) 3) Spotify built-in API (last resort, deprecated)
+	// When search_online is true, search for metadata from internet.
+	// Priority: 1) Deezer (reliable, no credentials) 2) Extension providers (spotify-web etc)
 	if req.SearchOnline && req.TrackName != "" && req.ArtistName != "" {
 		GoLog("[ReEnrich] Searching online metadata for: %s - %s\n", req.TrackName, req.ArtistName)
 		searchQuery := req.TrackName + " " + req.ArtistName
@@ -1910,37 +1747,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 				found = true
 			} else if extErr != nil {
 				GoLog("[ReEnrich] Extension search failed: %v\n", extErr)
-			}
-		}
-
-		// 3) Try Spotify built-in API as last resort (will be deprecated)
-		if !found {
-			GoLog("[ReEnrich] Trying Spotify API (fallback)...\n")
-			spotifyClient, spotifyErr := NewSpotifyMetadataClient()
-			if spotifyErr == nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-				results, err := spotifyClient.SearchTracks(ctx, searchQuery, 5)
-				cancel()
-				if err == nil && len(results.Tracks) > 0 {
-					track := results.Tracks[0]
-					GoLog("[ReEnrich] Spotify match: %s - %s (album: %s)\n", track.Name, track.Artists, track.AlbumName)
-					req.SpotifyID = track.SpotifyID
-					req.AlbumName = track.AlbumName
-					req.AlbumArtist = track.AlbumArtist
-					req.TrackNumber = track.TrackNumber
-					req.DiscNumber = track.DiscNumber
-					req.ReleaseDate = track.ReleaseDate
-					req.ISRC = track.ISRC
-					if track.Images != "" {
-						req.CoverURL = track.Images
-					}
-					req.DurationMs = int64(track.DurationMS)
-					found = true
-				} else if err != nil {
-					GoLog("[ReEnrich] Spotify search failed: %v\n", err)
-				}
-			} else {
-				GoLog("[ReEnrich] Spotify client unavailable: %v\n", spotifyErr)
 			}
 		}
 
@@ -2145,8 +1951,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	jsonBytes, _ := json.Marshal(result)
 	return string(jsonBytes), nil
 }
-
-// ==================== EXTENSION SYSTEM ====================
 
 func InitExtensionSystem(extensionsDir, dataDir string) error {
 	manager := GetExtensionManager()
@@ -2518,8 +2322,6 @@ func GetAllPendingFFmpegCommandsJSON() (string, error) {
 
 	return string(jsonBytes), nil
 }
-
-// ==================== EXTENSION CUSTOM SEARCH ====================
 
 func EnrichTrackWithExtensionJSON(extensionID, trackJSON string) (string, error) {
 	manager := GetExtensionManager()
@@ -3273,9 +3075,6 @@ func GetExtensionBrowseCategoriesJSON(extensionID string) (string, error) {
 	return callExtensionFunctionJSON(extensionID, "getBrowseCategories", 30*time.Second)
 }
 
-// ==================== LOCAL LIBRARY SCANNING ====================
-
-// SetLibraryCoverCacheDirJSON sets the directory for caching extracted cover art
 func SetLibraryCoverCacheDirJSON(cacheDir string) {
 	SetLibraryCoverCacheDir(cacheDir)
 }
@@ -3284,9 +3083,6 @@ func ScanLibraryFolderJSON(folderPath string) (string, error) {
 	return ScanLibraryFolder(folderPath)
 }
 
-// ScanLibraryFolderIncrementalJSON performs an incremental library scan
-// existingFilesJSON: JSON object mapping filePath -> modTime (unix millis)
-// Returns IncrementalScanResult as JSON
 func ScanLibraryFolderIncrementalJSON(folderPath, existingFilesJSON string) (string, error) {
 	return ScanLibraryFolderIncremental(folderPath, existingFilesJSON)
 }

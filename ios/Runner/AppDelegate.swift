@@ -15,6 +15,9 @@ import Gobackend  // Import Go framework
     private var libraryScanProgressEventSink: FlutterEventSink?
     private var lastLibraryScanProgressPayload: String?
     
+    /// Currently accessed security-scoped URL for library folder
+    private var activeSecurityScopedURL: URL?
+    
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -492,13 +495,6 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
-        case "getAmazonURLFromDeezerTrack":
-            let args = call.arguments as! [String: Any]
-            let deezerTrackId = args["deezer_track_id"] as! String
-            let response = GobackendGetAmazonURLFromDeezerTrack(deezerTrackId, &error)
-            if let error = error { throw error }
-            return response
-            
         case "preWarmTrackCache":
             let args = call.arguments as! [String: Any]
             let tracksJson = args["tracks"] as! String
@@ -922,6 +918,26 @@ import Gobackend  // Import Go framework
             let response = GobackendReadAudioMetadataJSON(filePath, &error)
             if let error = error { throw error }
             return response
+        
+        // iOS Security-Scoped Bookmark for Local Library
+        case "resolveIosBookmark":
+            let args = call.arguments as! [String: Any]
+            let bookmarkBase64 = args["bookmark"] as! String
+            return try resolveIosBookmark(bookmarkBase64)
+            
+        case "startAccessingIosBookmark":
+            let args = call.arguments as! [String: Any]
+            let bookmarkBase64 = args["bookmark"] as! String
+            return try startAccessingIosBookmark(bookmarkBase64)
+            
+        case "stopAccessingIosBookmark":
+            stopAccessingIosBookmark()
+            return nil
+            
+        case "createIosBookmarkFromPath":
+            let args = call.arguments as! [String: Any]
+            let path = args["path"] as! String
+            return try createIosBookmarkFromPath(path)
             
         // Lyrics Provider Settings
         case "setLyricsProviders":
@@ -953,12 +969,127 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
             
+        // CUE Sheet Parsing
+        case "parseCueSheet":
+            let args = call.arguments as! [String: Any]
+            let cuePath = args["cue_path"] as! String
+            let audioDir = args["audio_dir"] as? String ?? ""
+            let response = GobackendParseCueSheet(cuePath, audioDir, &error)
+            if let error = error { throw error }
+            return response
+            
         default:
             throw NSError(
                 domain: "SpotiFLAC",
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Method not implemented: \(call.method)"]
             )
+        }
+    }
+    
+    // MARK: - iOS Security-Scoped Bookmark Helpers
+    
+    /// Create a security-scoped bookmark from a filesystem path (e.g. from FilePicker).
+    /// The path must currently be accessible (within the same picker session).
+    /// Returns base64-encoded bookmark data.
+    private func createIosBookmarkFromPath(_ path: String) throws -> String {
+        let url = URL(fileURLWithPath: path)
+        do {
+            let bookmarkData = try url.bookmarkData(
+                options: .minimalBookmark,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+            return bookmarkData.base64EncodedString()
+        } catch {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to create bookmark for path \(path): \(error.localizedDescription)"]
+            )
+        }
+    }
+    
+    /// Resolve a base64-encoded security-scoped bookmark and return the resolved path.
+    /// Does NOT start accessing the resource.
+    private func resolveIosBookmark(_ bookmarkBase64: String) throws -> String {
+        guard let bookmarkData = Data(base64Encoded: bookmarkBase64) else {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid base64 bookmark data"]
+            )
+        }
+        
+        var isStale = false
+        let url: URL
+        do {
+            url = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+        } catch {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to resolve bookmark: \(error.localizedDescription)"]
+            )
+        }
+        
+        return url.path
+    }
+    
+    /// Resolve a base64-encoded bookmark, start accessing the security-scoped resource,
+    /// and return the resolved filesystem path. The resource stays accessed until
+    /// `stopAccessingIosBookmark()` is called.
+    private func startAccessingIosBookmark(_ bookmarkBase64: String) throws -> String {
+        // Stop any previously accessed resource first
+        stopAccessingIosBookmark()
+        
+        guard let bookmarkData = Data(base64Encoded: bookmarkBase64) else {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid base64 bookmark data"]
+            )
+        }
+        
+        var isStale = false
+        let url: URL
+        do {
+            url = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+        } catch {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to resolve bookmark: \(error.localizedDescription)"]
+            )
+        }
+        
+        guard url.startAccessingSecurityScopedResource() else {
+            throw NSError(
+                domain: "SpotiFLAC",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to start accessing security-scoped resource at \(url.path)"]
+            )
+        }
+        
+        activeSecurityScopedURL = url
+        return url.path
+    }
+    
+    /// Stop accessing the currently active security-scoped resource, if any.
+    private func stopAccessingIosBookmark() {
+        if let url = activeSecurityScopedURL {
+            url.stopAccessingSecurityScopedResource()
+            activeSecurityScopedURL = nil
         }
     }
 }

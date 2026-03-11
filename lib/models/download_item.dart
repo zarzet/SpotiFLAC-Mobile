@@ -34,6 +34,7 @@ class DownloadItem {
   final DownloadErrorType? errorType;
   final DateTime createdAt;
   final String? qualityOverride; // Override quality for this specific download
+  final String? playlistName; // Playlist context for folder organization
 
   const DownloadItem({
     required this.id,
@@ -48,6 +49,7 @@ class DownloadItem {
     this.errorType,
     required this.createdAt,
     this.qualityOverride,
+    this.playlistName,
   });
 
   DownloadItem copyWith({
@@ -63,6 +65,7 @@ class DownloadItem {
     DownloadErrorType? errorType,
     DateTime? createdAt,
     String? qualityOverride,
+    String? playlistName,
   }) {
     return DownloadItem(
       id: id ?? this.id,
@@ -77,6 +80,7 @@ class DownloadItem {
       errorType: errorType ?? this.errorType,
       createdAt: createdAt ?? this.createdAt,
       qualityOverride: qualityOverride ?? this.qualityOverride,
+      playlistName: playlistName ?? this.playlistName,
     );
   }
 

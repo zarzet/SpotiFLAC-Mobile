@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
@@ -311,9 +312,12 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
       final orphanedDownloads = await ref
           .read(downloadHistoryProvider.notifier)
           .cleanupOrphanedDownloads();
+      final iosBookmark = ref.read(settingsProvider).localLibraryBookmark;
       final missingLibraryEntries = await ref
           .read(localLibraryProvider.notifier)
-          .cleanupMissingFiles();
+          .cleanupMissingFiles(
+            iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+          );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -384,11 +388,13 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
               IconButton(
+                tooltip: 'Refresh',
                 onPressed: _isBusy ? null : _refreshOverview,
                 icon: const Icon(Icons.refresh),
               ),

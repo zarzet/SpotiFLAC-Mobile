@@ -24,6 +24,7 @@ class DonatePage extends StatelessWidget {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
@@ -56,17 +57,14 @@ class DonatePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Donate links card
                   _DonateLinksCard(colorScheme: colorScheme),
 
                   const SizedBox(height: 24),
 
-                  // Recent donors section
                   _RecentDonorsCard(colorScheme: colorScheme),
 
                   const SizedBox(height: 16),
 
-                  // Combined notice card
                   Card(
                     elevation: 0,
                     color: colorScheme.secondaryContainer.withValues(
@@ -166,7 +164,7 @@ class _RecentDonorsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const donorNames = <String>[];
+    const donorNames = <String>['a fan'];
 
     // Match SettingsGroup color logic
     final cardColor = isDark
@@ -218,13 +216,17 @@ class _RecentDonorsCard extends StatelessWidget {
                       Icon(
                         Icons.emoji_events_outlined,
                         size: 32,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'No supporters yet — be the first!',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -471,9 +473,12 @@ class _CryptoWalletItem extends StatelessWidget {
 
 int _cr(String v) {
   int r = 0x1F;
-  for (final c in v.codeUnits) { r = (r * 31 + c) & 0x7FFFFFFF; }
+  for (final c in v.codeUnits) {
+    r = (r * 31 + c) & 0x7FFFFFFF;
+  }
   return r;
 }
+
 // Highlighted supporters (hashes of names): none for now.
 const _cv = <int>{};
 
@@ -490,16 +495,10 @@ class _SupporterChip extends StatelessWidget {
     const goldAccentColor = Color(0xFFB8860B);
     const goldDarkChipColor = Color(0xFF3A3000);
 
-    final chipColor = e
-        ? goldChipColor
-        : colorScheme.secondaryContainer;
-    final accentColor = e
-        ? goldAccentColor
-        : colorScheme.primary;
+    final chipColor = e ? goldChipColor : colorScheme.secondaryContainer;
+    final accentColor = e ? goldAccentColor : colorScheme.primary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveChipColor = e && isDark
-        ? goldDarkChipColor
-        : chipColor;
+    final effectiveChipColor = e && isDark ? goldDarkChipColor : chipColor;
 
     return Material(
       color: effectiveChipColor,
@@ -536,9 +535,7 @@ class _SupporterChip extends StatelessWidget {
             Text(
               name,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: e
-                    ? accentColor
-                    : colorScheme.onSecondaryContainer,
+                color: e ? accentColor : colorScheme.onSecondaryContainer,
                 fontWeight: e ? FontWeight.w600 : FontWeight.w500,
               ),
             ),

@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Spotify şarkılarını Tidal, Qobuz ve Amazon Music'den yüksek kalitede indir.",
+  "aboutAppDescription": "Spotify şarkılarını Tidal ve Qobuz'den yüksek kalitede indir.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1089,7 +1089,7 @@
   },
   "providerBuiltIn": "Dahili",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Eklenti",
   "@providerExtension": {
@@ -2358,7 +2358,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "tutorialWelcomeTip2": "Tidal, Qobuz veya Deezer'den FLAC kalitesinde ses alın",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },

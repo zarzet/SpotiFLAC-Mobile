@@ -17,7 +17,6 @@ final _routerProvider = Provider<GoRouter>((ref) {
     settingsProvider.select((s) => s.hasCompletedTutorial),
   );
 
-  // Determine initial location based on app state
   String initialLocation;
   if (isFirstLaunch) {
     initialLocation = '/setup';

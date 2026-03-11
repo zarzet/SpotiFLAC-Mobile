@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -64,45 +63,20 @@ var (
 	credentialsMu      sync.RWMutex
 )
 
-var ErrNoSpotifyCredentials = errors.New("Spotify credentials not configured. Please set your own Client ID and Secret in Settings, or use Deezer as metadata source (free, no credentials required)")
+var ErrNoSpotifyCredentials = errors.New("built-in Spotify API metadata provider has been removed; use Deezer or the spotify-web extension instead")
 
 func SetSpotifyCredentials(clientID, clientSecret string) {
 	credentialsMu.Lock()
 	defer credentialsMu.Unlock()
-	customClientID = clientID
-	customClientSecret = clientSecret
+	customClientID = ""
+	customClientSecret = ""
 }
 
 func HasSpotifyCredentials() bool {
-	credentialsMu.RLock()
-	defer credentialsMu.RUnlock()
-
-	if customClientID != "" && customClientSecret != "" {
-		return true
-	}
-
-	if os.Getenv("SPOTIFY_CLIENT_ID") != "" && os.Getenv("SPOTIFY_CLIENT_SECRET") != "" {
-		return true
-	}
-
 	return false
 }
 
 func getCredentials() (string, string, error) {
-	credentialsMu.RLock()
-	defer credentialsMu.RUnlock()
-
-	if customClientID != "" && customClientSecret != "" {
-		return customClientID, customClientSecret, nil
-	}
-
-	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-
-	if clientID != "" && clientSecret != "" {
-		return clientID, clientSecret, nil
-	}
-
 	return "", "", ErrNoSpotifyCredentials
 }
 

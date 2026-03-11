@@ -102,12 +102,28 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (_currentIndex != 0) {
       _onNavTap(0);
     }
-    ref.read(trackProvider.notifier).fetchFromUrl(url);
     ref.read(settingsProvider.notifier).setHasSearchedBefore();
     if (mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.loadingSharedLink)));
+    }
+    await ref.read(trackProvider.notifier).fetchFromUrl(url);
+    final trackState = ref.read(trackProvider);
+    if (trackState.error != null && mounted) {
+      final l10n = context.l10n;
+      final errorMsg = trackState.error!;
+      final isRateLimit = errorMsg.contains('429') ||
+          errorMsg.toLowerCase().contains('rate limit') ||
+          errorMsg.toLowerCase().contains('too many requests');
+      final displayMessage = errorMsg == 'url_not_recognized'
+          ? l10n.errorUrlNotRecognizedMessage
+          : isRateLimit
+              ? l10n.errorRateLimitedMessage
+              : l10n.errorUrlFetchFailed;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(displayMessage)),
+      );
     }
   }
 

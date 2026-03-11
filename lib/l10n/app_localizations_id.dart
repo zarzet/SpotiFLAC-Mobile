@@ -15,7 +15,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get navHome => 'Beranda';
 
   @override
-  String get navLibrary => 'Library';
+  String get navLibrary => 'Pustaka';
 
   @override
   String get navSettings => 'Pengaturan';
@@ -45,7 +45,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get historyFilterSingles => 'Single';
 
   @override
-  String get historySearchHint => 'Search history...';
+  String get historySearchHint => 'Cari riwayat...';
 
   @override
   String get settingsTitle => 'Pengaturan';
@@ -104,7 +104,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get appearanceHistoryViewList => 'Daftar';
 
   @override
-  String get appearanceHistoryViewGrid => 'Grid';
+  String get appearanceHistoryViewGrid => 'Kisi';
 
   @override
   String get optionsTitle => 'Opsi';
@@ -126,7 +126,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Ketuk Deezer atau Spotify untuk beralih dari ekstensi';
 
   @override
-  String get optionsAutoFallback => 'Auto Fallback';
+  String get optionsAutoFallback => 'Cadangan Otomatis';
 
   @override
   String get optionsAutoFallbackSubtitle =>
@@ -217,7 +217,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String optionsSpotifyCredentialsConfigured(String clientId) {
-    return 'Client ID: $clientId...';
+    return 'ID Klien: $clientId...';
   }
 
   @override
@@ -230,7 +230,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get optionsSpotifyDeprecationWarning =>
-      'Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.';
+      'Pencarian Spotify akan dihentikan pada 3 Maret 2026 karena perubahan API Spotify. Silakan beralih ke Deezer.';
 
   @override
   String get extensionsTitle => 'Ekstensi';
@@ -283,7 +283,7 @@ class AppLocalizationsId extends AppLocalizations {
       'Seniman berbakat yang membuat logo aplikasi kita yang indah!';
 
   @override
-  String get aboutTranslators => 'Translators';
+  String get aboutTranslators => 'Penerjemah';
 
   @override
   String get aboutSpecialThanks => 'Terima Kasih Khusus';
@@ -311,19 +311,19 @@ class AppLocalizationsId extends AppLocalizations {
       'Sarankan fitur baru untuk aplikasi';
 
   @override
-  String get aboutTelegramChannel => 'Telegram Channel';
+  String get aboutTelegramChannel => 'Saluran Telegram';
 
   @override
-  String get aboutTelegramChannelSubtitle => 'Announcements and updates';
+  String get aboutTelegramChannelSubtitle => 'Pengumuman dan pembaruan';
 
   @override
-  String get aboutTelegramChat => 'Telegram Community';
+  String get aboutTelegramChat => 'Komunitas Telegram';
 
   @override
-  String get aboutTelegramChatSubtitle => 'Chat with other users';
+  String get aboutTelegramChatSubtitle => 'Berbincang dengan pengguna lain';
 
   @override
-  String get aboutSocial => 'Social';
+  String get aboutSocial => 'Sosial';
 
   @override
   String get aboutApp => 'Aplikasi';
@@ -341,7 +341,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get aboutSjdonadoDesc =>
-      'Creator of I Don\'t Have Spotify (IDHS). The fallback link resolver that saves the day!';
+      'Pencipta I Don\'t Have Spotify (IDHS). Penyelesai tautan cadangan yang menyelamatkan keadaan!';
 
   @override
   String get aboutDabMusic => 'DAB Music';
@@ -355,7 +355,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get aboutSpotiSaverDesc =>
-      'Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!';
+      'Tidal perangkat streaming FLAC resolusi tinggi. Bagian penting dari teka-teki tanpa kehilangan kualitas!';
 
   @override
   String get aboutAppDescription =>
@@ -456,7 +456,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get setupIcloudNotSupported =>
-      'iCloud Drive is not supported. Please use the app Documents folder.';
+      'iCloud Drive tidak didukung. Silakan gunakan folder Dokumen di aplikasi.';
 
   @override
   String get setupDownloadInFlac => 'Unduh lagu Spotify dalam format FLAC';
@@ -593,7 +593,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String csvImportTracks(int count) {
-    return '$count tracks from CSV';
+    return '$count trek dari CSV';
   }
 
   @override
@@ -613,7 +613,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String snackbarAlreadyInLibrary(String trackName) {
-    return '\"$trackName\" already exists in your library';
+    return '\"$trackName\" sudah ada di perpustakaan Anda';
   }
 
   @override
@@ -692,6 +692,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get errorNoTracksFound => 'Tidak ada lagu ditemukan';
 
   @override
+  String get errorUrlNotRecognized => 'Link tidak dikenali';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'Link ini tidak didukung. Pastikan URL benar dan ekstensi yang kompatibel sudah terpasang.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Gagal memuat konten dari link ini. Silakan coba lagi.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Tidak dapat memuat $item: sumber ekstensi tidak ada';
   }
@@ -755,14 +766,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get filenameFormat => 'Format Nama File';
 
   @override
-  String get filenameShowAdvancedTags => 'Tampilkan tag lanjutan';
+  String get filenameShowAdvancedTags => 'Show advanced tags';
 
   @override
   String get filenameShowAdvancedTagsDescription =>
-      'Aktifkan tag format untuk padding nomor lagu dan pola tanggal';
+      'Enable formatted tags for track padding and date patterns';
 
   @override
   String get folderOrganizationNone => 'Tidak ada';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'Berdasarkan Artis';
@@ -1343,10 +1361,10 @@ class AppLocalizationsId extends AppLocalizations {
       'YouTube provides lossy audio only. Not part of lossless fallback.';
 
   @override
-  String get youtubeOpusBitrateTitle => 'Bitrate Opus YouTube';
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
 
   @override
-  String get youtubeMp3BitrateTitle => 'Bitrate MP3 YouTube';
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
   String get downloadAskBeforeDownload => 'Tanya Sebelum Unduh';
@@ -1684,8 +1702,8 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'trek',
-      one: 'trek',
+      other: 'tracks',
+      one: 'track',
     );
     return '$_temp0';
   }
@@ -2134,10 +2152,58 @@ class AppLocalizationsId extends AppLocalizations {
   String get trackConvertFailed => 'Conversion failed';
 
   @override
-  String get actionCreate => 'Buat';
+  String get cueSplitTitle => 'Split CUE Sheet';
 
   @override
-  String get collectionFoldersTitle => 'Folder saya';
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
+
+  @override
+  String get actionCreate => 'Create';
+
+  @override
+  String get collectionFoldersTitle => 'My folders';
 
   @override
   String get collectionWishlist => 'Wishlist';
@@ -2146,172 +2212,171 @@ class AppLocalizationsId extends AppLocalizations {
   String get collectionLoved => 'Loved';
 
   @override
-  String get collectionPlaylists => 'Playlist';
+  String get collectionPlaylists => 'Playlists';
 
   @override
   String get collectionPlaylist => 'Playlist';
 
   @override
-  String get collectionAddToPlaylist => 'Tambahkan ke playlist';
+  String get collectionAddToPlaylist => 'Add to playlist';
 
   @override
-  String get collectionCreatePlaylist => 'Buat playlist';
+  String get collectionCreatePlaylist => 'Create playlist';
 
   @override
-  String get collectionNoPlaylistsYet => 'Belum ada playlist';
+  String get collectionNoPlaylistsYet => 'No playlists yet';
 
   @override
   String get collectionNoPlaylistsSubtitle =>
-      'Buat playlist untuk mulai mengategorikan lagu';
+      'Create a playlist to start categorizing tracks';
 
   @override
   String collectionPlaylistTracks(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count lagu',
-      one: '1 lagu',
+      other: '$count tracks',
+      one: '1 track',
     );
     return '$_temp0';
   }
 
   @override
   String collectionAddedToPlaylist(String playlistName) {
-    return 'Ditambahkan ke \"$playlistName\"';
+    return 'Added to \"$playlistName\"';
   }
 
   @override
   String collectionAlreadyInPlaylist(String playlistName) {
-    return 'Sudah ada di \"$playlistName\"';
+    return 'Already in \"$playlistName\"';
   }
 
   @override
-  String get collectionPlaylistCreated => 'Playlist berhasil dibuat';
+  String get collectionPlaylistCreated => 'Playlist created';
 
   @override
-  String get collectionPlaylistNameHint => 'Nama playlist';
+  String get collectionPlaylistNameHint => 'Playlist name';
 
   @override
-  String get collectionPlaylistNameRequired => 'Nama playlist wajib diisi';
+  String get collectionPlaylistNameRequired => 'Playlist name is required';
 
   @override
-  String get collectionRenamePlaylist => 'Ubah nama playlist';
+  String get collectionRenamePlaylist => 'Rename playlist';
 
   @override
-  String get collectionDeletePlaylist => 'Hapus playlist';
+  String get collectionDeletePlaylist => 'Delete playlist';
 
   @override
   String collectionDeletePlaylistMessage(String playlistName) {
-    return 'Hapus \"$playlistName\" beserta semua lagunya?';
+    return 'Delete \"$playlistName\" and all tracks inside it?';
   }
 
   @override
-  String get collectionPlaylistDeleted => 'Playlist dihapus';
+  String get collectionPlaylistDeleted => 'Playlist deleted';
 
   @override
-  String get collectionPlaylistRenamed => 'Nama playlist diperbarui';
+  String get collectionPlaylistRenamed => 'Playlist renamed';
 
   @override
-  String get collectionWishlistEmptyTitle => 'Wishlist masih kosong';
+  String get collectionWishlistEmptyTitle => 'Wishlist is empty';
 
   @override
   String get collectionWishlistEmptySubtitle =>
-      'Tap + di lagu untuk menyimpan yang ingin diunduh nanti';
+      'Tap + on tracks to save what you want to download later';
 
   @override
-  String get collectionLovedEmptyTitle => 'Folder Loved masih kosong';
+  String get collectionLovedEmptyTitle => 'Loved folder is empty';
 
   @override
   String get collectionLovedEmptySubtitle =>
-      'Tap love di lagu untuk menyimpan favoritmu';
+      'Tap love on tracks to keep your favorites';
 
   @override
-  String get collectionPlaylistEmptyTitle => 'Playlist masih kosong';
+  String get collectionPlaylistEmptyTitle => 'Playlist is empty';
 
   @override
   String get collectionPlaylistEmptySubtitle =>
-      'Tekan lama tombol + pada lagu untuk menambahkannya ke sini';
+      'Long-press + on any track to add it here';
 
   @override
-  String get collectionRemoveFromPlaylist => 'Hapus dari playlist';
+  String get collectionRemoveFromPlaylist => 'Remove from playlist';
 
   @override
-  String get collectionRemoveFromFolder => 'Hapus dari folder';
+  String get collectionRemoveFromFolder => 'Remove from folder';
 
   @override
   String collectionRemoved(String trackName) {
-    return '\"$trackName\" dihapus';
+    return '\"$trackName\" removed';
   }
 
   @override
   String collectionAddedToLoved(String trackName) {
-    return '\"$trackName\" ditambahkan ke Loved';
+    return '\"$trackName\" added to Loved';
   }
 
   @override
   String collectionRemovedFromLoved(String trackName) {
-    return '\"$trackName\" dihapus dari Loved';
+    return '\"$trackName\" removed from Loved';
   }
 
   @override
   String collectionAddedToWishlist(String trackName) {
-    return '\"$trackName\" ditambahkan ke Wishlist';
+    return '\"$trackName\" added to Wishlist';
   }
 
   @override
   String collectionRemovedFromWishlist(String trackName) {
-    return '\"$trackName\" dihapus dari Wishlist';
+    return '\"$trackName\" removed from Wishlist';
   }
 
   @override
-  String get trackOptionAddToLoved => 'Tambahkan ke Loved';
+  String get trackOptionAddToLoved => 'Add to Loved';
 
   @override
-  String get trackOptionRemoveFromLoved => 'Hapus dari Loved';
+  String get trackOptionRemoveFromLoved => 'Remove from Loved';
 
   @override
-  String get trackOptionAddToWishlist => 'Tambahkan ke Wishlist';
+  String get trackOptionAddToWishlist => 'Add to Wishlist';
 
   @override
-  String get trackOptionRemoveFromWishlist => 'Hapus dari Wishlist';
+  String get trackOptionRemoveFromWishlist => 'Remove from Wishlist';
 
   @override
-  String get collectionPlaylistChangeCover => 'Ubah gambar sampul';
+  String get collectionPlaylistChangeCover => 'Change cover image';
 
   @override
-  String get collectionPlaylistRemoveCover => 'Hapus gambar sampul';
+  String get collectionPlaylistRemoveCover => 'Remove cover image';
 
   @override
   String selectionShareCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'trek',
-      one: 'trek',
+      other: 'tracks',
+      one: 'track',
     );
-    return 'Bagikan $count $_temp0';
+    return 'Share $count $_temp0';
   }
 
   @override
-  String get selectionShareNoFiles => 'Tidak ada file yang dapat dibagikan';
+  String get selectionShareNoFiles => 'No shareable files found';
 
   @override
   String selectionConvertCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'trek',
-      one: 'trek',
+      other: 'tracks',
+      one: 'track',
     );
-    return 'Konversi $count $_temp0';
+    return 'Convert $count $_temp0';
   }
 
   @override
-  String get selectionConvertNoConvertible =>
-      'Tidak ada trek yang dapat dikonversi dipilih';
+  String get selectionConvertNoConvertible => 'No convertible tracks selected';
 
   @override
-  String get selectionBatchConvertConfirmTitle => 'Konversi Massal';
+  String get selectionBatchConvertConfirmTitle => 'Batch Convert';
 
   @override
   String selectionBatchConvertConfirmMessage(
@@ -2322,20 +2387,20 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'trek',
-      one: 'trek',
+      other: 'tracks',
+      one: 'track',
     );
-    return 'Konversi $count $_temp0 ke $format pada $bitrate?\n\nFile asli akan dihapus setelah konversi.';
+    return 'Convert $count $_temp0 to $format at $bitrate?\n\nOriginal files will be deleted after conversion.';
   }
 
   @override
   String selectionBatchConvertProgress(int current, int total) {
-    return 'Mengonversi $current dari $total...';
+    return 'Converting $current of $total...';
   }
 
   @override
   String selectionBatchConvertSuccess(int success, int total, String format) {
-    return 'Berhasil mengonversi $success dari $total trek ke $format';
+    return 'Converted $success of $total tracks to $format';
   }
 
   @override

@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Baixe faixas do Spotify em qualidade sem perdas do Tidal, Qobuz e Amazon Music.",
+  "aboutAppDescription": "Baixe faixas do Spotify em qualidade sem perdas do Tidal e Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1089,7 +1089,7 @@
   },
   "providerBuiltIn": "Embutido",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Extensão",
   "@providerExtension": {
@@ -2358,7 +2358,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "tutorialWelcomeTip2": "Obtenha áudio em qualidade FLAC do Tidal, Qobuz ou Deezer",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },

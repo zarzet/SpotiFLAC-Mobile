@@ -1,4 +1,3 @@
-// Package gobackend provides HTTP API for extension runtime
 package gobackend
 
 import (
@@ -11,8 +10,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-// ==================== HTTP API (Sandboxed) ====================
 
 type HTTPResponse struct {
 	StatusCode int               `json:"statusCode"`

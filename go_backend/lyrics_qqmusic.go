@@ -17,7 +17,6 @@ type QQMusicClient struct {
 	httpClient *http.Client
 }
 
-// QQ Music search response models
 type qqMusicSearchResponse struct {
 	Data struct {
 		Song struct {
@@ -184,7 +183,6 @@ func (c *QQMusicClient) FetchLyrics(
 		}, nil
 	}
 
-	// Fall back to plain text
 	resultLines := plainTextLyricsLines(lrcText)
 
 	if len(resultLines) > 0 {

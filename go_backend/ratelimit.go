@@ -48,7 +48,6 @@ func (r *RateLimiter) WaitForSlot() {
 	r.timestamps = append(r.timestamps, time.Now())
 }
 
-// cleanOldTimestamps removes timestamps that are outside the current window
 func (r *RateLimiter) cleanOldTimestamps(now time.Time) {
 	cutoff := now.Add(-r.window)
 	validStart := 0

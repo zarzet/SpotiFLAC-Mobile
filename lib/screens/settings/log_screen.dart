@@ -6,8 +6,10 @@ import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
-final RegExp _domainPattern =
-    RegExp(r'domain:\s*([^\s,]+)', caseSensitive: false);
+final RegExp _domainPattern = RegExp(
+  r'domain:\s*([^\s,]+)',
+  caseSensitive: false,
+);
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -17,7 +19,6 @@ class LogScreen extends StatefulWidget {
 }
 
 class _LogScreenState extends State<LogScreen> {
-
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String _selectedLevel = 'ALL';
@@ -74,7 +75,9 @@ class _LogScreenState extends State<LogScreen> {
         SnackBar(
           content: Text(context.l10n.logCopied),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -83,7 +86,9 @@ class _LogScreenState extends State<LogScreen> {
 
   void _shareLogs() async {
     final logs = await LogBuffer().exportWithDeviceInfo();
-    SharePlus.instance.share(ShareParams(text: logs, subject: 'SpotiFLAC Logs'));
+    SharePlus.instance.share(
+      ShareParams(text: logs, subject: 'SpotiFLAC Logs'),
+    );
   }
 
   void _clearLogs() {
@@ -137,52 +142,58 @@ class _LogScreenState extends State<LogScreen> {
           controller: _scrollController,
           slivers: [
             SliverAppBar(
-            expandedHeight: 120 + topPadding,
-            collapsedHeight: kToolbarHeight,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(_autoScroll ? Icons.vertical_align_bottom : Icons.vertical_align_center),
-                tooltip: _autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF',
-                onPressed: () => setState(() => _autoScroll = !_autoScroll),
+              expandedHeight: 120 + topPadding,
+              collapsedHeight: kToolbarHeight,
+              floating: false,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
+              leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
               ),
-              IconButton(
-                icon: const Icon(Icons.copy),
-                tooltip: 'Copy logs',
-                onPressed: _copyLogs,
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'share':
-                      _shareLogs();
-                      break;
-                    case 'clear':
-                      _clearLogs();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'share',
-                    child: ListTile(
-                      leading: const Icon(Icons.share),
-                      title: Text(context.l10n.logShareLogs),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _autoScroll
+                        ? Icons.vertical_align_bottom
+                        : Icons.vertical_align_center,
                   ),
-                  PopupMenuItem(
-                    value: 'clear',
-                    child: ListTile(
-                      leading: const Icon(Icons.delete_outline),
+                  tooltip: _autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF',
+                  onPressed: () => setState(() => _autoScroll = !_autoScroll),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy),
+                  tooltip: 'Copy logs',
+                  onPressed: _copyLogs,
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'share':
+                        _shareLogs();
+                        break;
+                      case 'clear':
+                        _clearLogs();
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'share',
+                      child: ListTile(
+                        leading: const Icon(Icons.share),
+                        title: Text(context.l10n.logShareLogs),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'clear',
+                      child: ListTile(
+                        leading: const Icon(Icons.delete_outline),
                         title: Text(context.l10n.logClearLogs),
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -194,11 +205,17 @@ class _LogScreenState extends State<LogScreen> {
                 builder: (context, constraints) {
                   final maxHeight = 120 + topPadding;
                   final minHeight = kToolbarHeight + topPadding;
-                  final expandRatio = ((constraints.maxHeight - minHeight) / (maxHeight - minHeight)).clamp(0.0, 1.0);
+                  final expandRatio =
+                      ((constraints.maxHeight - minHeight) /
+                              (maxHeight - minHeight))
+                          .clamp(0.0, 1.0);
                   final leftPadding = 56 - (32 * expandRatio);
                   return FlexibleSpaceBar(
                     expandedTitleScale: 1.0,
-                    titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
+                    titlePadding: EdgeInsets.only(
+                      left: leftPadding,
+                      bottom: 16,
+                    ),
                     title: Text(
                       context.l10n.logTitle,
                       style: TextStyle(
@@ -213,28 +230,40 @@ class _LogScreenState extends State<LogScreen> {
             ),
 
             SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.logFilterSection),
+              child: SettingsSectionHeader(
+                title: context.l10n.logFilterSection,
+              ),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
-                        Icon(Icons.filter_list, color: colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.filter_list,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(context.l10n.logFilterLevel, style: Theme.of(context).textTheme.bodyLarge),
+                              Text(
+                                context.l10n.logFilterLevel,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                               const SizedBox(height: 2),
                               Text(
                                 context.l10n.logFilterBySeverity,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                             ],
                           ),
@@ -248,8 +277,8 @@ class _LogScreenState extends State<LogScreen> {
                               child: Text(
                                 level,
                                 style: TextStyle(
-                                  color: level == 'ALL' 
-                                      ? colorScheme.onSurface 
+                                  color: level == 'ALL'
+                                      ? colorScheme.onSurface
                                       : _getLevelColor(level, colorScheme),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -272,7 +301,10 @@ class _LogScreenState extends State<LogScreen> {
                     color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     child: Row(
                       children: [
                         Icon(Icons.search, color: colorScheme.onSurfaceVariant),
@@ -295,6 +327,7 @@ class _LogScreenState extends State<LogScreen> {
                               fillColor: colorScheme.surfaceContainerHighest,
                               suffixIcon: _searchQuery.isNotEmpty
                                   ? IconButton(
+                                      tooltip: 'Clear search',
                                       icon: const Icon(Icons.clear, size: 20),
                                       onPressed: () {
                                         _searchController.clear();
@@ -317,16 +350,16 @@ class _LogScreenState extends State<LogScreen> {
 
             SliverToBoxAdapter(
               child: SettingsSectionHeader(
-                title: _selectedLevel != 'ALL' || _searchQuery.isNotEmpty 
+                title: _selectedLevel != 'ALL' || _searchQuery.isNotEmpty
                     ? context.l10n.logEntriesFiltered(logs.length)
                     : context.l10n.logEntries(logs.length),
               ),
             ),
-            
+
             SliverToBoxAdapter(
               child: _LogSummaryCard(logs: LogBuffer().entries),
             ),
-            
+
             logs.isEmpty
                 ? SliverToBoxAdapter(
                     child: SettingsGroup(
@@ -339,21 +372,26 @@ class _LogScreenState extends State<LogScreen> {
                               Icon(
                                 Icons.article_outlined,
                                 size: 48,
-                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                color: colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 context.l10n.logNoLogsYet,
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 context.l10n.logNoLogsYetSubtitle,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.7),
+                                    ),
                               ),
                             ],
                           ),
@@ -408,7 +446,7 @@ class _LogEntryTile extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: isError 
+            color: isError
                 ? colorScheme.errorContainer.withValues(alpha: 0.2)
                 : null,
           ),
@@ -427,7 +465,10 @@ class _LogEntryTile extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: levelColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(6),
@@ -444,7 +485,10 @@ class _LogEntryTile extends StatelessWidget {
                   if (entry.isFromGo) ...[
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.teal.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
@@ -519,9 +563,9 @@ class _LogSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     final analysis = _analyzeLogs();
-    
+
     if (!analysis.hasIssues) {
       return const SizedBox.shrink();
     }
@@ -530,7 +574,7 @@ class _LogSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         elevation: 0,
-        color: analysis.hasISPBlocking 
+        color: analysis.hasISPBlocking
             ? colorScheme.errorContainer.withValues(alpha: 0.5)
             : colorScheme.tertiaryContainer.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -542,9 +586,13 @@ class _LogSummaryCard extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    analysis.hasISPBlocking ? Icons.block : Icons.warning_amber_rounded,
+                    analysis.hasISPBlocking
+                        ? Icons.block
+                        : Icons.warning_amber_rounded,
                     size: 20,
-                    color: analysis.hasISPBlocking ? colorScheme.error : colorScheme.tertiary,
+                    color: analysis.hasISPBlocking
+                        ? colorScheme.error
+                        : colorScheme.tertiary,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -557,19 +605,21 @@ class _LogSummaryCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               if (analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.block,
                   label: 'ISP BLOCKING DETECTED',
-                  description: 'Your ISP may be blocking access to download services',
-                  suggestion: 'Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8',
+                  description:
+                      'Your ISP may be blocking access to download services',
+                  suggestion:
+                      'Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8',
                   color: colorScheme.error,
                   domains: analysis.blockedDomains,
                 ),
                 const SizedBox(height: 8),
               ],
-              
+
               if (analysis.hasRateLimit) ...[
                 _IssueBadge(
                   icon: Icons.speed,
@@ -580,7 +630,7 @@ class _LogSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              
+
               if (analysis.hasNetworkError && !analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.wifi_off,
@@ -591,17 +641,19 @@ class _LogSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              
+
               if (analysis.hasNotFound) ...[
                 _IssueBadge(
                   icon: Icons.search_off,
                   label: 'TRACK NOT FOUND',
-                  description: 'Some tracks could not be found on download services',
-                  suggestion: 'The track may not be available in lossless quality',
+                  description:
+                      'Some tracks could not be found on download services',
+                  suggestion:
+                      'The track may not be available in lossless quality',
                   color: colorScheme.onSurfaceVariant,
                 ),
               ],
-              
+
               const SizedBox(height: 12),
               Text(
                 'Total errors: ${analysis.errorCount}',
@@ -639,7 +691,7 @@ class _LogSummaryCard extends StatelessWidget {
           combined.contains('connection reset') ||
           combined.contains('connection refused')) {
         hasISPBlocking = true;
-        
+
         final domainMatch = _domainPattern.firstMatch(combined);
         if (domainMatch != null) {
           blockedDomains.add(domainMatch.group(1)!);
@@ -694,7 +746,12 @@ class _LogAnalysis {
     required this.blockedDomains,
   });
 
-  bool get hasIssues => errorCount > 0 || hasISPBlocking || hasRateLimit || hasNetworkError || hasNotFound;
+  bool get hasIssues =>
+      errorCount > 0 ||
+      hasISPBlocking ||
+      hasRateLimit ||
+      hasNetworkError ||
+      hasNotFound;
 }
 
 class _IssueBadge extends StatelessWidget {
@@ -717,7 +774,7 @@ class _IssueBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -746,9 +803,9 @@ class _IssueBadge extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             description,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
           ),
           if (domains != null && domains!.isNotEmpty) ...[
             const SizedBox(height: 4),
@@ -765,7 +822,11 @@ class _IssueBadge extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lightbulb_outline, size: 14, color: colorScheme.primary),
+              Icon(
+                Icons.lightbulb_outline,
+                size: 14,
+                color: colorScheme.primary,
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(

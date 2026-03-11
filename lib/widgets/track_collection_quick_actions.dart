@@ -36,6 +36,7 @@ class TrackCollectionQuickActions extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return IconButton(
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       icon: Icon(
         Icons.more_vert,
         color: colorScheme.onSurfaceVariant,

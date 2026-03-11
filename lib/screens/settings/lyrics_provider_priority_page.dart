@@ -122,8 +122,6 @@ class _LyricsProviderPriorityPageState
     );
   }
 
-  // ── State mutations ──
-
   void _enableProvider(String id) {
     setState(() => _enabledProviders.add(id));
     _markChanged();
@@ -141,8 +139,6 @@ class _LyricsProviderPriorityPageState
     setState(() => _enabledProviders.remove(id));
     _markChanged();
   }
-
-  // ── Save / Discard ──
 
   Future<void> _saveChanges() async {
     ref
@@ -179,8 +175,6 @@ class _LyricsProviderPriorityPageState
     );
     return result ?? false;
   }
-
-  // ── Provider metadata ──
 
   static _LyricsProviderInfo _getLyricsProviderInfo(String id) {
     switch (id) {
@@ -230,10 +224,6 @@ class _LyricsProviderPriorityPageState
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  Enabled provider card (reorderable)
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _EnabledProviderItem extends StatelessWidget {
   final String providerId;
   final _LyricsProviderInfo info;
@@ -273,7 +263,6 @@ class _EnabledProviderItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Numbered badge
                 Container(
                   width: 28,
                   height: 28,
@@ -296,10 +285,8 @@ class _EnabledProviderItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Icon
                 Icon(info.icon, color: colorScheme.primary),
                 const SizedBox(width: 12),
-                // Name + description
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,7 +306,6 @@ class _EnabledProviderItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Enable/disable switch
                 SizedBox(
                   height: 32,
                   child: FittedBox(
@@ -327,7 +313,6 @@ class _EnabledProviderItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Drag handle
                 Icon(Icons.drag_handle, color: colorScheme.onSurfaceVariant),
               ],
             ),
@@ -337,10 +322,6 @@ class _EnabledProviderItem extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  Disabled provider card
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _DisabledProviderItem extends StatelessWidget {
   final String providerId;
@@ -383,10 +364,8 @@ class _DisabledProviderItem extends StatelessWidget {
                   // Empty space aligned with numbered badge
                   const SizedBox(width: 28),
                   const SizedBox(width: 16),
-                  // Icon (muted)
                   Icon(info.icon, color: colorScheme.outline),
                   const SizedBox(width: 12),
-                  // Name + description
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +386,6 @@ class _DisabledProviderItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Switch
                   SizedBox(
                     height: 32,
                     child: FittedBox(
@@ -423,10 +401,6 @@ class _DisabledProviderItem extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  Provider info model
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _LyricsProviderInfo {
   final String name;

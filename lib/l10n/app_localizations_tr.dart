@@ -361,7 +361,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Spotify şarkılarını Tidal, Qobuz ve Amazon Music\'den yüksek kalitede indir.';
+      'Spotify şarkılarını Tidal ve Qobuz\'den yüksek kalitede indir.';
 
   @override
   String get artistAlbums => 'Albümler';
@@ -694,6 +694,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get errorNoTracksFound => 'Parça bulunamadı';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return '$item yüklenemedi: Eksik eklenti kaynağı';
   }
@@ -765,6 +776,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get folderOrganizationNone => 'Organizasyon yok';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'Sanatçıya Göre';
@@ -1821,7 +1839,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Tidal, Qobuz veya Deezer\'den FLAC kalitesinde ses alın';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2137,6 +2155,54 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get cueSplitTitle => 'Split CUE Sheet';
+
+  @override
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';

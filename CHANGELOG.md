@@ -1,5 +1,54 @@
 # Changelog
 
+## [3.7.2] - 2026-03-07
+
+### Changed
+
+- **Amazon Music is now an Extension**: Amazon Music has been moved from a built-in service to a separate installable extension. Install the "Amazon Music" extension from the Store to continue using it.
+
+### Fixed
+
+- **Deezer Downloads Timing Out**: Deezer downloads were failing with "context deadline exceeded" on larger files. Now uses the proper download timeout, matching Tidal and Qobuz.
+- **iOS Local Library Scan Fails**: Local library scanning was failing on iOS because the app lost access to user-picked folders after the FilePicker session ended. Implemented iOS security-scoped bookmark system:
+  - When a library folder is picked on iOS, a security-scoped bookmark is created and persisted in settings (`localLibraryBookmark`)
+  - Before each scan, the bookmark is resolved and security-scoped access is started; access is released in `finally` block after scan completes
+  - `cleanupMissingFiles` also activates the bookmark before checking file existence on iOS
+  - New `AppDelegate.swift` method channel handlers: `createIosBookmarkFromPath`, `startAccessingIosBookmark`, `stopAccessingIosBookmark`, `resolveIosBookmark`
+  - New `PlatformBridge` methods: `createIosBookmarkFromPath()`, `startAccessingIosBookmark()`, `stopAccessingIosBookmark()`
+  - All scan call-sites (Library Settings, Queue tab, Local Album screen) now pass the iOS bookmark to `startScan()`
+
+### Added
+
+- **Amazon Music Extension**: Available in `extension/Amazon-SpotiFLAC/` — same functionality as before, now as an installable extension.
+- **Accessibility Tooltips**: Added localized tooltips to all `IconButton` and `PopupMenuButton` widgets across the entire UI for screen reader and long-press discoverability
+  - Back buttons use `MaterialLocalizations.backButtonTooltip`
+  - Close buttons use `MaterialLocalizations.closeButtonTooltip`
+  - Menu buttons use `MaterialLocalizations.showMenuTooltip`
+  - Search buttons use `MaterialLocalizations.searchFieldLabel`
+  - Contextual actions use descriptive labels: "Play track", "Dismiss", "Clear search", "Change folder", "Refresh"
+  - Screens affected: Album, Artist, Playlist, Downloaded Album, Local Album, Home, Search, Queue, Library Playlists, Library Tracks Folder, Setup, Tutorial, Track Metadata, Store, Extension Store Details, and all Settings sub-pages (About, Appearance, Cache Management, Donate, Download, Extensions, Extension Detail, Library, Log, Options, Provider Priority)
+- **Semantics Wrappers**: Added `Semantics` widgets to interactive elements that previously had no accessibility information
+  - Album tiles in Artist screen: announces selection state and album name
+  - Recently downloaded track tiles in Home tab: announces track name and artist
+  - Explore items (albums/artists/playlists) in Home tab: announces item type and name
+  - Color palette picker in Appearance settings: announces selected state and color hex value
+  - Download button demo in Tutorial screen: added `ExcludeSemantics` on icon to prevent duplicate screen reader announcements
+  - Queue tab playlist cards: announces playlist name and item count
+  - Queue tab downloaded album cards: announces album name, artist, and track count
+  - Queue tab local album cards: announces album name, artist, and track count
+  - Queue tab play button on completed downloads: announces track name and artist with `ExcludeSemantics` on icon
+  - Queue tab download status indicators: "Finalizing download", "Download completed", "Downloaded file missing" labels with `ExcludeSemantics` on icons
+
+### Improved
+
+- **Code Formatting**: Reformatted and corrected indentation across multiple files to comply with Dart style guidelines
+  - `extension_detail_page.dart`: Fixed `SliverAppBar` and all subsequent slivers indentation (was 2 spaces short)
+  - `log_screen.dart`: Fixed `SliverAppBar` indentation alignment
+  - `donate_page.dart`: Reformatted ternary expressions and `_cr` function body
+  - `library_tracks_folder_screen.dart`: Minor line-break formatting
+
+---
+
 ## [3.7.1] - 2026-03-06
 
 ### Added

@@ -15,7 +15,8 @@ class ExtensionDetailPage extends ConsumerStatefulWidget {
   const ExtensionDetailPage({super.key, required this.extensionId});
 
   @override
-  ConsumerState<ExtensionDetailPage> createState() => _ExtensionDetailPageState();
+  ConsumerState<ExtensionDetailPage> createState() =>
+      _ExtensionDetailPageState();
 }
 
 class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
@@ -65,320 +66,373 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
-            expandedHeight: 120 + topPadding,
-            collapsedHeight: kToolbarHeight,
-            floating: false,
-            pinned: true,
-            backgroundColor: colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-            ),
-            flexibleSpace: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxHeight = 120 + topPadding;
-                final minHeight = kToolbarHeight + topPadding;
-                final expandRatio = ((constraints.maxHeight - minHeight) /
-                        (maxHeight - minHeight))
-                    .clamp(0.0, 1.0);
-                final leftPadding = 56 - (32 * expandRatio);
-                return FlexibleSpaceBar(
-                  expandedTitleScale: 1.0,
-                  titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
-                  title: Text(
-                    extension.displayName,
-                    style: TextStyle(
-                      fontSize: 20 + (8 * expandRatio),
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+              expandedHeight: 120 + topPadding,
+              collapsedHeight: kToolbarHeight,
+              floating: false,
+              pinned: true,
+              backgroundColor: colorScheme.surface,
+              surfaceTintColor: Colors.transparent,
+              leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+              flexibleSpace: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxHeight = 120 + topPadding;
+                  final minHeight = kToolbarHeight + topPadding;
+                  final expandRatio =
+                      ((constraints.maxHeight - minHeight) /
+                              (maxHeight - minHeight))
+                          .clamp(0.0, 1.0);
+                  final leftPadding = 56 - (32 * expandRatio);
+                  return FlexibleSpaceBar(
+                    expandedTitleScale: 1.0,
+                    titlePadding: EdgeInsets.only(
+                      left: leftPadding,
+                      bottom: 16,
                     ),
-                  ),
-                );
-              },
+                    title: Text(
+                      extension.displayName,
+                      style: TextStyle(
+                        fontSize: 20 + (8 * expandRatio),
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: hasError
-                                ? colorScheme.errorContainer
-                                : colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: extension.iconPath != null && extension.iconPath!.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.file(
-                                    File(extension.iconPath!),
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Icon(
-                                      hasError ? Icons.error_outline : Icons.extension,
-                                      size: 28,
-                                      color: hasError
-                                          ? colorScheme.error
-                                          : colorScheme.onPrimaryContainer,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: hasError
+                                  ? colorScheme.errorContainer
+                                  : colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child:
+                                extension.iconPath != null &&
+                                    extension.iconPath!.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.file(
+                                      File(extension.iconPath!),
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) => Icon(
+                                            hasError
+                                                ? Icons.error_outline
+                                                : Icons.extension,
+                                            size: 28,
+                                            color: hasError
+                                                ? colorScheme.error
+                                                : colorScheme
+                                                      .onPrimaryContainer,
+                                          ),
                                     ),
+                                  )
+                                : Icon(
+                                    hasError
+                                        ? Icons.error_outline
+                                        : Icons.extension,
+                                    size: 28,
+                                    color: hasError
+                                        ? colorScheme.error
+                                        : colorScheme.onPrimaryContainer,
                                   ),
-                                )
-                              : Icon(
-                                  hasError ? Icons.error_outline : Icons.extension,
-                                  size: 28,
-                                  color: hasError
-                                      ? colorScheme.error
-                                      : colorScheme.onPrimaryContainer,
-                                ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                extension.displayName,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'v${extension.version}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
                           ),
-                        ),
-                        Switch(
-                          value: extension.enabled,
-                          onChanged: hasError
-                              ? null
-                              : (enabled) => ref
-                                  .read(extensionProvider.notifier)
-                                  .setExtensionEnabled(widget.extensionId, enabled),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  extension.displayName,
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'v${extension.version}',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: extension.enabled,
+                            onChanged: hasError
+                                ? null
+                                : (enabled) => ref
+                                      .read(extensionProvider.notifier)
+                                      .setExtensionEnabled(
+                                        widget.extensionId,
+                                        enabled,
+                                      ),
+                          ),
+                        ],
+                      ),
+                      if (extension.description.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          extension.description,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
-                    ),
-                    if (extension.description.isNotEmpty) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        extension.description,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    _InfoRow(label: context.l10n.extensionAuthor, value: extension.author),
-                    _InfoRow(label: context.l10n.extensionId, value: extension.id),
-                    _InfoRow(label: context.l10n.extensionsVersion(extension.version), value: ''),
-                    if (hasError && extension.errorMessage != null)
                       _InfoRow(
-                        label: context.l10n.extensionError,
-                        value: extension.errorMessage!,
-                        isError: true,
+                        label: context.l10n.extensionAuthor,
+                        value: extension.author,
                       ),
-                  ],
+                      _InfoRow(
+                        label: context.l10n.extensionId,
+                        value: extension.id,
+                      ),
+                      _InfoRow(
+                        label: context.l10n.extensionsVersion(
+                          extension.version,
+                        ),
+                        value: '',
+                      ),
+                      if (hasError && extension.errorMessage != null)
+                        _InfoRow(
+                          label: context.l10n.extensionError,
+                          value: extension.errorMessage!,
+                          isError: true,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          SliverToBoxAdapter(
-            child: SettingsSectionHeader(title: context.l10n.extensionCapabilities),
-          ),
-          SliverToBoxAdapter(
-            child: SettingsGroup(
-              children: [
-                _CapabilityItem(
-                  icon: Icons.search,
-                  title: context.l10n.extensionMetadataProvider,
-                  enabled: extension.hasMetadataProvider,
-                ),
-                _CapabilityItem(
-                  icon: Icons.download,
-                  title: context.l10n.extensionDownloadProvider,
-                  enabled: extension.hasDownloadProvider,
-                ),
-                _CapabilityItem(
-                  icon: Icons.lyrics,
-                  title: context.l10n.extensionLyricsProvider,
-                  enabled: extension.hasLyricsProvider,
-                ),
-                _CapabilityItem(
-                  icon: Icons.manage_search,
-                  title: context.l10n.extensionsSearchProvider,
-                  enabled: extension.hasCustomSearch,
-                  subtitle: extension.searchBehavior?.placeholder,
-                ),
-                _CapabilityItem(
-                  icon: Icons.compare_arrows,
-                  title: context.l10n.extensionCustomTrackMatching,
-                  enabled: extension.hasCustomMatching,
-                  subtitle: extension.trackMatching?.strategy != null 
-                      ? context.l10n.extensionStrategy(extension.trackMatching!.strategy!)
-                      : null,
-                ),
-                _CapabilityItem(
-                  icon: Icons.auto_fix_high,
-                  title: context.l10n.extensionPostProcessing,
-                  enabled: extension.hasPostProcessing,
-                  subtitle: extension.postProcessing?.hooks.isNotEmpty == true
-                      ? context.l10n.extensionHooksAvailable(extension.postProcessing!.hooks.length)
-                      : null,
-                ),
-                _CapabilityItem(
-                  icon: Icons.link,
-                  title: context.l10n.extensionUrlHandler,
-                  enabled: extension.hasURLHandler,
-                  subtitle: extension.urlHandler?.patterns.isNotEmpty == true
-                      ? context.l10n.extensionPatternsCount(extension.urlHandler!.patterns.length)
-                      : null,
-                  showDivider: false,
-                ),
-              ],
-            ),
-          ),
-
-          if (extension.hasURLHandler && extension.urlHandler!.patterns.isNotEmpty) ...[
             SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.extensionUrlHandler),
+              child: SettingsSectionHeader(
+                title: context.l10n.extensionCapabilities,
+              ),
             ),
             SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
-                  _URLHandlerInfo(
-                    patterns: extension.urlHandler!.patterns,
+                  _CapabilityItem(
+                    icon: Icons.search,
+                    title: context.l10n.extensionMetadataProvider,
+                    enabled: extension.hasMetadataProvider,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.download,
+                    title: context.l10n.extensionDownloadProvider,
+                    enabled: extension.hasDownloadProvider,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.lyrics,
+                    title: context.l10n.extensionLyricsProvider,
+                    enabled: extension.hasLyricsProvider,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.manage_search,
+                    title: context.l10n.extensionsSearchProvider,
+                    enabled: extension.hasCustomSearch,
+                    subtitle: extension.searchBehavior?.placeholder,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.compare_arrows,
+                    title: context.l10n.extensionCustomTrackMatching,
+                    enabled: extension.hasCustomMatching,
+                    subtitle: extension.trackMatching?.strategy != null
+                        ? context.l10n.extensionStrategy(
+                            extension.trackMatching!.strategy!,
+                          )
+                        : null,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.auto_fix_high,
+                    title: context.l10n.extensionPostProcessing,
+                    enabled: extension.hasPostProcessing,
+                    subtitle: extension.postProcessing?.hooks.isNotEmpty == true
+                        ? context.l10n.extensionHooksAvailable(
+                            extension.postProcessing!.hooks.length,
+                          )
+                        : null,
+                  ),
+                  _CapabilityItem(
+                    icon: Icons.link,
+                    title: context.l10n.extensionUrlHandler,
+                    enabled: extension.hasURLHandler,
+                    subtitle: extension.urlHandler?.patterns.isNotEmpty == true
+                        ? context.l10n.extensionPatternsCount(
+                            extension.urlHandler!.patterns.length,
+                          )
+                        : null,
+                    showDivider: false,
                   ),
                 ],
               ),
             ),
-          ],
 
-          if (extension.hasDownloadProvider && extension.qualityOptions.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.extensionQualityOptions),
-            ),
-            SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: extension.qualityOptions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final quality = entry.value;
-                  return _QualityOptionItem(
-                    quality: quality,
-                    showDivider: index < extension.qualityOptions.length - 1,
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-
-          if (extension.hasPostProcessing && extension.postProcessing!.hooks.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.extensionPostProcessingHooks),
-            ),
-            SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: extension.postProcessing!.hooks.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final hook = entry.value;
-                  return _PostProcessingHookItem(
-                    hook: hook,
-                    showDivider: index < extension.postProcessing!.hooks.length - 1,
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-
-          if (extension.permissions.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.extensionPermissions),
-            ),
-            SliverToBoxAdapter(
-              child: SettingsGroup(
-                children: extension.permissions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final permission = entry.value;
-                  return _PermissionItem(
-                    permission: permission,
-                    showDivider: index < extension.permissions.length - 1,
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-
-          if (extension.settings.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.extensionSettings),
-            ),
-            if (_isLoadingSettings)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
+            if (extension.hasURLHandler &&
+                extension.urlHandler!.patterns.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SettingsSectionHeader(
+                  title: context.l10n.extensionUrlHandler,
                 ),
-              )
-            else
+              ),
               SliverToBoxAdapter(
                 child: SettingsGroup(
-                  children: extension.settings.asMap().entries.map((entry) {
+                  children: [
+                    _URLHandlerInfo(patterns: extension.urlHandler!.patterns),
+                  ],
+                ),
+              ),
+            ],
+
+            if (extension.hasDownloadProvider &&
+                extension.qualityOptions.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SettingsSectionHeader(
+                  title: context.l10n.extensionQualityOptions,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: extension.qualityOptions.asMap().entries.map((
+                    entry,
+                  ) {
                     final index = entry.key;
-                    final setting = entry.value;
-                    return _SettingItem(
-                      setting: setting,
-                      value: _settings[setting.key] ?? setting.defaultValue,
-                      showDivider: index < extension.settings.length - 1,
-                      onChanged: (value) => _updateSetting(setting.key, value),
-                      extensionId: widget.extensionId,
+                    final quality = entry.value;
+                    return _QualityOptionItem(
+                      quality: quality,
+                      showDivider: index < extension.qualityOptions.length - 1,
                     );
                   }).toList(),
                 ),
               ),
-          ],
+            ],
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: OutlinedButton.icon(
-                onPressed: () => _confirmRemove(context),
-                icon: const Icon(Icons.delete_outline),
-                label: Text(context.l10n.extensionRemoveButton),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.error),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            if (extension.hasPostProcessing &&
+                extension.postProcessing!.hooks.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SettingsSectionHeader(
+                  title: context.l10n.extensionPostProcessingHooks,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: extension.postProcessing!.hooks.asMap().entries.map(
+                    (entry) {
+                      final index = entry.key;
+                      final hook = entry.value;
+                      return _PostProcessingHookItem(
+                        hook: hook,
+                        showDivider:
+                            index < extension.postProcessing!.hooks.length - 1,
+                      );
+                    },
+                  ).toList(),
+                ),
+              ),
+            ],
+
+            if (extension.permissions.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SettingsSectionHeader(
+                  title: context.l10n.extensionPermissions,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: extension.permissions.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final permission = entry.value;
+                    return _PermissionItem(
+                      permission: permission,
+                      showDivider: index < extension.permissions.length - 1,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+
+            if (extension.settings.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SettingsSectionHeader(
+                  title: context.l10n.extensionSettings,
+                ),
+              ),
+              if (_isLoadingSettings)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                )
+              else
+                SliverToBoxAdapter(
+                  child: SettingsGroup(
+                    children: extension.settings.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final setting = entry.value;
+                      return _SettingItem(
+                        setting: setting,
+                        value: _settings[setting.key] ?? setting.defaultValue,
+                        showDivider: index < extension.settings.length - 1,
+                        onChanged: (value) =>
+                            _updateSetting(setting.key, value),
+                        extensionId: widget.extensionId,
+                      );
+                    }).toList(),
+                  ),
+                ),
+            ],
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: OutlinedButton.icon(
+                  onPressed: () => _confirmRemove(context),
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(context.l10n.extensionRemoveButton),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.error,
+                    side: BorderSide(color: colorScheme.error),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -397,9 +451,7 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.dialogRemoveExtension),
-        content: Text(
-          context.l10n.dialogRemoveExtensionMessage,
-        ),
+        content: Text(context.l10n.dialogRemoveExtensionMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -407,9 +459,7 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
             child: Text(context.l10n.dialogRemove),
           ),
         ],
@@ -504,10 +554,7 @@ class _CapabilityItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+                    Text(title, style: Theme.of(context).textTheme.bodyLarge),
                     if (subtitle != null && enabled) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -544,18 +591,15 @@ class _PermissionItem extends StatelessWidget {
   final String permission;
   final bool showDivider;
 
-  const _PermissionItem({
-    required this.permission,
-    this.showDivider = true,
-  });
+  const _PermissionItem({required this.permission, this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     IconData icon = Icons.security;
     String description = permission;
-    
+
     if (permission.startsWith('network:')) {
       icon = Icons.language;
       description = 'Network access to: ${permission.substring(8)}';
@@ -658,7 +702,6 @@ class _SettingItemState extends State<_SettingItem> {
         );
     }
 
-    // For button type, show a different layout
     if (widget.setting.type == 'button') {
       return Column(
         mainAxisSize: MainAxisSize.min,
@@ -674,9 +717,8 @@ class _SettingItemState extends State<_SettingItem> {
                       if (widget.setting.description != null) ...[
                         Text(
                           widget.setting.description!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                         const SizedBox(height: 12),
                       ],
@@ -703,7 +745,8 @@ class _SettingItemState extends State<_SettingItem> {
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          onTap: widget.setting.type == 'string' || widget.setting.type == 'number'
+          onTap:
+              widget.setting.type == 'string' || widget.setting.type == 'number'
               ? () => _showEditDialog(context)
               : null,
           child: Padding(
@@ -722,18 +765,17 @@ class _SettingItemState extends State<_SettingItem> {
                         const SizedBox(height: 2),
                         Text(
                           widget.setting.description!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
-                      if (widget.setting.type == 'string' || widget.setting.type == 'number') ...[
+                      if (widget.setting.type == 'string' ||
+                          widget.setting.type == 'number') ...[
                         const SizedBox(height: 4),
                         Text(
                           widget.value?.toString() ?? 'Not set',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.primary,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.primary),
                         ),
                       ],
                     ],
@@ -776,23 +818,23 @@ class _SettingItemState extends State<_SettingItem> {
         final success = result['success'] as bool? ?? false;
         if (!success) {
           final error = result['error'] as String? ?? 'Action failed';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
         } else {
           final message = result['message'] as String?;
           if (message != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(message)));
           }
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -802,7 +844,9 @@ class _SettingItemState extends State<_SettingItem> {
   }
 
   void _showEditDialog(BuildContext context) {
-    final controller = TextEditingController(text: widget.value?.toString() ?? '');
+    final controller = TextEditingController(
+      text: widget.value?.toString() ?? '',
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     showDialog(
@@ -817,7 +861,9 @@ class _SettingItemState extends State<_SettingItem> {
           decoration: InputDecoration(
             hintText: widget.setting.description ?? 'Enter value',
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            fillColor: colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -849,15 +895,12 @@ class _PostProcessingHookItem extends StatelessWidget {
   final PostProcessingHook hook;
   final bool showDivider;
 
-  const _PostProcessingHookItem({
-    required this.hook,
-    this.showDivider = true,
-  });
+  const _PostProcessingHookItem({required this.hook, this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -904,16 +947,20 @@ class _PostProcessingHookItem extends StatelessWidget {
                         spacing: 4,
                         children: hook.supportedFormats.map((format) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               format.toUpperCase(),
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                             ),
                           );
                         }).toList(),
@@ -924,7 +971,10 @@ class _PostProcessingHookItem extends StatelessWidget {
               ),
               if (hook.defaultEnabled)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -952,19 +1002,15 @@ class _PostProcessingHookItem extends StatelessWidget {
   }
 }
 
-
-
 class _URLHandlerInfo extends StatelessWidget {
   final List<String> patterns;
 
-  const _URLHandlerInfo({
-    required this.patterns,
-  });
+  const _URLHandlerInfo({required this.patterns});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1014,7 +1060,10 @@ class _URLHandlerInfo extends StatelessWidget {
             runSpacing: 8,
             children: patterns.map((pattern) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
@@ -1022,11 +1071,7 @@ class _URLHandlerInfo extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.language,
-                      size: 16,
-                      color: colorScheme.primary,
-                    ),
+                    Icon(Icons.language, size: 16, color: colorScheme.primary),
                     const SizedBox(width: 6),
                     Text(
                       pattern,
@@ -1049,11 +1094,7 @@ class _URLHandlerInfo extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
+                Icon(Icons.info_outline, size: 20, color: colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -1076,15 +1117,12 @@ class _QualityOptionItem extends StatelessWidget {
   final QualityOption quality;
   final bool showDivider;
 
-  const _QualityOptionItem({
-    required this.quality,
-    this.showDivider = true,
-  });
+  const _QualityOptionItem({required this.quality, this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1116,7 +1154,8 @@ class _QualityOptionItem extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (quality.description != null && quality.description!.isNotEmpty) ...[
+                    if (quality.description != null &&
+                        quality.description!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         quality.description!,
@@ -1138,7 +1177,10 @@ class _QualityOptionItem extends StatelessWidget {
               ),
               if (quality.settings.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),

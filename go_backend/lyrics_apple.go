@@ -97,7 +97,6 @@ func (m *appleTokenManager) clearToken() {
 	m.token = ""
 }
 
-// Apple Music API response models
 type appleMusicSearchResponse struct {
 	Results struct {
 		Songs *struct {
@@ -239,15 +238,12 @@ func (c *AppleMusicClient) FetchLyricsByID(songID string) (string, error) {
 	return bodyStr, nil
 }
 
-// formatPaxLyricsToLRC converts a pax proxy response to standard LRC format.
 func formatPaxLyricsToLRC(rawJSON string, multiPersonWordByWord bool) (string, error) {
-	// Try to parse as PaxResponse first
 	var paxResp paxResponse
 	if err := json.Unmarshal([]byte(rawJSON), &paxResp); err == nil && paxResp.Content != nil {
 		return formatPaxContent(paxResp.Type, paxResp.Content, multiPersonWordByWord), nil
 	}
 
-	// Try to parse as a direct list of PaxLyrics
 	var directLyrics []paxLyrics
 	if err := json.Unmarshal([]byte(rawJSON), &directLyrics); err == nil && len(directLyrics) > 0 {
 		return formatPaxContent("Syllable", directLyrics, multiPersonWordByWord), nil
