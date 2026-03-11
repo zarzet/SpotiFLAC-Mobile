@@ -6,6 +6,12 @@
   <img alt="SpotiFLAC Mobile" src="assets/images/banner-readme-light.png" width="650" height="auto">
 </picture>
 
+<p align="center">
+  <a href="https://trendshift.io/repositories/17247">
+    <img src="https://trendshift.io/api/badge/repositories/17247" alt="zarzet%2FSpotiFLAC-Mobile | Trendshift" width="250" height="55">
+  </a>
+</p>
+
 </div>
 
 ## Screenshots
