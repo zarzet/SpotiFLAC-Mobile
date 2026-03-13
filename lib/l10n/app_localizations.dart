@@ -256,7 +256,7 @@ abstract class AppLocalizations {
   /// **'Filename Format'**
   String get downloadFilenameFormat;
 
-  /// Setting for folder structure
+  /// Title of the folder organization picker bottom sheet
   ///
   /// In en, this message translates to:
   /// **'Folder Organization'**
@@ -2236,6 +2236,84 @@ abstract class AppLocalizations {
   /// **'Clear filters'**
   String get storeClearFilters;
 
+  /// Store setup screen - heading when no repo is configured
+  ///
+  /// In en, this message translates to:
+  /// **'Add Extension Repository'**
+  String get storeAddRepoTitle;
+
+  /// Store setup screen - explanatory text
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a GitHub repository URL that contains a registry.json file to browse and install extensions.'**
+  String get storeAddRepoDescription;
+
+  /// Label for the repository URL input field
+  ///
+  /// In en, this message translates to:
+  /// **'Repository URL'**
+  String get storeRepoUrlLabel;
+
+  /// Hint/placeholder for the repository URL input field
+  ///
+  /// In en, this message translates to:
+  /// **'https://github.com/user/repo'**
+  String get storeRepoUrlHint;
+
+  /// Helper text below the repository URL input field
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. https://github.com/user/extensions-repo'**
+  String get storeRepoUrlHelper;
+
+  /// Button to submit a new repository URL
+  ///
+  /// In en, this message translates to:
+  /// **'Add Repository'**
+  String get storeAddRepoButton;
+
+  /// Tooltip for the change-repository icon button in the app bar
+  ///
+  /// In en, this message translates to:
+  /// **'Change repository'**
+  String get storeChangeRepoTooltip;
+
+  /// Title of the change/remove repository dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Extension Repository'**
+  String get storeRepoDialogTitle;
+
+  /// Label shown above the current repository URL in the dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Current repository:'**
+  String get storeRepoDialogCurrent;
+
+  /// Label for the new repository URL field inside the dialog
+  ///
+  /// In en, this message translates to:
+  /// **'New Repository URL'**
+  String get storeNewRepoUrlLabel;
+
+  /// Error heading when the store cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load store'**
+  String get storeLoadError;
+
+  /// Message when store has no extensions
+  ///
+  /// In en, this message translates to:
+  /// **'No extensions available'**
+  String get storeEmptyNoExtensions;
+
+  /// Message when search/filter returns no results
+  ///
+  /// In en, this message translates to:
+  /// **'No extensions found'**
+  String get storeEmptyNoResults;
+
   /// Default search provider option
   ///
   /// In en, this message translates to:
@@ -4205,6 +4283,540 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Artist folders use Track Artist only'**
   String get downloadUseAlbumArtistForFoldersTrackSubtitle;
+
+  /// Title for the lyrics provider priority page
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics Providers'**
+  String get lyricsProvidersTitle;
+
+  /// Description on the lyrics provider priority page
+  ///
+  /// In en, this message translates to:
+  /// **'Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.'**
+  String get lyricsProvidersDescription;
+
+  /// Info tip on lyrics provider priority page
+  ///
+  /// In en, this message translates to:
+  /// **'Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.'**
+  String get lyricsProvidersInfoText;
+
+  /// Section header for enabled providers
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled ({count})'**
+  String lyricsProvidersEnabledSection(int count);
+
+  /// Section header for disabled providers
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled ({count})'**
+  String lyricsProvidersDisabledSection(int count);
+
+  /// Snackbar when user tries to disable the last enabled provider
+  ///
+  /// In en, this message translates to:
+  /// **'At least one provider must remain enabled'**
+  String get lyricsProvidersAtLeastOne;
+
+  /// Snackbar after saving lyrics provider priority
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics provider priority saved'**
+  String get lyricsProvidersSaved;
+
+  /// Body text of the discard-changes dialog on lyrics provider page
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes that will be lost.'**
+  String get lyricsProvidersDiscardContent;
+
+  /// Description for Spotify Lyrics API provider
+  ///
+  /// In en, this message translates to:
+  /// **'Spotify-sourced synced lyrics via community API'**
+  String get lyricsProviderSpotifyApiDesc;
+
+  /// Description for LRCLIB provider
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source synced lyrics database'**
+  String get lyricsProviderLrclibDesc;
+
+  /// Description for Netease provider
+  ///
+  /// In en, this message translates to:
+  /// **'NetEase Cloud Music (good for Asian songs)'**
+  String get lyricsProviderNeteaseDesc;
+
+  /// Description for Musixmatch provider
+  ///
+  /// In en, this message translates to:
+  /// **'Largest lyrics database (multi-language)'**
+  String get lyricsProviderMusixmatchDesc;
+
+  /// Description for Apple Music provider
+  ///
+  /// In en, this message translates to:
+  /// **'Word-by-word synced lyrics (via proxy)'**
+  String get lyricsProviderAppleMusicDesc;
+
+  /// Description for QQ Music provider
+  ///
+  /// In en, this message translates to:
+  /// **'QQ Music (good for Chinese songs, via proxy)'**
+  String get lyricsProviderQqMusicDesc;
+
+  /// Generic description for extension-based lyrics providers
+  ///
+  /// In en, this message translates to:
+  /// **'Extension provider'**
+  String get lyricsProviderExtensionDesc;
+
+  /// Title of SAF migration dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Storage Update Required'**
+  String get safMigrationTitle;
+
+  /// First paragraph of SAF migration dialog
+  ///
+  /// In en, this message translates to:
+  /// **'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.'**
+  String get safMigrationMessage1;
+
+  /// Second paragraph of SAF migration dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your download folder again to switch to the new storage system.'**
+  String get safMigrationMessage2;
+
+  /// Snackbar after successfully migrating to SAF
+  ///
+  /// In en, this message translates to:
+  /// **'Download folder updated to SAF mode'**
+  String get safMigrationSuccess;
+
+  /// Settings menu item - donate
+  ///
+  /// In en, this message translates to:
+  /// **'Donate'**
+  String get settingsDonate;
+
+  /// Subtitle for donate menu item
+  ///
+  /// In en, this message translates to:
+  /// **'Support SpotiFLAC-Mobile development'**
+  String get settingsDonateSubtitle;
+
+  /// Tooltip for the Love All button on album/playlist screens
+  ///
+  /// In en, this message translates to:
+  /// **'Love All'**
+  String get tooltipLoveAll;
+
+  /// Tooltip for the Add to Playlist button
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Playlist'**
+  String get tooltipAddToPlaylist;
+
+  /// Snackbar after removing multiple tracks from Loved folder
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {count} tracks from Loved'**
+  String snackbarRemovedTracksFromLoved(int count);
+
+  /// Snackbar after adding multiple tracks to Loved folder
+  ///
+  /// In en, this message translates to:
+  /// **'Added {count} tracks to Loved'**
+  String snackbarAddedTracksToLoved(int count);
+
+  /// Title of the Download All confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Download All'**
+  String get dialogDownloadAllTitle;
+
+  /// Body of the Download All confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Download {count} tracks?'**
+  String dialogDownloadAllMessage(int count);
+
+  /// Confirm button in Download All dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get dialogDownload;
+
+  /// Checkbox label in import dialog to skip already-downloaded songs
+  ///
+  /// In en, this message translates to:
+  /// **'Skip already downloaded songs'**
+  String get homeSkipAlreadyDownloaded;
+
+  /// Context menu item to navigate to the album page
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Album'**
+  String get homeGoToAlbum;
+
+  /// Snackbar when album info cannot be loaded
+  ///
+  /// In en, this message translates to:
+  /// **'Album info not available'**
+  String get homeAlbumInfoUnavailable;
+
+  /// Snackbar while loading a CUE sheet file
+  ///
+  /// In en, this message translates to:
+  /// **'Loading CUE sheet...'**
+  String get snackbarLoadingCueSheet;
+
+  /// Snackbar after successfully saving track metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata saved successfully'**
+  String get snackbarMetadataSaved;
+
+  /// Snackbar when lyrics embedding fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to embed lyrics'**
+  String get snackbarFailedToEmbedLyrics;
+
+  /// Snackbar when writing metadata back to file fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to write back to storage'**
+  String get snackbarFailedToWriteStorage;
+
+  /// Generic error snackbar with error detail
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String snackbarError(String error);
+
+  /// Snackbar when an extension button has no action configured
+  ///
+  /// In en, this message translates to:
+  /// **'No action defined for this button'**
+  String get snackbarNoActionDefined;
+
+  /// Empty state message when an album has no tracks
+  ///
+  /// In en, this message translates to:
+  /// **'No tracks found for this album'**
+  String get noTracksFoundForAlbum;
+
+  /// Subtitle text in Android download location bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Choose storage mode for downloaded files.'**
+  String get downloadLocationSubtitle;
+
+  /// Storage mode option - use legacy app folder
+  ///
+  /// In en, this message translates to:
+  /// **'App folder (non-SAF)'**
+  String get storageModeAppFolder;
+
+  /// Subtitle for app folder storage mode
+  ///
+  /// In en, this message translates to:
+  /// **'Use default Music/SpotiFLAC path'**
+  String get storageModeAppFolderSubtitle;
+
+  /// Storage mode option - use Android SAF picker
+  ///
+  /// In en, this message translates to:
+  /// **'SAF folder'**
+  String get storageModeSaf;
+
+  /// Subtitle for SAF storage mode
+  ///
+  /// In en, this message translates to:
+  /// **'Pick folder via Android Storage Access Framework'**
+  String get storageModeSafSubtitle;
+
+  /// Description text in filename format bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Customize how your files are named.'**
+  String get downloadFilenameDescription;
+
+  /// Label above filename tag chips
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to insert tag:'**
+  String get downloadFilenameInsertTag;
+
+  /// Subtitle when separate singles folder is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Albums/ and Singles/ folders'**
+  String get downloadSeparateSinglesEnabled;
+
+  /// Subtitle when separate singles folder is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'All files in same structure'**
+  String get downloadSeparateSinglesDisabled;
+
+  /// Setting title for artist folder filter options
+  ///
+  /// In en, this message translates to:
+  /// **'Artist Name Filters'**
+  String get downloadArtistNameFilters;
+
+  /// Setting title for SongLink country region
+  ///
+  /// In en, this message translates to:
+  /// **'SongLink Region'**
+  String get downloadSongLinkRegion;
+
+  /// Setting title for network compatibility toggle
+  ///
+  /// In en, this message translates to:
+  /// **'Network compatibility mode'**
+  String get downloadNetworkCompatibilityMode;
+
+  /// Subtitle when network compatibility mode is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled: try HTTP + accept invalid TLS certificates (unsafe)'**
+  String get downloadNetworkCompatibilityModeEnabled;
+
+  /// Subtitle when network compatibility mode is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Off: strict HTTPS certificate validation (recommended)'**
+  String get downloadNetworkCompatibilityModeDisabled;
+
+  /// Hint shown instead of Ask-quality subtitle when no built-in service selected
+  ///
+  /// In en, this message translates to:
+  /// **'Select a built-in service to enable'**
+  String get downloadSelectServiceToEnable;
+
+  /// Quality option label for Tidal lossy 320kbps
+  ///
+  /// In en, this message translates to:
+  /// **'Lossy 320kbps'**
+  String get downloadLossy320;
+
+  /// Setting title to pick output format for Tidal lossy downloads
+  ///
+  /// In en, this message translates to:
+  /// **'Lossy Format'**
+  String get downloadLossyFormat;
+
+  /// Info hint when non-Tidal/Qobuz service is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Select Tidal or Qobuz above to configure quality'**
+  String get downloadSelectTidalQobuz;
+
+  /// Subtitle for Embed Lyrics when Embed Metadata is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled while Embed Metadata is turned off'**
+  String get downloadEmbedLyricsDisabled;
+
+  /// Toggle title for including Netease translated lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Netease: Include Translation'**
+  String get downloadNeteaseIncludeTranslation;
+
+  /// Subtitle when Netease translation is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Append translated lyrics when available'**
+  String get downloadNeteaseIncludeTranslationEnabled;
+
+  /// Subtitle when Netease translation is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Use original lyrics only'**
+  String get downloadNeteaseIncludeTranslationDisabled;
+
+  /// Toggle title for including Netease romanized lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Netease: Include Romanization'**
+  String get downloadNeteaseIncludeRomanization;
+
+  /// Subtitle when Netease romanization is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Append romanized lyrics when available'**
+  String get downloadNeteaseIncludeRomanizationEnabled;
+
+  /// Subtitle when Netease romanization is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get downloadNeteaseIncludeRomanizationDisabled;
+
+  /// Toggle title for Apple/QQ multi-person word-by-word lyrics
+  ///
+  /// In en, this message translates to:
+  /// **'Apple/QQ Multi-Person Word-by-Word'**
+  String get downloadAppleQqMultiPerson;
+
+  /// Subtitle when multi-person word-by-word is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Enable v1/v2 speaker and [bg:] tags'**
+  String get downloadAppleQqMultiPersonEnabled;
+
+  /// Subtitle when multi-person word-by-word is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Simplified word-by-word formatting'**
+  String get downloadAppleQqMultiPersonDisabled;
+
+  /// Setting title for Musixmatch language preference
+  ///
+  /// In en, this message translates to:
+  /// **'Musixmatch Language'**
+  String get downloadMusixmatchLanguage;
+
+  /// Option label when Musixmatch uses original language
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (original)'**
+  String get downloadMusixmatchLanguageAuto;
+
+  /// Toggle title for filtering contributing artists in Album Artist metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Filter contributing artists in Album Artist'**
+  String get downloadFilterContributing;
+
+  /// Subtitle when contributing artist filter is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Album Artist metadata uses primary artist only'**
+  String get downloadFilterContributingEnabled;
+
+  /// Subtitle when contributing artist filter is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Keep full Album Artist metadata value'**
+  String get downloadFilterContributingDisabled;
+
+  /// Subtitle for lyrics providers setting when no providers are enabled
+  ///
+  /// In en, this message translates to:
+  /// **'None enabled'**
+  String get downloadProvidersNoneEnabled;
+
+  /// Label for the Musixmatch language code text field
+  ///
+  /// In en, this message translates to:
+  /// **'Language code'**
+  String get downloadMusixmatchLanguageCode;
+
+  /// Hint text for the Musixmatch language code field
+  ///
+  /// In en, this message translates to:
+  /// **'auto / en / es / ja'**
+  String get downloadMusixmatchLanguageHint;
+
+  /// Description in the Musixmatch language picker
+  ///
+  /// In en, this message translates to:
+  /// **'Set preferred language code (example: en, es, ja). Leave empty for auto.'**
+  String get downloadMusixmatchLanguageDesc;
+
+  /// Button to reset Musixmatch language to automatic
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get downloadMusixmatchAuto;
+
+  /// Title of the Tidal lossy format picker bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Lossy 320kbps Format'**
+  String get downloadLossy320Format;
+
+  /// Description in the Tidal lossy format picker
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.'**
+  String get downloadLossy320FormatDesc;
+
+  /// Tidal lossy format option - MP3 320kbps
+  ///
+  /// In en, this message translates to:
+  /// **'MP3 320kbps'**
+  String get downloadLossyMp3;
+
+  /// Subtitle for MP3 320kbps option
+  ///
+  /// In en, this message translates to:
+  /// **'Best compatibility, ~10MB per track'**
+  String get downloadLossyMp3Subtitle;
+
+  /// Tidal lossy format option - Opus 256kbps
+  ///
+  /// In en, this message translates to:
+  /// **'Opus 256kbps'**
+  String get downloadLossyOpus256;
+
+  /// Subtitle for Opus 256kbps option
+  ///
+  /// In en, this message translates to:
+  /// **'Best quality Opus, ~8MB per track'**
+  String get downloadLossyOpus256Subtitle;
+
+  /// Tidal lossy format option - Opus 128kbps
+  ///
+  /// In en, this message translates to:
+  /// **'Opus 128kbps'**
+  String get downloadLossyOpus128;
+
+  /// Subtitle for Opus 128kbps option
+  ///
+  /// In en, this message translates to:
+  /// **'Smallest size, ~4MB per track'**
+  String get downloadLossyOpus128Subtitle;
+
+  /// Subtitle for 'Any' network mode option
+  ///
+  /// In en, this message translates to:
+  /// **'WiFi + Mobile Data'**
+  String get downloadNetworkAnySubtitle;
+
+  /// Subtitle for 'WiFi only' network mode option
+  ///
+  /// In en, this message translates to:
+  /// **'Pause downloads on mobile data'**
+  String get downloadNetworkWifiOnlySubtitle;
+
+  /// Description in the SongLink region picker
+  ///
+  /// In en, this message translates to:
+  /// **'Used as userCountry for SongLink API lookup.'**
+  String get downloadSongLinkRegionDesc;
+
+  /// Snackbar when the audio format is not supported for the requested operation
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported audio format'**
+  String get snackbarUnsupportedAudioFormat;
+
+  /// Tooltip for refresh button on cache management page
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get cacheRefresh;
 }
 
 class _AppLocalizationsDelegate

@@ -801,7 +801,7 @@ class _SettingItemState extends State<_SettingItem> {
   Future<void> _invokeAction(BuildContext context) async {
     if (widget.setting.action == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No action defined for this button')),
+        SnackBar(content: Text(context.l10n.snackbarNoActionDefined)),
       );
       return;
     }
@@ -834,7 +834,7 @@ class _SettingItemState extends State<_SettingItem> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
       }
     } finally {
       if (mounted) {

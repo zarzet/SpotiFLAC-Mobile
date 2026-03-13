@@ -1731,13 +1731,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             );
             success = ok;
             if (!ok) {
-              error = 'Failed to write back to storage';
+              error = context.l10n.snackbarFailedToWriteStorage;
             }
           } else {
             success = true;
           }
         } else {
-          error = result['error']?.toString() ?? 'Failed to embed lyrics';
+          error = result['error']?.toString() ?? context.l10n.snackbarFailedToEmbedLyrics;
         }
       } else if (isMp3 || isOpus) {
         final metadata = _buildFallbackMetadata();
@@ -1783,7 +1783,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         }
 
         if (ffmpegResult == null) {
-          error = 'Failed to embed lyrics';
+          error = context.l10n.snackbarFailedToEmbedLyrics;
         } else if (_isSafFile) {
           final ok = await PlatformBridge.writeTempToSaf(
             ffmpegResult,
@@ -1791,13 +1791,13 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           );
           success = ok;
           if (!ok) {
-            error = 'Failed to write back to storage';
+            error = context.l10n.snackbarFailedToWriteStorage;
           }
         } else {
           success = true;
         }
       } else {
-        error = 'Unsupported audio format';
+        error = context.l10n.snackbarUnsupportedAudioFormat;
       }
 
       if (mounted) {
@@ -1812,7 +1812,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         } else {
           setState(() => _isEmbedding = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error ?? 'Failed to embed lyrics')),
+            SnackBar(content: Text(error ?? context.l10n.snackbarFailedToEmbedLyrics)),
           );
         }
       }
@@ -1821,7 +1821,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         setState(() => _isEmbedding = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
       }
     } finally {
       if (coverPath != null) {
@@ -2271,7 +2271,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               SnackBar(
                 content: Text(
                   context.l10n.trackSaveFailed(
-                    'Failed to write back to storage',
+                    context.l10n.snackbarFailedToWriteStorage,
                   ),
                 ),
               ),
@@ -2873,7 +2873,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
     // Show loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Loading CUE sheet...')),
+      SnackBar(content: Text(context.l10n.snackbarLoadingCueSheet)),
     );
 
     try {
@@ -3644,7 +3644,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
     if (saved == true && mounted) {
       ScaffoldMessenger.of(this.context).showSnackBar(
-        const SnackBar(content: Text('Metadata saved successfully')),
+        SnackBar(content: Text(this.context.l10n.snackbarMetadataSaved)),
       );
       // Re-read metadata from file to refresh the display
       try {
@@ -4066,7 +4066,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to pick cover: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
     }
   }
 
@@ -4290,7 +4290,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save metadata: $e')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);

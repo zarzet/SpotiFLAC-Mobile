@@ -247,7 +247,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
-        body: const Center(child: Text('No tracks found for this album')),
+        body: Center(child: Text(context.l10n.noTracksFoundForAlbum)),
       );
     }
 

@@ -363,7 +363,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
-        body: Center(child: Text('No tracks found for this album')),
+        body: Center(child: Text(context.l10n.noTracksFoundForAlbum)),
       );
     }
 

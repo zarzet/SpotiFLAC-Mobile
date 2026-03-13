@@ -482,7 +482,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           size: 22,
           color: allLoved ? Colors.redAccent : Colors.white,
         ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
+        tooltip: allLoved ? context.l10n.trackOptionRemoveFromLoved : context.l10n.tooltipLoveAll,
         padding: EdgeInsets.zero,
       ),
     );
@@ -505,7 +505,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   Widget _buildAddToPlaylistButton(BuildContext context) {
     return _buildCircleButton(
       icon: Icons.playlist_add,
-      tooltip: 'Add to Playlist',
+      tooltip: context.l10n.tooltipAddToPlaylist,
       onPressed: _tracks.isEmpty
           ? null
           : () => showAddTracksToPlaylistSheet(context, ref, _tracks),
@@ -520,8 +520,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         final colorScheme = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           backgroundColor: colorScheme.surfaceContainerHigh,
-          title: const Text('Download All'),
-          content: Text('Download ${_tracks.length} tracks?'),
+          title: Text(context.l10n.dialogDownloadAllTitle),
+          content: Text(context.l10n.dialogDownloadAllMessage(_tracks.length)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -532,7 +532,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 Navigator.pop(dialogContext);
                 _downloadAll(context);
               },
-              child: const Text('Download'),
+              child: Text(context.l10n.dialogDownload),
             ),
           ],
         );
@@ -552,7 +552,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
+          SnackBar(
+            content: Text(
+              context.l10n.snackbarRemovedTracksFromLoved(tracks.length),
+            ),
+          ),
         );
       }
     } else {
@@ -565,7 +569,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
+          SnackBar(
+            content: Text(
+              context.l10n.snackbarAddedTracksToLoved(addedCount),
+            ),
+          ),
         );
       }
     }

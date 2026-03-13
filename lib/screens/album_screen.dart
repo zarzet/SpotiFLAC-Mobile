@@ -619,7 +619,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           size: 22,
           color: allLoved ? Colors.redAccent : Colors.white,
         ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
+        tooltip: allLoved ? context.l10n.trackOptionRemoveFromLoved : context.l10n.tooltipLoveAll,
         padding: EdgeInsets.zero,
       ),
     );
@@ -642,7 +642,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
             ? null
             : () => showAddTracksToPlaylistSheet(context, ref, _tracks!),
         icon: const Icon(Icons.add, size: 22, color: Colors.white),
-        tooltip: 'Add to Playlist',
+        tooltip: context.l10n.tooltipAddToPlaylist,
         padding: EdgeInsets.zero,
       ),
     );
@@ -660,7 +660,11 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
+          SnackBar(
+            content: Text(
+              context.l10n.snackbarRemovedTracksFromLoved(tracks.length),
+            ),
+          ),
         );
       }
     } else {
@@ -673,7 +677,11 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
+          SnackBar(
+            content: Text(
+              context.l10n.snackbarAddedTracksToLoved(addedCount),
+            ),
+          ),
         );
       }
     }

@@ -816,7 +816,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                     const SizedBox(height: 12),
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Skip already downloaded songs'),
+                      title: Text(l10n.homeSkipAlreadyDownloaded),
                       value: skipDownloaded,
                       onChanged: (value) {
                         setDialogState(() {
@@ -1750,7 +1750,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             ),
             ListTile(
               leading: Icon(Icons.album, color: colorScheme.onSurfaceVariant),
-              title: const Text('Go to Album'),
+              title: Text(context.l10n.homeGoToAlbum),
               onTap: () {
                 Navigator.pop(context);
                 _navigateToTrackAlbum(item);
@@ -1824,7 +1824,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Album info not available')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.homeAlbumInfoUnavailable)));
     }
   }
 

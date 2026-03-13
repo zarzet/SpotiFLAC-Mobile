@@ -850,8 +850,8 @@ class _LibraryTracksFolderScreenState
         final colorScheme = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           backgroundColor: colorScheme.surfaceContainerHigh,
-          title: const Text('Download All'),
-          content: Text('Download ${tracks.length} tracks?'),
+          title: Text(context.l10n.dialogDownloadAllTitle),
+          content: Text(context.l10n.dialogDownloadAllMessage(tracks.length)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -862,7 +862,7 @@ class _LibraryTracksFolderScreenState
                 Navigator.pop(dialogContext);
                 _downloadAll(tracks);
               },
-              child: const Text('Download'),
+              child: Text(context.l10n.dialogDownload),
             ),
           ],
         );

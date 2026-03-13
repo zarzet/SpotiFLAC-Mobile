@@ -376,7 +376,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     title: context.l10n.downloadAskBeforeDownload,
                     subtitle: isBuiltInService
                         ? context.l10n.downloadAskQualitySubtitle
-                        : 'Select a built-in service to enable',
+                        : context.l10n.downloadSelectServiceToEnable,
                     value: settings.askQualityBeforeDownload,
                     enabled: isBuiltInService,
                     onChanged: (value) => ref
@@ -413,7 +413,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     // Lossy 320kbps option (Tidal only) - downloads M4A, converts to MP3/Opus
                     if (isTidalService)
                       _QualityOption(
-                        title: 'Lossy 320kbps',
+                        title: context.l10n.downloadLossy320,
                         subtitle: _getTidalHighFormatLabel(
                           settings.tidalHighFormat,
                         ),
@@ -426,7 +426,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     if (isTidalService && settings.audioQuality == 'HIGH')
                       SettingsItem(
                         icon: Icons.tune,
-                        title: 'Lossy Format',
+                        title: context.l10n.downloadLossyFormat,
                         subtitle: _getTidalHighFormatLabel(
                           settings.tidalHighFormat,
                         ),
@@ -451,7 +451,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Select Tidal or Qobuz above to configure quality',
+                              context.l10n.downloadSelectTidalQobuz,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -504,7 +504,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     title: context.l10n.optionsEmbedLyrics,
                     subtitle: settings.embedMetadata
                         ? context.l10n.optionsEmbedLyricsSubtitle
-                        : 'Disabled while Embed Metadata is turned off',
+                        : context.l10n.downloadEmbedLyricsDisabled,
                     value: settings.embedLyrics,
                     enabled: settings.embedMetadata,
                     onChanged: (value) => ref
@@ -528,7 +528,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     SettingsItem(
                       icon: Icons.source_outlined,
-                      title: 'Lyrics Providers',
+                      title: context.l10n.lyricsProvidersTitle,
                       subtitle: _getLyricsProvidersSubtitle(
                         settings.lyricsProviders,
                       ),
@@ -541,10 +541,10 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     SettingsSwitchItem(
                       icon: Icons.translate_outlined,
-                      title: 'Netease: Include Translation',
+                      title: context.l10n.downloadNeteaseIncludeTranslation,
                       subtitle: settings.lyricsIncludeTranslationNetease
-                          ? 'Append translated lyrics when available'
-                          : 'Use original lyrics only',
+                          ? context.l10n.downloadNeteaseIncludeTranslationEnabled
+                          : context.l10n.downloadNeteaseIncludeTranslationDisabled,
                       value: settings.lyricsIncludeTranslationNetease,
                       onChanged: (value) => ref
                           .read(settingsProvider.notifier)
@@ -552,10 +552,10 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     SettingsSwitchItem(
                       icon: Icons.text_fields_outlined,
-                      title: 'Netease: Include Romanization',
+                      title: context.l10n.downloadNeteaseIncludeRomanization,
                       subtitle: settings.lyricsIncludeRomanizationNetease
-                          ? 'Append romanized lyrics when available'
-                          : 'Disabled',
+                          ? context.l10n.downloadNeteaseIncludeRomanizationEnabled
+                          : context.l10n.downloadNeteaseIncludeRomanizationDisabled,
                       value: settings.lyricsIncludeRomanizationNetease,
                       onChanged: (value) => ref
                           .read(settingsProvider.notifier)
@@ -563,10 +563,10 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     SettingsSwitchItem(
                       icon: Icons.record_voice_over_outlined,
-                      title: 'Apple/QQ Multi-Person Word-by-Word',
+                      title: context.l10n.downloadAppleQqMultiPerson,
                       subtitle: settings.lyricsMultiPersonWordByWord
-                          ? 'Enable v1/v2 speaker and [bg:] tags'
-                          : 'Simplified word-by-word formatting',
+                          ? context.l10n.downloadAppleQqMultiPersonEnabled
+                          : context.l10n.downloadAppleQqMultiPersonDisabled,
                       value: settings.lyricsMultiPersonWordByWord,
                       onChanged: (value) => ref
                           .read(settingsProvider.notifier)
@@ -574,9 +574,9 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     SettingsItem(
                       icon: Icons.language_outlined,
-                      title: 'Musixmatch Language',
+                      title: context.l10n.downloadMusixmatchLanguage,
                       subtitle: settings.musixmatchLanguage.isEmpty
-                          ? 'Auto (original)'
+                          ? context.l10n.downloadMusixmatchLanguageAuto
                           : settings.musixmatchLanguage.toUpperCase(),
                       onTap: () => _showMusixmatchLanguagePicker(
                         context,
@@ -622,8 +622,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     icon: Icons.library_music_outlined,
                     title: context.l10n.downloadSeparateSinglesFolder,
                     subtitle: settings.separateSingles
-                        ? 'Albums/ and Singles/ folders'
-                        : 'All files in same structure',
+                        ? context.l10n.downloadSeparateSinglesEnabled
+                        : context.l10n.downloadSeparateSinglesDisabled,
                     value: settings.separateSingles,
                     onChanged: (value) => ref
                         .read(settingsProvider.notifier)
@@ -670,9 +670,9 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                         .read(settingsProvider.notifier)
                         .setUseAlbumArtistForFolders(value),
                   ),
-                  SettingsItem(
+                    SettingsItem(
                     icon: Icons.filter_alt_outlined,
-                    title: 'Artist Name Filters',
+                    title: context.l10n.downloadArtistNameFilters,
                     subtitle: _getArtistFolderFilterSubtitle(
                       context,
                       usePrimaryArtistOnly: settings.usePrimaryArtistOnly,
@@ -707,27 +707,15 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   if (_artistFolderFiltersExpanded)
                     SettingsSwitchItem(
                       icon: Icons.group_remove_outlined,
-                      title: 'Filter contributing artists in Album Artist',
+                      title: context.l10n.downloadFilterContributing,
                       subtitle: settings.filterContributingArtistsInAlbumArtist
-                          ? 'Album Artist metadata uses primary artist only'
-                          : 'Keep full Album Artist metadata value',
+                          ? context.l10n.downloadFilterContributingEnabled
+                          : context.l10n.downloadFilterContributingDisabled,
                       value: settings.filterContributingArtistsInAlbumArtist,
                       onChanged: (value) => ref
                           .read(settingsProvider.notifier)
                           .setFilterContributingArtistsInAlbumArtist(value),
                       showDivider: false,
-                    ),
-                  SettingsSwitchItem(
-                    icon: Icons.person_outline,
-                    title: context.l10n.downloadUsePrimaryArtistOnly,
-                    subtitle: settings.usePrimaryArtistOnly
-                        ? context.l10n.downloadUsePrimaryArtistOnlyEnabled
-                        : context.l10n.downloadUsePrimaryArtistOnlyDisabled,
-                    value: settings.usePrimaryArtistOnly,
-                    onChanged: (value) => ref
-                        .read(settingsProvider.notifier)
-                        .setUsePrimaryArtistOnly(value),
-                    showDivider: false,
                     ),
                 ],
               ),
@@ -753,7 +741,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   ),
                   SettingsItem(
                     icon: Icons.public,
-                    title: 'SongLink Region',
+                    title: context.l10n.downloadSongLinkRegion,
                     subtitle: _getSongLinkRegionLabel(settings.songLinkRegion),
                     onTap: () => _showSongLinkRegionPicker(
                       context,
@@ -763,10 +751,10 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   ),
                   SettingsSwitchItem(
                     icon: Icons.security_outlined,
-                    title: 'Network compatibility mode',
+                    title: context.l10n.downloadNetworkCompatibilityMode,
                     subtitle: settings.networkCompatibilityMode
-                        ? 'Enabled: try HTTP + accept invalid TLS certificates (unsafe)'
-                        : 'Off: strict HTTPS certificate validation (recommended)',
+                        ? context.l10n.downloadNetworkCompatibilityModeEnabled
+                        : context.l10n.downloadNetworkCompatibilityModeDisabled,
                     value: settings.networkCompatibilityMode,
                     onChanged: (value) {
                       ref
@@ -1045,7 +1033,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Customize how your files are named.',
+                      context.l10n.downloadFilenameDescription,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -1070,7 +1058,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     const SizedBox(height: 24),
 
                     Text(
-                      'Tap to insert tag:',
+                      context.l10n.downloadFilenameInsertTag,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -1238,7 +1226,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
-                'Download Location',
+                context.l10n.setupDownloadLocationTitle,
                 style: Theme.of(
                   ctx,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -1247,7 +1235,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
-                'Choose storage mode for downloaded files.',
+                context.l10n.downloadLocationSubtitle,
                 style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -1255,8 +1243,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ),
             ListTile(
               leading: Icon(Icons.folder_special, color: colorScheme.primary),
-              title: const Text('App folder (non-SAF)'),
-              subtitle: const Text('Use default Music/SpotiFLAC path'),
+              title: Text(context.l10n.storageModeAppFolder),
+              subtitle: Text(context.l10n.storageModeAppFolderSubtitle),
               trailing: !isSafMode ? const Icon(Icons.check) : null,
               onTap: () async {
                 Navigator.pop(ctx);
@@ -1269,10 +1257,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ),
             ListTile(
               leading: Icon(Icons.folder_open, color: colorScheme.primary),
-              title: const Text('SAF folder'),
-              subtitle: const Text(
-                'Pick folder via Android Storage Access Framework',
-              ),
+              title: Text(context.l10n.storageModeSaf),
+              subtitle: Text(context.l10n.storageModeSafSubtitle),
               trailing: isSafMode ? const Icon(Icons.check) : null,
               onTap: () async {
                 Navigator.pop(ctx);
@@ -1546,7 +1532,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
   };
 
   String _getLyricsProvidersSubtitle(List<String> providers) {
-    if (providers.isEmpty) return 'None enabled';
+    if (providers.isEmpty) return context.l10n.downloadProvidersNoneEnabled;
     return providers.map((p) => _providerDisplayNames[p] ?? p).join(' > ');
   }
 
@@ -1645,14 +1631,14 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Musixmatch Language',
+              context.l10n.downloadMusixmatchLanguage,
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Set preferred language code (example: en, es, ja). Leave empty for auto.',
+              context.l10n.downloadMusixmatchLanguageDesc,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -1661,9 +1647,9 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             TextField(
               controller: controller,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                labelText: 'Language code',
-                hintText: 'auto / en / es / ja',
+              decoration: InputDecoration(
+                labelText: context.l10n.downloadMusixmatchLanguageCode,
+                hintText: context.l10n.downloadMusixmatchLanguageHint,
               ),
             ),
             const SizedBox(height: 16),
@@ -1682,7 +1668,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                         .setMusixmatchLanguage('');
                     Navigator.pop(context);
                   },
-                  child: const Text('Auto'),
+                  child: Text(context.l10n.downloadMusixmatchAuto),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
@@ -1739,7 +1725,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
-                'Lossy 320kbps Format',
+                context.l10n.downloadLossy320Format,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -1748,7 +1734,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Text(
-                'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.',
+                context.l10n.downloadLossy320FormatDesc,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -1756,8 +1742,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.audiotrack),
-              title: const Text('MP3 320kbps'),
-              subtitle: const Text('Best compatibility, ~10MB per track'),
+              title: Text(context.l10n.downloadLossyMp3),
+              subtitle: Text(context.l10n.downloadLossyMp3Subtitle),
               trailing: current == 'mp3_320'
                   ? Icon(Icons.check, color: colorScheme.primary)
                   : null,
@@ -1770,8 +1756,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.graphic_eq),
-              title: const Text('Opus 256kbps'),
-              subtitle: const Text('Best quality Opus, ~8MB per track'),
+              title: Text(context.l10n.downloadLossyOpus256),
+              subtitle: Text(context.l10n.downloadLossyOpus256Subtitle),
               trailing: current == 'opus_256'
                   ? Icon(Icons.check, color: colorScheme.primary)
                   : null,
@@ -1784,8 +1770,8 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.graphic_eq),
-              title: const Text('Opus 128kbps'),
-              subtitle: const Text('Smallest size, ~4MB per track'),
+              title: Text(context.l10n.downloadLossyOpus128),
+              subtitle: Text(context.l10n.downloadLossyOpus128Subtitle),
               trailing: current == 'opus_128'
                   ? Icon(Icons.check, color: colorScheme.primary)
                   : null,
@@ -1842,7 +1828,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ListTile(
               leading: const Icon(Icons.signal_cellular_alt),
               title: Text(context.l10n.settingsDownloadNetworkAny),
-              subtitle: const Text('WiFi + Mobile Data'),
+              subtitle: Text(context.l10n.downloadNetworkAnySubtitle),
               trailing: current == 'any'
                   ? Icon(Icons.check, color: colorScheme.primary)
                   : null,
@@ -1856,7 +1842,7 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             ListTile(
               leading: const Icon(Icons.wifi),
               title: Text(context.l10n.settingsDownloadNetworkWifiOnly),
-              subtitle: const Text('Pause downloads on mobile data'),
+              subtitle: Text(context.l10n.downloadNetworkWifiOnlySubtitle),
               trailing: current == 'wifi_only'
                   ? Icon(Icons.check, color: colorScheme.primary)
                   : null,
@@ -1897,17 +1883,17 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                child: Text(
-                  'SongLink Region',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
+              child: Text(
+                context.l10n.downloadSongLinkRegion,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: Text(
-                  'Used as userCountry for SongLink API lookup.',
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                context.l10n.downloadSongLinkRegionDesc,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -1968,12 +1954,12 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-                child: Text(
-                  'Folder Organization',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
+              child: Text(
+                context.l10n.downloadFolderOrganization,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),

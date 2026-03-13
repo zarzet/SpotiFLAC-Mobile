@@ -1216,6 +1216,47 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storeClearFilters => 'Filter entfernen';
 
   @override
+  String get storeAddRepoTitle => 'Add Extension Repository';
+
+  @override
+  String get storeAddRepoDescription =>
+      'Enter a GitHub repository URL that contains a registry.json file to browse and install extensions.';
+
+  @override
+  String get storeRepoUrlLabel => 'Repository URL';
+
+  @override
+  String get storeRepoUrlHint => 'https://github.com/user/repo';
+
+  @override
+  String get storeRepoUrlHelper =>
+      'e.g. https://github.com/user/extensions-repo';
+
+  @override
+  String get storeAddRepoButton => 'Add Repository';
+
+  @override
+  String get storeChangeRepoTooltip => 'Change repository';
+
+  @override
+  String get storeRepoDialogTitle => 'Extension Repository';
+
+  @override
+  String get storeRepoDialogCurrent => 'Current repository:';
+
+  @override
+  String get storeNewRepoUrlLabel => 'New Repository URL';
+
+  @override
+  String get storeLoadError => 'Failed to load store';
+
+  @override
+  String get storeEmptyNoExtensions => 'No extensions available';
+
+  @override
+  String get storeEmptyNoResults => 'No extensions found';
+
+  @override
   String get extensionDefaultProvider => 'Standard (Deezer/Spotify)';
 
   @override
@@ -2436,4 +2477,317 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get downloadUseAlbumArtistForFoldersTrackSubtitle =>
       'Artist folders use Track Artist only';
+
+  @override
+  String get lyricsProvidersTitle => 'Lyrics Providers';
+
+  @override
+  String get lyricsProvidersDescription =>
+      'Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.';
+
+  @override
+  String get lyricsProvidersInfoText =>
+      'Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.';
+
+  @override
+  String lyricsProvidersEnabledSection(int count) {
+    return 'Enabled ($count)';
+  }
+
+  @override
+  String lyricsProvidersDisabledSection(int count) {
+    return 'Disabled ($count)';
+  }
+
+  @override
+  String get lyricsProvidersAtLeastOne =>
+      'At least one provider must remain enabled';
+
+  @override
+  String get lyricsProvidersSaved => 'Lyrics provider priority saved';
+
+  @override
+  String get lyricsProvidersDiscardContent =>
+      'You have unsaved changes that will be lost.';
+
+  @override
+  String get lyricsProviderSpotifyApiDesc =>
+      'Spotify-sourced synced lyrics via community API';
+
+  @override
+  String get lyricsProviderLrclibDesc => 'Open-source synced lyrics database';
+
+  @override
+  String get lyricsProviderNeteaseDesc =>
+      'NetEase Cloud Music (good for Asian songs)';
+
+  @override
+  String get lyricsProviderMusixmatchDesc =>
+      'Largest lyrics database (multi-language)';
+
+  @override
+  String get lyricsProviderAppleMusicDesc =>
+      'Word-by-word synced lyrics (via proxy)';
+
+  @override
+  String get lyricsProviderQqMusicDesc =>
+      'QQ Music (good for Chinese songs, via proxy)';
+
+  @override
+  String get lyricsProviderExtensionDesc => 'Extension provider';
+
+  @override
+  String get safMigrationTitle => 'Storage Update Required';
+
+  @override
+  String get safMigrationMessage1 =>
+      'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
+
+  @override
+  String get safMigrationMessage2 =>
+      'Please select your download folder again to switch to the new storage system.';
+
+  @override
+  String get safMigrationSuccess => 'Download folder updated to SAF mode';
+
+  @override
+  String get settingsDonate => 'Donate';
+
+  @override
+  String get settingsDonateSubtitle => 'Support SpotiFLAC-Mobile development';
+
+  @override
+  String get tooltipLoveAll => 'Love All';
+
+  @override
+  String get tooltipAddToPlaylist => 'Add to Playlist';
+
+  @override
+  String snackbarRemovedTracksFromLoved(int count) {
+    return 'Removed $count tracks from Loved';
+  }
+
+  @override
+  String snackbarAddedTracksToLoved(int count) {
+    return 'Added $count tracks to Loved';
+  }
+
+  @override
+  String get dialogDownloadAllTitle => 'Download All';
+
+  @override
+  String dialogDownloadAllMessage(int count) {
+    return 'Download $count tracks?';
+  }
+
+  @override
+  String get dialogDownload => 'Download';
+
+  @override
+  String get homeSkipAlreadyDownloaded => 'Skip already downloaded songs';
+
+  @override
+  String get homeGoToAlbum => 'Go to Album';
+
+  @override
+  String get homeAlbumInfoUnavailable => 'Album info not available';
+
+  @override
+  String get snackbarLoadingCueSheet => 'Loading CUE sheet...';
+
+  @override
+  String get snackbarMetadataSaved => 'Metadata saved successfully';
+
+  @override
+  String get snackbarFailedToEmbedLyrics => 'Failed to embed lyrics';
+
+  @override
+  String get snackbarFailedToWriteStorage => 'Failed to write back to storage';
+
+  @override
+  String snackbarError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get snackbarNoActionDefined => 'No action defined for this button';
+
+  @override
+  String get noTracksFoundForAlbum => 'No tracks found for this album';
+
+  @override
+  String get downloadLocationSubtitle =>
+      'Choose storage mode for downloaded files.';
+
+  @override
+  String get storageModeAppFolder => 'App folder (non-SAF)';
+
+  @override
+  String get storageModeAppFolderSubtitle => 'Use default Music/SpotiFLAC path';
+
+  @override
+  String get storageModeSaf => 'SAF folder';
+
+  @override
+  String get storageModeSafSubtitle =>
+      'Pick folder via Android Storage Access Framework';
+
+  @override
+  String get downloadFilenameDescription =>
+      'Customize how your files are named.';
+
+  @override
+  String get downloadFilenameInsertTag => 'Tap to insert tag:';
+
+  @override
+  String get downloadSeparateSinglesEnabled => 'Albums/ and Singles/ folders';
+
+  @override
+  String get downloadSeparateSinglesDisabled => 'All files in same structure';
+
+  @override
+  String get downloadArtistNameFilters => 'Artist Name Filters';
+
+  @override
+  String get downloadSongLinkRegion => 'SongLink Region';
+
+  @override
+  String get downloadNetworkCompatibilityMode => 'Network compatibility mode';
+
+  @override
+  String get downloadNetworkCompatibilityModeEnabled =>
+      'Enabled: try HTTP + accept invalid TLS certificates (unsafe)';
+
+  @override
+  String get downloadNetworkCompatibilityModeDisabled =>
+      'Off: strict HTTPS certificate validation (recommended)';
+
+  @override
+  String get downloadSelectServiceToEnable =>
+      'Select a built-in service to enable';
+
+  @override
+  String get downloadLossy320 => 'Lossy 320kbps';
+
+  @override
+  String get downloadLossyFormat => 'Lossy Format';
+
+  @override
+  String get downloadSelectTidalQobuz =>
+      'Select Tidal or Qobuz above to configure quality';
+
+  @override
+  String get downloadEmbedLyricsDisabled =>
+      'Disabled while Embed Metadata is turned off';
+
+  @override
+  String get downloadNeteaseIncludeTranslation =>
+      'Netease: Include Translation';
+
+  @override
+  String get downloadNeteaseIncludeTranslationEnabled =>
+      'Append translated lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeTranslationDisabled =>
+      'Use original lyrics only';
+
+  @override
+  String get downloadNeteaseIncludeRomanization =>
+      'Netease: Include Romanization';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationEnabled =>
+      'Append romanized lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationDisabled => 'Disabled';
+
+  @override
+  String get downloadAppleQqMultiPerson => 'Apple/QQ Multi-Person Word-by-Word';
+
+  @override
+  String get downloadAppleQqMultiPersonEnabled =>
+      'Enable v1/v2 speaker and [bg:] tags';
+
+  @override
+  String get downloadAppleQqMultiPersonDisabled =>
+      'Simplified word-by-word formatting';
+
+  @override
+  String get downloadMusixmatchLanguage => 'Musixmatch Language';
+
+  @override
+  String get downloadMusixmatchLanguageAuto => 'Auto (original)';
+
+  @override
+  String get downloadFilterContributing =>
+      'Filter contributing artists in Album Artist';
+
+  @override
+  String get downloadFilterContributingEnabled =>
+      'Album Artist metadata uses primary artist only';
+
+  @override
+  String get downloadFilterContributingDisabled =>
+      'Keep full Album Artist metadata value';
+
+  @override
+  String get downloadProvidersNoneEnabled => 'None enabled';
+
+  @override
+  String get downloadMusixmatchLanguageCode => 'Language code';
+
+  @override
+  String get downloadMusixmatchLanguageHint => 'auto / en / es / ja';
+
+  @override
+  String get downloadMusixmatchLanguageDesc =>
+      'Set preferred language code (example: en, es, ja). Leave empty for auto.';
+
+  @override
+  String get downloadMusixmatchAuto => 'Auto';
+
+  @override
+  String get downloadLossy320Format => 'Lossy 320kbps Format';
+
+  @override
+  String get downloadLossy320FormatDesc =>
+      'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.';
+
+  @override
+  String get downloadLossyMp3 => 'MP3 320kbps';
+
+  @override
+  String get downloadLossyMp3Subtitle => 'Best compatibility, ~10MB per track';
+
+  @override
+  String get downloadLossyOpus256 => 'Opus 256kbps';
+
+  @override
+  String get downloadLossyOpus256Subtitle =>
+      'Best quality Opus, ~8MB per track';
+
+  @override
+  String get downloadLossyOpus128 => 'Opus 128kbps';
+
+  @override
+  String get downloadLossyOpus128Subtitle => 'Smallest size, ~4MB per track';
+
+  @override
+  String get downloadNetworkAnySubtitle => 'WiFi + Mobile Data';
+
+  @override
+  String get downloadNetworkWifiOnlySubtitle =>
+      'Pause downloads on mobile data';
+
+  @override
+  String get downloadSongLinkRegionDesc =>
+      'Used as userCountry for SongLink API lookup.';
+
+  @override
+  String get snackbarUnsupportedAudioFormat => 'Unsupported audio format';
+
+  @override
+  String get cacheRefresh => 'Refresh';
 }

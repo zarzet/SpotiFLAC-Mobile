@@ -181,25 +181,20 @@ class _MainShellState extends ConsumerState<MainShell> {
           size: 32,
           color: colorScheme.primary,
         ),
-        title: const Text('Storage Update Required'),
-        content: const Column(
+        title: Text(context.l10n.safMigrationTitle),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. '
-              'This fixes "permission denied" errors on Android 10+.',
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Please select your download folder again to switch to the new storage system.',
-            ),
+            Text(context.l10n.safMigrationMessage1),
+            const SizedBox(height: 12),
+            Text(context.l10n.safMigrationMessage2),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Later'),
+            child: Text(context.l10n.updateLater),
           ),
           FilledButton(
             onPressed: () async {
@@ -219,15 +214,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                       );
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Download folder updated to SAF mode'),
+                      SnackBar(
+                        content: Text(context.l10n.safMigrationSuccess),
                       ),
                     );
                   }
                 }
               }
             },
-            child: const Text('Select Folder'),
+            child: Text(context.l10n.setupSelectFolder),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/widgets/priority_settings_scaffold.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -55,18 +56,18 @@ class _LyricsProviderPriorityPageState
 
     return PrioritySettingsScaffold(
       hasChanges: _hasChanges,
-      title: 'Lyrics Providers',
-      description:
-          'Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.',
-      infoText:
-          'Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.',
+      title: context.l10n.lyricsProvidersTitle,
+      description: context.l10n.lyricsProvidersDescription,
+      infoText: context.l10n.lyricsProvidersInfoText,
       onSave: _saveChanges,
       onConfirmDiscard: _confirmDiscard,
       slivers: [
         if (_enabledProviders.isNotEmpty)
           SliverToBoxAdapter(
             child: SettingsSectionHeader(
-              title: 'Enabled (${_enabledProviders.length})',
+              title: context.l10n.lyricsProvidersEnabledSection(
+                _enabledProviders.length,
+              ),
             ),
           ),
         if (_enabledProviders.isNotEmpty)
@@ -76,7 +77,7 @@ class _LyricsProviderPriorityPageState
               itemCount: _enabledProviders.length,
               itemBuilder: (context, index) {
                 final id = _enabledProviders[index];
-                final info = _getLyricsProviderInfo(id);
+                final info = _getLyricsProviderInfo(id, context);
                 return _EnabledProviderItem(
                   key: ValueKey(id),
                   providerId: id,
@@ -99,7 +100,9 @@ class _LyricsProviderPriorityPageState
         if (disabled.isNotEmpty)
           SliverToBoxAdapter(
             child: SettingsSectionHeader(
-              title: 'Disabled (${disabled.length})',
+              title: context.l10n.lyricsProvidersDisabledSection(
+                disabled.length,
+              ),
             ),
           ),
         if (disabled.isNotEmpty)
@@ -108,7 +111,7 @@ class _LyricsProviderPriorityPageState
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final id = disabled[index];
-                final info = _getLyricsProviderInfo(id);
+                final info = _getLyricsProviderInfo(id, context);
                 return _DisabledProviderItem(
                   key: ValueKey(id),
                   providerId: id,
@@ -130,8 +133,8 @@ class _LyricsProviderPriorityPageState
   void _disableProvider(String id) {
     if (_enabledProviders.length <= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('At least one provider must remain enabled'),
+        SnackBar(
+          content: Text(context.l10n.lyricsProvidersAtLeastOne),
         ),
       );
       return;
@@ -150,7 +153,7 @@ class _LyricsProviderPriorityPageState
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lyrics provider priority saved')),
+        SnackBar(content: Text(context.l10n.lyricsProvidersSaved)),
       );
     }
   }
@@ -159,16 +162,16 @@ class _LyricsProviderPriorityPageState
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('You have unsaved changes that will be lost.'),
+        title: Text(context.l10n.dialogDiscardChanges),
+        content: Text(context.l10n.lyricsProvidersDiscardContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.dialogCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Discard'),
+            child: Text(context.l10n.dialogDiscard),
           ),
         ],
       ),
@@ -176,48 +179,51 @@ class _LyricsProviderPriorityPageState
     return result ?? false;
   }
 
-  static _LyricsProviderInfo _getLyricsProviderInfo(String id) {
+  static _LyricsProviderInfo _getLyricsProviderInfo(
+    String id,
+    BuildContext context,
+  ) {
     switch (id) {
       case 'spotify_api':
         return _LyricsProviderInfo(
           name: 'Spotify Lyrics API',
-          description: 'Spotify-sourced synced lyrics via community API',
+          description: context.l10n.lyricsProviderSpotifyApiDesc,
           icon: Icons.music_note_outlined,
         );
       case 'lrclib':
         return _LyricsProviderInfo(
           name: 'LRCLIB',
-          description: 'Open-source synced lyrics database',
+          description: context.l10n.lyricsProviderLrclibDesc,
           icon: Icons.subtitles_outlined,
         );
       case 'netease':
         return _LyricsProviderInfo(
           name: 'Netease',
-          description: 'NetEase Cloud Music (good for Asian songs)',
+          description: context.l10n.lyricsProviderNeteaseDesc,
           icon: Icons.cloud_outlined,
         );
       case 'musixmatch':
         return _LyricsProviderInfo(
           name: 'Musixmatch',
-          description: 'Largest lyrics database (multi-language)',
+          description: context.l10n.lyricsProviderMusixmatchDesc,
           icon: Icons.translate,
         );
       case 'apple_music':
         return _LyricsProviderInfo(
           name: 'Apple Music',
-          description: 'Word-by-word synced lyrics (via proxy)',
+          description: context.l10n.lyricsProviderAppleMusicDesc,
           icon: Icons.music_note,
         );
       case 'qqmusic':
         return _LyricsProviderInfo(
           name: 'QQ Music',
-          description: 'QQ Music (good for Chinese songs, via proxy)',
+          description: context.l10n.lyricsProviderQqMusicDesc,
           icon: Icons.queue_music,
         );
       default:
         return _LyricsProviderInfo(
           name: id,
-          description: 'Extension provider',
+          description: context.l10n.lyricsProviderExtensionDesc,
           icon: Icons.extension,
         );
     }

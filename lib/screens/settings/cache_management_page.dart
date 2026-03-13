@@ -56,7 +56,7 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
     }
   }
 
@@ -282,7 +282,7 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
     } finally {
       if (mounted) {
         setState(() => _busyAction = null);
@@ -394,7 +394,7 @@ class _CacheManagementPageState extends ConsumerState<CacheManagementPage> {
             ),
             actions: [
               IconButton(
-                tooltip: 'Refresh',
+                tooltip: context.l10n.cacheRefresh,
                 onPressed: _isBusy ? null : _refreshOverview,
                 icon: const Icon(Icons.refresh),
               ),
