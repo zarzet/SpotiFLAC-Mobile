@@ -31,6 +31,7 @@ import 'package:spotiflac_android/screens/local_album_screen.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 import 'package:spotiflac_android/utils/path_match_keys.dart';
 import 'package:spotiflac_android/utils/string_utils.dart';
+import 'package:spotiflac_android/widgets/download_service_picker.dart';
 
 enum LibraryItemSource { downloaded, local }
 
@@ -1314,6 +1315,93 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     });
   }
 
+  Future<void> _downloadAllSelectedPlaylists(BuildContext context) async {
+    final collectionsState = ref.read(libraryCollectionsProvider);
+    final selectedPlaylists = collectionsState.playlists
+        .where((p) => _selectedPlaylistIds.contains(p.id))
+        .toList();
+
+    final totalTracks =
+        selectedPlaylists.fold<int>(0, (sum, p) => sum + p.tracks.length);
+
+    if (totalTracks == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selected playlists have no tracks')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Download All'),
+        content: Text(
+          'Download $totalTracks ${totalTracks == 1 ? 'track' : 'tracks'} '
+          'from ${selectedPlaylists.length} '
+          '${selectedPlaylists.length == 1 ? 'playlist' : 'playlists'}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.l10n.dialogCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Download'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final settings = ref.read(settingsProvider);
+    final queueNotifier = ref.read(downloadQueueProvider.notifier);
+
+    void enqueueAll({String? qualityOverride, String? service}) {
+      final svc = service ?? settings.defaultService;
+      for (final playlist in selectedPlaylists) {
+        final tracks = playlist.tracks.map((e) => e.track).toList();
+        queueNotifier.addMultipleToQueue(
+          tracks,
+          svc,
+          qualityOverride: qualityOverride,
+          playlistName: playlist.name,
+        );
+      }
+    }
+
+    if (settings.askQualityBeforeDownload) {
+      DownloadServicePicker.show(
+        context,
+        trackName: '$totalTracks tracks',
+        artistName: '${selectedPlaylists.length} playlists',
+        onSelect: (quality, service) {
+          enqueueAll(qualityOverride: quality, service: service);
+          if (!mounted) return;
+          _exitPlaylistSelectionMode();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.l10n.snackbarAddedTracksToQueue(totalTracks),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      enqueueAll();
+      _exitPlaylistSelectionMode();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.snackbarAddedTracksToQueue(totalTracks),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _deleteSelectedPlaylists(BuildContext context) async {
     final count = _selectedPlaylistIds.length;
     final confirmed = await showDialog<bool>(
@@ -1451,6 +1539,35 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               ),
 
               const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: selectedCount > 0
+                      ? () => _downloadAllSelectedPlaylists(context)
+                      : null,
+                  icon: const Icon(Icons.download_rounded),
+                  label: Text(
+                    selectedCount > 0
+                        ? 'Download $selectedCount ${selectedCount == 1 ? 'playlist' : 'playlists'}'
+                        : 'Select playlists to download',
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: selectedCount > 0
+                        ? colorScheme.primary
+                        : colorScheme.surfaceContainerHighest,
+                    foregroundColor: selectedCount > 0
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
 
               SizedBox(
                 width: double.infinity,
