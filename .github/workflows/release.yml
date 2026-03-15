@@ -393,6 +393,63 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  update-altstore:
+    runs-on: ubuntu-latest
+    needs: [get-version, build-ios, create-release]
+    if: ${{ needs.get-version.outputs.is_prerelease != 'true' }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Download iOS IPA
+        uses: actions/download-artifact@v7
+        with:
+          name: ios-ipa
+          path: ./release
+
+      - name: Update apps.json
+        run: |
+          VERSION="${{ needs.get-version.outputs.version }}"
+          VERSION_NUM="${VERSION#v}"
+          DATE=$(date -u +%Y-%m-%d)
+          IPA_FILE=$(find ./release -name "*ios*.ipa" | head -1)
+
+          if [ -z "$IPA_FILE" ]; then
+            echo "WARNING: IPA file not found, skipping apps.json update"
+            exit 0
+          fi
+
+          IPA_SIZE=$(stat -c%s "$IPA_FILE" 2>/dev/null || stat -f%z "$IPA_FILE")
+
+          if [ ! -f apps.json ]; then
+            echo "WARNING: apps.json not found on main, skipping"
+            exit 0
+          fi
+
+          jq --arg ver "$VERSION_NUM" \
+             --arg date "$DATE" \
+             --arg url "https://github.com/zarzet/SpotiFLAC-Mobile/releases/download/${VERSION}/SpotiFLAC-${VERSION}-ios-unsigned.ipa" \
+             --argjson size "$IPA_SIZE" \
+             '.apps[0].version = $ver | .apps[0].versionDate = $date | .apps[0].downloadURL = $url | .apps[0].size = $size' \
+             apps.json > apps.json.tmp && mv apps.json.tmp apps.json
+
+          echo "Updated apps.json:"
+          cat apps.json
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ needs.get-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps.json
+          git diff --cached --quiet && echo "No changes to commit" || \
+            (git commit -m "chore: update AltStore source to ${VERSION}" && git push)
+
   notify-telegram:
     runs-on: ubuntu-latest
     needs: [get-version, create-release]
