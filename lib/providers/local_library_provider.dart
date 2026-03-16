@@ -9,11 +9,11 @@ import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/local_library_scan_prefs.dart';
 import 'package:spotiflac_android/utils/path_match_keys.dart';
 
 final _log = AppLogger('LocalLibrary');
 
-const _lastScannedAtKey = 'local_library_last_scanned_at';
 const _excludedDownloadedCountKey = 'local_library_excluded_downloaded_count';
 final _prefs = SharedPreferences.getInstance();
 
@@ -165,10 +165,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       var excludedDownloadedCount = 0;
       try {
         final prefs = await prefsFuture;
-        final lastScannedAtStr = prefs.getString(_lastScannedAtKey);
-        if (lastScannedAtStr != null && lastScannedAtStr.isNotEmpty) {
-          lastScannedAt = DateTime.tryParse(lastScannedAtStr);
-        }
+        lastScannedAt = readLocalLibraryLastScannedAt(prefs);
         excludedDownloadedCount =
             prefs.getInt(_excludedDownloadedCountKey) ?? 0;
       } catch (e) {
@@ -336,7 +333,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         final now = DateTime.now();
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_lastScannedAtKey, now.toIso8601String());
+          await writeLocalLibraryLastScannedAt(prefs, now);
           await prefs.setInt(_excludedDownloadedCountKey, skippedDownloads);
           _log.d('Saved lastScannedAt: $now');
         } catch (e) {
@@ -500,7 +497,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         final now = DateTime.now();
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_lastScannedAtKey, now.toIso8601String());
+          await writeLocalLibraryLastScannedAt(prefs, now);
           await prefs.setInt(_excludedDownloadedCountKey, skippedDownloads);
           _log.d('Saved lastScannedAt: $now');
         } catch (e) {
@@ -818,7 +815,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_lastScannedAtKey);
+      await clearLocalLibraryLastScannedAt(prefs);
       await prefs.remove(_excludedDownloadedCountKey);
     } catch (e) {
       _log.w('Failed to clear lastScannedAt: $e');

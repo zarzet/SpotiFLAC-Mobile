@@ -14,6 +14,7 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/share_intent_service.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
+import 'package:spotiflac_android/utils/local_library_scan_prefs.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -99,8 +100,6 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
   Timer? _localLibraryWarmupTimer;
   bool _localLibraryWarmupScheduled = false;
   bool _autoScanTriggeredOnLaunch = false;
-
-  static const _lastScannedAtKey = 'local_library_last_scanned_at';
 
   @override
   void initState() {
@@ -200,10 +199,9 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
     // Determine cooldown based on auto-scan mode.
     final now = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
-    final lastScannedMs = prefs.getInt(_lastScannedAtKey);
+    final lastScanned = readLocalLibraryLastScannedAt(prefs);
 
-    if (lastScannedMs != null) {
-      final lastScanned = DateTime.fromMillisecondsSinceEpoch(lastScannedMs);
+    if (lastScanned != null) {
       final elapsed = now.difference(lastScanned);
 
       switch (settings.localLibraryAutoScan) {
