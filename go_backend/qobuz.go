@@ -49,9 +49,10 @@ const (
 	qobuzArtistGetBaseURL   = "https://www.qobuz.com/api.json/0.2/artist/get?artist_id="
 	qobuzPlaylistGetBaseURL = "https://www.qobuz.com/api.json/0.2/playlist/get?playlist_id="
 	qobuzStoreSearchBaseURL = "https://www.qobuz.com/us-en/search/tracks/"
+	qobuzTrackOpenBaseURL   = "https://open.qobuz.com/track/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
 	qobuzStoreBaseURL       = "https://www.qobuz.com/us-en"
-	qobuzDownloadAPIURL     = "https://www.musicdl.me/api/qobuz/download"
+	qobuzDownloadAPIURL     = "https://dl.musicdl.me/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
 	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"
@@ -1631,19 +1632,23 @@ func fetchQobuzURLWithRetry(provider qobuzAPIProvider, trackID int64, quality st
 	return fetchQobuzURLSingleAttempt(provider, trackID, quality, timeout, "")
 }
 
+func buildQobuzMusicDLPayload(trackID int64, quality string) ([]byte, error) {
+	requestQuality := mapQobuzQualityCodeToAPI(quality)
+	payload := map[string]any{
+		"quality":      requestQuality,
+		"upload_to_r2": false,
+		"url":          fmt.Sprintf("%s%d", qobuzTrackOpenBaseURL, trackID),
+	}
+	return json.Marshal(payload)
+}
+
 func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, quality string, timeout time.Duration, country string) (qobuzDownloadInfo, error) {
 	var lastErr error
 	retryDelay := qobuzRetryDelay
 	var payloadBytes []byte
 	if provider.Kind == qobuzAPIKindMusicDL {
-		requestQuality := mapQobuzQualityCodeToAPI(quality)
-		payload := map[string]any{
-			"quality":      requestQuality,
-			"upload_to_r2": false,
-			"url":          fmt.Sprintf("%s%d", qobuzTrackPlayBaseURL, trackID),
-		}
 		var err error
-		payloadBytes, err = json.Marshal(payload)
+		payloadBytes, err = buildQobuzMusicDLPayload(trackID, quality)
 		if err != nil {
 			return qobuzDownloadInfo{}, fmt.Errorf("failed to encode qobuz request: %w", err)
 		}
@@ -1688,7 +1693,6 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 		}
 		if provider.Kind == qobuzAPIKindMusicDL {
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("X-Debug-Key", getQobuzDebugKey())
 		}
 
 		resp, err := DoRequestWithUserAgent(client, req)

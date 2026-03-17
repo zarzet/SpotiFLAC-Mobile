@@ -174,7 +174,12 @@ func (r *ExtensionRuntime) fileDownload(call goja.FunctionCall) goja.Value {
 		req.Header.Set("User-Agent", "SpotiFLAC-Extension/1.0")
 	}
 
-	resp, err := r.httpClient.Do(req)
+	client := r.downloadClient
+	if client == nil {
+		client = r.httpClient
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return r.vm.ToValue(map[string]interface{}{
 			"success": false,

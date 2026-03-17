@@ -1,6 +1,9 @@
 package gobackend
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestParseQobuzURL(t *testing.T) {
 	tests := []struct {
@@ -192,6 +195,28 @@ func TestGetQobuzDebugKey(t *testing.T) {
 		if got[i]^qobuzDebugKeyXORMask != qobuzDebugKeyObfuscated[i] {
 			t.Fatalf("unexpected debug key reconstruction at index %d", i)
 		}
+	}
+}
+
+func TestBuildQobuzMusicDLPayloadUsesOpenTrackURL(t *testing.T) {
+	payloadBytes, err := buildQobuzMusicDLPayload(374610875, "7")
+	if err != nil {
+		t.Fatalf("buildQobuzMusicDLPayload returned error: %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		t.Fatalf("payload is not valid JSON: %v", err)
+	}
+
+	if got := payload["url"]; got != "https://open.qobuz.com/track/374610875" {
+		t.Fatalf("payload url = %v, want open.qobuz.com track URL", got)
+	}
+	if got := payload["quality"]; got != "hi-res" {
+		t.Fatalf("payload quality = %v, want hi-res", got)
+	}
+	if got := payload["upload_to_r2"]; got != false {
+		t.Fatalf("payload upload_to_r2 = %v, want false", got)
 	}
 }
 

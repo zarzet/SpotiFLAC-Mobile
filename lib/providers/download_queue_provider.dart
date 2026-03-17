@@ -3594,6 +3594,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       String? genre;
       String? label;
       String? copyright;
+      final extensionState = ref.read(extensionProvider);
+      final selectedExtensionDownloadProvider =
+          settings.useExtensionProviders &&
+          extensionState.extensions.any(
+            (e) =>
+                e.enabled &&
+                e.hasDownloadProvider &&
+                e.id.toLowerCase() == item.service.toLowerCase(),
+          );
 
       String? deezerTrackId = trackToDownload.deezerId;
       if (deezerTrackId == null && trackToDownload.id.startsWith('deezer:')) {
@@ -3628,7 +3637,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
 
       // Fallback: Use SongLink to convert Spotify ID to Deezer ID
-      if (deezerTrackId == null &&
+      if (!selectedExtensionDownloadProvider &&
+          deezerTrackId == null &&
           trackToDownload.id.isNotEmpty &&
           !trackToDownload.id.startsWith('deezer:') &&
           !trackToDownload.id.startsWith('extension:')) {
@@ -3729,6 +3739,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         if (shouldAbortWork('during SongLink availability lookup')) {
           return;
         }
+      } else if (selectedExtensionDownloadProvider && deezerTrackId == null) {
+        _log.d(
+          'Skipping Flutter SongLink Deezer prelookup for extension provider: ${item.service}',
+        );
       }
 
       if (deezerTrackId != null && deezerTrackId.isNotEmpty) {
@@ -3756,7 +3770,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
       Map<String, dynamic> result;
 
-      final extensionState = ref.read(extensionProvider);
       final hasActiveExtensions = extensionState.extensions.any(
         (e) => e.enabled,
       );

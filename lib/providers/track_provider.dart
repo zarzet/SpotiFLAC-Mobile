@@ -958,9 +958,16 @@ class TrackNotifier extends Notifier<TrackState> {
     final durationMs = _extractDurationMs(data);
 
     final itemType = data['item_type']?.toString();
+    final effectiveSource =
+        source ?? data['source']?.toString() ?? data['provider_id']?.toString();
+    final spotifyId = (data['spotify_id'] ?? '').toString();
+    final nativeId = (data['id'] ?? '').toString();
+    final preferredId = effectiveSource != null && effectiveSource.isNotEmpty
+        ? (nativeId.isNotEmpty ? nativeId : spotifyId)
+        : (spotifyId.isNotEmpty ? spotifyId : nativeId);
 
     return Track(
-      id: (data['spotify_id'] ?? data['id'] ?? '').toString(),
+      id: preferredId,
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? data['album'] ?? '').toString(),
@@ -974,10 +981,7 @@ class TrackNotifier extends Notifier<TrackState> {
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date']?.toString(),
       totalTracks: data['total_tracks'] as int?,
-      source:
-          source ??
-          data['source']?.toString() ??
-          data['provider_id']?.toString(),
+      source: effectiveSource,
       albumType: data['album_type']?.toString(),
       itemType: itemType,
     );
