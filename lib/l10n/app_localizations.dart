@@ -1432,6 +1432,66 @@ abstract class AppLocalizations {
   /// **'Playlists'**
   String get searchPlaylists;
 
+  /// Bottom sheet title for search sort options
+  ///
+  /// In en, this message translates to:
+  /// **'Sort Results'**
+  String get searchSortTitle;
+
+  /// Sort option - default API order
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get searchSortDefault;
+
+  /// Sort option - title ascending
+  ///
+  /// In en, this message translates to:
+  /// **'Title (A-Z)'**
+  String get searchSortTitleAZ;
+
+  /// Sort option - title descending
+  ///
+  /// In en, this message translates to:
+  /// **'Title (Z-A)'**
+  String get searchSortTitleZA;
+
+  /// Sort option - artist ascending
+  ///
+  /// In en, this message translates to:
+  /// **'Artist (A-Z)'**
+  String get searchSortArtistAZ;
+
+  /// Sort option - artist descending
+  ///
+  /// In en, this message translates to:
+  /// **'Artist (Z-A)'**
+  String get searchSortArtistZA;
+
+  /// Sort option - shortest duration first
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (Shortest)'**
+  String get searchSortDurationShort;
+
+  /// Sort option - longest duration first
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (Longest)'**
+  String get searchSortDurationLong;
+
+  /// Sort option - oldest release first
+  ///
+  /// In en, this message translates to:
+  /// **'Release Date (Oldest)'**
+  String get searchSortDateOldest;
+
+  /// Sort option - newest release first
+  ///
+  /// In en, this message translates to:
+  /// **'Release Date (Newest)'**
+  String get searchSortDateNewest;
+
   /// Tooltip - play button
   ///
   /// In en, this message translates to:

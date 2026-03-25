@@ -83,6 +83,18 @@ class _SearchResultBuckets {
   });
 }
 
+enum _SearchSortOption {
+  defaultOrder,
+  titleAsc,
+  titleDesc,
+  artistAsc,
+  artistDesc,
+  durationAsc,
+  durationDesc,
+  dateAsc,
+  dateDesc,
+}
+
 const _homeHistoryPreviewLimit = 48;
 
 class _HomeHistoryPreview {
@@ -244,6 +256,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
   Map<String, (double, double)>? _thumbnailSizesCache;
   List<Track>? _searchBucketsSourceTracks;
   _SearchResultBuckets? _searchBucketsCache;
+  _SearchSortOption _searchSortOption = _SearchSortOption.defaultOrder;
 
   double _responsiveScale({
     required BuildContext context,
@@ -564,6 +577,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
         '${searchProvider ?? 'default'}:$query:${selectedFilter ?? 'all'}';
     if (_lastSearchQuery == searchKey) return;
     _lastSearchQuery = searchKey;
+    _searchSortOption = _SearchSortOption.defaultOrder;
 
     final isBuiltInProvider =
         searchProvider != null &&
@@ -2399,6 +2413,168 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
   }
 
+  // ── Search result sorting ──────────────────────────────────────────────
+
+  String _sortOptionLabel(_SearchSortOption option) {
+    switch (option) {
+      case _SearchSortOption.defaultOrder:
+        return context.l10n.searchSortDefault;
+      case _SearchSortOption.titleAsc:
+        return context.l10n.searchSortTitleAZ;
+      case _SearchSortOption.titleDesc:
+        return context.l10n.searchSortTitleZA;
+      case _SearchSortOption.artistAsc:
+        return context.l10n.searchSortArtistAZ;
+      case _SearchSortOption.artistDesc:
+        return context.l10n.searchSortArtistZA;
+      case _SearchSortOption.durationAsc:
+        return context.l10n.searchSortDurationShort;
+      case _SearchSortOption.durationDesc:
+        return context.l10n.searchSortDurationLong;
+      case _SearchSortOption.dateAsc:
+        return context.l10n.searchSortDateOldest;
+      case _SearchSortOption.dateDesc:
+        return context.l10n.searchSortDateNewest;
+    }
+  }
+
+  void _showSortOptions(ColorScheme colorScheme) {
+    var tempSort = _searchSortOption;
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: colorScheme.surfaceContainerLow,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        context.l10n.searchSortTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => setSheetState(
+                          () => tempSort = _SearchSortOption.defaultOrder,
+                        ),
+                        child: Text(context.l10n.libraryFilterReset),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _SearchSortOption.values.map((option) {
+                      return FilterChip(
+                        label: Text(_sortOptionLabel(option)),
+                        selected: tempSort == option,
+                        showCheckmark: false,
+                        onSelected: (_) =>
+                            setSheetState(() => tempSort = option),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        if (_searchSortOption != tempSort) {
+                          setState(() {
+                            _searchSortOption = tempSort;
+                          });
+                        }
+                      },
+                      child: Text(context.l10n.libraryFilterApply),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  List<T> _applySortToList<T>(
+    List<T> items,
+    String Function(T) getName,
+    String Function(T) getArtist,
+    int Function(T) getDuration,
+    String? Function(T) getDate,
+  ) {
+    if (_searchSortOption == _SearchSortOption.defaultOrder) return items;
+    final sorted = List<T>.of(items);
+    switch (_searchSortOption) {
+      case _SearchSortOption.defaultOrder:
+        break;
+      case _SearchSortOption.titleAsc:
+        sorted.sort(
+          (a, b) =>
+              getName(a).toLowerCase().compareTo(getName(b).toLowerCase()),
+        );
+      case _SearchSortOption.titleDesc:
+        sorted.sort(
+          (a, b) =>
+              getName(b).toLowerCase().compareTo(getName(a).toLowerCase()),
+        );
+      case _SearchSortOption.artistAsc:
+        sorted.sort(
+          (a, b) =>
+              getArtist(a).toLowerCase().compareTo(getArtist(b).toLowerCase()),
+        );
+      case _SearchSortOption.artistDesc:
+        sorted.sort(
+          (a, b) =>
+              getArtist(b).toLowerCase().compareTo(getArtist(a).toLowerCase()),
+        );
+      case _SearchSortOption.durationAsc:
+        sorted.sort((a, b) => getDuration(a).compareTo(getDuration(b)));
+      case _SearchSortOption.durationDesc:
+        sorted.sort((a, b) => getDuration(b).compareTo(getDuration(a)));
+      case _SearchSortOption.dateAsc:
+        sorted.sort((a, b) {
+          final da = getDate(a) ?? '';
+          final db = getDate(b) ?? '';
+          return da.compareTo(db);
+        });
+      case _SearchSortOption.dateDesc:
+        sorted.sort((a, b) {
+          final da = getDate(a) ?? '';
+          final db = getDate(b) ?? '';
+          return db.compareTo(da);
+        });
+    }
+    return sorted;
+  }
+
   List<Widget> _buildSearchResults({
     required List<Track> tracks,
     required List<SearchArtist>? searchArtists,
@@ -2423,6 +2599,61 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final playlistItems = buckets.playlistItems;
     final artistItems = buckets.artistItems;
 
+    // Apply sorting to each list.
+    final sortedArtists = searchArtists != null && searchArtists.isNotEmpty
+        ? _applySortToList<SearchArtist>(
+            searchArtists,
+            (a) => a.name,
+            (a) => a.name,
+            (a) => 0,
+            (a) => null,
+          )
+        : searchArtists;
+
+    final sortedAlbums = searchAlbums != null && searchAlbums.isNotEmpty
+        ? _applySortToList<SearchAlbum>(
+            searchAlbums,
+            (a) => a.name,
+            (a) => a.artists,
+            (a) => 0,
+            (a) => a.releaseDate,
+          )
+        : searchAlbums;
+
+    final sortedPlaylists =
+        searchPlaylists != null && searchPlaylists.isNotEmpty
+        ? _applySortToList<SearchPlaylist>(
+            searchPlaylists,
+            (p) => p.name,
+            (p) => p.owner,
+            (p) => 0,
+            (p) => null,
+          )
+        : searchPlaylists;
+
+    // For tracks we need paired sorting (track + original index).
+    List<Track> sortedTracks;
+    List<int> sortedTrackIndexes;
+    if (realTracks.isNotEmpty &&
+        _searchSortOption != _SearchSortOption.defaultOrder) {
+      final paired = List.generate(
+        realTracks.length,
+        (i) => (realTracks[i], realTrackIndexes[i]),
+      );
+      final sortedPairs = _applySortToList<(Track, int)>(
+        paired,
+        (p) => p.$1.name,
+        (p) => p.$1.artistName,
+        (p) => p.$1.duration,
+        (p) => p.$1.releaseDate,
+      );
+      sortedTracks = sortedPairs.map((p) => p.$1).toList();
+      sortedTrackIndexes = sortedPairs.map((p) => p.$2).toList();
+    } else {
+      sortedTracks = realTracks;
+      sortedTrackIndexes = realTrackIndexes;
+    }
+
     final slivers = <Widget>[
       if (error != null)
         SliverToBoxAdapter(
@@ -2440,24 +2671,29 @@ class _HomeTabState extends ConsumerState<HomeTab>
         ),
     ];
 
-    if (searchArtists != null && searchArtists.isNotEmpty) {
+    // Track whether the sort button has been shown yet (show on first section).
+    bool sortButtonShown = false;
+
+    if (sortedArtists != null && sortedArtists.isNotEmpty) {
       slivers.addAll(
         _buildVirtualizedResultSection(
           title: context.l10n.searchArtists,
-          itemCount: searchArtists.length,
+          itemCount: sortedArtists.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _SearchArtistItemWidget(
-            key: ValueKey('search-artist-${searchArtists[index].id}'),
-            artist: searchArtists[index],
+            key: ValueKey('search-artist-${sortedArtists[index].id}'),
+            artist: sortedArtists[index],
             showDivider: showDivider,
             onTap: () => _navigateToArtist(
-              searchArtists[index].id,
-              searchArtists[index].name,
-              searchArtists[index].imageUrl,
+              sortedArtists[index].id,
+              sortedArtists[index].name,
+              sortedArtists[index].imageUrl,
             ),
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
     if (artistItems.isNotEmpty) {
@@ -2466,6 +2702,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
           title: context.l10n.searchArtists,
           itemCount: artistItems.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _CollectionItemWidget(
             key: ValueKey('artist-${artistItems[index].id}'),
             item: artistItems[index],
@@ -2474,22 +2711,25 @@ class _HomeTabState extends ConsumerState<HomeTab>
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
-    if (searchAlbums != null && searchAlbums.isNotEmpty) {
+    if (sortedAlbums != null && sortedAlbums.isNotEmpty) {
       slivers.addAll(
         _buildVirtualizedResultSection(
           title: context.l10n.searchAlbums,
-          itemCount: searchAlbums.length,
+          itemCount: sortedAlbums.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _SearchAlbumItemWidget(
-            key: ValueKey('search-album-${searchAlbums[index].id}'),
-            album: searchAlbums[index],
+            key: ValueKey('search-album-${sortedAlbums[index].id}'),
+            album: sortedAlbums[index],
             showDivider: showDivider,
-            onTap: () => _navigateToSearchAlbum(searchAlbums[index]),
+            onTap: () => _navigateToSearchAlbum(sortedAlbums[index]),
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
     if (albumItems.isNotEmpty) {
@@ -2498,6 +2738,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
           title: context.l10n.searchAlbums,
           itemCount: albumItems.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _CollectionItemWidget(
             key: ValueKey('album-${albumItems[index].id}'),
             item: albumItems[index],
@@ -2506,22 +2747,25 @@ class _HomeTabState extends ConsumerState<HomeTab>
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
-    if (searchPlaylists != null && searchPlaylists.isNotEmpty) {
+    if (sortedPlaylists != null && sortedPlaylists.isNotEmpty) {
       slivers.addAll(
         _buildVirtualizedResultSection(
           title: context.l10n.searchPlaylists,
-          itemCount: searchPlaylists.length,
+          itemCount: sortedPlaylists.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _SearchPlaylistItemWidget(
-            key: ValueKey('search-playlist-${searchPlaylists[index].id}'),
-            playlist: searchPlaylists[index],
+            key: ValueKey('search-playlist-${sortedPlaylists[index].id}'),
+            playlist: sortedPlaylists[index],
             showDivider: showDivider,
-            onTap: () => _navigateToSearchPlaylist(searchPlaylists[index]),
+            onTap: () => _navigateToSearchPlaylist(sortedPlaylists[index]),
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
     if (playlistItems.isNotEmpty) {
@@ -2530,6 +2774,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
           title: context.l10n.searchPlaylists,
           itemCount: playlistItems.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _CollectionItemWidget(
             key: ValueKey('playlist-${playlistItems[index].id}'),
             item: playlistItems[index],
@@ -2538,20 +2783,22 @@ class _HomeTabState extends ConsumerState<HomeTab>
           ),
         ),
       );
+      sortButtonShown = true;
     }
 
-    if (realTracks.isNotEmpty) {
+    if (sortedTracks.isNotEmpty) {
       slivers.addAll(
         _buildVirtualizedResultSection(
           title: context.l10n.searchSongs,
-          itemCount: realTracks.length,
+          itemCount: sortedTracks.length,
           colorScheme: colorScheme,
+          showSortButton: !sortButtonShown,
           itemBuilder: (index, showDivider) => _TrackItemWithStatus(
-            key: ValueKey(realTracks[index].id),
-            track: realTracks[index],
-            index: realTrackIndexes[index],
+            key: ValueKey(sortedTracks[index].id),
+            track: sortedTracks[index],
+            index: sortedTrackIndexes[index],
             showDivider: showDivider,
-            onDownload: () => _downloadTrack(realTrackIndexes[index]),
+            onDownload: () => _downloadTrack(sortedTrackIndexes[index]),
             searchExtensionId: searchExtensionId,
             showLocalLibraryIndicator: showLocalLibraryIndicator,
             thumbnailSizesByExtensionId: thumbnailSizesByExtensionId,
@@ -2569,6 +2816,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
     required int itemCount,
     required ColorScheme colorScheme,
     required Widget Function(int index, bool showDivider) itemBuilder,
+    bool showSortButton = false,
   }) {
     final sectionColor = Theme.of(context).brightness == Brightness.dark
         ? Color.alphaBlend(
@@ -2580,12 +2828,47 @@ class _HomeTabState extends ConsumerState<HomeTab>
     return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (showSortButton)
+                SizedBox(
+                  height: 32,
+                  child: TextButton.icon(
+                    onPressed: () => _showSortOptions(colorScheme),
+                    icon: Icon(
+                      Icons.swap_vert,
+                      size: 18,
+                      color: _searchSortOption != _SearchSortOption.defaultOrder
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    label: Text(
+                      _searchSortOption != _SearchSortOption.defaultOrder
+                          ? _sortOptionLabel(_searchSortOption)
+                          : context.l10n.libraryFilterSort,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color:
+                            _searchSortOption != _SearchSortOption.defaultOrder
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
