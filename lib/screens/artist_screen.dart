@@ -152,6 +152,16 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     return tileSize + 64 + ((textScale - 1) * 14);
   }
 
+  String? _recommendedDownloadService() {
+    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
+      return widget.extensionId;
+    }
+    if (widget.artistId.startsWith('tidal:')) return 'tidal';
+    if (widget.artistId.startsWith('qobuz:')) return 'qobuz';
+    if (widget.artistId.startsWith('deezer:')) return 'deezer';
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -889,6 +899,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           _fetchAndQueueAlbums(albums, service, quality);
         },
@@ -1689,6 +1700,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           if (!mounted) return;
           enqueue(service, quality: quality);

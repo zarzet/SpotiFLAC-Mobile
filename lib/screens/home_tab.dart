@@ -712,6 +712,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
             playlistName: trackState.playlistName!,
             coverUrl: trackState.coverUrl,
             tracks: trackState.tracks,
+            recommendedService:
+                trackState.searchExtensionId ?? trackState.searchSource,
           ),
         ),
       );
@@ -4470,6 +4472,7 @@ class _ExtensionPlaylistScreenState
       playlistName: widget.playlistName,
       coverUrl: widget.coverUrl,
       tracks: _tracks!,
+      recommendedService: widget.extensionId,
     );
   }
 }

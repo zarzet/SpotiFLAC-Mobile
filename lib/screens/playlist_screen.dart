@@ -21,6 +21,7 @@ class PlaylistScreen extends ConsumerStatefulWidget {
   final String? coverUrl;
   final List<Track> tracks;
   final String? playlistId;
+  final String? recommendedService;
 
   const PlaylistScreen({
     super.key,
@@ -28,6 +29,7 @@ class PlaylistScreen extends ConsumerStatefulWidget {
     this.coverUrl,
     required this.tracks,
     this.playlistId,
+    this.recommendedService,
   });
 
   @override
@@ -46,6 +48,31 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   List<Track> get _tracks => _fetchedTracks ?? widget.tracks;
   String get _playlistName => _resolvedPlaylistName ?? widget.playlistName;
   String? get _coverUrl => _resolvedCoverUrl ?? widget.coverUrl;
+
+  String? _recommendedDownloadService() {
+    final explicit = widget.recommendedService;
+    if (explicit != null && explicit.isNotEmpty) {
+      return explicit;
+    }
+
+    final playlistId = widget.playlistId;
+    if (playlistId != null) {
+      if (playlistId.startsWith('tidal:')) return 'tidal';
+      if (playlistId.startsWith('qobuz:')) return 'qobuz';
+      if (playlistId.startsWith('deezer:')) return 'deezer';
+    }
+
+    final source = _tracks.firstOrNull?.source;
+    if (source != null && source.isNotEmpty) {
+      return source;
+    }
+
+    final trackId = _tracks.firstOrNull?.id ?? '';
+    if (trackId.startsWith('tidal:')) return 'tidal';
+    if (trackId.startsWith('qobuz:')) return 'qobuz';
+    if (trackId.startsWith('deezer:')) return 'deezer';
+    return null;
+  }
 
   @override
   void initState() {
@@ -429,6 +456,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         trackName: track.name,
         artistName: track.artistName,
         coverUrl: track.coverUrl,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
@@ -663,6 +691,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         context,
         trackName: '${tracksToQueue.length} tracks',
         artistName: _playlistName,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)

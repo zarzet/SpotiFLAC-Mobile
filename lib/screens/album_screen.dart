@@ -241,6 +241,16 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     );
   }
 
+  String? _recommendedDownloadService() {
+    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
+      return widget.extensionId;
+    }
+    if (widget.albumId.startsWith('tidal:')) return 'tidal';
+    if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
+    if (widget.albumId.startsWith('deezer:')) return 'deezer';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -551,6 +561,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         trackName: track.name,
         artistName: track.artistName,
         coverUrl: track.coverUrl,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
@@ -623,6 +634,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         context,
         trackName: '${tracksToQueue.length} tracks',
         artistName: widget.albumName,
+        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
