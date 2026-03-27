@@ -999,6 +999,46 @@
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
+  "searchSortTitle": "Sort Results",
+  "@searchSortTitle": {
+    "description": "Bottom sheet title for search sort options"
+  },
+  "searchSortDefault": "Default",
+  "@searchSortDefault": {
+    "description": "Sort option - default API order"
+  },
+  "searchSortTitleAZ": "Title (A-Z)",
+  "@searchSortTitleAZ": {
+    "description": "Sort option - title ascending"
+  },
+  "searchSortTitleZA": "Title (Z-A)",
+  "@searchSortTitleZA": {
+    "description": "Sort option - title descending"
+  },
+  "searchSortArtistAZ": "Artist (A-Z)",
+  "@searchSortArtistAZ": {
+    "description": "Sort option - artist ascending"
+  },
+  "searchSortArtistZA": "Artist (Z-A)",
+  "@searchSortArtistZA": {
+    "description": "Sort option - artist descending"
+  },
+  "searchSortDurationShort": "Duration (Shortest)",
+  "@searchSortDurationShort": {
+    "description": "Sort option - shortest duration first"
+  },
+  "searchSortDurationLong": "Duration (Longest)",
+  "@searchSortDurationLong": {
+    "description": "Sort option - longest duration first"
+  },
+  "searchSortDateOldest": "Release Date (Oldest)",
+  "@searchSortDateOldest": {
+    "description": "Sort option - oldest release first"
+  },
+  "searchSortDateNewest": "Release Date (Newest)",
+  "@searchSortDateNewest": {
+    "description": "Sort option - newest release first"
+  },
   "tooltipPlay": "Play",
   "@tooltipPlay": {
     "description": "Tooltip - play button"
@@ -1869,18 +1909,6 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
-  "@youtubeQualityNote": {
-    "description": "Note for YouTube service explaining lossy-only quality"
-  },
-  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
-  "@youtubeOpusBitrateTitle": {
-    "description": "Title for YouTube Opus bitrate setting"
-  },
-  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
-  "@youtubeMp3BitrateTitle": {
-    "description": "Title for YouTube MP3 bitrate setting"
-  },
   "downloadAskBeforeDownload": "Ask Before Download",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
@@ -2000,6 +2028,14 @@
   "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
   "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
+  },
+  "albumFolderArtistAlbumFlat": "Artist / Album (Singles flat)",
+  "@albumFolderArtistAlbumFlat": {
+    "description": "Album folder option with singles directly in artist folder"
+  },
+  "albumFolderArtistAlbumFlatSubtitle": "Artist/Album/ and Artist/song.flac",
+  "@albumFolderArtistAlbumFlatSubtitle": {
+    "description": "Folder structure example for flat singles"
   },
   "downloadedAlbumDeleteSelected": "Delete Selected",
   "@downloadedAlbumDeleteSelected": {
@@ -3903,5 +3939,129 @@
   "editMetadataSelectEmpty": "Empty only",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
+  },
+
+  "queueDownloadingCount": "Downloading ({count})",
+  "@queueDownloadingCount": {
+    "description": "Header for active downloads section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDownloadedHeader": "Downloaded",
+  "@queueDownloadedHeader": {
+    "description": "Header label for downloaded items section in library"
+  },
+  "queueFilteringIndicator": "Filtering...",
+  "@queueFilteringIndicator": {
+    "description": "Shown while filter results are being computed"
+  },
+  "queueTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@queueTrackCount": {
+    "description": "Track count label with plural support",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAlbumCount": "{count, plural, =1{1 album} other{{count} albums}}",
+  "@queueAlbumCount": {
+    "description": "Album count label with plural support",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueEmptyAlbums": "No album downloads",
+  "@queueEmptyAlbums": {
+    "description": "Empty state title when no album downloads exist"
+  },
+  "queueEmptyAlbumsSubtitle": "Download multiple tracks from an album to see them here",
+  "@queueEmptyAlbumsSubtitle": {
+    "description": "Empty state subtitle for album downloads"
+  },
+  "queueEmptySingles": "No single downloads",
+  "@queueEmptySingles": {
+    "description": "Empty state title when no single track downloads exist"
+  },
+  "queueEmptySinglesSubtitle": "Single track downloads will appear here",
+  "@queueEmptySinglesSubtitle": {
+    "description": "Empty state subtitle for single track downloads"
+  },
+  "queueEmptyHistory": "No download history",
+  "@queueEmptyHistory": {
+    "description": "Empty state title when download history is empty"
+  },
+  "queueEmptyHistorySubtitle": "Downloaded tracks will appear here",
+  "@queueEmptyHistorySubtitle": {
+    "description": "Empty state subtitle for download history"
+  },
+  "selectionAllPlaylistsSelected": "All playlists selected",
+  "@selectionAllPlaylistsSelected": {
+    "description": "Shown when all playlists are selected in selection mode"
+  },
+  "selectionTapPlaylistsToSelect": "Tap playlists to select",
+  "@selectionTapPlaylistsToSelect": {
+    "description": "Hint shown in playlist selection mode"
+  },
+  "selectionSelectPlaylistsToDelete": "Select playlists to delete",
+  "@selectionSelectPlaylistsToDelete": {
+    "description": "Hint shown when no playlists are selected for deletion"
+  },
+  "audioAnalysisTitle": "Audio Quality Analysis",
+  "@audioAnalysisTitle": {
+    "description": "Title for audio analysis section"
+  },
+  "audioAnalysisDescription": "Verify lossless quality with spectrum analysis",
+  "@audioAnalysisDescription": {
+    "description": "Description for audio analysis tap-to-analyze prompt"
+  },
+  "audioAnalysisAnalyzing": "Analyzing audio...",
+  "@audioAnalysisAnalyzing": {
+    "description": "Loading text while analyzing audio"
+  },
+  "audioAnalysisSampleRate": "Sample Rate",
+  "@audioAnalysisSampleRate": {
+    "description": "Sample rate metric label"
+  },
+  "audioAnalysisBitDepth": "Bit Depth",
+  "@audioAnalysisBitDepth": {
+    "description": "Bit depth metric label"
+  },
+  "audioAnalysisChannels": "Channels",
+  "@audioAnalysisChannels": {
+    "description": "Channels metric label"
+  },
+  "audioAnalysisDuration": "Duration",
+  "@audioAnalysisDuration": {
+    "description": "Duration metric label"
+  },
+  "audioAnalysisNyquist": "Nyquist",
+  "@audioAnalysisNyquist": {
+    "description": "Nyquist frequency metric label"
+  },
+  "audioAnalysisFileSize": "Size",
+  "@audioAnalysisFileSize": {
+    "description": "File size metric label"
+  },
+  "audioAnalysisDynamicRange": "Dynamic Range",
+  "@audioAnalysisDynamicRange": {
+    "description": "Dynamic range metric label"
+  },
+  "audioAnalysisPeak": "Peak",
+  "@audioAnalysisPeak": {
+    "description": "Peak amplitude metric label"
+  },
+  "audioAnalysisRms": "RMS",
+  "@audioAnalysisRms": {
+    "description": "RMS level metric label"
+  },
+  "audioAnalysisSamples": "Samples",
+  "@audioAnalysisSamples": {
+    "description": "Total samples metric label"
   }
 }
