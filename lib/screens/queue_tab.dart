@@ -1187,6 +1187,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   }
 
   void _onFilterPageChanged(int index) {
+    HapticFeedback.selectionClick();
     final filterMode = _filterModes[index];
     ref.read(settingsProvider.notifier).setHistoryFilterMode(filterMode);
   }
