@@ -161,13 +161,9 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
       return ext.qualityOptions;
     }
 
-    return [
-      const QualityOption(
-        id: 'DEFAULT',
-        label: 'Default Quality',
-        description: 'Best available',
-      ),
-    ];
+    // Extensions without quality options use Tidal's options as default
+    // since the download will fall back to built-in providers anyway.
+    return _builtInServices.firstWhere((s) => s.id == 'tidal').qualityOptions;
   }
 
   @override
