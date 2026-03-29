@@ -113,3 +113,67 @@ func TestBuildDownloadSuccessResponsePrefersProviderCoverURL(t *testing.T) {
 		t.Fatalf("cover url = %q, want %q", resp.CoverURL, result.CoverURL)
 	}
 }
+
+func TestApplyReEnrichTrackMetadataPreservesExistingReleaseDateWhenCandidateMissing(t *testing.T) {
+	req := reEnrichRequest{
+		SpotifyID:   "spotify-track-id",
+		AlbumName:   "Original Album",
+		ReleaseDate: "2024-01-01",
+		ISRC:        "REQ123",
+	}
+
+	applyReEnrichTrackMetadata(&req, ExtTrackMetadata{
+		AlbumName:   "Resolved Album",
+		ReleaseDate: "",
+		ISRC:        "",
+	})
+
+	if req.ReleaseDate != "2024-01-01" {
+		t.Fatalf("release date = %q, want existing value preserved", req.ReleaseDate)
+	}
+	if req.AlbumName != "Resolved Album" {
+		t.Fatalf("album = %q, want updated album", req.AlbumName)
+	}
+	if req.ISRC != "REQ123" {
+		t.Fatalf("isrc = %q, want existing value preserved", req.ISRC)
+	}
+}
+
+func TestSelectBestReEnrichTrackPrefersCandidateWithReleaseDate(t *testing.T) {
+	req := reEnrichRequest{
+		TrackName:   "Song Title",
+		ArtistName:  "Artist Name",
+		AlbumName:   "Album Name",
+		ReleaseDate: "",
+		DurationMs:  180000,
+	}
+
+	tracks := []ExtTrackMetadata{
+		{
+			ID:          "first",
+			Name:        "Song Title",
+			Artists:     "Artist Name",
+			AlbumName:   "Album Name",
+			DurationMS:  180000,
+			ReleaseDate: "",
+			ProviderID:  "spotify",
+		},
+		{
+			ID:          "second",
+			Name:        "Song Title",
+			Artists:     "Artist Name",
+			AlbumName:   "Album Name",
+			DurationMS:  180000,
+			ReleaseDate: "2024-03-09",
+			ProviderID:  "deezer",
+		},
+	}
+
+	best := selectBestReEnrichTrack(req, tracks)
+	if best == nil {
+		t.Fatal("expected a selected track")
+	}
+	if best.ID != "second" {
+		t.Fatalf("selected track = %q, want candidate with release date", best.ID)
+	}
+}

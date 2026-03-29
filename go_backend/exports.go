@@ -116,6 +116,270 @@ type DownloadResult struct {
 	DecryptionKey string
 }
 
+type reEnrichRequest struct {
+	FilePath     string `json:"file_path"`
+	CoverURL     string `json:"cover_url"`
+	MaxQuality   bool   `json:"max_quality"`
+	EmbedLyrics  bool   `json:"embed_lyrics"`
+	SpotifyID    string `json:"spotify_id"`
+	TrackName    string `json:"track_name"`
+	ArtistName   string `json:"artist_name"`
+	AlbumName    string `json:"album_name"`
+	AlbumArtist  string `json:"album_artist"`
+	TrackNumber  int    `json:"track_number"`
+	DiscNumber   int    `json:"disc_number"`
+	ReleaseDate  string `json:"release_date"`
+	ISRC         string `json:"isrc"`
+	Genre        string `json:"genre"`
+	Label        string `json:"label"`
+	Copyright    string `json:"copyright"`
+	DurationMs   int64  `json:"duration_ms"`
+	SearchOnline bool   `json:"search_online"`
+}
+
+func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
+	if req == nil {
+		return
+	}
+
+	if track.SpotifyID != "" {
+		req.SpotifyID = track.SpotifyID
+	} else if track.DeezerID != "" {
+		req.SpotifyID = "deezer:" + track.DeezerID
+	} else if track.QobuzID != "" {
+		req.SpotifyID = "qobuz:" + track.QobuzID
+	} else if track.TidalID != "" {
+		req.SpotifyID = "tidal:" + track.TidalID
+	} else if track.ID != "" {
+		req.SpotifyID = track.ID
+	}
+
+	if track.AlbumName != "" {
+		req.AlbumName = track.AlbumName
+	}
+	if track.AlbumArtist != "" {
+		req.AlbumArtist = track.AlbumArtist
+	}
+	if track.TrackNumber > 0 {
+		req.TrackNumber = track.TrackNumber
+	}
+	if track.DiscNumber > 0 {
+		req.DiscNumber = track.DiscNumber
+	}
+	if track.ReleaseDate != "" {
+		req.ReleaseDate = track.ReleaseDate
+	}
+	if track.ISRC != "" {
+		req.ISRC = track.ISRC
+	}
+	if coverURL := track.ResolvedCoverURL(); coverURL != "" {
+		req.CoverURL = coverURL
+	}
+	if track.DurationMS > 0 {
+		req.DurationMs = int64(track.DurationMS)
+	}
+	if track.Genre != "" {
+		req.Genre = track.Genre
+	}
+	if track.Label != "" {
+		req.Label = track.Label
+	}
+	if track.Copyright != "" {
+		req.Copyright = track.Copyright
+	}
+}
+
+func reEnrichDownloadRequest(req reEnrichRequest) DownloadRequest {
+	return DownloadRequest{
+		TrackName:   req.TrackName,
+		ArtistName:  req.ArtistName,
+		AlbumName:   req.AlbumName,
+		ReleaseDate: req.ReleaseDate,
+		ISRC:        req.ISRC,
+		DurationMS:  int(req.DurationMs),
+	}
+}
+
+func selectBestReEnrichTrack(req reEnrichRequest, tracks []ExtTrackMetadata) *ExtTrackMetadata {
+	if len(tracks) == 0 {
+		return nil
+	}
+
+	downloadReq := reEnrichDownloadRequest(req)
+	currentISRC := strings.TrimSpace(req.ISRC)
+	currentAlbum := strings.TrimSpace(req.AlbumName)
+	var best *ExtTrackMetadata
+	bestScore := -1 << 30
+
+	for i := range tracks {
+		track := &tracks[i]
+		score := 0
+
+		resolved := resolvedTrackInfo{
+			Title:      track.Name,
+			ArtistName: track.Artists,
+			ISRC:       track.ISRC,
+			Duration:   track.DurationMS / 1000,
+		}
+		if trackMatchesRequest(downloadReq, resolved, "ReEnrich") {
+			score += 2000
+		}
+
+		if currentISRC != "" && strings.EqualFold(currentISRC, strings.TrimSpace(track.ISRC)) {
+			score += 10000
+		}
+		if req.TrackName != "" && track.Name != "" && titlesMatch(req.TrackName, track.Name) {
+			score += 400
+		}
+		if req.ArtistName != "" && track.Artists != "" && artistsMatch(req.ArtistName, track.Artists) {
+			score += 320
+		}
+		if currentAlbum != "" && track.AlbumName != "" {
+			switch {
+			case titlesMatch(currentAlbum, track.AlbumName):
+				score += 120
+			case strings.Contains(strings.ToLower(track.AlbumName), strings.ToLower(currentAlbum)),
+				strings.Contains(strings.ToLower(currentAlbum), strings.ToLower(track.AlbumName)):
+				score += 50
+			}
+		}
+
+		if req.DurationMs > 0 && track.DurationMS > 0 {
+			diff := int(req.DurationMs/1000) - (track.DurationMS / 1000)
+			if diff < 0 {
+				diff = -diff
+			}
+			if diff <= 10 {
+				score += 80
+			}
+		}
+
+		if track.ReleaseDate != "" {
+			score += 70
+		}
+		if track.TrackNumber > 0 {
+			score += 20
+		}
+		if track.DiscNumber > 0 {
+			score += 10
+		}
+		if track.ISRC != "" {
+			score += 40
+		}
+
+		if best == nil || score > bestScore {
+			best = track
+			bestScore = score
+		}
+	}
+
+	return best
+}
+
+func extTrackFromTrackMetadata(track *TrackMetadata, providerID string) *ExtTrackMetadata {
+	if track == nil {
+		return nil
+	}
+
+	deezerID := strings.TrimSpace(strings.TrimPrefix(track.SpotifyID, "deezer:"))
+	return &ExtTrackMetadata{
+		ID:          track.SpotifyID,
+		Name:        track.Name,
+		Artists:     track.Artists,
+		AlbumName:   track.AlbumName,
+		AlbumArtist: track.AlbumArtist,
+		DurationMS:  track.DurationMS,
+		CoverURL:    track.Images,
+		Images:      track.Images,
+		ReleaseDate: track.ReleaseDate,
+		TrackNumber: track.TrackNumber,
+		DiscNumber:  track.DiscNumber,
+		ISRC:        track.ISRC,
+		ProviderID:  providerID,
+		DeezerID:    deezerID,
+		SpotifyID:   track.SpotifyID,
+	}
+}
+
+func normalizeReEnrichSpotifyTrackID(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+	if extracted := extractSpotifyIDFromURL(trimmed); extracted != "" {
+		return extracted
+	}
+	if len(trimmed) == 22 && !strings.Contains(trimmed, ":") && !strings.Contains(trimmed, "/") {
+		return trimmed
+	}
+	return ""
+}
+
+func resolveReEnrichTrackFromIdentifiers(req reEnrichRequest) (*ExtTrackMetadata, error) {
+	deezerClient := GetDeezerClient()
+	downloadReq := reEnrichDownloadRequest(req)
+
+	if isrc := strings.TrimSpace(req.ISRC); isrc != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		track, err := deezerClient.SearchByISRC(ctx, isrc)
+		cancel()
+		if err == nil && track != nil {
+			resolved := resolvedTrackInfo{
+				Title:      track.Name,
+				ArtistName: track.Artists,
+				ISRC:       track.ISRC,
+				Duration:   track.DurationMS / 1000,
+			}
+			if trackMatchesRequest(downloadReq, resolved, "ReEnrich") {
+				return extTrackFromTrackMetadata(track, "deezer"), nil
+			}
+		}
+	}
+
+	sourceTrackID := strings.TrimSpace(req.SpotifyID)
+	if sourceTrackID == "" {
+		return nil, nil
+	}
+
+	deezerID := strings.TrimSpace(strings.TrimPrefix(sourceTrackID, "deezer:"))
+	if deezerID == sourceTrackID {
+		deezerID = extractDeezerIDFromURL(sourceTrackID)
+	}
+	if deezerID == "" {
+		spotifyID := normalizeReEnrichSpotifyTrackID(sourceTrackID)
+		if spotifyID != "" {
+			resolvedDeezerID, err := NewSongLinkClient().GetDeezerIDFromSpotify(spotifyID)
+			if err == nil {
+				deezerID = strings.TrimSpace(resolvedDeezerID)
+			}
+		}
+	}
+	if deezerID == "" {
+		return nil, nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	trackResp, err := deezerClient.GetTrack(ctx, deezerID)
+	if err != nil || trackResp == nil {
+		return nil, err
+	}
+
+	track := &trackResp.Track
+	resolved := resolvedTrackInfo{
+		Title:      track.Name,
+		ArtistName: track.Artists,
+		ISRC:       track.ISRC,
+		Duration:   track.DurationMS / 1000,
+	}
+	if !trackMatchesRequest(downloadReq, resolved, "ReEnrich") {
+		return nil, nil
+	}
+
+	return extTrackFromTrackMetadata(track, "deezer"), nil
+}
+
 func preferredReleaseMetadata(
 	req DownloadRequest,
 	album string,
@@ -1716,26 +1980,7 @@ func GetLyricsFetchOptionsJSON() (string, error) {
 // When search_online is true, searches Spotify/Deezer by track name + artist to fetch
 // complete metadata from the internet before embedding.
 func ReEnrichFile(requestJSON string) (string, error) {
-	var req struct {
-		FilePath     string `json:"file_path"`
-		CoverURL     string `json:"cover_url"`
-		MaxQuality   bool   `json:"max_quality"`
-		EmbedLyrics  bool   `json:"embed_lyrics"`
-		SpotifyID    string `json:"spotify_id"`
-		TrackName    string `json:"track_name"`
-		ArtistName   string `json:"artist_name"`
-		AlbumName    string `json:"album_name"`
-		AlbumArtist  string `json:"album_artist"`
-		TrackNumber  int    `json:"track_number"`
-		DiscNumber   int    `json:"disc_number"`
-		ReleaseDate  string `json:"release_date"`
-		ISRC         string `json:"isrc"`
-		Genre        string `json:"genre"`
-		Label        string `json:"label"`
-		Copyright    string `json:"copyright"`
-		DurationMs   int64  `json:"duration_ms"`
-		SearchOnline bool   `json:"search_online"`
-	}
+	var req reEnrichRequest
 
 	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
 		return "", fmt.Errorf("failed to parse request: %w", err)
@@ -1757,42 +2002,22 @@ func ReEnrichFile(requestJSON string) (string, error) {
 		deezerClient := GetDeezerClient()
 		GoLog("[ReEnrich] Trying metadata providers in configured priority...\n")
 		manager := GetExtensionManager()
+		if identifierTrack, err := resolveReEnrichTrackFromIdentifiers(req); err == nil && identifierTrack != nil {
+			GoLog("[ReEnrich] Identifier-first metadata match (%s): %s - %s (album: %s, date: %s)\n",
+				identifierTrack.ProviderID, identifierTrack.Name, identifierTrack.Artists, identifierTrack.AlbumName, identifierTrack.ReleaseDate)
+			applyReEnrichTrackMetadata(&req, *identifierTrack)
+			found = true
+		}
+
 		tracks, searchErr := manager.SearchTracksWithMetadataProviders(searchQuery, 5, true)
 		if searchErr == nil && len(tracks) > 0 {
-			track := tracks[0]
-			GoLog("[ReEnrich] Metadata match (%s): %s - %s (album: %s)\n", track.ProviderID, track.Name, track.Artists, track.AlbumName)
-			if track.SpotifyID != "" {
-				req.SpotifyID = track.SpotifyID
-			} else if track.DeezerID != "" {
-				req.SpotifyID = "deezer:" + track.DeezerID
-			} else if track.QobuzID != "" {
-				req.SpotifyID = "qobuz:" + track.QobuzID
-			} else if track.TidalID != "" {
-				req.SpotifyID = "tidal:" + track.TidalID
-			} else {
-				req.SpotifyID = track.ID
+			track := selectBestReEnrichTrack(req, tracks)
+			if track != nil {
+				GoLog("[ReEnrich] Metadata match (%s): %s - %s (album: %s, date: %s)\n",
+					track.ProviderID, track.Name, track.Artists, track.AlbumName, track.ReleaseDate)
+				applyReEnrichTrackMetadata(&req, *track)
+				found = true
 			}
-			req.AlbumName = track.AlbumName
-			req.AlbumArtist = track.AlbumArtist
-			req.TrackNumber = track.TrackNumber
-			req.DiscNumber = track.DiscNumber
-			req.ReleaseDate = track.ReleaseDate
-			req.ISRC = track.ISRC
-			coverURL := track.ResolvedCoverURL()
-			if coverURL != "" {
-				req.CoverURL = coverURL
-			}
-			req.DurationMs = int64(track.DurationMS)
-			if track.Genre != "" {
-				req.Genre = track.Genre
-			}
-			if track.Label != "" {
-				req.Label = track.Label
-			}
-			if track.Copyright != "" {
-				req.Copyright = track.Copyright
-			}
-			found = true
 		} else if searchErr != nil {
 			GoLog("[ReEnrich] Metadata provider search failed: %v\n", searchErr)
 		}
