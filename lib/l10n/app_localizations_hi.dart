@@ -1261,7 +1261,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get storeNewRepoUrlLabel => 'New Repository URL';
 
   @override
-  String get storeLoadError => 'Failed to load store';
+  String get storeLoadError => 'Failed to load repository';
 
   @override
   String get storeEmptyNoExtensions => 'No extensions available';

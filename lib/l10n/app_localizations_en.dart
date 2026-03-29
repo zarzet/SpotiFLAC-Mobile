@@ -21,13 +21,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navSettings => 'Settings';
 
   @override
-  String get navStore => 'Store';
+  String get navStore => 'Repo';
 
   @override
   String get homeTitle => 'Home';
 
   @override
-  String get homeSubtitle => 'Paste a Spotify link or search by name';
+  String get homeSubtitle => 'Paste a supported URL or search by name';
 
   @override
   String get homeSupports => 'Supports: Track, Album, Playlist, Artist URLs';
@@ -170,10 +170,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Parallel downloads may trigger rate limiting';
 
   @override
-  String get optionsExtensionStore => 'Extension Store';
+  String get optionsExtensionStore => 'Extension Repo';
 
   @override
-  String get optionsExtensionStoreSubtitle => 'Show Store tab in navigation';
+  String get optionsExtensionStoreSubtitle => 'Show Repo tab in navigation';
 
   @override
   String get optionsCheckUpdates => 'Check for Updates';
@@ -250,7 +250,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get extensionsUninstall => 'Uninstall';
 
   @override
-  String get storeTitle => 'Extension Store';
+  String get storeTitle => 'Extension Repo';
 
   @override
   String get storeSearch => 'Search extensions...';
@@ -1261,7 +1261,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeNewRepoUrlLabel => 'New Repository URL';
 
   @override
-  String get storeLoadError => 'Failed to load store';
+  String get storeLoadError => 'Failed to load repository';
 
   @override
   String get storeEmptyNoExtensions => 'No extensions available';
@@ -1997,7 +1997,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialExtensionsTip1 =>
-      'Browse the Store tab to discover useful extensions';
+      'Browse the Repo tab to discover useful extensions';
 
   @override
   String get tutorialExtensionsTip2 =>

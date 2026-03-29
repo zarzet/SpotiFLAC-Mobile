@@ -343,13 +343,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           headerImage = artistData['header_image'] as String?;
           listeners = artistData['listeners'] as int?;
         } else {
-          final metadata = await PlatformBridge.getSpotifyMetadataWithFallback(
-            url,
-          );
-          final albumsList = metadata['albums'] as List<dynamic>;
-          albums = albumsList
-              .map((a) => _parseArtistAlbum(a as Map<String, dynamic>))
-              .toList();
+          throw StateError('Failed to load artist metadata from extension');
         }
       }
 
@@ -1101,15 +1095,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       final result = await PlatformBridge.handleURLWithExtension(url);
       if (result != null && result['tracks'] != null) {
         final tracksList = result['tracks'] as List<dynamic>;
-        return tracksList
-            .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
-            .toList();
-      }
-
-      // Fallback to direct Spotify metadata
-      final metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
-      if (metadata['tracks'] != null) {
-        final tracksList = metadata['tracks'] as List<dynamic>;
         return tracksList
             .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
             .toList();

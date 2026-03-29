@@ -538,90 +538,11 @@ class TrackNotifier extends Notifier<TrackState> {
         return;
       }
 
-      final isSpotifyUrl =
-          url.contains('open.spotify.com') ||
-          url.contains('spotify.link') ||
-          url.startsWith('spotify:');
-      if (!isSpotifyUrl) {
-        state = TrackState(
-          isLoading: false,
-          error: 'url_not_recognized',
-          hasSearchText: state.hasSearchText,
-        );
-        return;
-      }
-
-      final parsed = await PlatformBridge.parseSpotifyUrl(url);
-      if (!_isRequestValid(requestId)) return;
-
-      final type = parsed['type'] as String;
-
-      Map<String, dynamic> metadata;
-
-      try {
-        metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
-      } catch (e) {
-        rethrow;
-      }
-
-      if (!_isRequestValid(requestId)) return;
-
-      if (type == 'track') {
-        final trackData = metadata['track'] as Map<String, dynamic>;
-        final track = _parseTrack(trackData);
-        state = TrackState(
-          tracks: [track],
-          isLoading: false,
-          coverUrl: track.coverUrl,
-        );
-      } else if (type == 'album') {
-        final albumInfo = metadata['album_info'] as Map<String, dynamic>;
-        final trackList = metadata['track_list'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-        state = TrackState(
-          tracks: tracks,
-          isLoading: false,
-          albumId: parsed['id'] as String?,
-          albumName: albumInfo['name'] as String?,
-          coverUrl: normalizeRemoteHttpUrl(albumInfo['images']?.toString()),
-        );
-        _preWarmCacheForTracks(tracks);
-      } else if (type == 'playlist') {
-        final playlistInfo = metadata['playlist_info'] as Map<String, dynamic>;
-        final trackList = metadata['track_list'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-        final owner = playlistInfo['owner'] as Map<String, dynamic>?;
-        final playlistName =
-            (playlistInfo['name'] ?? owner?['name']) as String?;
-        final coverUrl = normalizeRemoteHttpUrl(
-          (playlistInfo['images'] ?? owner?['images'])?.toString(),
-        );
-        state = TrackState(
-          tracks: tracks,
-          isLoading: false,
-          playlistName: playlistName,
-          coverUrl: coverUrl,
-        );
-        _preWarmCacheForTracks(tracks);
-      } else if (type == 'artist') {
-        final artistInfo = metadata['artist_info'] as Map<String, dynamic>;
-        final albumsList = metadata['albums'] as List<dynamic>;
-        final albums = albumsList
-            .map((a) => _parseArtistAlbum(a as Map<String, dynamic>))
-            .toList();
-        state = TrackState(
-          tracks: [],
-          isLoading: false,
-          artistId: artistInfo['id'] as String?,
-          artistName: artistInfo['name'] as String?,
-          coverUrl: normalizeRemoteHttpUrl(artistInfo['images']?.toString()),
-          artistAlbums: albums,
-        );
-      }
+      state = TrackState(
+        isLoading: false,
+        error: 'url_not_recognized',
+        hasSearchText: state.hasSearchText,
+      );
     } catch (e) {
       if (!_isRequestValid(requestId)) return;
       state = TrackState(

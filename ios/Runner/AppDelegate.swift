@@ -199,13 +199,6 @@ import Gobackend  // Import Go framework
         var error: NSError?
         
         switch call.method {
-        case "parseSpotifyUrl":
-            let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendParseSpotifyURL(url, &error)
-            if let error = error { throw error }
-            return response
-            
         case "checkAvailability":
             let args = call.arguments as! [String: Any]
             let spotifyId = args["spotify_id"] as! String
@@ -515,13 +508,6 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
 
-        case "getSpotifyMetadataWithFallback":
-            let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendGetSpotifyMetadataWithDeezerFallback(url, &error)
-            if let error = error { throw error }
-            return response
-            
         case "checkAvailabilityFromDeezerID":
             let args = call.arguments as! [String: Any]
             let deezerTrackId = args["deezer_track_id"] as! String

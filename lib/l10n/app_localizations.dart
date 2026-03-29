@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// Bottom navigation - Extension store tab
   ///
   /// In en, this message translates to:
-  /// **'Store'**
+  /// **'Repo'**
   String get navStore;
 
   /// Home screen title
@@ -163,7 +163,7 @@ abstract class AppLocalizations {
   /// Subtitle shown below search box
   ///
   /// In en, this message translates to:
-  /// **'Paste a Spotify link or search by name'**
+  /// **'Paste a supported URL or search by name'**
   String get homeSubtitle;
 
   /// Info text about supported URL types
@@ -427,13 +427,13 @@ abstract class AppLocalizations {
   /// Show/hide store tab
   ///
   /// In en, this message translates to:
-  /// **'Extension Store'**
+  /// **'Extension Repo'**
   String get optionsExtensionStore;
 
   /// Subtitle for extension store toggle
   ///
   /// In en, this message translates to:
-  /// **'Show Store tab in navigation'**
+  /// **'Show Repo tab in navigation'**
   String get optionsExtensionStoreSubtitle;
 
   /// Auto update check toggle
@@ -565,7 +565,7 @@ abstract class AppLocalizations {
   /// Store screen title
   ///
   /// In en, this message translates to:
-  /// **'Extension Store'**
+  /// **'Extension Repo'**
   String get storeTitle;
 
   /// Store search placeholder
@@ -2365,7 +2365,7 @@ abstract class AppLocalizations {
   /// Error heading when the store cannot be loaded
   ///
   /// In en, this message translates to:
-  /// **'Failed to load store'**
+  /// **'Failed to load repository'**
   String get storeLoadError;
 
   /// Message when store has no extensions
@@ -3613,7 +3613,7 @@ abstract class AppLocalizations {
   /// Tutorial extensions tip 1
   ///
   /// In en, this message translates to:
-  /// **'Browse the Store tab to discover useful extensions'**
+  /// **'Browse the Repo tab to discover useful extensions'**
   String get tutorialExtensionsTip1;
 
   /// Tutorial extensions tip 2

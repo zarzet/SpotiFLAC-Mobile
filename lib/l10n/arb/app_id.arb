@@ -17,7 +17,7 @@
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Toko",
+  "navStore": "Repo",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Tempel link Spotify atau cari berdasarkan nama",
+  "homeSubtitle": "Tempel URL yang didukung atau cari berdasarkan nama",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -211,11 +211,11 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Toko Ekstensi",
+  "optionsExtensionStore": "Repo Ekstensi",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Tampilkan tab Toko di navigasi",
+  "optionsExtensionStoreSubtitle": "Tampilkan tab Repo di navigasi",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
@@ -318,9 +318,13 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Toko Ekstensi",
+  "storeTitle": "Repo Ekstensi",
   "@storeTitle": {
     "description": "Store screen title"
+  },
+  "storeLoadError": "Gagal memuat repo",
+  "@storeLoadError": {
+    "description": "Error heading when the store cannot be loaded"
   },
   "storeSearch": "Cari ekstensi...",
   "@storeSearch": {
@@ -2459,7 +2463,7 @@
   "@tutorialExtensionsDesc": {
     "description": "Tutorial extensions page description"
   },
-  "tutorialExtensionsTip1": "Browse the Store tab to discover useful extensions",
+  "tutorialExtensionsTip1": "Buka tab Repo untuk menemukan ekstensi yang berguna",
   "@tutorialExtensionsTip1": {
     "description": "Tutorial extensions tip 1"
   },

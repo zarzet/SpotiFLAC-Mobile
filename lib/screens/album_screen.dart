@@ -174,42 +174,107 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   Future<void> _fetchTracks() async {
     setState(() => _isLoading = true);
     try {
-      Map<String, dynamic> metadata;
-
       if (widget.albumId.startsWith('deezer:')) {
         final deezerAlbumId = widget.albumId.replaceFirst('deezer:', '');
-        metadata = await PlatformBridge.getDeezerMetadata(
+        final metadata = await PlatformBridge.getDeezerMetadata(
           'album',
           deezerAlbumId,
         );
+        final trackList = metadata['track_list'] as List<dynamic>;
+        final tracks = trackList
+            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .toList();
+
+        final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
+        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
+            ?.toString();
+
+        _AlbumCache.set(widget.albumId, tracks);
+
+        if (mounted) {
+          setState(() {
+            _tracks = tracks;
+            _artistId = artistId;
+            _isLoading = false;
+          });
+        }
+        return;
       } else if (widget.albumId.startsWith('qobuz:')) {
         final qobuzAlbumId = widget.albumId.replaceFirst('qobuz:', '');
-        metadata = await PlatformBridge.getQobuzMetadata('album', qobuzAlbumId);
+        final metadata = await PlatformBridge.getQobuzMetadata(
+          'album',
+          qobuzAlbumId,
+        );
+        final trackList = metadata['track_list'] as List<dynamic>;
+        final tracks = trackList
+            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .toList();
+
+        final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
+        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
+            ?.toString();
+
+        _AlbumCache.set(widget.albumId, tracks);
+
+        if (mounted) {
+          setState(() {
+            _tracks = tracks;
+            _artistId = artistId;
+            _isLoading = false;
+          });
+        }
+        return;
       } else if (widget.albumId.startsWith('tidal:')) {
         final tidalAlbumId = widget.albumId.replaceFirst('tidal:', '');
-        metadata = await PlatformBridge.getTidalMetadata('album', tidalAlbumId);
+        final metadata = await PlatformBridge.getTidalMetadata(
+          'album',
+          tidalAlbumId,
+        );
+        final trackList = metadata['track_list'] as List<dynamic>;
+        final tracks = trackList
+            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .toList();
+
+        final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
+        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
+            ?.toString();
+
+        _AlbumCache.set(widget.albumId, tracks);
+
+        if (mounted) {
+          setState(() {
+            _tracks = tracks;
+            _artistId = artistId;
+            _isLoading = false;
+          });
+        }
+        return;
       } else {
         final url = 'https://open.spotify.com/album/${widget.albumId}';
-        metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
-      }
+        final result = await PlatformBridge.handleURLWithExtension(url);
+        if (result == null || result['tracks'] == null) {
+          throw StateError('Failed to load album metadata from extension');
+        }
 
-      final trackList = metadata['track_list'] as List<dynamic>;
-      final tracks = trackList
-          .map((t) => _parseTrack(t as Map<String, dynamic>))
-          .toList();
+        final trackList = result['tracks'] as List<dynamic>;
+        final tracks = trackList
+            .map((t) => _parseTrack(t as Map<String, dynamic>))
+            .toList();
 
-      final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
-      final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
-          ?.toString();
+        final albumInfo = result['album'] as Map<String, dynamic>?;
+        final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
+            ?.toString();
 
-      _AlbumCache.set(widget.albumId, tracks);
+        _AlbumCache.set(widget.albumId, tracks);
 
-      if (mounted) {
-        setState(() {
-          _tracks = tracks;
-          _artistId = artistId;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _tracks = tracks;
+            _artistId = artistId;
+            _isLoading = false;
+          });
+        }
+        return;
       }
     } catch (e) {
       if (mounted) {

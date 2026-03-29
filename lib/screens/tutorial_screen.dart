@@ -185,7 +185,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                     title: l10n.tutorialExtensionsTitle,
                     description: l10n.tutorialExtensionsDesc,
                     content: _buildFeatureList(context, [
-                      (Icons.storefront_rounded, l10n.tutorialExtensionsTip1),
+                      (Icons.extension_rounded, l10n.tutorialExtensionsTip1),
                       (
                         Icons.add_circle_outline_rounded,
                         l10n.tutorialExtensionsTip2,

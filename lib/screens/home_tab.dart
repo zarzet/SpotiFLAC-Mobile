@@ -2313,7 +2313,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
         error.contains('429') ||
         error.toLowerCase().contains('rate limit') ||
         error.toLowerCase().contains('too many requests');
-
     final isUrlNotRecognized = error == 'url_not_recognized';
 
     if (isRateLimit) {
@@ -3087,7 +3086,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final extState = ref.read(extensionProvider);
 
     if (!extState.isInitialized) {
-      return 'Paste Spotify URL or search...';
+      return 'Paste supported URL or search...';
     }
 
     if (searchProvider != null && searchProvider.isNotEmpty) {
@@ -3108,7 +3107,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
         return 'Search with ${ext.displayName}...';
       }
     }
-    return 'Paste Spotify URL or search...';
+    return 'Paste supported URL or search...';
   }
 
   Widget _buildSearchFilterBar(

@@ -13,25 +13,6 @@ import (
 	"github.com/dop251/goja"
 )
 
-func ParseSpotifyURL(url string) (string, error) {
-	parsed, err := parseSpotifyURI(url)
-	if err != nil {
-		return "", err
-	}
-
-	result := map[string]string{
-		"type": parsed.Type,
-		"id":   parsed.ID,
-	}
-
-	jsonBytes, err := json.Marshal(result)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
 func CheckAvailability(spotifyID, isrc string) (string, error) {
 	client := NewSongLinkClient()
 	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
@@ -1524,72 +1505,6 @@ func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
 	}
 
 	return "", fmt.Errorf("Spotify to Deezer conversion only supported for tracks and albums. Please search by name for %s", resourceType)
-}
-
-func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	spotFetchData, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
-	if apiErr == nil {
-		GoLog("[Fallback] Spotify metadata fetched via SpotFetch API\n")
-		jsonBytes, err := json.Marshal(spotFetchData)
-		if err != nil {
-			return "", err
-		}
-		return string(jsonBytes), nil
-	}
-	GoLog("[Fallback] SpotFetch API fallback failed: %v\n", apiErr)
-
-	parsed, parseErr := parseSpotifyURI(spotifyURL)
-	if parseErr != nil {
-		return "", fmt.Errorf("SpotFetch fallback failed (%v) and URL parsing failed: %w", apiErr, parseErr)
-	}
-
-	GoLog("[Fallback] Trying Deezer conversion fallback for %s...\n", parsed.Type)
-
-	if parsed.Type == "track" || parsed.Type == "album" {
-		return ConvertSpotifyToDeezer(parsed.Type, parsed.ID)
-	}
-
-	if parsed.Type == "artist" {
-		return "", fmt.Errorf("SpotFetch fallback failed (%v). Artist pages now require SpotFetch or a metadata extension such as spotify-web", apiErr)
-	}
-
-	return "", fmt.Errorf("SpotFetch fallback failed (%v), and Deezer conversion is unavailable for playlists", apiErr)
-}
-
-func shouldTrySpotFetchFallback(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, ErrNoSpotifyCredentials) {
-		return true
-	}
-
-	errStr := strings.ToLower(err.Error())
-	indicators := []string{
-		"429",
-		"rate",
-		"limit",
-		"403",
-		"forbidden",
-		"401",
-		"unauthorized",
-		"timeout",
-		"connection",
-		"spotify error",
-		"access token",
-		"client token",
-		"eof",
-	}
-
-	for _, indicator := range indicators {
-		if strings.Contains(errStr, indicator) {
-			return true
-		}
-	}
-	return false
 }
 
 func CheckAvailabilityFromDeezerID(deezerTrackID string) (string, error) {

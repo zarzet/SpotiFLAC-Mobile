@@ -20,12 +20,6 @@ class PlatformBridge {
   static bool get supportsExtensionSystem =>
       Platform.isAndroid || Platform.isIOS;
 
-  static Future<Map<String, dynamic>> parseSpotifyUrl(String url) async {
-    _log.d('parseSpotifyUrl: $url');
-    final result = await _channel.invokeMethod('parseSpotifyUrl', {'url': url});
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
   static Future<Map<String, dynamic>> checkAvailability(
     String spotifyId,
     String isrc,
@@ -651,16 +645,6 @@ class PlatformBridge {
       'resource_type': resourceType,
       'spotify_id': spotifyId,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> getSpotifyMetadataWithFallback(
-    String url,
-  ) async {
-    final result = await _channel.invokeMethod(
-      'getSpotifyMetadataWithFallback',
-      {'url': url},
-    );
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 

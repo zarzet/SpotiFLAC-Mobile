@@ -158,7 +158,7 @@ class OptionsSettingsPage extends ConsumerWidget {
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
-                    icon: Icons.store,
+                    icon: Icons.extension,
                     title: context.l10n.optionsExtensionStore,
                     subtitle: context.l10n.optionsExtensionStoreSubtitle,
                     value: settings.showExtensionStore,

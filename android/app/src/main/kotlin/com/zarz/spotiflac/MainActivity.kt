@@ -1987,13 +1987,6 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(null)
                         }
-                        "parseSpotifyUrl" -> {
-                            val url = call.argument<String>("url") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.parseSpotifyURL(url)
-                            }
-                            result.success(response)
-                        }
                         "checkAvailability" -> {
                             val spotifyId = call.argument<String>("spotify_id") ?: ""
                             val isrc = call.argument<String>("isrc") ?: ""
@@ -2754,13 +2747,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val spotifyId = call.argument<String>("spotify_id") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.convertSpotifyToDeezer(resourceType, spotifyId)
-                            }
-                            result.success(response)
-                        }
-                        "getSpotifyMetadataWithFallback" -> {
-                            val url = call.argument<String>("url") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getSpotifyMetadataWithDeezerFallback(url)
                             }
                             result.success(response)
                         }

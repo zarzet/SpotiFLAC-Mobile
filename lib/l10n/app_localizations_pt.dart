@@ -1261,7 +1261,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get storeNewRepoUrlLabel => 'New Repository URL';
 
   @override
-  String get storeLoadError => 'Failed to load store';
+  String get storeLoadError => 'Failed to load repository';
 
   @override
   String get storeEmptyNoExtensions => 'No extensions available';
@@ -1997,7 +1997,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tutorialExtensionsTip1 =>
-      'Browse the Store tab to discover useful extensions';
+      'Browse the Repo tab to discover useful extensions';
 
   @override
   String get tutorialExtensionsTip2 =>

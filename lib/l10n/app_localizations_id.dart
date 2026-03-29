@@ -21,13 +21,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get navSettings => 'Pengaturan';
 
   @override
-  String get navStore => 'Toko';
+  String get navStore => 'Repo';
 
   @override
   String get homeTitle => 'Beranda';
 
   @override
-  String get homeSubtitle => 'Tempel link Spotify atau cari berdasarkan nama';
+  String get homeSubtitle =>
+      'Tempel URL yang didukung atau cari berdasarkan nama';
 
   @override
   String get homeSupports => 'Mendukung: URL Track, Album, Playlist, Artis';
@@ -173,10 +174,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Unduhan paralel dapat memicu pembatasan rate';
 
   @override
-  String get optionsExtensionStore => 'Toko Ekstensi';
+  String get optionsExtensionStore => 'Repo Ekstensi';
 
   @override
-  String get optionsExtensionStoreSubtitle => 'Tampilkan tab Toko di navigasi';
+  String get optionsExtensionStoreSubtitle => 'Tampilkan tab Repo di navigasi';
 
   @override
   String get optionsCheckUpdates => 'Periksa Pembaruan';
@@ -252,7 +253,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get extensionsUninstall => 'Copot';
 
   @override
-  String get storeTitle => 'Toko Ekstensi';
+  String get storeTitle => 'Repo Ekstensi';
 
   @override
   String get storeSearch => 'Cari ekstensi...';
@@ -1267,7 +1268,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get storeNewRepoUrlLabel => 'New Repository URL';
 
   @override
-  String get storeLoadError => 'Failed to load store';
+  String get storeLoadError => 'Gagal memuat repo';
 
   @override
   String get storeEmptyNoExtensions => 'No extensions available';
@@ -2006,7 +2007,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tutorialExtensionsTip1 =>
-      'Browse the Store tab to discover useful extensions';
+      'Buka tab Repo untuk menemukan ekstensi yang berguna';
 
   @override
   String get tutorialExtensionsTip2 =>

@@ -5,25 +5,25 @@ class ShellNavigationService {
       GlobalKey<NavigatorState>();
   static final GlobalKey<NavigatorState> libraryTabNavigatorKey =
       GlobalKey<NavigatorState>();
-  static final GlobalKey<NavigatorState> storeTabNavigatorKey =
+  static final GlobalKey<NavigatorState> repoTabNavigatorKey =
       GlobalKey<NavigatorState>();
 
   static int _currentTabIndex = 0;
-  static bool _showStoreTab = false;
+  static bool _showRepoTab = false;
 
   static void syncState({
     required int currentTabIndex,
-    required bool showStoreTab,
+    required bool showRepoTab,
   }) {
     _currentTabIndex = currentTabIndex;
-    _showStoreTab = showStoreTab;
+    _showRepoTab = showRepoTab;
   }
 
   static NavigatorState? activeTabNavigator() {
     if (_currentTabIndex == 0) return homeTabNavigatorKey.currentState;
     if (_currentTabIndex == 1) return libraryTabNavigatorKey.currentState;
-    if (_showStoreTab && _currentTabIndex == 2) {
-      return storeTabNavigatorKey.currentState;
+    if (_showRepoTab && _currentTabIndex == 2) {
+      return repoTabNavigatorKey.currentState;
     }
     return null;
   }

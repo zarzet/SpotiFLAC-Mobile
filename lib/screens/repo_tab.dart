@@ -8,14 +8,14 @@ import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/screens/store/extension_details_screen.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 
-class StoreTab extends ConsumerStatefulWidget {
-  const StoreTab({super.key});
+class RepoTab extends ConsumerStatefulWidget {
+  const RepoTab({super.key});
 
   @override
-  ConsumerState<StoreTab> createState() => _StoreTabState();
+  ConsumerState<RepoTab> createState() => _RepoTabState();
 }
 
-class _StoreTabState extends ConsumerState<StoreTab> {
+class _RepoTabState extends ConsumerState<RepoTab> {
   final _searchController = TextEditingController();
   final _repoUrlController = TextEditingController();
   bool _isInitialized = false;
@@ -323,7 +323,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.store_outlined,
+              Icons.extension_outlined,
               size: 72,
               color: colorScheme.onSurfaceVariant,
             ),

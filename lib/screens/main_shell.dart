@@ -12,7 +12,7 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/providers/track_provider.dart';
 import 'package:spotiflac_android/screens/home_tab.dart';
-import 'package:spotiflac_android/screens/store_tab.dart';
+import 'package:spotiflac_android/screens/repo_tab.dart';
 import 'package:spotiflac_android/screens/queue_tab.dart';
 import 'package:spotiflac_android/screens/settings/settings_tab.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
@@ -44,8 +44,8 @@ class _MainShellState extends ConsumerState<MainShell>
       ShellNavigationService.homeTabNavigatorKey;
   final GlobalKey<NavigatorState> _libraryTabNavigatorKey =
       ShellNavigationService.libraryTabNavigatorKey;
-  final GlobalKey<NavigatorState> _storeTabNavigatorKey =
-      ShellNavigationService.storeTabNavigatorKey;
+  final GlobalKey<NavigatorState> _repoTabNavigatorKey =
+      ShellNavigationService.repoTabNavigatorKey;
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _MainShellState extends ConsumerState<MainShell>
     );
     ShellNavigationService.syncState(
       currentTabIndex: _currentIndex,
-      showStoreTab: false,
+      showRepoTab: false,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdates();
@@ -268,7 +268,7 @@ class _MainShellState extends ConsumerState<MainShell>
       );
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
-        showStoreTab: showStore,
+        showRepoTab: showStore,
       );
       FocusManager.instance.primaryFocus?.unfocus();
       // Jump directly when skipping intermediate tabs to avoid
@@ -295,7 +295,7 @@ class _MainShellState extends ConsumerState<MainShell>
       );
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
-        showStoreTab: showStore,
+        showRepoTab: showStore,
       );
       FocusManager.instance.primaryFocus?.unfocus();
     }
@@ -414,7 +414,7 @@ class _MainShellState extends ConsumerState<MainShell>
   NavigatorState? _navigatorForTab(int index, bool showStore) {
     if (index == 0) return _homeTabNavigatorKey.currentState;
     if (index == 1) return _libraryTabNavigatorKey.currentState;
-    if (showStore && index == 2) return _storeTabNavigatorKey.currentState;
+    if (showStore && index == 2) return _repoTabNavigatorKey.currentState;
     return null;
   }
 
@@ -428,9 +428,9 @@ class _MainShellState extends ConsumerState<MainShell>
     );
     ShellNavigationService.syncState(
       currentTabIndex: _currentIndex,
-      showStoreTab: showStore,
+      showRepoTab: showStore,
     );
-    final storeUpdatesCount = ref.watch(
+    final repoUpdatesCount = ref.watch(
       storeProvider.select((s) => s.updatesAvailableCount),
     );
 
@@ -447,9 +447,9 @@ class _MainShellState extends ConsumerState<MainShell>
       ),
       if (showStore)
         _TabNavigator(
-          key: const ValueKey('tab-store'),
-          navigatorKey: _storeTabNavigatorKey,
-          child: const StoreTab(),
+          key: const ValueKey('tab-repo'),
+          navigatorKey: _repoTabNavigatorKey,
+          child: const RepoTab(),
         ),
       const SettingsTab(),
     ];
@@ -485,20 +485,20 @@ class _MainShellState extends ConsumerState<MainShell>
       if (showStore)
         NavigationDestination(
           icon: AnimatedBadge(
-            count: storeUpdatesCount,
+            count: repoUpdatesCount,
             child: Badge(
-              isLabelVisible: storeUpdatesCount > 0,
-              label: Text('$storeUpdatesCount'),
-              child: const Icon(Icons.store_outlined),
+              isLabelVisible: repoUpdatesCount > 0,
+              label: Text('$repoUpdatesCount'),
+              child: const Icon(Icons.extension_outlined),
             ),
           ),
-          selectedIcon: SwingIcon(
+          selectedIcon: BouncingIcon(
             child: AnimatedBadge(
-              count: storeUpdatesCount,
+              count: repoUpdatesCount,
               child: Badge(
-                isLabelVisible: storeUpdatesCount > 0,
-                label: Text('$storeUpdatesCount'),
-                child: const Icon(Icons.store),
+                isLabelVisible: repoUpdatesCount > 0,
+                label: Text('$repoUpdatesCount'),
+                child: const Icon(Icons.extension),
               ),
             ),
           ),
