@@ -17,7 +17,7 @@
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Tienda",
+  "navStore": "Repo",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Pegar enlace de Spotify o buscar por nombre",
+  "homeSubtitle": "Paste a supported URL or search by name",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -211,11 +211,11 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Tienda de extensiones",
+  "optionsExtensionStore": "Extension Repo",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Mostrar pestaña de tienda en la navegación",
+  "optionsExtensionStoreSubtitle": "Show Repo tab in navigation",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
@@ -318,7 +318,7 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Tienda de extensiones",
+  "storeTitle": "Extension Repo",
   "@storeTitle": {
     "description": "Store screen title"
   },
@@ -1654,7 +1654,7 @@
   "@storeNewRepoUrlLabel": {
     "description": "Label for the new repository URL field inside the dialog"
   },
-  "storeLoadError": "No se pudo cargar la tienda",
+  "storeLoadError": "Failed to load repository",
   "@storeLoadError": {
     "description": "Error heading when the store cannot be loaded"
   },
@@ -2611,7 +2611,7 @@
   "@tutorialExtensionsDesc": {
     "description": "Tutorial extensions page description"
   },
-  "tutorialExtensionsTip1": "Browse the Store tab to discover useful extensions",
+  "tutorialExtensionsTip1": "Browse the Repo tab to discover useful extensions",
   "@tutorialExtensionsTip1": {
     "description": "Tutorial extensions tip 1"
   },
@@ -4038,5 +4038,311 @@
   "audioAnalysisSamples": "Samples",
   "@audioAnalysisSamples": {
     "description": "Total samples metric label"
+  },
+  "extensionsSearchWith": "Search with {providerName}",
+  "@extensionsSearchWith": {
+    "description": "Extensions page - subtitle for built-in search provider option",
+    "placeholders": {
+      "providerName": {
+        "type": "String"
+      }
+    }
+  },
+  "extensionsHomeFeedProvider": "Home Feed Provider",
+  "@extensionsHomeFeedProvider": {
+    "description": "Extensions page - label for home feed provider selector"
+  },
+  "extensionsHomeFeedDescription": "Choose which extension provides the home feed on the main screen",
+  "@extensionsHomeFeedDescription": {
+    "description": "Extensions page - description for home feed provider picker"
+  },
+  "extensionsHomeFeedAuto": "Auto",
+  "@extensionsHomeFeedAuto": {
+    "description": "Extensions page - home feed provider option: auto"
+  },
+  "extensionsHomeFeedAutoSubtitle": "Automatically select the best available",
+  "@extensionsHomeFeedAutoSubtitle": {
+    "description": "Extensions page - subtitle for auto home feed option"
+  },
+  "extensionsHomeFeedUse": "Use {extensionName} home feed",
+  "@extensionsHomeFeedUse": {
+    "description": "Extensions page - subtitle for a specific extension home feed option",
+    "placeholders": {
+      "extensionName": {
+        "type": "String"
+      }
+    }
+  },
+  "extensionsNoHomeFeedExtensions": "No extensions with home feed",
+  "@extensionsNoHomeFeedExtensions": {
+    "description": "Extensions page - shown when no installed extension has home feed"
+  },
+  "sortAlphaAsc": "A-Z",
+  "@sortAlphaAsc": {
+    "description": "Sort option - alphabetical ascending"
+  },
+  "sortAlphaDesc": "Z-A",
+  "@sortAlphaDesc": {
+    "description": "Sort option - alphabetical descending"
+  },
+  "cancelDownloadTitle": "Cancel download?",
+  "@cancelDownloadTitle": {
+    "description": "Dialog title when confirming cancellation of an active download"
+  },
+  "cancelDownloadContent": "This will cancel the active download for \"{trackName}\".",
+  "@cancelDownloadContent": {
+    "description": "Dialog body when confirming cancellation of an active download",
+    "placeholders": {
+      "trackName": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelDownloadKeep": "Keep",
+  "@cancelDownloadKeep": {
+    "description": "Dialog button - keep the active download (do not cancel)"
+  },
+  "metadataSaveFailedFfmpeg": "Failed to save metadata via FFmpeg",
+  "@metadataSaveFailedFfmpeg": {
+    "description": "Snackbar error when FFmpeg fails to write metadata"
+  },
+  "metadataSaveFailedStorage": "Failed to write metadata back to storage",
+  "@metadataSaveFailedStorage": {
+    "description": "Snackbar error when writing metadata file back to storage fails"
+  },
+  "snackbarFolderPickerFailed": "Failed to open folder picker: {error}",
+  "@snackbarFolderPickerFailed": {
+    "description": "Snackbar shown when folder picker fails to open",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadAlbum": "Failed to load album",
+  "@errorLoadAlbum": {
+    "description": "Error state shown when album fails to load"
+  },
+  "errorLoadPlaylist": "Failed to load playlist",
+  "@errorLoadPlaylist": {
+    "description": "Error state shown when playlist fails to load"
+  },
+  "errorLoadArtist": "Failed to load artist",
+  "@errorLoadArtist": {
+    "description": "Error state shown when artist fails to load"
+  },
+  "notifChannelDownloadName": "Download Progress",
+  "@notifChannelDownloadName": {
+    "description": "Android notification channel name for download progress"
+  },
+  "notifChannelDownloadDesc": "Shows download progress for tracks",
+  "@notifChannelDownloadDesc": {
+    "description": "Android notification channel description for download progress"
+  },
+  "notifChannelLibraryScanName": "Library Scan",
+  "@notifChannelLibraryScanName": {
+    "description": "Android notification channel name for library scan"
+  },
+  "notifChannelLibraryScanDesc": "Shows local library scan progress",
+  "@notifChannelLibraryScanDesc": {
+    "description": "Android notification channel description for library scan"
+  },
+  "notifDownloadingTrack": "Downloading {trackName}",
+  "@notifDownloadingTrack": {
+    "description": "Notification title while downloading a track",
+    "placeholders": {
+      "trackName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifFinalizingTrack": "Finalizing {trackName}",
+  "@notifFinalizingTrack": {
+    "description": "Notification title while finalizing (embedding metadata) a track",
+    "placeholders": {
+      "trackName": {
+        "type": "String"
+      }
+    }
+  },
+  "notifEmbeddingMetadata": "Embedding metadata...",
+  "@notifEmbeddingMetadata": {
+    "description": "Notification body while embedding metadata into a downloaded track"
+  },
+  "notifAlreadyInLibraryCount": "Already in Library ({completed}/{total})",
+  "@notifAlreadyInLibraryCount": {
+    "description": "Notification title when track is already in library, with count",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "notifAlreadyInLibrary": "Already in Library",
+  "@notifAlreadyInLibrary": {
+    "description": "Notification title when track is already in library"
+  },
+  "notifDownloadCompleteCount": "Download Complete ({completed}/{total})",
+  "@notifDownloadCompleteCount": {
+    "description": "Notification title when download is complete, with count",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "notifDownloadComplete": "Download Complete",
+  "@notifDownloadComplete": {
+    "description": "Notification title when a single download is complete"
+  },
+  "notifDownloadsFinished": "Downloads Finished ({completed} done, {failed} failed)",
+  "@notifDownloadsFinished": {
+    "description": "Notification title when queue finishes with some failures",
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "notifAllDownloadsComplete": "All Downloads Complete",
+  "@notifAllDownloadsComplete": {
+    "description": "Notification title when all downloads finish successfully"
+  },
+  "notifTracksDownloadedSuccess": "{count} tracks downloaded successfully",
+  "@notifTracksDownloadedSuccess": {
+    "description": "Notification body for queue complete - how many tracks were downloaded",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifScanningLibrary": "Scanning local library",
+  "@notifScanningLibrary": {
+    "description": "Notification title while scanning local library"
+  },
+  "notifLibraryScanProgressWithTotal": "{scanned}/{total} files • {percentage}%",
+  "@notifLibraryScanProgressWithTotal": {
+    "description": "Notification body for library scan progress when total is known",
+    "placeholders": {
+      "scanned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLibraryScanProgressNoTotal": "{scanned} files scanned • {percentage}%",
+  "@notifLibraryScanProgressNoTotal": {
+    "description": "Notification body for library scan progress when total is unknown",
+    "placeholders": {
+      "scanned": {
+        "type": "int"
+      },
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLibraryScanComplete": "Library scan complete",
+  "@notifLibraryScanComplete": {
+    "description": "Notification title when library scan finishes"
+  },
+  "notifLibraryScanCompleteBody": "{count} tracks indexed",
+  "@notifLibraryScanCompleteBody": {
+    "description": "Notification body for library scan complete - number of indexed tracks",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLibraryScanExcluded": "{count} excluded",
+  "@notifLibraryScanExcluded": {
+    "description": "Library scan complete suffix - excluded track count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLibraryScanErrors": "{count} errors",
+  "@notifLibraryScanErrors": {
+    "description": "Library scan complete suffix - error count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notifLibraryScanFailed": "Library scan failed",
+  "@notifLibraryScanFailed": {
+    "description": "Notification title when library scan fails"
+  },
+  "notifLibraryScanCancelled": "Library scan cancelled",
+  "@notifLibraryScanCancelled": {
+    "description": "Notification title when library scan is cancelled by the user"
+  },
+  "notifLibraryScanStopped": "Scan stopped before completion.",
+  "@notifLibraryScanStopped": {
+    "description": "Notification body when library scan is cancelled"
+  },
+  "notifDownloadingUpdate": "Downloading SpotiFLAC v{version}",
+  "@notifDownloadingUpdate": {
+    "description": "Notification title while downloading an app update",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "notifUpdateProgress": "{received} / {total} MB • {percentage}%",
+  "@notifUpdateProgress": {
+    "description": "Notification body showing update download progress",
+    "placeholders": {
+      "received": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "percentage": {
+        "type": "int"
+      }
+    }
+  },
+  "notifUpdateReady": "Update Ready",
+  "@notifUpdateReady": {
+    "description": "Notification title when app update download is complete"
+  },
+  "notifUpdateReadyBody": "SpotiFLAC v{version} downloaded. Tap to install.",
+  "@notifUpdateReadyBody": {
+    "description": "Notification body when app update is ready to install",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "notifUpdateFailed": "Update Failed",
+  "@notifUpdateFailed": {
+    "description": "Notification title when app update download fails"
+  },
+  "notifUpdateFailedBody": "Could not download update. Try again later.",
+  "@notifUpdateFailedBody": {
+    "description": "Notification body when app update download fails"
   }
 }
