@@ -982,7 +982,7 @@ func convertToLRCWithMetadata(lyrics *LyricsResponse, trackName, artistName stri
 
 	builder.WriteString(fmt.Sprintf("[ti:%s]\n", trackName))
 	builder.WriteString(fmt.Sprintf("[ar:%s]\n", artistName))
-	builder.WriteString("[by:SpotiFLAC-Mobile]\n")
+	builder.WriteString("[by:Implemented by SpotiFLAC-Mobile using Paxsenix API]\n")
 	builder.WriteString("\n")
 
 	if lyrics.SyncType == "LINE_SYNCED" {

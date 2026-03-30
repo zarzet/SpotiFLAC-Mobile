@@ -2662,6 +2662,15 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		req.DiscNumber,
 	)
 
+	// Prefer the cover URL the frontend sent (user-selected album) over the
+	// track's default album cover returned by the Qobuz track/get API, which
+	// may belong to a different album when the same track appears on multiple
+	// releases.
+	resultCoverURL := strings.TrimSpace(req.CoverURL)
+	if resultCoverURL == "" {
+		resultCoverURL = strings.TrimSpace(qobuzTrackAlbumImage(track))
+	}
+
 	return QobuzDownloadResult{
 		FilePath:    outputPath,
 		BitDepth:    actualBitDepth,
@@ -2673,7 +2682,7 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		TrackNumber: resultTrackNumber,
 		DiscNumber:  resultDiscNumber,
 		ISRC:        track.ISRC,
-		CoverURL:    strings.TrimSpace(qobuzTrackAlbumImage(track)),
+		CoverURL:    resultCoverURL,
 		LyricsLRC:   lyricsLRC,
 	}, nil
 }

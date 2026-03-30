@@ -519,7 +519,7 @@ class _LogEntryTile extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                entry.message,
+                entry.previewMessage,
                 style: TextStyle(
                   fontSize: 13,
                   fontFamily: 'monospace',
@@ -527,10 +527,10 @@ class _LogEntryTile extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              if (entry.error != null) ...[
+              if (entry.previewError != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  entry.error!,
+                  entry.previewError!,
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'monospace',

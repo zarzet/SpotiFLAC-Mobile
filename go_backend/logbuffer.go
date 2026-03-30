@@ -25,7 +25,6 @@ type LogBuffer struct {
 
 const (
 	defaultLogBufferSize = 500
-	maxLogMessageLength  = 500
 )
 
 var (
@@ -58,14 +57,6 @@ func GetLogBuffer() *LogBuffer {
 	return globalLogBuffer
 }
 
-func truncateLogMessage(message string) string {
-	runes := []rune(message)
-	if len(runes) <= maxLogMessageLength {
-		return message
-	}
-	return string(runes[:maxLogMessageLength]) + "...[truncated]"
-}
-
 func (lb *LogBuffer) SetLoggingEnabled(enabled bool) {
 	lb.mu.Lock()
 	defer lb.mu.Unlock()
@@ -87,7 +78,6 @@ func (lb *LogBuffer) Add(level, tag, message string) {
 	}
 
 	message = sanitizeSensitiveLogText(message)
-	message = truncateLogMessage(message)
 
 	entry := LogEntry{
 		Timestamp: time.Now().Format("15:04:05.000"),

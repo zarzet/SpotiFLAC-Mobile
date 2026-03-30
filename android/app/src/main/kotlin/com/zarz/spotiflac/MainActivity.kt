@@ -56,6 +56,8 @@ class MainActivity: FlutterFragmentActivity() {
     private var flutterBackCallback: OnBackPressedCallback? = null
     @Volatile private var safScanCancel = false
     @Volatile private var safScanActive = false
+    /** Tri-state: null = untested, true = works, false = fails (Samsung SELinux). */
+    @Volatile private var procSelfFdReadable: Boolean? = null
     private val safTreeLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { activityResult ->
@@ -375,6 +377,8 @@ class MainActivity: FlutterFragmentActivity() {
         synchronized(safScanLock) {
             safScanProgress = SafScanProgress()
         }
+        // Allow re-probing /proc/self/fd readability on every new scan session.
+        procSelfFdReadable = null
     }
 
     private fun updateSafScanProgress(block: (SafScanProgress) -> Unit) {
@@ -804,27 +808,45 @@ class MainActivity: FlutterFragmentActivity() {
     ): JSONObject? {
         val displayName = buildUriDisplayName(uri, displayNameHint, fallbackExt)
 
-        try {
-            contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                val directPath = "/proc/self/fd/${pfd.fd}"
-                val metadataJson = Gobackend.readAudioMetadataWithHintAndCoverCacheKeyJSON(
-                    directPath,
-                    displayName,
-                    coverCacheKey,
-                )
-                if (metadataJson.isNotBlank()) {
-                    val obj = JSONObject(metadataJson)
-                    val filenameFallback = obj.optBoolean("metadataFromFilename", false)
-                    if (!obj.has("error") && !filenameFallback) {
-                        return obj
+        // Skip /proc/self/fd/ attempt when known to fail (e.g. Samsung SELinux).
+        if (procSelfFdReadable != false) {
+            try {
+                contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                    val directPath = "/proc/self/fd/${pfd.fd}"
+                    val metadataJson = Gobackend.readAudioMetadataWithHintAndCoverCacheKeyJSON(
+                        directPath,
+                        displayName,
+                        coverCacheKey,
+                    )
+                    if (metadataJson.isNotBlank()) {
+                        val obj = JSONObject(metadataJson)
+                        val filenameFallback = obj.optBoolean("metadataFromFilename", false)
+                        if (!obj.has("error") && !filenameFallback) {
+                            procSelfFdReadable = true
+                            return obj
+                        }
+                        // Go could not read real metadata from the fd path –
+                        // remember so we skip the attempt for remaining files.
+                        if (procSelfFdReadable == null) {
+                            procSelfFdReadable = false
+                            android.util.Log.d(
+                                "SpotiFLAC",
+                                "Direct /proc/self/fd read not usable on this device, " +
+                                    "using temp-file fallback for remaining files",
+                            )
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                if (procSelfFdReadable == null) {
+                    procSelfFdReadable = false
+                    android.util.Log.d(
+                        "SpotiFLAC",
+                        "Direct /proc/self/fd read not usable on this device, " +
+                            "using temp-file fallback for remaining files",
+                    )
+                }
             }
-        } catch (e: Exception) {
-            android.util.Log.d(
-                "SpotiFLAC",
-                "Direct SAF metadata read fallback for $uri: ${e.message}",
-            )
         }
 
         val tempPath = try {
@@ -2411,11 +2433,13 @@ class MainActivity: FlutterFragmentActivity() {
                                                 return@withContext obj.toString()
                                                 // Note: temp file NOT deleted here - Dart will clean up after FFmpeg + writeTempToSaf
                                             }
-                                            // FLAC: Go wrote directly to temp, copy back now
-                                            if (!writeUriFromPath(uri, tempPath)) {
-                                                return@withContext """{"error":"Failed to write metadata back to SAF file"}"""
-                                            }
-                                            raw
+                            // FLAC: Go wrote directly to temp, copy back now
+                            if (!writeUriFromPath(uri, tempPath)) {
+                                try { File(tempPath).delete() } catch (_: Exception) {}
+                                return@withContext """{"error":"Failed to write metadata back to SAF file"}"""
+                            }
+                            try { File(tempPath).delete() } catch (_: Exception) {}
+                            raw
                                         } catch (e: Exception) {
                                             try { File(tempPath).delete() } catch (_: Exception) {}
                                             throw e

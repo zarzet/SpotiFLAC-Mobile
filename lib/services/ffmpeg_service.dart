@@ -1158,8 +1158,11 @@ class FFmpegService {
     // For M4A/MP4, cover art is mapped as a video stream and stored in the
     // 'covr' atom automatically by FFmpeg. The '-disposition attached_pic'
     // flag is only valid for Matroska/WebM containers and must NOT be used here.
+    // Force the mp4 muxer when cover art is present because the default ipod
+    // muxer (auto-selected for .m4a) does not register a codec tag for mjpeg,
+    // causing "codec not currently supported in container" on FFmpeg 8.0+.
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy ');
+      cmdBuffer.write('-map 1:v -c:v copy -f mp4 ');
     }
 
     cmdBuffer.write('-c:a copy ');

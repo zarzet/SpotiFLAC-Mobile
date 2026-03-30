@@ -89,6 +89,10 @@ class LogEntry {
     return '$h:$m:$s.$ms';
   }
 
+  String get previewMessage => _truncateLogText(message);
+
+  String? get previewError => error == null ? null : _truncateLogText(error!);
+
   @override
   String toString() {
     final errorPart = error != null ? ' | $error' : '';
@@ -128,11 +132,9 @@ class LogBuffer extends ChangeNotifier {
       return;
     }
 
-    final sanitizedMessage = _truncateLogText(
-      _redactSensitiveText(entry.message),
-    );
+    final sanitizedMessage = _redactSensitiveText(entry.message);
     final sanitizedError = entry.error != null
-        ? _truncateLogText(_redactSensitiveText(entry.error!))
+        ? _redactSensitiveText(entry.error!)
         : null;
     final sanitizedEntry =
         (sanitizedMessage == entry.message && sanitizedError == entry.error)
@@ -381,9 +383,7 @@ class BufferedOutput extends LogOutput {
     }
 
     final level = _levelToString(event.level);
-    final message = _truncateLogText(
-      _redactSensitiveText(event.lines.join('\n')),
-    );
+    final message = _redactSensitiveText(event.lines.join('\n'));
 
     LogBuffer().add(
       LogEntry(

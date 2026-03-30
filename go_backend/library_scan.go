@@ -311,11 +311,11 @@ func scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(filePath, displ
 
 	switch ext {
 	case ".flac":
-		return scanFLACFile(filePath, result)
+		return scanFLACFile(filePath, result, displayNameHint)
 	case ".m4a":
-		return scanM4AFile(filePath, result)
+		return scanM4AFile(filePath, result, displayNameHint)
 	case ".mp3":
-		return scanMP3File(filePath, result)
+		return scanMP3File(filePath, result, displayNameHint)
 	case ".opus", ".ogg":
 		return scanOggFile(filePath, result, displayNameHint)
 	default:
@@ -351,10 +351,10 @@ func applyDefaultLibraryMetadata(filePath, displayNameHint string, result *Libra
 	}
 }
 
-func scanFLACFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
+func scanFLACFile(filePath string, result *LibraryScanResult, displayNameHint string) (*LibraryScanResult, error) {
 	metadata, err := ReadMetadata(filePath)
 	if err != nil {
-		return scanFromFilename(filePath, "", result)
+		return scanFromFilename(filePath, displayNameHint, result)
 	}
 
 	result.TrackName = metadata.Title
@@ -376,14 +376,19 @@ func scanFLACFile(filePath string, result *LibraryScanResult) (*LibraryScanResul
 		}
 	}
 
-	applyDefaultLibraryMetadata(filePath, "", result)
+	applyDefaultLibraryMetadata(filePath, displayNameHint, result)
 
 	return result, nil
 }
 
-func scanM4AFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
+func scanM4AFile(filePath string, result *LibraryScanResult, displayNameHint string) (*LibraryScanResult, error) {
 	metadata, err := ReadM4ATags(filePath)
-	if err == nil && metadata != nil {
+	if err != nil {
+		GoLog("[LibraryScan] M4A read error for %s: %v\n", filePath, err)
+		return scanFromFilename(filePath, displayNameHint, result)
+	}
+
+	if metadata != nil {
 		result.TrackName = metadata.Title
 		result.ArtistName = metadata.Artist
 		result.AlbumName = metadata.Album
@@ -404,15 +409,15 @@ func scanM4AFile(filePath string, result *LibraryScanResult) (*LibraryScanResult
 		result.SampleRate = quality.SampleRate
 	}
 
-	applyDefaultLibraryMetadata(filePath, "", result)
+	applyDefaultLibraryMetadata(filePath, displayNameHint, result)
 	return result, nil
 }
 
-func scanMP3File(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
+func scanMP3File(filePath string, result *LibraryScanResult, displayNameHint string) (*LibraryScanResult, error) {
 	metadata, err := ReadID3Tags(filePath)
 	if err != nil {
 		GoLog("[LibraryScan] ID3 read error for %s: %v\n", filePath, err)
-		return scanFromFilename(filePath, "", result)
+		return scanFromFilename(filePath, displayNameHint, result)
 	}
 
 	result.TrackName = metadata.Title
@@ -439,7 +444,7 @@ func scanMP3File(filePath string, result *LibraryScanResult) (*LibraryScanResult
 		}
 	}
 
-	applyDefaultLibraryMetadata(filePath, "", result)
+	applyDefaultLibraryMetadata(filePath, displayNameHint, result)
 
 	return result, nil
 }
