@@ -2513,6 +2513,30 @@
   "@libraryFilterFormat": {
     "description": "Filter section - file format"
   },
+  "libraryFilterMetadata": "Metadata",
+  "@libraryFilterMetadata": {
+    "description": "Filter section - metadata completeness"
+  },
+  "libraryFilterMetadataComplete": "Complete metadata",
+  "@libraryFilterMetadataComplete": {
+    "description": "Filter option - items with complete metadata"
+  },
+  "libraryFilterMetadataMissingAny": "Missing any metadata",
+  "@libraryFilterMetadataMissingAny": {
+    "description": "Filter option - items missing any tracked metadata field"
+  },
+  "libraryFilterMetadataMissingYear": "Missing year",
+  "@libraryFilterMetadataMissingYear": {
+    "description": "Filter option - items missing release year/date"
+  },
+  "libraryFilterMetadataMissingGenre": "Missing genre",
+  "@libraryFilterMetadataMissingGenre": {
+    "description": "Filter option - items missing genre"
+  },
+  "libraryFilterMetadataMissingAlbumArtist": "Missing album artist",
+  "@libraryFilterMetadataMissingAlbumArtist": {
+    "description": "Filter option - items missing album artist"
+  },
   "libraryFilterSort": "Sort",
   "@libraryFilterSort": {
     "description": "Filter section - sort order"
@@ -2524,6 +2548,22 @@
   "libraryFilterSortOldest": "Oldest",
   "@libraryFilterSortOldest": {
     "description": "Sort option - oldest first"
+  },
+  "libraryFilterSortAlbumAsc": "Album (A-Z)",
+  "@libraryFilterSortAlbumAsc": {
+    "description": "Sort option - album ascending"
+  },
+  "libraryFilterSortAlbumDesc": "Album (Z-A)",
+  "@libraryFilterSortAlbumDesc": {
+    "description": "Sort option - album descending"
+  },
+  "libraryFilterSortGenreAsc": "Genre (A-Z)",
+  "@libraryFilterSortGenreAsc": {
+    "description": "Sort option - genre ascending"
+  },
+  "libraryFilterSortGenreDesc": "Genre (Z-A)",
+  "@libraryFilterSortGenreDesc": {
+    "description": "Sort option - genre descending"
   },
   "timeJustNow": "Just now",
   "@timeJustNow": {

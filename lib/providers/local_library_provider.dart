@@ -339,6 +339,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           scanWasCancelled: false,
           excludedDownloadedCount: skippedDownloads,
         );
+        await _pruneLibraryCoverCache(persistedItems);
 
         _log.i(
           'Full scan complete: ${persistedItems.length} tracks found, '
@@ -813,6 +814,46 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
     state = LocalLibraryState();
     _log.i('Library cleared');
+  }
+
+  Future<void> _pruneLibraryCoverCache(Iterable<LocalLibraryItem> items) async {
+    try {
+      final appSupportDir = await getApplicationSupportDirectory();
+      final libraryCoverDir = Directory('${appSupportDir.path}/library_covers');
+      if (!await libraryCoverDir.exists()) {
+        return;
+      }
+
+      final referencedCoverPaths = items
+          .map((item) => item.coverPath)
+          .whereType<String>()
+          .where((path) => path.isNotEmpty)
+          .toSet();
+
+      var deletedCount = 0;
+      await for (final entity in libraryCoverDir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entity is! File || referencedCoverPaths.contains(entity.path)) {
+          continue;
+        }
+        try {
+          await entity.delete();
+          deletedCount++;
+        } catch (e) {
+          _log.w(
+            'Failed deleting stale library cover cache ${entity.path}: $e',
+          );
+        }
+      }
+
+      if (deletedCount > 0) {
+        _log.i('Pruned $deletedCount stale library cover cache files');
+      }
+    } catch (e) {
+      _log.w('Failed pruning library cover cache: $e');
+    }
   }
 
   Future<void> removeItem(String id) async {

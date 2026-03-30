@@ -1903,6 +1903,24 @@ class AppLocalizationsNl extends AppLocalizations {
   String get libraryFilterFormat => 'Format';
 
   @override
+  String get libraryFilterMetadata => 'Metadata';
+
+  @override
+  String get libraryFilterMetadataComplete => 'Complete metadata';
+
+  @override
+  String get libraryFilterMetadataMissingAny => 'Missing any metadata';
+
+  @override
+  String get libraryFilterMetadataMissingYear => 'Missing year';
+
+  @override
+  String get libraryFilterMetadataMissingGenre => 'Missing genre';
+
+  @override
+  String get libraryFilterMetadataMissingAlbumArtist => 'Missing album artist';
+
+  @override
   String get libraryFilterSort => 'Sort';
 
   @override
@@ -1910,6 +1928,18 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get libraryFilterSortOldest => 'Oldest';
+
+  @override
+  String get libraryFilterSortAlbumAsc => 'Album (A-Z)';
+
+  @override
+  String get libraryFilterSortAlbumDesc => 'Album (Z-A)';
+
+  @override
+  String get libraryFilterSortGenreAsc => 'Genre (A-Z)';
+
+  @override
+  String get libraryFilterSortGenreDesc => 'Genre (Z-A)';
 
   @override
   String get timeJustNow => 'Just now';

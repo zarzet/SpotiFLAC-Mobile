@@ -200,6 +200,48 @@ func reEnrichDownloadRequest(req reEnrichRequest) DownloadRequest {
 	}
 }
 
+func buildReEnrichFFmpegMetadata(req reEnrichRequest, lyricsLRC string) map[string]string {
+	metadata := map[string]string{}
+	if req.TrackName != "" {
+		metadata["TITLE"] = req.TrackName
+	}
+	if req.ArtistName != "" {
+		metadata["ARTIST"] = req.ArtistName
+	}
+	if req.AlbumName != "" {
+		metadata["ALBUM"] = req.AlbumName
+	}
+	if req.AlbumArtist != "" {
+		metadata["ALBUMARTIST"] = req.AlbumArtist
+	}
+	if req.ReleaseDate != "" {
+		metadata["DATE"] = req.ReleaseDate
+	}
+	if req.ISRC != "" {
+		metadata["ISRC"] = req.ISRC
+	}
+	if req.Genre != "" {
+		metadata["GENRE"] = req.Genre
+	}
+	if req.TrackNumber > 0 {
+		metadata["TRACKNUMBER"] = fmt.Sprintf("%d", req.TrackNumber)
+	}
+	if req.DiscNumber > 0 {
+		metadata["DISCNUMBER"] = fmt.Sprintf("%d", req.DiscNumber)
+	}
+	if req.Label != "" {
+		metadata["ORGANIZATION"] = req.Label
+	}
+	if req.Copyright != "" {
+		metadata["COPYRIGHT"] = req.Copyright
+	}
+	if lyricsLRC != "" {
+		metadata["LYRICS"] = lyricsLRC
+		metadata["UNSYNCEDLYRICS"] = lyricsLRC
+	}
+	return metadata
+}
+
 func selectBestReEnrichTrack(req reEnrichRequest, tracks []ExtTrackMetadata) *ExtTrackMetadata {
 	if len(tracks) == 0 {
 		return nil
@@ -1099,6 +1141,26 @@ func ParseCueSheet(cuePath string, audioDir string) (string, error) {
 func ScanCueSheetForLibrary(cuePath, audioDir, virtualPathPrefix string, fileModTime int64) (string, error) {
 	scanTime := time.Now().UTC().Format(time.RFC3339)
 	results, err := ScanCueFileForLibraryExt(cuePath, audioDir, virtualPathPrefix, fileModTime, scanTime)
+	if err != nil {
+		return "[]", err
+	}
+	jsonBytes, err := json.Marshal(results)
+	if err != nil {
+		return "[]", fmt.Errorf("failed to marshal cue scan results: %w", err)
+	}
+	return string(jsonBytes), nil
+}
+
+func ScanCueSheetForLibraryWithCoverCacheKey(cuePath, audioDir, virtualPathPrefix string, fileModTime int64, coverCacheKey string) (string, error) {
+	scanTime := time.Now().UTC().Format(time.RFC3339)
+	results, err := ScanCueFileForLibraryExtWithCoverCacheKey(
+		cuePath,
+		audioDir,
+		virtualPathPrefix,
+		fileModTime,
+		coverCacheKey,
+		scanTime,
+	)
 	if err != nil {
 		return "[]", err
 	}
@@ -2195,36 +2257,14 @@ func ReEnrichFile(requestJSON string) (string, error) {
 
 	// Don't cleanup cover temp — Dart needs it for FFmpeg embed
 	cleanupCover = false
+	ffmpegMetadata := buildReEnrichFFmpegMetadata(req, lyricsLRC)
+
 	result := map[string]interface{}{
 		"method":            "ffmpeg",
 		"cover_path":        coverTempPath,
 		"lyrics":            lyricsLRC,
 		"enriched_metadata": enrichedMeta,
-		"metadata": map[string]string{
-			"TITLE":       req.TrackName,
-			"ARTIST":      req.ArtistName,
-			"ALBUM":       req.AlbumName,
-			"ALBUMARTIST": req.AlbumArtist,
-			"DATE":        req.ReleaseDate,
-			"ISRC":        req.ISRC,
-			"GENRE":       req.Genre,
-		},
-	}
-	if req.TrackNumber > 0 {
-		result["metadata"].(map[string]string)["TRACKNUMBER"] = fmt.Sprintf("%d", req.TrackNumber)
-	}
-	if req.DiscNumber > 0 {
-		result["metadata"].(map[string]string)["DISCNUMBER"] = fmt.Sprintf("%d", req.DiscNumber)
-	}
-	if req.Label != "" {
-		result["metadata"].(map[string]string)["ORGANIZATION"] = req.Label
-	}
-	if req.Copyright != "" {
-		result["metadata"].(map[string]string)["COPYRIGHT"] = req.Copyright
-	}
-	if lyricsLRC != "" {
-		result["metadata"].(map[string]string)["LYRICS"] = lyricsLRC
-		result["metadata"].(map[string]string)["UNSYNCEDLYRICS"] = lyricsLRC
+		"metadata":          ffmpegMetadata,
 	}
 
 	jsonBytes, _ := json.Marshal(result)
@@ -3467,4 +3507,8 @@ func ReadAudioMetadataJSON(filePath string) (string, error) {
 
 func ReadAudioMetadataWithHintJSON(filePath, displayName string) (string, error) {
 	return ReadAudioMetadataWithDisplayName(filePath, displayName)
+}
+
+func ReadAudioMetadataWithHintAndCoverCacheKeyJSON(filePath, displayName, coverCacheKey string) (string, error) {
+	return ReadAudioMetadataWithDisplayNameAndCoverCacheKey(filePath, displayName, coverCacheKey)
 }

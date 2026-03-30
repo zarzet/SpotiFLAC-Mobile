@@ -1620,14 +1620,28 @@ func extractAnyCoverArtWithHint(filePath, displayNameHint string) ([]byte, strin
 }
 
 func SaveCoverToCache(filePath, cacheDir string) (string, error) {
-	return SaveCoverToCacheWithHint(filePath, "", cacheDir)
+	return SaveCoverToCacheWithHintAndKey(filePath, "", cacheDir, "")
 }
 
 func SaveCoverToCacheWithHint(filePath, displayNameHint, cacheDir string) (string, error) {
+	return SaveCoverToCacheWithHintAndKey(filePath, displayNameHint, cacheDir, "")
+}
+
+func resolveLibraryCoverCacheKey(filePath, explicitKey string) string {
+	explicitKey = strings.TrimSpace(explicitKey)
+	if explicitKey != "" {
+		return explicitKey
+	}
+
 	cacheKey := filePath
 	if stat, err := os.Stat(filePath); err == nil {
 		cacheKey = fmt.Sprintf("%s|%d|%d", filePath, stat.Size(), stat.ModTime().UnixNano())
 	}
+	return cacheKey
+}
+
+func SaveCoverToCacheWithHintAndKey(filePath, displayNameHint, cacheDir, coverCacheKey string) (string, error) {
+	cacheKey := resolveLibraryCoverCacheKey(filePath, coverCacheKey)
 	hash := hashString(cacheKey)
 
 	jpgPath := filepath.Join(cacheDir, fmt.Sprintf("cover_%x.jpg", hash))

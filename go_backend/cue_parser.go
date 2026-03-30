@@ -26,11 +26,11 @@ type CueSheet struct {
 
 // CueTrack represents a single track in a cue sheet
 type CueTrack struct {
-	Number    int    `json:"number"`
-	Title     string `json:"title"`
-	Performer string `json:"performer"`
-	ISRC      string `json:"isrc,omitempty"`
-	Composer  string `json:"composer,omitempty"`
+	Number    int     `json:"number"`
+	Title     string  `json:"title"`
+	Performer string  `json:"performer"`
+	ISRC      string  `json:"isrc,omitempty"`
+	Composer  string  `json:"composer,omitempty"`
 	StartTime float64 `json:"start_time"` // INDEX 01 in seconds
 	PreGap    float64 `json:"pre_gap"`    // INDEX 00 in seconds (or -1 if not present)
 }
@@ -422,7 +422,7 @@ func ScanCueFileForLibrary(cuePath string, scanTime string) ([]LibraryScanResult
 	if err != nil {
 		return nil, err
 	}
-	return scanCueSheetForLibrary(cuePath, sheet, audioPath, "", 0, scanTime)
+	return scanCueSheetForLibrary(cuePath, sheet, audioPath, "", 0, "", scanTime)
 }
 
 // ScanCueFileForLibraryExt is like ScanCueFileForLibrary but with extra parameters
@@ -433,6 +433,17 @@ func ScanCueFileForLibrary(cuePath string, scanTime string) ([]LibraryScanResult
 //   - fileModTime: if > 0, used as the FileModTime for all results instead of
 //     stat-ing the cuePath on disk (useful when the real file lives behind SAF)
 func ScanCueFileForLibraryExt(cuePath, audioDir, virtualPathPrefix string, fileModTime int64, scanTime string) ([]LibraryScanResult, error) {
+	return ScanCueFileForLibraryExtWithCoverCacheKey(
+		cuePath,
+		audioDir,
+		virtualPathPrefix,
+		fileModTime,
+		"",
+		scanTime,
+	)
+}
+
+func ScanCueFileForLibraryExtWithCoverCacheKey(cuePath, audioDir, virtualPathPrefix string, fileModTime int64, coverCacheKey, scanTime string) ([]LibraryScanResult, error) {
 	sheet, err := ParseCueFile(cuePath)
 	if err != nil {
 		return nil, err
@@ -441,7 +452,15 @@ func ScanCueFileForLibraryExt(cuePath, audioDir, virtualPathPrefix string, fileM
 	if err != nil {
 		return nil, err
 	}
-	return scanCueSheetForLibrary(cuePath, sheet, audioPath, virtualPathPrefix, fileModTime, scanTime)
+	return scanCueSheetForLibrary(
+		cuePath,
+		sheet,
+		audioPath,
+		virtualPathPrefix,
+		fileModTime,
+		coverCacheKey,
+		scanTime,
+	)
 }
 
 func resolveCueAudioPathForLibrary(cuePath string, sheet *CueSheet, audioDir string) (string, error) {
@@ -459,7 +478,7 @@ func resolveCueAudioPathForLibrary(cuePath string, sheet *CueSheet, audioDir str
 	return audioPath, nil
 }
 
-func scanCueSheetForLibrary(cuePath string, sheet *CueSheet, audioPath, virtualPathPrefix string, fileModTime int64, scanTime string) ([]LibraryScanResult, error) {
+func scanCueSheetForLibrary(cuePath string, sheet *CueSheet, audioPath, virtualPathPrefix string, fileModTime int64, coverCacheKey, scanTime string) ([]LibraryScanResult, error) {
 	if sheet == nil {
 		return nil, fmt.Errorf("cue sheet is nil for %s", cuePath)
 	}
@@ -492,7 +511,12 @@ func scanCueSheetForLibrary(cuePath string, sheet *CueSheet, audioPath, virtualP
 	coverCacheDir := libraryCoverCacheDir
 	libraryCoverCacheMu.RUnlock()
 	if coverCacheDir != "" {
-		cp, err := SaveCoverToCache(audioPath, coverCacheDir)
+		cp, err := SaveCoverToCacheWithHintAndKey(
+			audioPath,
+			"",
+			coverCacheDir,
+			coverCacheKey,
+		)
 		if err == nil && cp != "" {
 			coverPath = cp
 		}

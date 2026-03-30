@@ -13,25 +13,26 @@ import (
 )
 
 type LibraryScanResult struct {
-	ID          string `json:"id"`
-	TrackName   string `json:"trackName"`
-	ArtistName  string `json:"artistName"`
-	AlbumName   string `json:"albumName"`
-	AlbumArtist string `json:"albumArtist,omitempty"`
-	FilePath    string `json:"filePath"`
-	CoverPath   string `json:"coverPath,omitempty"`
-	ScannedAt   string `json:"scannedAt"`
-	FileModTime int64  `json:"fileModTime,omitempty"` // Unix timestamp in milliseconds
-	ISRC        string `json:"isrc,omitempty"`
-	TrackNumber int    `json:"trackNumber,omitempty"`
-	DiscNumber  int    `json:"discNumber,omitempty"`
-	Duration    int    `json:"duration,omitempty"`
-	ReleaseDate string `json:"releaseDate,omitempty"`
-	BitDepth    int    `json:"bitDepth,omitempty"`
-	SampleRate  int    `json:"sampleRate,omitempty"`
-	Bitrate     int    `json:"bitrate,omitempty"` // kbps, for lossy formats (MP3, Opus, Vorbis)
-	Genre       string `json:"genre,omitempty"`
-	Format      string `json:"format,omitempty"`
+	ID                   string `json:"id"`
+	TrackName            string `json:"trackName"`
+	ArtistName           string `json:"artistName"`
+	AlbumName            string `json:"albumName"`
+	AlbumArtist          string `json:"albumArtist,omitempty"`
+	FilePath             string `json:"filePath"`
+	CoverPath            string `json:"coverPath,omitempty"`
+	ScannedAt            string `json:"scannedAt"`
+	FileModTime          int64  `json:"fileModTime,omitempty"` // Unix timestamp in milliseconds
+	ISRC                 string `json:"isrc,omitempty"`
+	TrackNumber          int    `json:"trackNumber,omitempty"`
+	DiscNumber           int    `json:"discNumber,omitempty"`
+	Duration             int    `json:"duration,omitempty"`
+	ReleaseDate          string `json:"releaseDate,omitempty"`
+	BitDepth             int    `json:"bitDepth,omitempty"`
+	SampleRate           int    `json:"sampleRate,omitempty"`
+	Bitrate              int    `json:"bitrate,omitempty"` // kbps, for lossy formats (MP3, Opus, Vorbis)
+	Genre                string `json:"genre,omitempty"`
+	Format               string `json:"format,omitempty"`
+	MetadataFromFilename bool   `json:"metadataFromFilename,omitempty"`
 }
 
 type LibraryScanProgress struct {
@@ -219,6 +220,7 @@ func ScanLibraryFolder(folderPath string) (string, error) {
 					cueInfo.audioPath,
 					"",
 					fileInfo.modTime,
+					"",
 					scanTime,
 				)
 			} else {
@@ -269,10 +271,14 @@ func scanAudioFile(filePath, scanTime string) (*LibraryScanResult, error) {
 }
 
 func scanAudioFileWithKnownModTime(filePath, scanTime string, knownModTime int64) (*LibraryScanResult, error) {
-	return scanAudioFileWithKnownModTimeAndDisplayName(filePath, "", scanTime, knownModTime)
+	return scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(filePath, "", "", scanTime, knownModTime)
 }
 
 func scanAudioFileWithKnownModTimeAndDisplayName(filePath, displayNameHint, scanTime string, knownModTime int64) (*LibraryScanResult, error) {
+	return scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(filePath, displayNameHint, "", scanTime, knownModTime)
+}
+
+func scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(filePath, displayNameHint, coverCacheKey, scanTime string, knownModTime int64) (*LibraryScanResult, error) {
 	ext := resolveLibraryAudioExt(filePath, displayNameHint)
 
 	result := &LibraryScanResult{
@@ -292,7 +298,12 @@ func scanAudioFileWithKnownModTimeAndDisplayName(filePath, displayNameHint, scan
 	coverCacheDir := libraryCoverCacheDir
 	libraryCoverCacheMu.RUnlock()
 	if coverCacheDir != "" {
-		coverPath, err := SaveCoverToCacheWithHint(filePath, displayNameHint, coverCacheDir)
+		coverPath, err := SaveCoverToCacheWithHintAndKey(
+			filePath,
+			displayNameHint,
+			coverCacheDir,
+			coverCacheKey,
+		)
 		if err == nil && coverPath != "" {
 			result.CoverPath = coverPath
 		}
@@ -466,6 +477,7 @@ func scanOggFile(filePath string, result *LibraryScanResult, displayNameHint str
 }
 
 func scanFromFilename(filePath, displayNameHint string, result *LibraryScanResult) (*LibraryScanResult, error) {
+	result.MetadataFromFilename = true
 	nameSource := libraryDisplayNameOrPath(filePath, displayNameHint)
 	filename := strings.TrimSuffix(filepath.Base(nameSource), filepath.Ext(nameSource))
 
@@ -541,8 +553,18 @@ func ReadAudioMetadata(filePath string) (string, error) {
 }
 
 func ReadAudioMetadataWithDisplayName(filePath, displayNameHint string) (string, error) {
+	return ReadAudioMetadataWithDisplayNameAndCoverCacheKey(filePath, displayNameHint, "")
+}
+
+func ReadAudioMetadataWithDisplayNameAndCoverCacheKey(filePath, displayNameHint, coverCacheKey string) (string, error) {
 	scanTime := time.Now().UTC().Format(time.RFC3339)
-	result, err := scanAudioFileWithKnownModTimeAndDisplayName(filePath, displayNameHint, scanTime, 0)
+	result, err := scanAudioFileWithKnownModTimeAndDisplayNameAndCoverCacheKey(
+		filePath,
+		displayNameHint,
+		coverCacheKey,
+		scanTime,
+		0,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -746,6 +768,7 @@ func scanLibraryFolderIncrementalWithExistingFiles(folderPath string, existingFi
 					cueInfo.audioPath,
 					"",
 					f.modTime,
+					"",
 					scanTime,
 				)
 			} else {

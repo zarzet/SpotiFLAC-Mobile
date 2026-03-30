@@ -124,6 +124,12 @@ class UnifiedLibraryItem {
       coverUrl != null ||
       (localCoverPath != null && localCoverPath!.isNotEmpty);
 
+  String? get albumArtist => historyItem?.albumArtist ?? localItem?.albumArtist;
+
+  String? get releaseDate => historyItem?.releaseDate ?? localItem?.releaseDate;
+
+  String? get genre => historyItem?.genre ?? localItem?.genre;
+
   String get searchKey =>
       '${trackName.toLowerCase()}|${artistName.toLowerCase()}|${albumName.toLowerCase()}';
   String get albumKey =>
@@ -319,6 +325,7 @@ class _QueueGroupedAlbumFilterRequest {
   final String? filterSource;
   final String? filterQuality;
   final String? filterFormat;
+  final String? filterMetadata;
   final String sortMode;
 
   const _QueueGroupedAlbumFilterRequest({
@@ -326,6 +333,7 @@ class _QueueGroupedAlbumFilterRequest {
     required this.filterSource,
     required this.filterQuality,
     required this.filterFormat,
+    required this.filterMetadata,
     required this.sortMode,
   });
 
@@ -337,6 +345,7 @@ class _QueueGroupedAlbumFilterRequest {
           filterSource == other.filterSource &&
           filterQuality == other.filterQuality &&
           filterFormat == other.filterFormat &&
+          filterMetadata == other.filterMetadata &&
           sortMode == other.sortMode;
 
   @override
@@ -345,6 +354,7 @@ class _QueueGroupedAlbumFilterRequest {
     filterSource,
     filterQuality,
     filterFormat,
+    filterMetadata,
     sortMode,
   );
 }
@@ -356,6 +366,161 @@ String _queueFileExtLower(String filePath) {
     return '';
   }
   return filePath.substring(dotIndex + 1).toLowerCase();
+}
+
+bool _queueHasMetadataValue(String? value) {
+  return value != null && value.trim().isNotEmpty;
+}
+
+String _queueNormalizedMetadataValue(String? value) {
+  return value?.trim().toLowerCase() ?? '';
+}
+
+DateTime? _queueParseReleaseDate(String? value) {
+  final trimmed = value?.trim() ?? '';
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
+  final parsed = DateTime.tryParse(trimmed);
+  if (parsed != null) {
+    return parsed;
+  }
+
+  final yearMatch = RegExp(r'(\d{4})').firstMatch(trimmed);
+  if (yearMatch == null) {
+    return null;
+  }
+
+  final year = int.tryParse(yearMatch.group(1)!);
+  if (year == null || year <= 0) {
+    return null;
+  }
+  return DateTime(year);
+}
+
+bool _queueMatchesMetadataFilter({
+  required String? filterMetadata,
+  required String? albumArtist,
+  required String? releaseDate,
+  required String? genre,
+}) {
+  if (filterMetadata == null) {
+    return true;
+  }
+
+  final hasAlbumArtist = _queueHasMetadataValue(albumArtist);
+  final hasReleaseDate = _queueParseReleaseDate(releaseDate) != null;
+  final hasGenre = _queueHasMetadataValue(genre);
+  final isComplete = hasAlbumArtist && hasReleaseDate && hasGenre;
+
+  switch (filterMetadata) {
+    case 'complete':
+      return isComplete;
+    case 'missing-any':
+      return !isComplete;
+    case 'missing-year':
+      return !hasReleaseDate;
+    case 'missing-genre':
+      return !hasGenre;
+    case 'missing-album-artist':
+      return !hasAlbumArtist;
+    default:
+      return true;
+  }
+}
+
+bool _queueUnifiedItemMatchesMetadataFilter(
+  UnifiedLibraryItem item,
+  String? filterMetadata,
+) {
+  return _queueMatchesMetadataFilter(
+    filterMetadata: filterMetadata,
+    albumArtist: item.albumArtist,
+    releaseDate: item.releaseDate,
+    genre: item.genre,
+  );
+}
+
+int _queueCompareOptionalText(
+  String? left,
+  String? right, {
+  bool descending = false,
+}) {
+  final normalizedLeft = _queueNormalizedMetadataValue(left);
+  final normalizedRight = _queueNormalizedMetadataValue(right);
+  final leftEmpty = normalizedLeft.isEmpty;
+  final rightEmpty = normalizedRight.isEmpty;
+
+  if (leftEmpty && rightEmpty) {
+    return 0;
+  }
+  if (leftEmpty) {
+    return 1;
+  }
+  if (rightEmpty) {
+    return -1;
+  }
+
+  final comparison = normalizedLeft.compareTo(normalizedRight);
+  return descending ? -comparison : comparison;
+}
+
+int _queueCompareOptionalDate(
+  DateTime? left,
+  DateTime? right, {
+  bool descending = false,
+}) {
+  if (left == null && right == null) {
+    return 0;
+  }
+  if (left == null) {
+    return 1;
+  }
+  if (right == null) {
+    return -1;
+  }
+
+  final comparison = left.compareTo(right);
+  return descending ? -comparison : comparison;
+}
+
+DateTime? _queueGroupedAlbumReleaseDate(_GroupedAlbum album) {
+  for (final track in album.tracks) {
+    final releaseDate = _queueParseReleaseDate(track.releaseDate);
+    if (releaseDate != null) {
+      return releaseDate;
+    }
+  }
+  return null;
+}
+
+DateTime? _queueGroupedLocalAlbumReleaseDate(_GroupedLocalAlbum album) {
+  for (final track in album.tracks) {
+    final releaseDate = _queueParseReleaseDate(track.releaseDate);
+    if (releaseDate != null) {
+      return releaseDate;
+    }
+  }
+  return null;
+}
+
+String? _queueGroupedAlbumGenre(_GroupedAlbum album) {
+  for (final track in album.tracks) {
+    if (_queueHasMetadataValue(track.genre)) {
+      return track.genre;
+    }
+  }
+  return null;
+}
+
+String? _queueGroupedLocalAlbumGenre(_GroupedLocalAlbum album) {
+  for (final track in album.tracks) {
+    if (_queueHasMetadataValue(track.genre)) {
+      return track.genre;
+    }
+  }
+  return null;
 }
 
 String? _queueLocalQualityLabel(LocalLibraryItem item) {
@@ -519,6 +684,7 @@ List<_GroupedAlbum> _queueFilterGroupedAlbums(
   if (request.filterSource == null &&
       request.filterQuality == null &&
       request.filterFormat == null &&
+      request.filterMetadata == null &&
       request.searchQuery.isEmpty &&
       request.sortMode == 'latest') {
     return albums;
@@ -531,13 +697,23 @@ List<_GroupedAlbum> _queueFilterGroupedAlbums(
       continue;
     }
 
-    if (request.filterQuality != null || request.filterFormat != null) {
+    if (request.filterQuality != null ||
+        request.filterFormat != null ||
+        request.filterMetadata != null) {
       var hasMatchingTrack = false;
       for (final track in album.tracks) {
         if (!_queuePassesQualityFilter(request.filterQuality, track.quality)) {
           continue;
         }
         if (!_queuePassesFormatFilter(request.filterFormat, track.filePath)) {
+          continue;
+        }
+        if (!_queueMatchesMetadataFilter(
+          filterMetadata: request.filterMetadata,
+          albumArtist: track.albumArtist,
+          releaseDate: track.releaseDate,
+          genre: track.genre,
+        )) {
           continue;
         }
         hasMatchingTrack = true;
@@ -552,6 +728,29 @@ List<_GroupedAlbum> _queueFilterGroupedAlbums(
   switch (request.sortMode) {
     case 'oldest':
       result.sort((a, b) => a.latestDownload.compareTo(b.latestDownload));
+    case 'artist-asc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          a.artistName,
+          b.artistName,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'artist-desc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          a.artistName,
+          b.artistName,
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
     case 'a-z':
       result.sort(
         (a, b) =>
@@ -562,6 +761,64 @@ List<_GroupedAlbum> _queueFilterGroupedAlbums(
         (a, b) =>
             b.albumName.toLowerCase().compareTo(a.albumName.toLowerCase()),
       );
+    case 'album-asc':
+      result.sort(
+        (a, b) => _queueCompareOptionalText(a.albumName, b.albumName),
+      );
+    case 'album-desc':
+      result.sort(
+        (a, b) => _queueCompareOptionalText(
+          a.albumName,
+          b.albumName,
+          descending: true,
+        ),
+      );
+    case 'release-oldest':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalDate(
+          _queueGroupedAlbumReleaseDate(a),
+          _queueGroupedAlbumReleaseDate(b),
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'release-newest':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalDate(
+          _queueGroupedAlbumReleaseDate(a),
+          _queueGroupedAlbumReleaseDate(b),
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'genre-asc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          _queueGroupedAlbumGenre(a),
+          _queueGroupedAlbumGenre(b),
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'genre-desc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          _queueGroupedAlbumGenre(a),
+          _queueGroupedAlbumGenre(b),
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
     default:
       break;
   }
@@ -576,6 +833,7 @@ List<_GroupedLocalAlbum> _queueFilterGroupedLocalAlbums(
   if (request.filterSource == null &&
       request.filterQuality == null &&
       request.filterFormat == null &&
+      request.filterMetadata == null &&
       request.searchQuery.isEmpty &&
       request.sortMode == 'latest') {
     return albums;
@@ -588,7 +846,9 @@ List<_GroupedLocalAlbum> _queueFilterGroupedLocalAlbums(
       continue;
     }
 
-    if (request.filterQuality != null || request.filterFormat != null) {
+    if (request.filterQuality != null ||
+        request.filterFormat != null ||
+        request.filterMetadata != null) {
       var hasMatchingTrack = false;
       for (final track in album.tracks) {
         if (!_queuePassesQualityFilter(
@@ -598,6 +858,14 @@ List<_GroupedLocalAlbum> _queueFilterGroupedLocalAlbums(
           continue;
         }
         if (!_queuePassesFormatFilter(request.filterFormat, track.filePath)) {
+          continue;
+        }
+        if (!_queueMatchesMetadataFilter(
+          filterMetadata: request.filterMetadata,
+          albumArtist: track.albumArtist,
+          releaseDate: track.releaseDate,
+          genre: track.genre,
+        )) {
           continue;
         }
         hasMatchingTrack = true;
@@ -612,6 +880,29 @@ List<_GroupedLocalAlbum> _queueFilterGroupedLocalAlbums(
   switch (request.sortMode) {
     case 'oldest':
       result.sort((a, b) => a.latestScanned.compareTo(b.latestScanned));
+    case 'artist-asc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          a.artistName,
+          b.artistName,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'artist-desc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          a.artistName,
+          b.artistName,
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
     case 'a-z':
       result.sort(
         (a, b) =>
@@ -622,6 +913,64 @@ List<_GroupedLocalAlbum> _queueFilterGroupedLocalAlbums(
         (a, b) =>
             b.albumName.toLowerCase().compareTo(a.albumName.toLowerCase()),
       );
+    case 'album-asc':
+      result.sort(
+        (a, b) => _queueCompareOptionalText(a.albumName, b.albumName),
+      );
+    case 'album-desc':
+      result.sort(
+        (a, b) => _queueCompareOptionalText(
+          a.albumName,
+          b.albumName,
+          descending: true,
+        ),
+      );
+    case 'release-oldest':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalDate(
+          _queueGroupedLocalAlbumReleaseDate(a),
+          _queueGroupedLocalAlbumReleaseDate(b),
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'release-newest':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalDate(
+          _queueGroupedLocalAlbumReleaseDate(a),
+          _queueGroupedLocalAlbumReleaseDate(b),
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'genre-asc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          _queueGroupedLocalAlbumGenre(a),
+          _queueGroupedLocalAlbumGenre(b),
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
+    case 'genre-desc':
+      result.sort((a, b) {
+        final comparison = _queueCompareOptionalText(
+          _queueGroupedLocalAlbumGenre(a),
+          _queueGroupedLocalAlbumGenre(b),
+          descending: true,
+        );
+        if (comparison != 0) {
+          return comparison;
+        }
+        return _queueCompareOptionalText(a.albumName, b.albumName);
+      });
     default:
       break;
   }
@@ -781,10 +1130,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   String? _filterCacheSource;
   String? _filterCacheQuality;
   String? _filterCacheFormat;
+  String? _filterCacheMetadata;
   String _filterCacheSortMode = 'latest';
   String? _filterSource; // null = all, 'downloaded', 'local'
   String? _filterQuality; // null = all, 'hires', 'cd', 'lossy'
   String? _filterFormat; // null = all, 'flac', 'mp3', 'm4a', 'opus', 'ogg'
+  String? _filterMetadata; // null = all, 'complete', 'missing-*'
   String _sortMode = 'latest'; // 'latest', 'oldest', 'a-z', 'z-a'
 
   double _effectiveTextScale() {
@@ -871,6 +1222,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         _filterCacheSource == _filterSource &&
         _filterCacheQuality == _filterQuality &&
         _filterCacheFormat == _filterFormat &&
+        _filterCacheMetadata == _filterMetadata &&
         _filterCacheSortMode == _sortMode;
 
     if (isCacheValid) {
@@ -886,6 +1238,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     _filterCacheSource = _filterSource;
     _filterCacheQuality = _filterQuality;
     _filterCacheFormat = _filterFormat;
+    _filterCacheMetadata = _filterMetadata;
     _filterCacheSortMode = _sortMode;
   }
 
@@ -1868,6 +2221,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (_filterSource != null) count++;
     if (_filterQuality != null) count++;
     if (_filterFormat != null) count++;
+    if (_filterMetadata != null) count++;
     return count;
   }
 
@@ -1876,6 +2230,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       _filterSource = null;
       _filterQuality = null;
       _filterFormat = null;
+      _filterMetadata = null;
       _sortMode = 'latest';
       _unifiedItemsCache.clear();
       _invalidateFilterContentCache();
@@ -1931,6 +2286,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               if (ext != _filterFormat) return false;
             }
 
+            if (!_queueUnifiedItemMatchesMetadataFilter(
+              item,
+              _filterMetadata,
+            )) {
+              return false;
+            }
+
             return true;
           })
           .toList(growable: false);
@@ -1957,6 +2319,95 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           (a, b) =>
               b.trackName.toLowerCase().compareTo(a.trackName.toLowerCase()),
         );
+      case 'artist-asc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(
+            a.artistName,
+            b.artistName,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'artist-desc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(
+            a.artistName,
+            b.artistName,
+            descending: true,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'album-asc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(
+            a.albumName,
+            b.albumName,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'album-desc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(
+            a.albumName,
+            b.albumName,
+            descending: true,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'release-oldest':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalDate(
+            _queueParseReleaseDate(a.releaseDate),
+            _queueParseReleaseDate(b.releaseDate),
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'release-newest':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalDate(
+            _queueParseReleaseDate(a.releaseDate),
+            _queueParseReleaseDate(b.releaseDate),
+            descending: true,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'genre-asc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(a.genre, b.genre);
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
+      case 'genre-desc':
+        sorted.sort((a, b) {
+          final comparison = _queueCompareOptionalText(
+            a.genre,
+            b.genre,
+            descending: true,
+          );
+          if (comparison != 0) {
+            return comparison;
+          }
+          return _queueCompareOptionalText(a.trackName, b.trackName);
+        });
     }
     return sorted;
   }
@@ -1982,6 +2433,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     String? tempSource = _filterSource;
     String? tempQuality = _filterQuality;
     String? tempFormat = _filterFormat;
+    String? tempMetadata = _filterMetadata;
     String tempSortMode = _sortMode;
 
     showModalBottomSheet<void>(
@@ -2034,6 +2486,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                     tempSource = null;
                                     tempQuality = null;
                                     tempFormat = null;
+                                    tempMetadata = null;
                                     tempSortMode = 'latest';
                                   });
                                 },
@@ -2148,6 +2601,76 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                           const SizedBox(height: 16),
 
                           Text(
+                            context.l10n.libraryFilterMetadata,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilterChip(
+                                label: Text(context.l10n.libraryFilterAll),
+                                selected: tempMetadata == null,
+                                onSelected: (_) =>
+                                    setSheetState(() => tempMetadata = null),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterMetadataComplete,
+                                ),
+                                selected: tempMetadata == 'complete',
+                                onSelected: (_) => setSheetState(
+                                  () => tempMetadata = 'complete',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterMetadataMissingAny,
+                                ),
+                                selected: tempMetadata == 'missing-any',
+                                onSelected: (_) => setSheetState(
+                                  () => tempMetadata = 'missing-any',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterMetadataMissingYear,
+                                ),
+                                selected: tempMetadata == 'missing-year',
+                                onSelected: (_) => setSheetState(
+                                  () => tempMetadata = 'missing-year',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingGenre,
+                                ),
+                                selected: tempMetadata == 'missing-genre',
+                                onSelected: (_) => setSheetState(
+                                  () => tempMetadata = 'missing-genre',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context
+                                      .l10n
+                                      .libraryFilterMetadataMissingAlbumArtist,
+                                ),
+                                selected:
+                                    tempMetadata == 'missing-album-artist',
+                                onSelected: (_) => setSheetState(
+                                  () => tempMetadata = 'missing-album-artist',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
                             context.l10n.libraryFilterSort,
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.w600),
@@ -2175,16 +2698,80 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                 ),
                               ),
                               FilterChip(
-                                label: Text(context.l10n.sortAlphaAsc),
+                                label: Text(context.l10n.searchSortTitleAZ),
                                 selected: tempSortMode == 'a-z',
                                 onSelected: (_) =>
                                     setSheetState(() => tempSortMode = 'a-z'),
                               ),
                               FilterChip(
-                                label: Text(context.l10n.sortAlphaDesc),
+                                label: Text(context.l10n.searchSortTitleZA),
                                 selected: tempSortMode == 'z-a',
                                 onSelected: (_) =>
                                     setSheetState(() => tempSortMode = 'z-a'),
+                              ),
+                              FilterChip(
+                                label: Text(context.l10n.searchSortArtistAZ),
+                                selected: tempSortMode == 'artist-asc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'artist-asc',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(context.l10n.searchSortArtistZA),
+                                selected: tempSortMode == 'artist-desc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'artist-desc',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortAlbumAsc,
+                                ),
+                                selected: tempSortMode == 'album-asc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'album-asc',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortAlbumDesc,
+                                ),
+                                selected: tempSortMode == 'album-desc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'album-desc',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(context.l10n.searchSortDateNewest),
+                                selected: tempSortMode == 'release-newest',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'release-newest',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(context.l10n.searchSortDateOldest),
+                                selected: tempSortMode == 'release-oldest',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'release-oldest',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortGenreAsc,
+                                ),
+                                selected: tempSortMode == 'genre-asc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'genre-asc',
+                                ),
+                              ),
+                              FilterChip(
+                                label: Text(
+                                  context.l10n.libraryFilterSortGenreDesc,
+                                ),
+                                selected: tempSortMode == 'genre-desc',
+                                onSelected: (_) => setSheetState(
+                                  () => tempSortMode = 'genre-desc',
+                                ),
                               ),
                             ],
                           ),
@@ -2198,6 +2785,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                                   _filterSource = tempSource;
                                   _filterQuality = tempQuality;
                                   _filterFormat = tempFormat;
+                                  _filterMetadata = tempMetadata;
                                   _sortMode = tempSortMode;
                                   _unifiedItemsCache.clear();
                                   _invalidateFilterContentCache();
@@ -2738,6 +3326,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           filterSource: _filterSource,
           filterQuality: _filterQuality,
           filterFormat: _filterFormat,
+          filterMetadata: _filterMetadata,
           sortMode: _sortMode,
         ),
       ),

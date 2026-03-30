@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1650,7 +1651,8 @@ func (q *QobuzDownloader) searchQobuzTracksViaAPI(query string, limit int) ([]Qo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("search failed: HTTP %d", resp.StatusCode)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("search failed: HTTP %d (%s)", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
 	var result struct {
@@ -1662,6 +1664,234 @@ func (q *QobuzDownloader) searchQobuzTracksViaAPI(query string, limit int) ([]Qo
 		return nil, err
 	}
 	return result.Tracks.Items, nil
+}
+
+type qobuzTrackSearchCandidate struct {
+	score int
+	track QobuzTrack
+}
+
+func qobuzNormalizedSearchText(value string) string {
+	return normalizeLooseArtistName(value)
+}
+
+func qobuzSearchTokens(value string) []string {
+	normalized := qobuzNormalizedSearchText(value)
+	if normalized == "" {
+		return nil
+	}
+
+	parts := strings.Fields(normalized)
+	tokens := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		if len(part) < 2 {
+			continue
+		}
+		if _, ok := seen[part]; ok {
+			continue
+		}
+		seen[part] = struct{}{}
+		tokens = append(tokens, part)
+	}
+	return tokens
+}
+
+func qobuzScoreTrackSearchCandidate(query string, track *QobuzTrack) int {
+	if track == nil {
+		return 0
+	}
+
+	queryNorm := qobuzNormalizedSearchText(query)
+	if queryNorm == "" {
+		return 0
+	}
+
+	titleNorm := qobuzNormalizedSearchText(track.Title)
+	displayNorm := qobuzNormalizedSearchText(qobuzTrackDisplayTitle(track))
+	artistNorm := qobuzNormalizedSearchText(qobuzTrackArtistName(track))
+	albumNorm := qobuzNormalizedSearchText(strings.TrimSpace(track.Album.Title))
+
+	score := 0
+
+	if qobuzTitlesMatch(query, track.Title) || qobuzTitlesMatch(query, qobuzTrackDisplayTitle(track)) {
+		score += 900
+	}
+
+	switch {
+	case queryNorm == titleNorm, queryNorm == displayNorm:
+		score += 1200
+	case (titleNorm != "" && strings.Contains(titleNorm, queryNorm)) ||
+		(displayNorm != "" && strings.Contains(displayNorm, queryNorm)):
+		score += 420
+	case (titleNorm != "" && strings.Contains(queryNorm, titleNorm)) ||
+		(displayNorm != "" && strings.Contains(queryNorm, displayNorm)):
+		score += 260
+	}
+
+	if artistNorm != "" && strings.Contains(queryNorm, artistNorm) {
+		score += 180
+	}
+	if albumNorm != "" && strings.Contains(queryNorm, albumNorm) {
+		score += 100
+	}
+
+	for _, token := range qobuzSearchTokens(query) {
+		switch {
+		case strings.Contains(titleNorm, token), strings.Contains(displayNorm, token):
+			score += 180
+		case strings.Contains(artistNorm, token):
+			score += 70
+		case strings.Contains(albumNorm, token):
+			score += 35
+		}
+	}
+
+	if track.ISRC != "" {
+		score += 15
+	}
+	if track.MaximumBitDepth >= 24 {
+		score += 10
+	}
+	if track.MaximumSamplingRate >= 88.2 {
+		score += 10
+	}
+
+	return score
+}
+
+func selectQobuzTracksFromAlbumSearchResults(
+	query string,
+	limit int,
+	albumSummaries []qobuzAlbumDetails,
+	loadAlbum func(string) (*qobuzAlbumDetails, error),
+) ([]QobuzTrack, error) {
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("empty qobuz album-search fallback query")
+	}
+	if len(albumSummaries) == 0 {
+		return nil, fmt.Errorf("album search returned no albums")
+	}
+
+	candidates := make([]qobuzTrackSearchCandidate, 0, limit)
+	seenTrackIDs := make(map[int64]struct{})
+
+	for _, summary := range albumSummaries {
+		albumID := strings.TrimSpace(summary.ID)
+		if albumID == "" {
+			continue
+		}
+
+		album, err := loadAlbum(albumID)
+		if err != nil || album == nil {
+			continue
+		}
+
+		for i := range album.Tracks.Items {
+			track := album.Tracks.Items[i]
+			track.Album.ID = album.ID
+			track.Album.QobuzID = album.QobuzID
+			track.Album.Title = album.Title
+			track.Album.ReleaseDate = album.ReleaseDateOriginal
+			track.Album.TracksCount = album.TracksCount
+			track.Album.ProductType = album.ProductType
+			track.Album.ReleaseType = album.ReleaseType
+			track.Album.Artist.ID = album.Artist.ID
+			track.Album.Artist.Name = album.Artist.Name
+			track.Album.Artists = album.Artists
+			track.Album.Image = album.Image
+
+			if track.ID > 0 {
+				if _, ok := seenTrackIDs[track.ID]; ok {
+					continue
+				}
+				seenTrackIDs[track.ID] = struct{}{}
+			}
+
+			score := qobuzScoreTrackSearchCandidate(query, &track)
+			if score <= 0 {
+				continue
+			}
+
+			candidates = append(candidates, qobuzTrackSearchCandidate{
+				score: score,
+				track: track,
+			})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("album-search fallback returned no scored track candidates")
+	}
+
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].score != candidates[j].score {
+			return candidates[i].score > candidates[j].score
+		}
+		if candidates[i].track.MaximumBitDepth != candidates[j].track.MaximumBitDepth {
+			return candidates[i].track.MaximumBitDepth > candidates[j].track.MaximumBitDepth
+		}
+		return candidates[i].track.ID < candidates[j].track.ID
+	})
+
+	if limit > 0 && len(candidates) > limit {
+		candidates = candidates[:limit]
+	}
+
+	tracks := make([]QobuzTrack, 0, len(candidates))
+	for _, candidate := range candidates {
+		tracks = append(tracks, candidate.track)
+	}
+	return tracks, nil
+}
+
+func (q *QobuzDownloader) searchQobuzTracksViaAlbumSearch(query string, limit int) ([]QobuzTrack, error) {
+	albumLimit := limit
+	if albumLimit < 3 {
+		albumLimit = 3
+	}
+	if albumLimit > 8 {
+		albumLimit = 8
+	}
+
+	searchURL := fmt.Sprintf(
+		"https://www.qobuz.com/api.json/0.2/album/search?query=%s&limit=%d&app_id=%s",
+		url.QueryEscape(strings.TrimSpace(query)),
+		albumLimit,
+		q.appID,
+	)
+
+	req, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := DoRequestWithUserAgent(q.client, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("album search failed: HTTP %d (%s)", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var albumResp struct {
+		Albums struct {
+			Items []qobuzAlbumDetails `json:"items"`
+		} `json:"albums"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&albumResp); err != nil {
+		return nil, err
+	}
+
+	return selectQobuzTracksFromAlbumSearchResults(
+		query,
+		limit,
+		albumResp.Albums.Items,
+		q.getAlbumDetails,
+	)
 }
 
 func extractQobuzTrackIDsFromStoreSearchHTML(body []byte) []int64 {
@@ -1741,9 +1971,18 @@ func (q *QobuzDownloader) searchQobuzTracksWithFallback(query string, limit int)
 		if len(apiTracks) > 0 {
 			return apiTracks, nil
 		}
-		GoLog("[Qobuz] API search returned 0 results for '%s', trying store fallback\n", query)
+		GoLog("[Qobuz] API search returned 0 results for '%s', trying album-search fallback\n", query)
 	} else {
-		GoLog("[Qobuz] API search failed for '%s': %v. Trying store fallback.\n", query, apiErr)
+		GoLog("[Qobuz] API search failed for '%s': %v. Trying album-search fallback.\n", query, apiErr)
+	}
+
+	albumTracks, albumErr := q.searchQobuzTracksViaAlbumSearch(query, limit)
+	if albumErr == nil && len(albumTracks) > 0 {
+		GoLog("[Qobuz] Album-search fallback returned %d candidate tracks for '%s'\n", len(albumTracks), query)
+		return albumTracks, nil
+	}
+	if albumErr != nil {
+		GoLog("[Qobuz] Album-search fallback failed for '%s': %v. Trying store fallback.\n", query, albumErr)
 	}
 
 	storeTracks, storeErr := q.searchQobuzTracksViaStore(query, limit)
@@ -1752,10 +1991,21 @@ func (q *QobuzDownloader) searchQobuzTracksWithFallback(query string, limit int)
 		return storeTracks, nil
 	}
 
-	if apiErr != nil && storeErr != nil {
-		return nil, fmt.Errorf("api search failed (%v); store fallback failed (%v)", apiErr, storeErr)
+	if apiErr != nil && albumErr != nil && storeErr != nil {
+		return nil, fmt.Errorf(
+			"api search failed (%v); album-search fallback failed (%v); store fallback failed (%v)",
+			apiErr,
+			albumErr,
+			storeErr,
+		)
+	}
+	if albumErr == nil && len(albumTracks) == 0 && storeErr != nil {
+		return nil, storeErr
 	}
 	if storeErr != nil {
+		if albumErr != nil {
+			return nil, albumErr
+		}
 		return nil, storeErr
 	}
 	return nil, fmt.Errorf("no tracks found for query: %s", query)

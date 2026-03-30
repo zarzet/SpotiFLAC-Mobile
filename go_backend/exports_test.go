@@ -177,3 +177,48 @@ func TestSelectBestReEnrichTrackPrefersCandidateWithReleaseDate(t *testing.T) {
 		t.Fatalf("selected track = %q, want candidate with release date", best.ID)
 	}
 }
+
+func TestBuildReEnrichFFmpegMetadataOmitsEmptyFields(t *testing.T) {
+	req := reEnrichRequest{
+		TrackName:   "Song",
+		ArtistName:  "Artist",
+		AlbumName:   "Album",
+		AlbumArtist: "",
+		ReleaseDate: "",
+		TrackNumber: 0,
+		DiscNumber:  0,
+		ISRC:        "",
+		Genre:       "",
+		Label:       "",
+		Copyright:   "",
+	}
+
+	metadata := buildReEnrichFFmpegMetadata(req, "")
+
+	if metadata["TITLE"] != "Song" {
+		t.Fatalf("title = %q", metadata["TITLE"])
+	}
+	if metadata["ARTIST"] != "Artist" {
+		t.Fatalf("artist = %q", metadata["ARTIST"])
+	}
+	if metadata["ALBUM"] != "Album" {
+		t.Fatalf("album = %q", metadata["ALBUM"])
+	}
+
+	for _, key := range []string{
+		"ALBUMARTIST",
+		"DATE",
+		"TRACKNUMBER",
+		"DISCNUMBER",
+		"ISRC",
+		"GENRE",
+		"ORGANIZATION",
+		"COPYRIGHT",
+		"LYRICS",
+		"UNSYNCEDLYRICS",
+	} {
+		if _, exists := metadata[key]; exists {
+			t.Fatalf("did not expect key %s in metadata: %#v", key, metadata)
+		}
+	}
+}

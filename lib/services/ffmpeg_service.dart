@@ -1691,6 +1691,9 @@ class FFmpegService {
       final key = entry.key.toUpperCase();
       final normalizedKey = key.replaceAll(RegExp(r'[^A-Z0-9]'), '');
       final value = entry.value;
+      if (value.trim().isEmpty) {
+        continue;
+      }
 
       switch (normalizedKey) {
         case 'TITLE':
@@ -1708,12 +1711,16 @@ class FFmpegService {
         case 'TRACKNUMBER':
         case 'TRACK':
         case 'TRCK':
-          id3Map['track'] = value;
+          if (value != '0') {
+            id3Map['track'] = value;
+          }
           break;
         case 'DISCNUMBER':
         case 'DISC':
         case 'TPOS':
-          id3Map['disc'] = value;
+          if (value != '0') {
+            id3Map['disc'] = value;
+          }
           break;
         case 'DATE':
         case 'YEAR':

@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func buildTestQobuzAlbum(id, title, artist string, tracks ...QobuzTrack) *qobuzAlbumDetails {
+	album := &qobuzAlbumDetails{
+		ID:                  id,
+		Title:               title,
+		ReleaseDateOriginal: "2013-05-20",
+		TracksCount:         len(tracks),
+		ProductType:         "album",
+		ReleaseType:         "album",
+	}
+	album.Artist = qobuzArtistRef{ID: 1, Name: artist}
+	album.Artists = []qobuzArtistRef{{ID: 1, Name: artist}}
+	album.Tracks.Items = tracks
+	return album
+}
+
 func TestParseQobuzURL(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -274,6 +289,68 @@ func testQobuzTrack(id int64, title, artist string, duration int) *QobuzTrack {
 	}
 	track.Performer.Name = artist
 	return track
+}
+
+func TestSelectQobuzTracksFromAlbumSearchResultsPrefersMatchingTrack(t *testing.T) {
+	summaries := []qobuzAlbumDetails{
+		{ID: "album-a"},
+		{ID: "album-b"},
+	}
+
+	match := *testQobuzTrack(1, "Get Lucky", "Daft Punk", 369)
+	other := *testQobuzTrack(2, "Fragments of Time", "Daft Punk", 280)
+	fallback := *testQobuzTrack(3, "Da Funk", "Daft Punk", 330)
+
+	albums := map[string]*qobuzAlbumDetails{
+		"album-a": buildTestQobuzAlbum("album-a", "Random Access Memories", "Daft Punk", match, other),
+		"album-b": buildTestQobuzAlbum("album-b", "Homework", "Daft Punk", fallback),
+	}
+
+	tracks, err := selectQobuzTracksFromAlbumSearchResults(
+		"daft punk get lucky",
+		3,
+		summaries,
+		func(id string) (*qobuzAlbumDetails, error) { return albums[id], nil },
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(tracks) == 0 {
+		t.Fatal("expected tracks, got none")
+	}
+	if tracks[0].ID != 1 {
+		t.Fatalf("expected Get Lucky to rank first, got track id %d", tracks[0].ID)
+	}
+}
+
+func TestSelectQobuzTracksFromAlbumSearchResultsDedupesTracks(t *testing.T) {
+	summaries := []qobuzAlbumDetails{
+		{ID: "album-a"},
+		{ID: "album-b"},
+	}
+
+	shared := *testQobuzTrack(42, "Get Lucky", "Daft Punk", 369)
+
+	albums := map[string]*qobuzAlbumDetails{
+		"album-a": buildTestQobuzAlbum("album-a", "Random Access Memories", "Daft Punk", shared),
+		"album-b": buildTestQobuzAlbum("album-b", "Random Access Memories Deluxe", "Daft Punk", shared),
+	}
+
+	tracks, err := selectQobuzTracksFromAlbumSearchResults(
+		"daft punk get lucky",
+		5,
+		summaries,
+		func(id string) (*qobuzAlbumDetails, error) { return albums[id], nil },
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(tracks) != 1 {
+		t.Fatalf("expected 1 deduped track, got %d", len(tracks))
+	}
+	if tracks[0].ID != 42 {
+		t.Fatalf("unexpected deduped track id: %d", tracks[0].ID)
+	}
 }
 
 func TestResolveQobuzTrackForRequestRejectsSongLinkMismatch(t *testing.T) {

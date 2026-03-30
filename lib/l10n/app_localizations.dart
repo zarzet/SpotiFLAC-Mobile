@@ -3478,6 +3478,42 @@ abstract class AppLocalizations {
   /// **'Format'**
   String get libraryFilterFormat;
 
+  /// Filter section - metadata completeness
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata'**
+  String get libraryFilterMetadata;
+
+  /// Filter option - items with complete metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Complete metadata'**
+  String get libraryFilterMetadataComplete;
+
+  /// Filter option - items missing any tracked metadata field
+  ///
+  /// In en, this message translates to:
+  /// **'Missing any metadata'**
+  String get libraryFilterMetadataMissingAny;
+
+  /// Filter option - items missing release year/date
+  ///
+  /// In en, this message translates to:
+  /// **'Missing year'**
+  String get libraryFilterMetadataMissingYear;
+
+  /// Filter option - items missing genre
+  ///
+  /// In en, this message translates to:
+  /// **'Missing genre'**
+  String get libraryFilterMetadataMissingGenre;
+
+  /// Filter option - items missing album artist
+  ///
+  /// In en, this message translates to:
+  /// **'Missing album artist'**
+  String get libraryFilterMetadataMissingAlbumArtist;
+
   /// Filter section - sort order
   ///
   /// In en, this message translates to:
@@ -3495,6 +3531,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Oldest'**
   String get libraryFilterSortOldest;
+
+  /// Sort option - album ascending
+  ///
+  /// In en, this message translates to:
+  /// **'Album (A-Z)'**
+  String get libraryFilterSortAlbumAsc;
+
+  /// Sort option - album descending
+  ///
+  /// In en, this message translates to:
+  /// **'Album (Z-A)'**
+  String get libraryFilterSortAlbumDesc;
+
+  /// Sort option - genre ascending
+  ///
+  /// In en, this message translates to:
+  /// **'Genre (A-Z)'**
+  String get libraryFilterSortGenreAsc;
+
+  /// Sort option - genre descending
+  ///
+  /// In en, this message translates to:
+  /// **'Genre (Z-A)'**
+  String get libraryFilterSortGenreDesc;
 
   /// Relative time - less than a minute ago
   ///
