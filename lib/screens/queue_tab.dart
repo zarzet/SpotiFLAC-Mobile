@@ -4906,6 +4906,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         lowerPath.endsWith('.opus') ||
         lowerPath.endsWith('.ogg');
 
+    final artistTagMode = ref.read(settingsProvider).artistTagMode;
     String? ffmpegResult;
     if (isMp3) {
       ffmpegResult = await FFmpegService.embedMetadataToMp3(
@@ -4924,6 +4925,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         opusPath: ffmpegTarget,
         coverPath: effectiveCoverPath,
         metadata: metadata,
+        artistTagMode: artistTagMode,
       );
     }
 
@@ -4958,11 +4960,13 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   Future<bool> _reEnrichQueueLocalTrack(LocalLibraryItem item) async {
     final durationMs = (item.duration ?? 0) * 1000;
+    final artistTagMode = ref.read(settingsProvider).artistTagMode;
     final request = <String, dynamic>{
       'file_path': item.filePath,
       'cover_url': '',
       'max_quality': true,
       'embed_lyrics': true,
+      'artist_tag_mode': artistTagMode,
       'spotify_id': '',
       'track_name': item.trackName,
       'artist_name': item.artistName,
@@ -5663,6 +5667,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           bitrate: bitrate,
           metadata: metadata,
           coverPath: coverPath,
+          artistTagMode: settings.artistTagMode,
           deleteOriginal: !isSaf,
         );
 

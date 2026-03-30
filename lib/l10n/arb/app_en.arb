@@ -190,6 +190,30 @@
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
+  "optionsArtistTagMode": "Artist Tag Mode",
+  "@optionsArtistTagMode": {
+    "description": "Setting title for how artist metadata is written into files"
+  },
+  "optionsArtistTagModeDescription": "Choose how multiple artists are written into embedded tags.",
+  "@optionsArtistTagModeDescription": {
+    "description": "Bottom-sheet description for artist tag mode setting"
+  },
+  "optionsArtistTagModeJoined": "Single joined value",
+  "@optionsArtistTagModeJoined": {
+    "description": "Artist tag mode option that joins multiple artists into one value"
+  },
+  "optionsArtistTagModeJoinedSubtitle": "Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.",
+  "@optionsArtistTagModeJoinedSubtitle": {
+    "description": "Subtitle for joined artist tag mode"
+  },
+  "optionsArtistTagModeSplitVorbis": "Split tags for FLAC/Opus",
+  "@optionsArtistTagModeSplitVorbis": {
+    "description": "Artist tag mode option that writes repeated ARTIST tags for Vorbis formats"
+  },
+  "optionsArtistTagModeSplitVorbisSubtitle": "Write one artist tag per artist for FLAC and Opus; MP3 and M4A stay joined.",
+  "@optionsArtistTagModeSplitVorbisSubtitle": {
+    "description": "Subtitle for split Vorbis artist tag mode"
+  },
   "optionsConcurrentDownloads": "Concurrent Downloads",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
@@ -2399,6 +2423,15 @@
       }
     }
   },
+  "libraryFilesUnit": "{count, plural, =1{file} other{files}}",
+  "@libraryFilesUnit": {
+    "description": "Unit label for files count during library scanning",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "libraryLastScanned": "Last scanned: {time}",
   "@libraryLastScanned": {
     "description": "Last scan time display",
@@ -2415,6 +2448,10 @@
   "libraryScanning": "Scanning...",
   "@libraryScanning": {
     "description": "Status during scan"
+  },
+  "libraryScanFinalizing": "Finalizing library...",
+  "@libraryScanFinalizing": {
+    "description": "Status shown after file scanning finishes but library persistence is still running"
   },
   "libraryScanProgress": "{progress}% of {total} files",
   "@libraryScanProgress": {

@@ -159,6 +159,27 @@ class AppLocalizationsId extends AppLocalizations {
       'Unduh cover art resolusi tertinggi';
 
   @override
+  String get optionsArtistTagMode => 'Artist Tag Mode';
+
+  @override
+  String get optionsArtistTagModeDescription =>
+      'Choose how multiple artists are written into embedded tags.';
+
+  @override
+  String get optionsArtistTagModeJoined => 'Single joined value';
+
+  @override
+  String get optionsArtistTagModeJoinedSubtitle =>
+      'Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.';
+
+  @override
+  String get optionsArtistTagModeSplitVorbis => 'Split tags for FLAC/Opus';
+
+  @override
+  String get optionsArtistTagModeSplitVorbisSubtitle =>
+      'Write one artist tag per artist for FLAC and Opus; MP3 and M4A stay joined.';
+
+  @override
   String get optionsConcurrentDownloads => 'Unduhan Bersamaan';
 
   @override
@@ -1834,6 +1855,17 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String libraryFilesUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'files',
+      one: 'file',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String libraryLastScanned(String time) {
     return 'Last scanned: $time';
   }
@@ -1843,6 +1875,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get libraryScanning => 'Scanning...';
+
+  @override
+  String get libraryScanFinalizing => 'Finalizing library...';
 
   @override
   String libraryScanProgress(String progress, int total) {

@@ -153,6 +153,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optionsMaxQualityCoverSubtitle => '最高解像度のカバーアートをダウンロード';
 
   @override
+  String get optionsArtistTagMode => 'Artist Tag Mode';
+
+  @override
+  String get optionsArtistTagModeDescription =>
+      'Choose how multiple artists are written into embedded tags.';
+
+  @override
+  String get optionsArtistTagModeJoined => 'Single joined value';
+
+  @override
+  String get optionsArtistTagModeJoinedSubtitle =>
+      'Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.';
+
+  @override
+  String get optionsArtistTagModeSplitVorbis => 'Split tags for FLAC/Opus';
+
+  @override
+  String get optionsArtistTagModeSplitVorbisSubtitle =>
+      'Write one artist tag per artist for FLAC and Opus; MP3 and M4A stay joined.';
+
+  @override
   String get optionsConcurrentDownloads => '同時ダウンロード';
 
   @override
@@ -1811,6 +1832,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String libraryFilesUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'files',
+      one: 'file',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String libraryLastScanned(String time) {
     return '最終スキャン: $time';
   }
@@ -1820,6 +1852,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get libraryScanning => 'スキャン中...';
+
+  @override
+  String get libraryScanFinalizing => 'Finalizing library...';
 
   @override
   String libraryScanProgress(String progress, int total) {

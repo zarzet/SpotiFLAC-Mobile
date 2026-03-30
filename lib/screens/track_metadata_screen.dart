@@ -1838,6 +1838,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           }
         } catch (_) {}
 
+        final artistTagMode = ref.read(settingsProvider).artistTagMode;
         String? ffmpegResult;
         if (isMp3) {
           ffmpegResult = await FFmpegService.embedMetadataToMp3(
@@ -1856,6 +1857,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             opusPath: workingPath,
             coverPath: coverPath,
             metadata: metadata,
+            artistTagMode: artistTagMode,
           );
         }
 
@@ -2228,6 +2230,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     if (!_fileExists) return;
 
     try {
+      final artistTagMode = ref.read(settingsProvider).artistTagMode;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.trackReEnrichSearching)),
       );
@@ -2238,6 +2241,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         'cover_url': _coverUrl ?? '',
         'max_quality': true,
         'embed_lyrics': true,
+        'artist_tag_mode': artistTagMode,
         'spotify_id': _spotifyId ?? '',
         'track_name': trackName,
         'artist_name': artistName,
@@ -2340,6 +2344,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             opusPath: ffmpegTarget,
             coverPath: effectiveCoverPath,
             metadata: metadata,
+            artistTagMode: artistTagMode,
           );
         }
 
@@ -3554,6 +3559,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         bitrate: bitrate,
         metadata: metadata,
         coverPath: coverPath,
+        artistTagMode: ref.read(settingsProvider).artistTagMode,
         deleteOriginal: !isSaf,
       );
 
@@ -3768,6 +3774,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         initialValues: initialValues,
         filePath: cleanFilePath,
         sourceTrackId: _spotifyId,
+        artistTagMode: ref.read(settingsProvider).artistTagMode,
       ),
     );
 
@@ -3989,12 +3996,14 @@ class _EditMetadataSheet extends StatefulWidget {
   final Map<String, String> initialValues;
   final String filePath;
   final String? sourceTrackId;
+  final String artistTagMode;
 
   const _EditMetadataSheet({
     required this.colorScheme,
     required this.initialValues,
     required this.filePath,
     this.sourceTrackId,
+    required this.artistTagMode,
   });
 
   @override
@@ -4875,6 +4884,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       'composer': _composerCtrl.text,
       'comment': _commentCtrl.text,
       'cover_path': _selectedCoverPath ?? '',
+      'artist_tag_mode': widget.artistTagMode,
     };
 
     try {
@@ -5005,6 +5015,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
             opusPath: ffmpegTarget,
             coverPath: existingCoverPath,
             metadata: vorbisMap,
+            artistTagMode: widget.artistTagMode,
           );
         }
 

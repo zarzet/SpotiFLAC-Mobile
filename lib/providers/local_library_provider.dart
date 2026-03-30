@@ -20,6 +20,7 @@ final _prefs = SharedPreferences.getInstance();
 class LocalLibraryState {
   final List<LocalLibraryItem> items;
   final bool isScanning;
+  final bool scanIsFinalizing;
   final double scanProgress;
   final String? scanCurrentFile;
   final int scanTotalFiles;
@@ -35,6 +36,7 @@ class LocalLibraryState {
   LocalLibraryState({
     this.items = const [],
     this.isScanning = false,
+    this.scanIsFinalizing = false,
     this.scanProgress = 0,
     this.scanCurrentFile,
     this.scanTotalFiles = 0,
@@ -85,6 +87,7 @@ class LocalLibraryState {
   LocalLibraryState copyWith({
     List<LocalLibraryItem>? items,
     bool? isScanning,
+    bool? scanIsFinalizing,
     double? scanProgress,
     String? scanCurrentFile,
     int? scanTotalFiles,
@@ -100,6 +103,7 @@ class LocalLibraryState {
     return LocalLibraryState(
       items: nextItems,
       isScanning: isScanning ?? this.isScanning,
+      scanIsFinalizing: scanIsFinalizing ?? this.scanIsFinalizing,
       scanProgress: scanProgress ?? this.scanProgress,
       scanCurrentFile: scanCurrentFile ?? this.scanCurrentFile,
       scanTotalFiles: scanTotalFiles ?? this.scanTotalFiles,
@@ -120,7 +124,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   final LibraryDatabase _db = LibraryDatabase.instance;
   final HistoryDatabase _historyDb = HistoryDatabase.instance;
   final NotificationService _notificationService = NotificationService();
-  static const _progressPollingInterval = Duration(milliseconds: 1200);
+  static const _progressPollingInterval = Duration(milliseconds: 350);
+  static const _progressStreamBootstrapTimeout = Duration(milliseconds: 900);
   Timer? _progressTimer;
   Timer? _progressStreamBootstrapTimer;
   StreamSubscription<Map<String, dynamic>>? _progressStreamSub;
@@ -220,6 +225,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     );
     state = state.copyWith(
       isScanning: true,
+      scanIsFinalizing: false,
       scanProgress: 0,
       scanCurrentFile: null,
       scanTotalFiles: 0,
@@ -297,10 +303,20 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             ? await PlatformBridge.scanSafTree(effectiveFolderPath)
             : await PlatformBridge.scanLibraryFolder(effectiveFolderPath);
         if (_scanCancelRequested) {
-          state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          state = state.copyWith(
+            isScanning: false,
+            scanIsFinalizing: false,
+            scanWasCancelled: true,
+          );
           await _showScanCancelledNotification();
           return;
         }
+
+        state = state.copyWith(
+          scanIsFinalizing: true,
+          scanProgress: state.scanProgress >= 99 ? state.scanProgress : 99,
+          scanCurrentFile: null,
+        );
 
         final items = <LocalLibraryItem>[];
         int skippedDownloads = 0;
@@ -334,6 +350,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         state = state.copyWith(
           items: persistedItems,
           isScanning: false,
+          scanIsFinalizing: false,
           scanProgress: 100,
           lastScannedAt: now,
           scanWasCancelled: false,
@@ -404,10 +421,20 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         }
 
         if (_scanCancelRequested) {
-          state = state.copyWith(isScanning: false, scanWasCancelled: true);
+          state = state.copyWith(
+            isScanning: false,
+            scanIsFinalizing: false,
+            scanWasCancelled: true,
+          );
           await _showScanCancelledNotification();
           return;
         }
+
+        state = state.copyWith(
+          scanIsFinalizing: true,
+          scanProgress: state.scanProgress >= 99 ? state.scanProgress : 99,
+          scanCurrentFile: null,
+        );
 
         final scannedList =
             (result['files'] as List<dynamic>?) ??
@@ -498,6 +525,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         state = state.copyWith(
           items: items,
           isScanning: false,
+          scanIsFinalizing: false,
           scanProgress: 100,
           lastScannedAt: now,
           scanWasCancelled: false,
@@ -517,7 +545,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       }
     } catch (e, stack) {
       _log.e('Library scan failed: $e', e, stack);
-      state = state.copyWith(isScanning: false, scanWasCancelled: false);
+      state = state.copyWith(
+        isScanning: false,
+        scanIsFinalizing: false,
+        scanWasCancelled: false,
+      );
       await _showScanFailedNotification(e.toString());
     } finally {
       if (didStartSecurityAccess) {
@@ -574,16 +606,21 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         cancelOnError: false,
       );
 
-      _progressStreamBootstrapTimer = Timer(const Duration(seconds: 3), () {
-        if (_hasReceivedProgressStreamEvent) {
-          return;
-        }
-        _log.w('Library scan progress stream timeout, fallback to polling');
-        _progressStreamSub?.cancel();
-        _progressStreamSub = null;
-        _usingProgressStream = false;
-        _startProgressPollingTimer();
-      });
+      Future<void>.microtask(_requestProgressSnapshot);
+
+      _progressStreamBootstrapTimer = Timer(
+        _progressStreamBootstrapTimeout,
+        () {
+          if (_hasReceivedProgressStreamEvent) {
+            return;
+          }
+          _log.w('Library scan progress stream timeout, fallback to polling');
+          _progressStreamSub?.cancel();
+          _progressStreamSub = null;
+          _usingProgressStream = false;
+          _startProgressPollingTimer();
+        },
+      );
       return;
     }
 
@@ -610,20 +647,41 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     });
   }
 
+  Future<void> _requestProgressSnapshot() async {
+    if (_isProgressPollingInFlight) return;
+    _isProgressPollingInFlight = true;
+    try {
+      final progress = await PlatformBridge.getLibraryScanProgress();
+      await _handleLibraryScanProgress(progress);
+      _progressPollingErrorCount = 0;
+    } catch (e) {
+      _progressPollingErrorCount++;
+      if (_progressPollingErrorCount <= 3) {
+        _log.w('Initial library scan progress fetch failed: $e');
+      }
+    } finally {
+      _isProgressPollingInFlight = false;
+    }
+  }
+
   Future<void> _handleLibraryScanProgress(Map<String, dynamic> progress) async {
     final nextProgress = (progress['progress_pct'] as num?)?.toDouble() ?? 0;
     final normalizedProgress = ((nextProgress * 10).round() / 10).clamp(
       0.0,
       100.0,
     );
+    final isComplete = progress['is_complete'] == true;
+    final displayProgress = isComplete
+        ? 99.0
+        : (normalizedProgress >= 100.0 ? 99.0 : normalizedProgress);
     final currentFile = progress['current_file'] as String?;
     final totalFiles = (progress['total_files'] as num?)?.toInt() ?? 0;
     final scannedFiles = (progress['scanned_files'] as num?)?.toInt() ?? 0;
     final errorCount = (progress['error_count'] as num?)?.toInt() ?? 0;
-    final isComplete = progress['is_complete'] == true;
 
     final shouldUpdateState =
-        state.scanProgress != normalizedProgress ||
+        state.scanProgress != displayProgress ||
+        state.scanIsFinalizing != isComplete ||
         state.scanCurrentFile != currentFile ||
         state.scanTotalFiles != totalFiles ||
         state.scannedFiles != scannedFiles ||
@@ -631,8 +689,9 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
     if (shouldUpdateState) {
       state = state.copyWith(
-        scanProgress: normalizedProgress,
-        scanCurrentFile: currentFile,
+        scanIsFinalizing: isComplete,
+        scanProgress: displayProgress,
+        scanCurrentFile: isComplete ? null : currentFile,
         scanTotalFiles: totalFiles,
         scannedFiles: scannedFiles,
         scanErrorCount: errorCount,
@@ -705,7 +764,11 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     _log.i('Cancelling library scan');
     _scanCancelRequested = true;
     await PlatformBridge.cancelLibraryScan();
-    state = state.copyWith(isScanning: false, scanWasCancelled: true);
+    state = state.copyWith(
+      isScanning: false,
+      scanIsFinalizing: false,
+      scanWasCancelled: true,
+    );
     _stopProgressPolling();
     await _showScanCancelledNotification();
   }

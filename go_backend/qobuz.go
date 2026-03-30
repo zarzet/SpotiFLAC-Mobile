@@ -2585,18 +2585,19 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	}
 
 	metadata := Metadata{
-		Title:       track.Title,
-		Artist:      track.Performer.Name,
-		Album:       albumName,
-		AlbumArtist: req.AlbumArtist,
-		Date:        releaseDate,
-		TrackNumber: actualTrackNumber,
-		TotalTracks: req.TotalTracks,
-		DiscNumber:  req.DiscNumber,
-		ISRC:        track.ISRC,
-		Genre:       req.Genre,
-		Label:       req.Label,
-		Copyright:   req.Copyright,
+		Title:         track.Title,
+		Artist:        req.ArtistName,
+		Album:         albumName,
+		AlbumArtist:   req.AlbumArtist,
+		ArtistTagMode: req.ArtistTagMode,
+		Date:          releaseDate,
+		TrackNumber:   actualTrackNumber,
+		TotalTracks:   req.TotalTracks,
+		DiscNumber:    req.DiscNumber,
+		ISRC:          track.ISRC,
+		Genre:         req.Genre,
+		Label:         req.Label,
+		Copyright:     req.Copyright,
 	}
 
 	var coverData []byte

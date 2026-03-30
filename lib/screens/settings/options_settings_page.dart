@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
-import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
+import 'package:spotiflac_android/utils/artist_utils.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
 class OptionsSettingsPage extends ConsumerWidget {
@@ -115,7 +116,22 @@ class OptionsSettingsPage extends ConsumerWidget {
                     value: settings.embedMetadata,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setEmbedMetadata(v),
+                    showDivider: settings.embedMetadata,
                   ),
+                  if (settings.embedMetadata)
+                    SettingsItem(
+                      icon: Icons.people_alt_outlined,
+                      title: context.l10n.optionsArtistTagMode,
+                      subtitle: _getArtistTagModeLabel(
+                        context,
+                        settings.artistTagMode,
+                      ),
+                      onTap: () => _showArtistTagModePicker(
+                        context,
+                        ref,
+                        settings.artistTagMode,
+                      ),
+                    ),
                   SettingsSwitchItem(
                     icon: Icons.image,
                     title: context.l10n.optionsMaxQualityCover,
@@ -230,6 +246,88 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getArtistTagModeLabel(BuildContext context, String mode) {
+    switch (mode) {
+      case artistTagModeSplitVorbis:
+        return context.l10n.optionsArtistTagModeSplitVorbis;
+      default:
+        return context.l10n.optionsArtistTagModeJoined;
+    }
+  }
+
+  void _showArtistTagModePicker(
+    BuildContext context,
+    WidgetRef ref,
+    String currentMode,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Text(
+                context.l10n.optionsArtistTagMode,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                context.l10n.optionsArtistTagModeDescription,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.segment_outlined),
+              title: Text(context.l10n.optionsArtistTagModeJoined),
+              subtitle: Text(context.l10n.optionsArtistTagModeJoinedSubtitle),
+              trailing: currentMode == artistTagModeJoined
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref
+                    .read(settingsProvider.notifier)
+                    .setArtistTagMode(artistTagModeJoined);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.library_music_outlined),
+              title: Text(context.l10n.optionsArtistTagModeSplitVorbis),
+              subtitle: Text(
+                context.l10n.optionsArtistTagModeSplitVorbisSubtitle,
+              ),
+              trailing: currentMode == artistTagModeSplitVorbis
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () {
+                ref
+                    .read(settingsProvider.notifier)
+                    .setArtistTagMode(artistTagModeSplitVorbis);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

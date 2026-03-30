@@ -11,6 +11,7 @@ class DownloadRequestPayload {
   final String filenameFormat;
   final String quality;
   final bool embedMetadata;
+  final String artistTagMode;
   final bool embedLyrics;
   final bool embedMaxQualityCover;
   final int trackNumber;
@@ -49,6 +50,7 @@ class DownloadRequestPayload {
     required this.filenameFormat,
     this.quality = 'LOSSLESS',
     this.embedMetadata = true,
+    this.artistTagMode = 'joined',
     this.embedLyrics = true,
     this.embedMaxQualityCover = true,
     this.trackNumber = 1,
@@ -89,6 +91,7 @@ class DownloadRequestPayload {
       'filename_format': filenameFormat,
       'quality': quality,
       'embed_metadata': embedMetadata,
+      'artist_tag_mode': artistTagMode,
       'embed_lyrics': embedLyrics,
       'embed_max_quality_cover': embedMaxQualityCover,
       'track_number': trackNumber,
@@ -133,6 +136,7 @@ class DownloadRequestPayload {
       filenameFormat: filenameFormat,
       quality: quality,
       embedMetadata: embedMetadata,
+      artistTagMode: artistTagMode,
       embedLyrics: embedLyrics,
       embedMaxQualityCover: embedMaxQualityCover,
       trackNumber: trackNumber,

@@ -41,7 +41,8 @@ class MainActivity: FlutterFragmentActivity() {
         "com.zarz.spotiflac/download_progress_stream"
     private val LIBRARY_SCAN_PROGRESS_STREAM_CHANNEL =
         "com.zarz.spotiflac/library_scan_progress_stream"
-    private val STREAM_POLLING_INTERVAL_MS = 1200L
+    private val DOWNLOAD_PROGRESS_STREAM_POLLING_INTERVAL_MS = 1200L
+    private val LIBRARY_SCAN_PROGRESS_STREAM_POLLING_INTERVAL_MS = 200L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingSafTreeResult: MethodChannel.Result? = null
     private val safScanLock = Any()
@@ -455,7 +456,7 @@ class MainActivity: FlutterFragmentActivity() {
                         "Download progress stream poll failed: ${e.message}",
                     )
                 }
-                delay(STREAM_POLLING_INTERVAL_MS)
+                delay(DOWNLOAD_PROGRESS_STREAM_POLLING_INTERVAL_MS)
             }
         }
     }
@@ -472,6 +473,18 @@ class MainActivity: FlutterFragmentActivity() {
         libraryScanProgressEventSink = sink
         lastLibraryScanProgressPayload = null
         libraryScanProgressStreamJob = scope.launch {
+            try {
+                val initialPayload = withContext(Dispatchers.IO) {
+                    readLibraryScanProgressJsonForStream()
+                }
+                lastLibraryScanProgressPayload = initialPayload
+                sink.success(parseJsonPayload(initialPayload))
+            } catch (e: Exception) {
+                android.util.Log.w(
+                    "SpotiFLAC",
+                    "Library scan progress initial poll failed: ${e.message}",
+                )
+            }
             while (isActive && libraryScanProgressEventSink === sink) {
                 try {
                     val payload = withContext(Dispatchers.IO) {
@@ -487,7 +500,7 @@ class MainActivity: FlutterFragmentActivity() {
                         "Library scan progress stream poll failed: ${e.message}",
                     )
                 }
-                delay(STREAM_POLLING_INTERVAL_MS)
+                delay(LIBRARY_SCAN_PROGRESS_STREAM_POLLING_INTERVAL_MS)
             }
         }
     }

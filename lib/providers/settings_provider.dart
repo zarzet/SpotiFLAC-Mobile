@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/utils/artist_utils.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -258,6 +259,13 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setEmbedMetadata(bool enabled) {
     state = state.copyWith(embedMetadata: enabled);
     _saveSettings();
+  }
+
+  void setArtistTagMode(String mode) {
+    if (mode == artistTagModeJoined || mode == artistTagModeSplitVorbis) {
+      state = state.copyWith(artistTagMode: mode);
+      _saveSettings();
+    }
   }
 
   void setLyricsMode(String mode) {

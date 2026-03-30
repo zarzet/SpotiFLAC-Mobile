@@ -400,6 +400,42 @@ abstract class AppLocalizations {
   /// **'Download highest resolution cover art'**
   String get optionsMaxQualityCoverSubtitle;
 
+  /// Setting title for how artist metadata is written into files
+  ///
+  /// In en, this message translates to:
+  /// **'Artist Tag Mode'**
+  String get optionsArtistTagMode;
+
+  /// Bottom-sheet description for artist tag mode setting
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how multiple artists are written into embedded tags.'**
+  String get optionsArtistTagModeDescription;
+
+  /// Artist tag mode option that joins multiple artists into one value
+  ///
+  /// In en, this message translates to:
+  /// **'Single joined value'**
+  String get optionsArtistTagModeJoined;
+
+  /// Subtitle for joined artist tag mode
+  ///
+  /// In en, this message translates to:
+  /// **'Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.'**
+  String get optionsArtistTagModeJoinedSubtitle;
+
+  /// Artist tag mode option that writes repeated ARTIST tags for Vorbis formats
+  ///
+  /// In en, this message translates to:
+  /// **'Split tags for FLAC/Opus'**
+  String get optionsArtistTagModeSplitVorbis;
+
+  /// Subtitle for split Vorbis artist tag mode
+  ///
+  /// In en, this message translates to:
+  /// **'Write one artist tag per artist for FLAC and Opus; MP3 and M4A stay joined.'**
+  String get optionsArtistTagModeSplitVorbisSubtitle;
+
   /// Number of parallel downloads
   ///
   /// In en, this message translates to:
@@ -3334,6 +3370,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{track} other{tracks}}'**
   String libraryTracksUnit(int count);
 
+  /// Unit label for files count during library scanning
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{file} other{files}}'**
+  String libraryFilesUnit(int count);
+
   /// Last scan time display
   ///
   /// In en, this message translates to:
@@ -3351,6 +3393,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scanning...'**
   String get libraryScanning;
+
+  /// Status shown after file scanning finishes but library persistence is still running
+  ///
+  /// In en, this message translates to:
+  /// **'Finalizing library...'**
+  String get libraryScanFinalizing;
 
   /// Scan progress display
   ///

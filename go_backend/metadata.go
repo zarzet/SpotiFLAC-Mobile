@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,10 @@ import (
 	"github.com/go-flac/flacvorbis/v2"
 	"github.com/go-flac/go-flac/v2"
 )
+
+const artistTagModeSplitVorbis = "split_vorbis"
+
+var artistTagSplitPattern = regexp.MustCompile(`\s*(?:,|&|\bx\b)\s*|\s+\b(?:feat(?:uring)?|ft|with)\.?\s*`)
 
 func detectCoverMIME(coverPath string, coverData []byte) string {
 	// Prefer magic-byte detection over file extension.
@@ -96,22 +101,23 @@ func buildPictureBlock(coverPath string, coverData []byte) (flac.MetaDataBlock, 
 }
 
 type Metadata struct {
-	Title       string
-	Artist      string
-	Album       string
-	AlbumArtist string
-	Date        string
-	TrackNumber int
-	TotalTracks int
-	DiscNumber  int
-	ISRC        string
-	Description string
-	Lyrics      string
-	Genre       string
-	Label       string
-	Copyright   string
-	Composer    string
-	Comment     string
+	Title         string
+	Artist        string
+	Album         string
+	AlbumArtist   string
+	ArtistTagMode string
+	Date          string
+	TrackNumber   int
+	TotalTracks   int
+	DiscNumber    int
+	ISRC          string
+	Description   string
+	Lyrics        string
+	Genre         string
+	Label         string
+	Copyright     string
+	Composer      string
+	Comment       string
 }
 
 func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
@@ -139,9 +145,14 @@ func EmbedMetadata(filePath string, metadata Metadata, coverPath string) error {
 	}
 
 	setComment(cmt, "TITLE", metadata.Title)
-	setComment(cmt, "ARTIST", metadata.Artist)
+	setArtistComments(cmt, "ARTIST", metadata.Artist, metadata.ArtistTagMode)
 	setComment(cmt, "ALBUM", metadata.Album)
-	setComment(cmt, "ALBUMARTIST", metadata.AlbumArtist)
+	setArtistComments(
+		cmt,
+		"ALBUMARTIST",
+		metadata.AlbumArtist,
+		metadata.ArtistTagMode,
+	)
 	setComment(cmt, "DATE", metadata.Date)
 
 	if metadata.TrackNumber > 0 {
@@ -248,9 +259,14 @@ func EmbedMetadataWithCoverData(filePath string, metadata Metadata, coverData []
 	}
 
 	setComment(cmt, "TITLE", metadata.Title)
-	setComment(cmt, "ARTIST", metadata.Artist)
+	setArtistComments(cmt, "ARTIST", metadata.Artist, metadata.ArtistTagMode)
 	setComment(cmt, "ALBUM", metadata.Album)
-	setComment(cmt, "ALBUMARTIST", metadata.AlbumArtist)
+	setArtistComments(
+		cmt,
+		"ALBUMARTIST",
+		metadata.AlbumArtist,
+		metadata.ArtistTagMode,
+	)
 	setComment(cmt, "DATE", metadata.Date)
 
 	if metadata.TrackNumber > 0 {
@@ -339,9 +355,9 @@ func ReadMetadata(filePath string) (*Metadata, error) {
 			}
 
 			metadata.Title = getComment(cmt, "TITLE")
-			metadata.Artist = getComment(cmt, "ARTIST")
+			metadata.Artist = getJoinedComment(cmt, "ARTIST")
 			metadata.Album = getComment(cmt, "ALBUM")
-			metadata.AlbumArtist = getComment(cmt, "ALBUMARTIST")
+			metadata.AlbumArtist = getJoinedComment(cmt, "ALBUMARTIST")
 			metadata.Date = getComment(cmt, "DATE")
 			metadata.ISRC = getComment(cmt, "ISRC")
 			metadata.Description = getComment(cmt, "DESCRIPTION")
@@ -394,6 +410,28 @@ func setComment(cmt *flacvorbis.MetaDataBlockVorbisComment, key, value string) {
 	if value == "" {
 		return
 	}
+	removeCommentKey(cmt, key)
+	cmt.Comments = append(cmt.Comments, key+"="+value)
+}
+
+func setArtistComments(cmt *flacvorbis.MetaDataBlockVorbisComment, key, value, mode string) {
+	values := []string{value}
+	if shouldSplitVorbisArtistTags(mode) {
+		values = splitArtistTagValues(value)
+	}
+	if len(values) == 0 {
+		return
+	}
+	removeCommentKey(cmt, key)
+	for _, artist := range values {
+		if strings.TrimSpace(artist) == "" {
+			continue
+		}
+		cmt.Comments = append(cmt.Comments, key+"="+artist)
+	}
+}
+
+func removeCommentKey(cmt *flacvorbis.MetaDataBlockVorbisComment, key string) {
 	keyUpper := strings.ToUpper(key)
 	for i := len(cmt.Comments) - 1; i >= 0; i-- {
 		comment := cmt.Comments[i]
@@ -405,20 +443,85 @@ func setComment(cmt *flacvorbis.MetaDataBlockVorbisComment, key, value string) {
 			}
 		}
 	}
-	cmt.Comments = append(cmt.Comments, key+"="+value)
 }
 
 func getComment(cmt *flacvorbis.MetaDataBlockVorbisComment, key string) string {
+	values := getCommentValues(cmt, key)
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+func getJoinedComment(cmt *flacvorbis.MetaDataBlockVorbisComment, key string) string {
+	return joinVorbisCommentValues(getCommentValues(cmt, key))
+}
+
+func getCommentValues(cmt *flacvorbis.MetaDataBlockVorbisComment, key string) []string {
 	keyUpper := strings.ToUpper(key) + "="
+	values := make([]string, 0, 1)
 	for _, comment := range cmt.Comments {
 		if len(comment) > len(key) {
 			commentUpper := strings.ToUpper(comment[:len(key)+1])
 			if commentUpper == keyUpper {
-				return comment[len(key)+1:]
+				values = append(values, comment[len(key)+1:])
 			}
 		}
 	}
-	return ""
+	return values
+}
+
+func shouldSplitVorbisArtistTags(mode string) bool {
+	return strings.EqualFold(strings.TrimSpace(mode), artistTagModeSplitVorbis)
+}
+
+func splitArtistTagValues(rawArtists string) []string {
+	trimmed := strings.TrimSpace(rawArtists)
+	if trimmed == "" {
+		return nil
+	}
+
+	parts := artistTagSplitPattern.Split(trimmed, -1)
+	values := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		artist := strings.TrimSpace(part)
+		if artist == "" {
+			continue
+		}
+		key := strings.ToLower(artist)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		values = append(values, artist)
+	}
+	if len(values) > 0 {
+		return values
+	}
+	return []string{trimmed}
+}
+
+func joinVorbisCommentValues(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+
+	joined := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		joined = append(joined, trimmed)
+	}
+	return strings.Join(joined, ", ")
 }
 
 func fileExists(path string) bool {

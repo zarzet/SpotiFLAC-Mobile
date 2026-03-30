@@ -49,6 +49,7 @@ type DownloadRequest struct {
 	FilenameFormat       string `json:"filename_format"`
 	Quality              string `json:"quality"`
 	EmbedMetadata        bool   `json:"embed_metadata"`
+	ArtistTagMode        string `json:"artist_tag_mode,omitempty"`
 	EmbedLyrics          bool   `json:"embed_lyrics"`
 	EmbedMaxQualityCover bool   `json:"embed_max_quality_cover"`
 	TrackNumber          int    `json:"track_number"`
@@ -117,24 +118,25 @@ type DownloadResult struct {
 }
 
 type reEnrichRequest struct {
-	FilePath     string `json:"file_path"`
-	CoverURL     string `json:"cover_url"`
-	MaxQuality   bool   `json:"max_quality"`
-	EmbedLyrics  bool   `json:"embed_lyrics"`
-	SpotifyID    string `json:"spotify_id"`
-	TrackName    string `json:"track_name"`
-	ArtistName   string `json:"artist_name"`
-	AlbumName    string `json:"album_name"`
-	AlbumArtist  string `json:"album_artist"`
-	TrackNumber  int    `json:"track_number"`
-	DiscNumber   int    `json:"disc_number"`
-	ReleaseDate  string `json:"release_date"`
-	ISRC         string `json:"isrc"`
-	Genre        string `json:"genre"`
-	Label        string `json:"label"`
-	Copyright    string `json:"copyright"`
-	DurationMs   int64  `json:"duration_ms"`
-	SearchOnline bool   `json:"search_online"`
+	FilePath      string `json:"file_path"`
+	CoverURL      string `json:"cover_url"`
+	MaxQuality    bool   `json:"max_quality"`
+	EmbedLyrics   bool   `json:"embed_lyrics"`
+	ArtistTagMode string `json:"artist_tag_mode,omitempty"`
+	SpotifyID     string `json:"spotify_id"`
+	TrackName     string `json:"track_name"`
+	ArtistName    string `json:"artist_name"`
+	AlbumName     string `json:"album_name"`
+	AlbumArtist   string `json:"album_artist"`
+	TrackNumber   int    `json:"track_number"`
+	DiscNumber    int    `json:"disc_number"`
+	ReleaseDate   string `json:"release_date"`
+	ISRC          string `json:"isrc"`
+	Genre         string `json:"genre"`
+	Label         string `json:"label"`
+	Copyright     string `json:"copyright"`
+	DurationMs    int64  `json:"duration_ms"`
+	SearchOnline  bool   `json:"search_online"`
 }
 
 func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
@@ -191,12 +193,13 @@ func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
 
 func reEnrichDownloadRequest(req reEnrichRequest) DownloadRequest {
 	return DownloadRequest{
-		TrackName:   req.TrackName,
-		ArtistName:  req.ArtistName,
-		AlbumName:   req.AlbumName,
-		ReleaseDate: req.ReleaseDate,
-		ISRC:        req.ISRC,
-		DurationMS:  int(req.DurationMs),
+		TrackName:     req.TrackName,
+		ArtistName:    req.ArtistName,
+		AlbumName:     req.AlbumName,
+		ReleaseDate:   req.ReleaseDate,
+		ISRC:          req.ISRC,
+		DurationMS:    int(req.DurationMs),
+		ArtistTagMode: req.ArtistTagMode,
 	}
 }
 
@@ -1195,19 +1198,20 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 		}
 
 		meta := Metadata{
-			Title:       fields["title"],
-			Artist:      fields["artist"],
-			Album:       fields["album"],
-			AlbumArtist: fields["album_artist"],
-			Date:        fields["date"],
-			TrackNumber: trackNum,
-			DiscNumber:  discNum,
-			ISRC:        fields["isrc"],
-			Genre:       fields["genre"],
-			Label:       fields["label"],
-			Copyright:   fields["copyright"],
-			Composer:    fields["composer"],
-			Comment:     fields["comment"],
+			Title:         fields["title"],
+			Artist:        fields["artist"],
+			Album:         fields["album"],
+			AlbumArtist:   fields["album_artist"],
+			ArtistTagMode: fields["artist_tag_mode"],
+			Date:          fields["date"],
+			TrackNumber:   trackNum,
+			DiscNumber:    discNum,
+			ISRC:          fields["isrc"],
+			Genre:         fields["genre"],
+			Label:         fields["label"],
+			Copyright:     fields["copyright"],
+			Composer:      fields["composer"],
+			Comment:       fields["comment"],
 		}
 
 		if err := EmbedMetadata(filePath, meta, coverPath); err != nil {
@@ -2210,18 +2214,19 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	if isFlac {
 		// Native Go FLAC metadata embedding
 		metadata := Metadata{
-			Title:       req.TrackName,
-			Artist:      req.ArtistName,
-			Album:       req.AlbumName,
-			AlbumArtist: req.AlbumArtist,
-			Date:        req.ReleaseDate,
-			TrackNumber: req.TrackNumber,
-			DiscNumber:  req.DiscNumber,
-			ISRC:        req.ISRC,
-			Genre:       req.Genre,
-			Label:       req.Label,
-			Copyright:   req.Copyright,
-			Lyrics:      lyricsLRC,
+			Title:         req.TrackName,
+			Artist:        req.ArtistName,
+			Album:         req.AlbumName,
+			AlbumArtist:   req.AlbumArtist,
+			ArtistTagMode: req.ArtistTagMode,
+			Date:          req.ReleaseDate,
+			TrackNumber:   req.TrackNumber,
+			DiscNumber:    req.DiscNumber,
+			ISRC:          req.ISRC,
+			Genre:         req.Genre,
+			Label:         req.Label,
+			Copyright:     req.Copyright,
+			Lyrics:        lyricsLRC,
 		}
 
 		if len(coverDataBytes) > 0 {

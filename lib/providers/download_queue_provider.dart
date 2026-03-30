@@ -2996,6 +2996,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             ? coverPath
             : null,
         metadata: metadata,
+        artistTagMode: settings.artistTagMode,
       );
 
       if (result != null) {
@@ -3328,6 +3329,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             ? coverPath
             : null,
         metadata: metadata,
+        artistTagMode: settings.artistTagMode,
       );
 
       if (result != null) {
@@ -4215,6 +4217,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           filenameFormat: state.filenameFormat,
           quality: quality,
           embedMetadata: metadataEmbeddingEnabled,
+          artistTagMode: settings.artistTagMode,
           embedLyrics: metadataEmbeddingEnabled && settings.embedLyrics,
           embedMaxQualityCover:
               metadataEmbeddingEnabled && settings.maxQualityCover,

@@ -392,6 +392,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               itemCount: libraryState.items.length,
               excludedDownloadedCount: libraryState.excludedDownloadedCount,
               isScanning: libraryState.isScanning,
+              scanIsFinalizing: libraryState.scanIsFinalizing,
               scanProgress: libraryState.scanProgress,
               scanCurrentFile: libraryState.scanCurrentFile,
               scanTotalFiles: libraryState.scanTotalFiles,
@@ -528,8 +529,10 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
                 children: [
                   if (libraryState.isScanning)
                     _ScanProgressTile(
+                      isFinalizing: libraryState.scanIsFinalizing,
                       progress: libraryState.scanProgress,
                       currentFile: libraryState.scanCurrentFile,
+                      scannedFiles: libraryState.scannedFiles,
                       totalFiles: libraryState.scanTotalFiles,
                       onCancel: _cancelScan,
                     )
@@ -646,6 +649,7 @@ class _LibraryHeroCard extends StatelessWidget {
   final int itemCount;
   final int excludedDownloadedCount;
   final bool isScanning;
+  final bool scanIsFinalizing;
   final double scanProgress;
   final String? scanCurrentFile;
   final int scanTotalFiles;
@@ -656,6 +660,7 @@ class _LibraryHeroCard extends StatelessWidget {
     required this.itemCount,
     required this.excludedDownloadedCount,
     required this.isScanning,
+    required this.scanIsFinalizing,
     required this.scanProgress,
     this.scanCurrentFile,
     required this.scanTotalFiles,
@@ -680,6 +685,11 @@ class _LibraryHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final showIndeterminateProgress =
+        isScanning &&
+        (scanIsFinalizing ||
+            scanTotalFiles <= 0 ||
+            (scannedFiles <= 0 && scanProgress <= 0));
     final displayCount = isScanning
         ? scannedFiles
         : itemCount + excludedDownloadedCount;
@@ -798,7 +808,7 @@ class _LibraryHeroCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   isScanning
-                      ? context.l10n.libraryTracksUnit(scannedFiles)
+                      ? context.l10n.libraryFilesUnit(scannedFiles)
                       : context.l10n.libraryTracksUnit(displayCount),
                   style: TextStyle(
                     fontSize: 16,
@@ -821,14 +831,49 @@ class _LibraryHeroCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (isScanning && scanCurrentFile != null) ...[
+                if (isScanning) ...[
                   const SizedBox(height: 16),
                   LinearProgressIndicator(
-                    value: scanProgress / 100,
+                    value: showIndeterminateProgress
+                        ? null
+                        : scanProgress / 100,
                     backgroundColor: colorScheme.surfaceContainerHighest,
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(4),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    scanIsFinalizing
+                        ? context.l10n.libraryScanFinalizing
+                        : scanTotalFiles > 0
+                        ? context.l10n.libraryScanProgress(
+                            scanProgress.toStringAsFixed(0),
+                            scanTotalFiles,
+                          )
+                        : context.l10n.libraryScanning,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
+                      ),
+                    ),
+                  ),
+                  if (!scanIsFinalizing &&
+                      scanCurrentFile != null &&
+                      scanCurrentFile!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      scanCurrentFile!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ],
                 ] else ...[
                   const SizedBox(height: 8),
                   Row(
@@ -865,14 +910,18 @@ class _LibraryHeroCard extends StatelessWidget {
 }
 
 class _ScanProgressTile extends StatelessWidget {
+  final bool isFinalizing;
   final double progress;
   final String? currentFile;
+  final int scannedFiles;
   final int totalFiles;
   final VoidCallback onCancel;
 
   const _ScanProgressTile({
+    required this.isFinalizing,
     required this.progress,
     this.currentFile,
+    required this.scannedFiles,
     required this.totalFiles,
     required this.onCancel,
   });
@@ -880,6 +929,8 @@ class _ScanProgressTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final showIndeterminateProgress =
+        isFinalizing || totalFiles <= 0 || (scannedFiles <= 0 && progress <= 0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -901,10 +952,14 @@ class _ScanProgressTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      context.l10n.libraryScanProgress(
-                        progress.toStringAsFixed(0),
-                        totalFiles,
-                      ),
+                      isFinalizing
+                          ? context.l10n.libraryScanFinalizing
+                          : totalFiles > 0
+                          ? context.l10n.libraryScanProgress(
+                              progress.toStringAsFixed(0),
+                              totalFiles,
+                            )
+                          : context.l10n.libraryScanning,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -920,12 +975,14 @@ class _ScanProgressTile extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(
-            value: progress / 100,
+            value: showIndeterminateProgress ? null : progress / 100,
             backgroundColor: colorScheme.surfaceContainerHighest,
             color: colorScheme.primary,
             borderRadius: BorderRadius.circular(4),
           ),
-          if (currentFile != null) ...[
+          if (!isFinalizing &&
+              currentFile != null &&
+              currentFile!.trim().isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               currentFile!,

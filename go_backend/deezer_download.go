@@ -524,18 +524,19 @@ func downloadFromDeezer(req DownloadRequest) (DeezerDownloadResult, error) {
 	}
 
 	metadata := Metadata{
-		Title:       req.TrackName,
-		Artist:      req.ArtistName,
-		Album:       req.AlbumName,
-		AlbumArtist: req.AlbumArtist,
-		Date:        req.ReleaseDate,
-		TrackNumber: req.TrackNumber,
-		TotalTracks: req.TotalTracks,
-		DiscNumber:  req.DiscNumber,
-		ISRC:        req.ISRC,
-		Genre:       req.Genre,
-		Label:       req.Label,
-		Copyright:   req.Copyright,
+		Title:         req.TrackName,
+		Artist:        req.ArtistName,
+		Album:         req.AlbumName,
+		AlbumArtist:   req.AlbumArtist,
+		ArtistTagMode: req.ArtistTagMode,
+		Date:          req.ReleaseDate,
+		TrackNumber:   req.TrackNumber,
+		TotalTracks:   req.TotalTracks,
+		DiscNumber:    req.DiscNumber,
+		ISRC:          req.ISRC,
+		Genre:         req.Genre,
+		Label:         req.Label,
+		Copyright:     req.Copyright,
 	}
 
 	var coverData []byte

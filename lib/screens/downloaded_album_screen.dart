@@ -1235,6 +1235,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           bitrate: bitrate,
           metadata: metadata,
           coverPath: coverPath,
+          artistTagMode: settings.artistTagMode,
           deleteOriginal: !isSaf,
         );
 

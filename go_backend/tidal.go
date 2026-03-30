@@ -2354,18 +2354,19 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	}
 
 	metadata := Metadata{
-		Title:       req.TrackName,
-		Artist:      req.ArtistName,
-		Album:       req.AlbumName,
-		AlbumArtist: req.AlbumArtist,
-		Date:        releaseDate,
-		TrackNumber: actualTrackNumber,
-		TotalTracks: req.TotalTracks,
-		DiscNumber:  actualDiscNumber,
-		ISRC:        track.ISRC,
-		Genre:       req.Genre,
-		Label:       req.Label,
-		Copyright:   req.Copyright,
+		Title:         req.TrackName,
+		Artist:        req.ArtistName,
+		Album:         req.AlbumName,
+		AlbumArtist:   req.AlbumArtist,
+		ArtistTagMode: req.ArtistTagMode,
+		Date:          releaseDate,
+		TrackNumber:   actualTrackNumber,
+		TotalTracks:   req.TotalTracks,
+		DiscNumber:    actualDiscNumber,
+		ISRC:          track.ISRC,
+		Genre:         req.Genre,
+		Label:         req.Label,
+		Copyright:     req.Copyright,
 	}
 
 	var coverData []byte

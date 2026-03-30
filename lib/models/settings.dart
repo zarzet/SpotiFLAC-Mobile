@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:spotiflac_android/utils/artist_utils.dart';
 
 part 'settings.g.dart';
 
@@ -12,6 +13,8 @@ class AppSettings {
   final String downloadTreeUri; // SAF persistable tree URI
   final bool autoFallback;
   final bool embedMetadata; // Master switch for metadata/cover/lyrics embedding
+  final String
+  artistTagMode; // 'joined' or 'split_vorbis' for Vorbis-based formats
   final bool embedLyrics;
   final bool maxQualityCover;
   final bool isFirstLaunch;
@@ -88,6 +91,7 @@ class AppSettings {
     this.downloadTreeUri = '',
     this.autoFallback = true,
     this.embedMetadata = true,
+    this.artistTagMode = artistTagModeJoined,
     this.embedLyrics = true,
     this.maxQualityCover = true,
     this.isFirstLaunch = true,
@@ -152,6 +156,7 @@ class AppSettings {
     String? downloadTreeUri,
     bool? autoFallback,
     bool? embedMetadata,
+    String? artistTagMode,
     bool? embedLyrics,
     bool? maxQualityCover,
     bool? isFirstLaunch,
@@ -210,6 +215,7 @@ class AppSettings {
       downloadTreeUri: downloadTreeUri ?? this.downloadTreeUri,
       autoFallback: autoFallback ?? this.autoFallback,
       embedMetadata: embedMetadata ?? this.embedMetadata,
+      artistTagMode: artistTagMode ?? this.artistTagMode,
       embedLyrics: embedLyrics ?? this.embedLyrics,
       maxQualityCover: maxQualityCover ?? this.maxQualityCover,
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,

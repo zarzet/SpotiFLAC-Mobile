@@ -980,6 +980,8 @@ func parseVorbisComments(data []byte, metadata *AudioMetadata) {
 	}
 
 	reader := bytes.NewReader(data)
+	artistValues := make([]string, 0, 1)
+	albumArtistValues := make([]string, 0, 1)
 
 	// Read vendor string length
 	var vendorLen uint32
@@ -1034,9 +1036,9 @@ func parseVorbisComments(data []byte, metadata *AudioMetadata) {
 		case "TITLE":
 			metadata.Title = value
 		case "ARTIST":
-			metadata.Artist = value
+			artistValues = append(artistValues, value)
 		case "ALBUMARTIST", "ALBUM_ARTIST", "ALBUM ARTIST":
-			metadata.AlbumArtist = value
+			albumArtistValues = append(albumArtistValues, value)
 		case "ALBUM":
 			metadata.Album = value
 		case "DATE", "YEAR":
@@ -1065,6 +1067,13 @@ func parseVorbisComments(data []byte, metadata *AudioMetadata) {
 		case "COPYRIGHT":
 			metadata.Copyright = value
 		}
+	}
+
+	if len(artistValues) > 0 {
+		metadata.Artist = joinVorbisCommentValues(artistValues)
+	}
+	if len(albumArtistValues) > 0 {
+		metadata.AlbumArtist = joinVorbisCommentValues(albumArtistValues)
 	}
 }
 

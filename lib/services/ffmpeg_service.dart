@@ -7,6 +7,7 @@ import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_session.dart';
 import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new_full/session_state.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:spotiflac_android/utils/artist_utils.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('FFmpeg');
@@ -887,6 +888,7 @@ class FFmpegService {
     required String flacPath,
     String? coverPath,
     Map<String, String>? metadata,
+    String artistTagMode = artistTagModeJoined,
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.flac');
@@ -911,10 +913,11 @@ class FFmpegService {
     cmdBuffer.write('-c:a copy ');
 
     if (metadata != null) {
-      metadata.forEach((key, value) {
-        final sanitizedValue = value.replaceAll('"', '\\"');
-        cmdBuffer.write('-metadata $key="$sanitizedValue" ');
-      });
+      _appendVorbisMetadataToCommandBuffer(
+        cmdBuffer,
+        metadata,
+        artistTagMode: artistTagMode,
+      );
     }
 
     cmdBuffer.write('"$tempOutput" -y');
@@ -1046,6 +1049,7 @@ class FFmpegService {
     required String opusPath,
     String? coverPath,
     Map<String, String>? metadata,
+    String artistTagMode = artistTagModeJoined,
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.opus');
@@ -1063,11 +1067,11 @@ class FFmpegService {
     ];
 
     if (metadata != null) {
-      metadata.forEach((key, value) {
-        arguments
-          ..add('-metadata')
-          ..add('$key=$value');
-      });
+      _appendVorbisMetadataToArguments(
+        arguments,
+        metadata,
+        artistTagMode: artistTagMode,
+      );
     }
 
     if (coverPath != null) {
@@ -1326,6 +1330,7 @@ class FFmpegService {
     required String bitrate,
     required Map<String, String> metadata,
     String? coverPath,
+    String artistTagMode = artistTagModeJoined,
     bool deleteOriginal = true,
   }) async {
     final format = targetFormat.toLowerCase();
@@ -1348,6 +1353,7 @@ class FFmpegService {
         inputPath: inputPath,
         metadata: metadata,
         coverPath: coverPath,
+        artistTagMode: artistTagMode,
         deleteOriginal: deleteOriginal,
       );
     }
@@ -1391,6 +1397,7 @@ class FFmpegService {
           opusPath: outputPath,
           coverPath: coverPath,
           metadata: metadata,
+          artistTagMode: artistTagMode,
         );
       }
 
@@ -1491,6 +1498,7 @@ class FFmpegService {
     required String inputPath,
     required Map<String, String> metadata,
     String? coverPath,
+    String artistTagMode = artistTagModeJoined,
     bool deleteOriginal = true,
   }) async {
     final outputPath = _buildOutputPath(inputPath, '.flac');
@@ -1515,11 +1523,11 @@ class FFmpegService {
     cmdBuffer.write('-c:a flac -compression_level 8 ');
     cmdBuffer.write('-map_metadata 0 ');
 
-    final vorbisComments = _normalizeToVorbisComments(metadata);
-    for (final entry in vorbisComments.entries) {
-      final sanitized = entry.value.replaceAll('"', '\\"');
-      cmdBuffer.write('-metadata ${entry.key}="$sanitized" ');
-    }
+    _appendVorbisMetadataToCommandBuffer(
+      cmdBuffer,
+      metadata,
+      artistTagMode: artistTagMode,
+    );
 
     cmdBuffer.write('"$outputPath" -y');
 
@@ -1615,6 +1623,86 @@ class FFmpegService {
     }
 
     return vorbis;
+  }
+
+  static void _appendVorbisMetadataToCommandBuffer(
+    StringBuffer cmdBuffer,
+    Map<String, String> metadata, {
+    String artistTagMode = artistTagModeJoined,
+  }) {
+    for (final entry in _buildVorbisMetadataEntries(
+      metadata,
+      artistTagMode: artistTagMode,
+    )) {
+      final sanitized = entry.value.replaceAll('"', '\\"');
+      cmdBuffer.write('-metadata ${entry.key}="$sanitized" ');
+    }
+  }
+
+  static void _appendVorbisMetadataToArguments(
+    List<String> arguments,
+    Map<String, String> metadata, {
+    String artistTagMode = artistTagModeJoined,
+  }) {
+    for (final entry in _buildVorbisMetadataEntries(
+      metadata,
+      artistTagMode: artistTagMode,
+    )) {
+      arguments
+        ..add('-metadata')
+        ..add('${entry.key}=${entry.value}');
+    }
+  }
+
+  static List<MapEntry<String, String>> _buildVorbisMetadataEntries(
+    Map<String, String> metadata, {
+    String artistTagMode = artistTagModeJoined,
+  }) {
+    final vorbis = _normalizeToVorbisComments(metadata);
+    final entries = <MapEntry<String, String>>[];
+
+    for (final entry in vorbis.entries) {
+      if (entry.key == 'ARTIST' || entry.key == 'ALBUMARTIST') {
+        continue;
+      }
+      entries.add(entry);
+    }
+
+    _appendVorbisArtistEntries(
+      entries,
+      'ARTIST',
+      vorbis['ARTIST'],
+      artistTagMode: artistTagMode,
+    );
+    _appendVorbisArtistEntries(
+      entries,
+      'ALBUMARTIST',
+      vorbis['ALBUMARTIST'],
+      artistTagMode: artistTagMode,
+    );
+
+    return entries;
+  }
+
+  static void _appendVorbisArtistEntries(
+    List<MapEntry<String, String>> entries,
+    String key,
+    String? rawValue, {
+    String artistTagMode = artistTagModeJoined,
+  }) {
+    final value = rawValue?.trim() ?? '';
+    if (value.isEmpty) {
+      return;
+    }
+
+    if (!shouldSplitVorbisArtistTags(artistTagMode)) {
+      entries.add(MapEntry(key, value));
+      return;
+    }
+
+    for (final artist in splitArtistTagValues(value)) {
+      entries.add(MapEntry(key, artist));
+    }
   }
 
   /// Map Vorbis comment keys to M4A/MP4 metadata tag names for FFmpeg.
