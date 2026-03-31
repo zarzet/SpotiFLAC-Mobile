@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Paste a supported URL or search by name",
+  "homeSubtitle": "Unterstützte URL einfügen oder nach  suchen",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -190,6 +190,30 @@
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
+  "optionsArtistTagMode": "Künstler Tag-Modus",
+  "@optionsArtistTagMode": {
+    "description": "Setting title for how artist metadata is written into files"
+  },
+  "optionsArtistTagModeDescription": "Wähle aus, wie mehrere Künstler in eingebetteten Tags geschrieben sind.",
+  "@optionsArtistTagModeDescription": {
+    "description": "Bottom-sheet description for artist tag mode setting"
+  },
+  "optionsArtistTagModeJoined": "Einzelne beigefügte Werte",
+  "@optionsArtistTagModeJoined": {
+    "description": "Artist tag mode option that joins multiple artists into one value"
+  },
+  "optionsArtistTagModeJoinedSubtitle": "Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.",
+  "@optionsArtistTagModeJoinedSubtitle": {
+    "description": "Subtitle for joined artist tag mode"
+  },
+  "optionsArtistTagModeSplitVorbis": "Tags für FLAC/Opus aufteilen",
+  "@optionsArtistTagModeSplitVorbis": {
+    "description": "Artist tag mode option that writes repeated ARTIST tags for Vorbis formats"
+  },
+  "optionsArtistTagModeSplitVorbisSubtitle": "Write one artist tag per artist for FLAC and Opus; MP3 and M4A stay joined.",
+  "@optionsArtistTagModeSplitVorbisSubtitle": {
+    "description": "Subtitle for split Vorbis artist tag mode"
+  },
   "optionsConcurrentDownloads": "Parallele Downloads",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
@@ -211,11 +235,11 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Extension Repo",
+  "optionsExtensionStore": "Erweiterungs-Repo",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Show Repo tab in navigation",
+  "optionsExtensionStoreSubtitle": "Repo-Tab in der Navigation anzeigen",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
@@ -318,7 +342,7 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Extension Repo",
+  "storeTitle": "Erweiterungs-Repo",
   "@storeTitle": {
     "description": "Store screen title"
   },
@@ -671,7 +695,7 @@
   "@dialogImport": {
     "description": "Dialog button - import data"
   },
-  "dialogDownload": "Download",
+  "dialogDownload": "Herunterladen",
   "@dialogDownload": {
     "description": "Confirm button in Download All dialog"
   },
@@ -999,43 +1023,43 @@
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
-  "searchSortTitle": "Sort Results",
+  "searchSortTitle": "Ergebnisse sortieren",
   "@searchSortTitle": {
     "description": "Bottom sheet title for search sort options"
   },
-  "searchSortDefault": "Default",
+  "searchSortDefault": "Standard",
   "@searchSortDefault": {
     "description": "Sort option - default API order"
   },
-  "searchSortTitleAZ": "Title (A-Z)",
+  "searchSortTitleAZ": "Titel (A-Z)",
   "@searchSortTitleAZ": {
     "description": "Sort option - title ascending"
   },
-  "searchSortTitleZA": "Title (Z-A)",
+  "searchSortTitleZA": "Titel (Z-A)",
   "@searchSortTitleZA": {
     "description": "Sort option - title descending"
   },
-  "searchSortArtistAZ": "Artist (A-Z)",
+  "searchSortArtistAZ": "Künstler (A-Z)",
   "@searchSortArtistAZ": {
     "description": "Sort option - artist ascending"
   },
-  "searchSortArtistZA": "Artist (Z-A)",
+  "searchSortArtistZA": "Künstler (Z-A)",
   "@searchSortArtistZA": {
     "description": "Sort option - artist descending"
   },
-  "searchSortDurationShort": "Duration (Shortest)",
+  "searchSortDurationShort": "Dauer (kürzeste)",
   "@searchSortDurationShort": {
     "description": "Sort option - shortest duration first"
   },
-  "searchSortDurationLong": "Duration (Longest)",
+  "searchSortDurationLong": "Dauer (längste)",
   "@searchSortDurationLong": {
     "description": "Sort option - longest duration first"
   },
-  "searchSortDateOldest": "Release Date (Oldest)",
+  "searchSortDateOldest": "Veröffentlichungsdatum (älteste)",
   "@searchSortDateOldest": {
     "description": "Sort option - oldest release first"
   },
-  "searchSortDateNewest": "Release Date (Newest)",
+  "searchSortDateNewest": "Veröffentlichungsdatum (Neueste)",
   "@searchSortDateNewest": {
     "description": "Sort option - newest release first"
   },
@@ -1614,15 +1638,15 @@
   "@storeClearFilters": {
     "description": "Button to clear all filters"
   },
-  "storeAddRepoTitle": "Add Extension Repository",
+  "storeAddRepoTitle": "Erweiterungs-Repository hinzufügen",
   "@storeAddRepoTitle": {
     "description": "Store setup screen - heading when no repo is configured"
   },
-  "storeAddRepoDescription": "Enter a GitHub repository URL that contains a registry.json file to browse and install extensions.",
+  "storeAddRepoDescription": "Gib eine GitHub Repository-URL ein, die eine Registry.json Datei enthält, um Erweiterungen zu durchsuchen und zu installieren.",
   "@storeAddRepoDescription": {
     "description": "Store setup screen - explanatory text"
   },
-  "storeRepoUrlLabel": "Repository URL",
+  "storeRepoUrlLabel": "Repository-URL",
   "@storeRepoUrlLabel": {
     "description": "Label for the repository URL input field"
   },
@@ -1630,27 +1654,27 @@
   "@storeRepoUrlHint": {
     "description": "Hint/placeholder for the repository URL input field"
   },
-  "storeRepoUrlHelper": "e.g. https://github.com/user/extensions-repo",
+  "storeRepoUrlHelper": "z.B. https://github.com/user/extensions-repo",
   "@storeRepoUrlHelper": {
     "description": "Helper text below the repository URL input field"
   },
-  "storeAddRepoButton": "Add Repository",
+  "storeAddRepoButton": "Repository hinzufügen",
   "@storeAddRepoButton": {
     "description": "Button to submit a new repository URL"
   },
-  "storeChangeRepoTooltip": "Change repository",
+  "storeChangeRepoTooltip": "Repository ändern",
   "@storeChangeRepoTooltip": {
     "description": "Tooltip for the change-repository icon button in the app bar"
   },
-  "storeRepoDialogTitle": "Extension Repository",
+  "storeRepoDialogTitle": "Erweiterungs-Repository",
   "@storeRepoDialogTitle": {
     "description": "Title of the change/remove repository dialog"
   },
-  "storeRepoDialogCurrent": "Current repository:",
+  "storeRepoDialogCurrent": "Aktuelles Repository:",
   "@storeRepoDialogCurrent": {
     "description": "Label shown above the current repository URL in the dialog"
   },
-  "storeNewRepoUrlLabel": "New Repository URL",
+  "storeNewRepoUrlLabel": "Neue Repository-URL",
   "@storeNewRepoUrlLabel": {
     "description": "Label for the new repository URL field inside the dialog"
   },
@@ -1865,11 +1889,11 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "downloadLossy320": "Lossy 320kbps",
+  "downloadLossy320": "Verlustbehaftet 320kbps",
   "@downloadLossy320": {
     "description": "Quality option label for Tidal lossy 320kbps"
   },
-  "downloadLossyFormat": "Lossy Format",
+  "downloadLossyFormat": "Verlustbehaftetes Format",
   "@downloadLossyFormat": {
     "description": "Setting title to pick output format for Tidal lossy downloads"
   },
@@ -2318,7 +2342,7 @@
   "@libraryShowDuplicateIndicatorSubtitle": {
     "description": "Subtitle for duplicate indicator toggle"
   },
-  "libraryAutoScan": "Auto Scan",
+  "libraryAutoScan": "Auto-Scan",
   "@libraryAutoScan": {
     "description": "Setting for automatic library scanning"
   },
@@ -2326,19 +2350,19 @@
   "@libraryAutoScanSubtitle": {
     "description": "Subtitle for auto scan setting"
   },
-  "libraryAutoScanOff": "Off",
+  "libraryAutoScanOff": "Aus",
   "@libraryAutoScanOff": {
     "description": "Auto scan disabled"
   },
-  "libraryAutoScanOnOpen": "Every app open",
+  "libraryAutoScanOnOpen": "Bei jeder App Öffnung",
   "@libraryAutoScanOnOpen": {
     "description": "Auto scan when app opens"
   },
-  "libraryAutoScanDaily": "Daily",
+  "libraryAutoScanDaily": "Täglich",
   "@libraryAutoScanDaily": {
     "description": "Auto scan once per day"
   },
-  "libraryAutoScanWeekly": "Weekly",
+  "libraryAutoScanWeekly": "Wöchentlich",
   "@libraryAutoScanWeekly": {
     "description": "Auto scan once per week"
   },
@@ -2399,6 +2423,15 @@
       }
     }
   },
+  "libraryFilesUnit": "{count, plural, =1{1 Datei} other{{count} Datein}}",
+  "@libraryFilesUnit": {
+    "description": "Unit label for files count during library scanning",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "libraryLastScanned": "Zuletzt gescannt: {time}",
   "@libraryLastScanned": {
     "description": "Last scan time display",
@@ -2415,6 +2448,10 @@
   "libraryScanning": "Scannen...",
   "@libraryScanning": {
     "description": "Status during scan"
+  },
+  "libraryScanFinalizing": "Finalizing library...",
+  "@libraryScanFinalizing": {
+    "description": "Status shown after file scanning finishes but library persistence is still running"
   },
   "libraryScanProgress": "{progress}% von {total} Dateien",
   "@libraryScanProgress": {
@@ -2513,6 +2550,30 @@
   "@libraryFilterFormat": {
     "description": "Filter section - file format"
   },
+  "libraryFilterMetadata": "Metadaten",
+  "@libraryFilterMetadata": {
+    "description": "Filter section - metadata completeness"
+  },
+  "libraryFilterMetadataComplete": "Komplette Metadaten",
+  "@libraryFilterMetadataComplete": {
+    "description": "Filter option - items with complete metadata"
+  },
+  "libraryFilterMetadataMissingAny": "Metadaten fehlen",
+  "@libraryFilterMetadataMissingAny": {
+    "description": "Filter option - items missing any tracked metadata field"
+  },
+  "libraryFilterMetadataMissingYear": "Jahr fehlt",
+  "@libraryFilterMetadataMissingYear": {
+    "description": "Filter option - items missing release year/date"
+  },
+  "libraryFilterMetadataMissingGenre": "Genre fehlt",
+  "@libraryFilterMetadataMissingGenre": {
+    "description": "Filter option - items missing genre"
+  },
+  "libraryFilterMetadataMissingAlbumArtist": "Fehlender Album-Künstler",
+  "@libraryFilterMetadataMissingAlbumArtist": {
+    "description": "Filter option - items missing album artist"
+  },
   "libraryFilterSort": "Sortieren",
   "@libraryFilterSort": {
     "description": "Filter section - sort order"
@@ -2524,6 +2585,22 @@
   "libraryFilterSortOldest": "Älteste",
   "@libraryFilterSortOldest": {
     "description": "Sort option - oldest first"
+  },
+  "libraryFilterSortAlbumAsc": "Album (A-Z)",
+  "@libraryFilterSortAlbumAsc": {
+    "description": "Sort option - album ascending"
+  },
+  "libraryFilterSortAlbumDesc": "Album (Z-A)",
+  "@libraryFilterSortAlbumDesc": {
+    "description": "Sort option - album descending"
+  },
+  "libraryFilterSortGenreAsc": "Genre (A-Z)",
+  "@libraryFilterSortGenreAsc": {
+    "description": "Sort option - genre ascending"
+  },
+  "libraryFilterSortGenreDesc": "Genre (Z-A)",
+  "@libraryFilterSortGenreDesc": {
+    "description": "Sort option - genre descending"
   },
   "timeJustNow": "Gerade eben",
   "@timeJustNow": {
@@ -2919,7 +2996,7 @@
   "@trackReEnrichFfmpegFailed": {
     "description": "Snackbar when FFmpeg embed fails for MP3/Opus"
   },
-  "queueFlacAction": "Queue FLAC",
+  "queueFlacAction": "Warteschlange FLAC",
   "@queueFlacAction": {
     "description": "Action/button label for queueing FLAC redownloads for local tracks"
   },
@@ -3443,7 +3520,7 @@
   "@lyricsProvidersInfoText": {
     "description": "Info tip on lyrics provider priority page"
   },
-  "lyricsProvidersEnabledSection": "Enabled ({count})",
+  "lyricsProvidersEnabledSection": "({count}) aktiviert",
   "@lyricsProvidersEnabledSection": {
     "description": "Section header for enabled providers",
     "placeholders": {
@@ -3517,23 +3594,23 @@
   "@safMigrationSuccess": {
     "description": "Snackbar after successfully migrating to SAF"
   },
-  "settingsDonate": "Donate",
+  "settingsDonate": "Unterstützen",
   "@settingsDonate": {
     "description": "Settings menu item - donate"
   },
-  "settingsDonateSubtitle": "Support SpotiFLAC-Mobile development",
+  "settingsDonateSubtitle": "Unterstütze die SpotiFLAC-Mobile Entwickler",
   "@settingsDonateSubtitle": {
     "description": "Subtitle for donate menu item"
   },
-  "tooltipLoveAll": "Love All",
+  "tooltipLoveAll": "Alle lieben",
   "@tooltipLoveAll": {
     "description": "Tooltip for the Love All button on album/playlist screens"
   },
-  "tooltipAddToPlaylist": "Add to Playlist",
+  "tooltipAddToPlaylist": "Zur Wiedergabeliste hinzufügen",
   "@tooltipAddToPlaylist": {
     "description": "Tooltip for the Add to Playlist button"
   },
-  "snackbarRemovedTracksFromLoved": "Removed {count} tracks from Loved",
+  "snackbarRemovedTracksFromLoved": "{count} Titel von geliebt entfernt",
   "@snackbarRemovedTracksFromLoved": {
     "description": "Snackbar after removing multiple tracks from Loved folder",
     "placeholders": {
@@ -3551,7 +3628,7 @@
       }
     }
   },
-  "dialogDownloadAllTitle": "Download All",
+  "dialogDownloadAllTitle": "Alle Herunterladen",
   "@dialogDownloadAllTitle": {
     "description": "Dialog title for bulk download confirmation"
   },
@@ -3568,7 +3645,7 @@
   "@homeSkipAlreadyDownloaded": {
     "description": "Checkbox label in import dialog to skip already-downloaded songs"
   },
-  "homeGoToAlbum": "Go to Album",
+  "homeGoToAlbum": "Zum Album gehen",
   "@homeGoToAlbum": {
     "description": "Context menu item to navigate to the album page"
   },
@@ -3592,7 +3669,7 @@
   "@snackbarFailedToWriteStorage": {
     "description": "Snackbar when writing metadata back to file fails"
   },
-  "snackbarError": "Error: {error}",
+  "snackbarError": "Fehler: {error}",
   "@snackbarError": {
     "description": "Generic error snackbar with error detail",
     "placeholders": {
@@ -3621,7 +3698,7 @@
   "@storageModeAppFolderSubtitle": {
     "description": "Subtitle for app folder storage mode"
   },
-  "storageModeSaf": "SAF folder",
+  "storageModeSaf": "SAF-Ordner",
   "@storageModeSaf": {
     "description": "Storage mode option - use Android SAF picker"
   },
@@ -3665,11 +3742,11 @@
   "@downloadCreatePlaylistSourceFolderRedundant": {
     "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
   },
-  "downloadSongLinkRegion": "SongLink Region",
+  "downloadSongLinkRegion": "SongLink-Region",
   "@downloadSongLinkRegion": {
     "description": "Setting title for SongLink country region"
   },
-  "downloadNetworkCompatibilityMode": "Network compatibility mode",
+  "downloadNetworkCompatibilityMode": "Netzwerkkompatibilitätsmodus",
   "@downloadNetworkCompatibilityMode": {
     "description": "Setting title for network compatibility toggle"
   },
@@ -3713,7 +3790,7 @@
   "@downloadNeteaseIncludeRomanizationEnabled": {
     "description": "Subtitle when Netease romanization is enabled"
   },
-  "downloadNeteaseIncludeRomanizationDisabled": "Disabled",
+  "downloadNeteaseIncludeRomanizationDisabled": "Deaktiviert",
   "@downloadNeteaseIncludeRomanizationDisabled": {
     "description": "Subtitle when Netease romanization is disabled"
   },
@@ -3749,11 +3826,11 @@
   "@downloadFilterContributingDisabled": {
     "description": "Subtitle when contributing artist filter is disabled"
   },
-  "downloadProvidersNoneEnabled": "None enabled",
+  "downloadProvidersNoneEnabled": "Keine aktiviert",
   "@downloadProvidersNoneEnabled": {
     "description": "Subtitle for lyrics providers setting when no providers are enabled"
   },
-  "downloadMusixmatchLanguageCode": "Language code",
+  "downloadMusixmatchLanguageCode": "Sprach-Code",
   "@downloadMusixmatchLanguageCode": {
     "description": "Label for the Musixmatch language code text field"
   },
@@ -3785,7 +3862,7 @@
   "@snackbarUnsupportedAudioFormat": {
     "description": "Snackbar when the audio format is not supported for the requested operation"
   },
-  "cacheRefresh": "Refresh",
+  "cacheRefresh": "Aktualisieren",
   "@cacheRefresh": {
     "description": "Tooltip for refresh button on cache management page"
   },
@@ -3835,7 +3912,7 @@
   "@editMetadataAutoFillDesc": {
     "description": "Description for the auto-fill section"
   },
-  "editMetadataAutoFillFetch": "Fetch & Fill",
+  "editMetadataAutoFillFetch": "Abrufen & Ausfüllen",
   "@editMetadataAutoFillFetch": {
     "description": "Button label to fetch online metadata and fill selected fields"
   },
@@ -3860,11 +3937,11 @@
   "@editMetadataAutoFillNoneSelected": {
     "description": "Snackbar when user taps Fetch without selecting any fields"
   },
-  "editMetadataFieldTitle": "Title",
+  "editMetadataFieldTitle": "Titel",
   "@editMetadataFieldTitle": {
     "description": "Chip label for title field in auto-fill selector"
   },
-  "editMetadataFieldArtist": "Artist",
+  "editMetadataFieldArtist": "Künstler",
   "@editMetadataFieldArtist": {
     "description": "Chip label for artist field in auto-fill selector"
   },
@@ -3872,19 +3949,19 @@
   "@editMetadataFieldAlbum": {
     "description": "Chip label for album field in auto-fill selector"
   },
-  "editMetadataFieldAlbumArtist": "Album Artist",
+  "editMetadataFieldAlbumArtist": "Album Künstler",
   "@editMetadataFieldAlbumArtist": {
     "description": "Chip label for album artist field in auto-fill selector"
   },
-  "editMetadataFieldDate": "Date",
+  "editMetadataFieldDate": "Datum",
   "@editMetadataFieldDate": {
     "description": "Chip label for date field in auto-fill selector"
   },
-  "editMetadataFieldTrackNum": "Track #",
+  "editMetadataFieldTrackNum": "Titel #",
   "@editMetadataFieldTrackNum": {
     "description": "Chip label for track number field in auto-fill selector"
   },
-  "editMetadataFieldDiscNum": "Disc #",
+  "editMetadataFieldDiscNum": "Disk #",
   "@editMetadataFieldDiscNum": {
     "description": "Chip label for disc number field in auto-fill selector"
   },
@@ -3900,19 +3977,19 @@
   "@editMetadataFieldLabel": {
     "description": "Chip label for label field in auto-fill selector"
   },
-  "editMetadataFieldCopyright": "Copyright",
+  "editMetadataFieldCopyright": "Urheberrecht",
   "@editMetadataFieldCopyright": {
     "description": "Chip label for copyright field in auto-fill selector"
   },
-  "editMetadataFieldCover": "Cover Art",
+  "editMetadataFieldCover": "Cover-Art",
   "@editMetadataFieldCover": {
     "description": "Chip label for cover art field in auto-fill selector"
   },
-  "editMetadataSelectAll": "All",
+  "editMetadataSelectAll": "Alle",
   "@editMetadataSelectAll": {
     "description": "Button to select all fields for auto-fill"
   },
-  "editMetadataSelectEmpty": "Empty only",
+  "editMetadataSelectEmpty": "Nur leer",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
   },
@@ -3925,11 +4002,11 @@
       }
     }
   },
-  "queueDownloadedHeader": "Downloaded",
+  "queueDownloadedHeader": "Heruntergeladen",
   "@queueDownloadedHeader": {
     "description": "Header label for downloaded items section in library"
   },
-  "queueFilteringIndicator": "Filtering...",
+  "queueFilteringIndicator": "Filtere...",
   "@queueFilteringIndicator": {
     "description": "Shown while filter results are being computed"
   },
@@ -3983,7 +4060,7 @@
   "@selectionTapPlaylistsToSelect": {
     "description": "Hint shown in playlist selection mode"
   },
-  "selectionSelectPlaylistsToDelete": "Select playlists to delete",
+  "selectionSelectPlaylistsToDelete": "Playlist zum Löschen wählen",
   "@selectionSelectPlaylistsToDelete": {
     "description": "Hint shown when no playlists are selected for deletion"
   },
@@ -4003,15 +4080,15 @@
   "@audioAnalysisSampleRate": {
     "description": "Sample rate metric label"
   },
-  "audioAnalysisBitDepth": "Bit Depth",
+  "audioAnalysisBitDepth": "Bit-Tiefe",
   "@audioAnalysisBitDepth": {
     "description": "Bit depth metric label"
   },
-  "audioAnalysisChannels": "Channels",
+  "audioAnalysisChannels": "Kanäle",
   "@audioAnalysisChannels": {
     "description": "Channels metric label"
   },
-  "audioAnalysisDuration": "Duration",
+  "audioAnalysisDuration": "Länge",
   "@audioAnalysisDuration": {
     "description": "Duration metric label"
   },
@@ -4019,15 +4096,15 @@
   "@audioAnalysisNyquist": {
     "description": "Nyquist frequency metric label"
   },
-  "audioAnalysisFileSize": "Size",
+  "audioAnalysisFileSize": "Größe",
   "@audioAnalysisFileSize": {
     "description": "File size metric label"
   },
-  "audioAnalysisDynamicRange": "Dynamic Range",
+  "audioAnalysisDynamicRange": "Dynamischer Bereich",
   "@audioAnalysisDynamicRange": {
     "description": "Dynamic range metric label"
   },
-  "audioAnalysisPeak": "Peak",
+  "audioAnalysisPeak": "Maximum",
   "@audioAnalysisPeak": {
     "description": "Peak amplitude metric label"
   },
@@ -4035,7 +4112,7 @@
   "@audioAnalysisRms": {
     "description": "RMS level metric label"
   },
-  "audioAnalysisSamples": "Samples",
+  "audioAnalysisSamples": "Proben",
   "@audioAnalysisSamples": {
     "description": "Total samples metric label"
   },
@@ -4098,7 +4175,7 @@
       }
     }
   },
-  "cancelDownloadKeep": "Keep",
+  "cancelDownloadKeep": "Behalten",
   "@cancelDownloadKeep": {
     "description": "Dialog button - keep the active download (do not cancel)"
   },
@@ -4139,7 +4216,7 @@
   "@notifChannelDownloadDesc": {
     "description": "Android notification channel description for download progress"
   },
-  "notifChannelLibraryScanName": "Library Scan",
+  "notifChannelLibraryScanName": "Bibliotheksscan",
   "@notifChannelLibraryScanName": {
     "description": "Android notification channel name for library scan"
   },
@@ -4279,7 +4356,7 @@
       }
     }
   },
-  "notifLibraryScanErrors": "{count} errors",
+  "notifLibraryScanErrors": "{count} Fehler",
   "@notifLibraryScanErrors": {
     "description": "Library scan complete suffix - error count",
     "placeholders": {
@@ -4324,7 +4401,7 @@
       }
     }
   },
-  "notifUpdateReady": "Update Ready",
+  "notifUpdateReady": "Update bereit",
   "@notifUpdateReady": {
     "description": "Notification title when app update download is complete"
   },
@@ -4337,7 +4414,7 @@
       }
     }
   },
-  "notifUpdateFailed": "Update Failed",
+  "notifUpdateFailed": "Update fehlgeschlagen",
   "@notifUpdateFailed": {
     "description": "Notification title when app update download fails"
   },
