@@ -170,5 +170,18 @@ Interested in contributing? Check out the [Contributing Guide](CONTRIBUTING.md) 
 | [dabmusic.xyz](https://dabmusic.xyz) | [AfkarXYZ](https://github.com/afkarxyz) | [LRCLib](https://lrclib.net) | [Paxsenix](https://lyrics.paxsenix.org) | [Cobalt](https://cobalt.tools) |
 | [qwkuns.me](https://qwkuns.me) | [SpotubeDL](https://spotubedl.com) | [Song.link](https://song.link) | [IDHS](https://github.com/sjdonado/idonthavespotify) | |
 
+---
+
+## Disclaimer
+
+This repository and its contents are provided strictly for educational and research purposes. The software is provided "as-is" without warranty of any kind, express or implied, as stated in the [MIT License](LICENSE).
+
+- No copyrighted content is hosted, stored, mirrored, or distributed by this repository.
+- Users must ensure that their use of this software is properly authorized and complies with all applicable laws, regulations, and third-party terms of service.
+- This software is provided free of charge by the maintainer. If you paid a third party for access to this software in its original form from this repository, you may have been misled or scammed. Any redistribution or commercial use by third parties must comply with the terms of the repository license. No affiliation, endorsement, or support by the maintainer is implied unless explicitly stated in writing.
+- SpotiFLAC Mobile is an independent project. It is not affiliated with, endorsed by, or connected to any other project or version on other platforms that may share a similar name. The maintainer of this repository has no control over or responsibility for third-party projects.
+- The author(s) disclaim all liability for any direct, indirect, incidental, or consequential damages arising from the use or misuse of this software. Users assume all risk associated with its use.
+- If you are a copyright holder or authorized representative and believe this repository infringes upon your rights, please contact the maintainer with sufficient detail (including relevant URLs and proof of ownership). The matter will be promptly investigated and appropriate action will be taken, which may include removal of the referenced material.
+
 > [!TIP]
 > **Star the repo** to get notified about all new releases directly from GitHub.

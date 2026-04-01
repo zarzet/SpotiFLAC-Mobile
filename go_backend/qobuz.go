@@ -53,7 +53,7 @@ const (
 	qobuzTrackOpenBaseURL   = "https://open.qobuz.com/track/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
 	qobuzStoreBaseURL       = "https://www.qobuz.com/us-en"
-	qobuzDownloadAPIURL     = "https://api.zarz.moe/v1/qbz"
+	qobuzDownloadAPIURL     = "https://dl.musicdl.me/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
 	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"

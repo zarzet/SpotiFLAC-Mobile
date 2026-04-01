@@ -3851,6 +3851,11 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                   } catch (e) {
                     debugPrint('Failed to delete file: $e');
                   }
+                  if (_localLibraryItem != null) {
+                    await ref
+                        .read(localLibraryProvider.notifier)
+                        .removeItem(_localLibraryItem!.id);
+                  }
                 }
               } else {
                 try {
