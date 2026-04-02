@@ -493,9 +493,22 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       (_isLocalItem
           ? _localLibraryItem!.releaseDate
           : _downloadItem!.releaseDate);
-  String? get isrc =>
-      _editedMetadata?['isrc']?.toString() ??
-      (_isLocalItem ? _localLibraryItem!.isrc : _downloadItem!.isrc);
+  String? get isrc {
+    final raw =
+        _editedMetadata?['isrc']?.toString() ??
+        (_isLocalItem ? _localLibraryItem!.isrc : _downloadItem!.isrc);
+    if (raw == null || raw.trim().isEmpty) return null;
+    final upper = raw.trim().toUpperCase();
+    // Only accept valid ISRC codes (CC-XXX-YY-NNNNN, 12 alphanumeric chars).
+    // Strip hyphens/spaces that some sources include.
+    final stripped = upper.replaceAll(RegExp(r'[-\s]'), '');
+    if (_isrcValidationPattern.hasMatch(stripped)) return stripped;
+    return null;
+  }
+
+  static final RegExp _isrcValidationPattern = RegExp(
+    r'^[A-Z]{2}[A-Z0-9]{3}\d{7}$',
+  );
   String? get genre =>
       _editedMetadata?['genre']?.toString() ??
       (_isLocalItem ? _localLibraryItem!.genre : _downloadItem!.genre);
@@ -580,6 +593,29 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
 
     return raw;
+  }
+
+  String _serviceForTrackId(String value, {required String fallbackService}) {
+    final raw = value.trim();
+    if (raw.isEmpty) return fallbackService;
+    final spotifyTrackIdPattern = RegExp(r'^[A-Za-z0-9]{22}$');
+
+    if (raw.startsWith('deezer:')) return 'deezer';
+    if (raw.startsWith('tidal:')) return 'tidal';
+    if (raw.startsWith('qobuz:')) return 'qobuz';
+    if (raw.startsWith('spotify:')) return 'spotify';
+    if (spotifyTrackIdPattern.hasMatch(raw)) return 'spotify';
+
+    final uri = Uri.tryParse(raw);
+    if (uri != null) {
+      final host = uri.host.toLowerCase();
+      if (host.contains('spotify.com')) return 'spotify';
+      if (host.contains('deezer.com')) return 'deezer';
+      if (host.contains('tidal.com')) return 'tidal';
+      if (host.contains('qobuz.com')) return 'qobuz';
+    }
+
+    return fallbackService;
   }
 
   String? get _displayAudioQuality {
@@ -1092,16 +1128,18 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               const SizedBox(height: 8),
               Builder(
                 builder: (context) {
-                  final isDeezer = _spotifyId!.contains('deezer');
-                  final svc = _service.toLowerCase();
+                  final openService = _serviceForTrackId(
+                    _spotifyId!,
+                    fallbackService: _service.toLowerCase(),
+                  );
                   String buttonLabel;
-                  if (isDeezer) {
+                  if (openService == 'deezer') {
                     buttonLabel = context.l10n.trackOpenInDeezer;
-                  } else if (svc == 'amazon') {
+                  } else if (openService == 'amazon') {
                     buttonLabel = 'Open in Amazon Music';
-                  } else if (svc == 'tidal') {
+                  } else if (openService == 'tidal') {
                     buttonLabel = 'Open in Tidal';
-                  } else if (svc == 'qobuz') {
+                  } else if (openService == 'qobuz') {
                     buttonLabel = 'Open in Qobuz';
                   } else {
                     buttonLabel = context.l10n.trackOpenInSpotify;
@@ -1132,28 +1170,29 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   Future<void> _openServiceUrl(BuildContext context) async {
     if (_spotifyId == null) return;
 
-    final isDeezer =
-        _service.toLowerCase() == 'deezer' || _spotifyId!.startsWith('deezer:');
+    final openService = _serviceForTrackId(
+      _spotifyId!,
+      fallbackService: _service.toLowerCase(),
+    );
     final rawId = _displayServiceTrackId(_spotifyId!);
-    final svc = _service.toLowerCase();
 
     String webUrl;
     Uri? appUri;
     String serviceName;
 
-    if (isDeezer) {
+    if (openService == 'deezer') {
       webUrl = 'https://www.deezer.com/track/$rawId';
       appUri = Uri.parse('deezer://www.deezer.com/track/$rawId');
       serviceName = 'Deezer';
-    } else if (svc == 'amazon') {
+    } else if (openService == 'amazon') {
       webUrl = 'https://music.amazon.com/search/$rawId';
       appUri = Uri.parse('amznm://search/$rawId');
       serviceName = 'Amazon Music';
-    } else if (svc == 'tidal') {
+    } else if (openService == 'tidal') {
       webUrl = 'https://listen.tidal.com/track/$rawId';
       appUri = Uri.parse('tidal://track/$rawId');
       serviceName = 'Tidal';
-    } else if (svc == 'qobuz') {
+    } else if (openService == 'qobuz') {
       webUrl = 'https://play.qobuz.com/track/$rawId';
       appUri = Uri.parse('qobuz://track/$rawId');
       serviceName = 'Qobuz';
@@ -1223,23 +1262,23 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     ];
 
     if (!_isLocalItem && _spotifyId != null && _spotifyId!.isNotEmpty) {
-      final isDeezer =
-          _service.toLowerCase() == 'deezer' || _spotifyId!.startsWith('deezer:');
+      final idService = _serviceForTrackId(
+        _spotifyId!,
+        fallbackService: _service.toLowerCase(),
+      );
       final cleanId = _displayServiceTrackId(_spotifyId!);
       String idLabel;
-      if (isDeezer) {
-        idLabel = 'Deezer ID';
-      } else {
-        switch (_service.toLowerCase()) {
-          case 'amazon':
-            idLabel = 'Amazon ASIN';
-          case 'tidal':
-            idLabel = 'Tidal ID';
-          case 'qobuz':
-            idLabel = 'Qobuz ID';
-          default:
-            idLabel = 'Spotify ID';
-        }
+      switch (idService) {
+        case 'deezer':
+          idLabel = 'Deezer ID';
+        case 'amazon':
+          idLabel = 'Amazon ASIN';
+        case 'tidal':
+          idLabel = 'Tidal ID';
+        case 'qobuz':
+          idLabel = 'Qobuz ID';
+        default:
+          idLabel = 'Spotify ID';
       }
       items.add(_MetadataItem(idLabel, cleanId));
     }
