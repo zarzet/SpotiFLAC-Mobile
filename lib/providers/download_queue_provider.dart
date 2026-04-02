@@ -2811,8 +2811,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         'artist': track.artistName,
         'album': track.albumName,
         'album_artist': resolvedAlbumArtist,
-        'track_number': track.trackNumber ?? 1,
-        'disc_number': track.discNumber ?? 1,
+        'track_number': track.trackNumber ?? 0,
+        'disc_number': track.discNumber ?? 0,
         'isrc': track.isrc ?? '',
         'release_date': track.releaseDate ?? '',
         'duration_ms': track.duration * 1000,
@@ -4649,12 +4649,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             (trackToDownload.trackNumber != null &&
                 trackToDownload.trackNumber! > 0)
             ? trackToDownload.trackNumber!
-            : 1;
+            : 0;
         final normalizedDiscNumber =
             (trackToDownload.discNumber != null &&
                 trackToDownload.discNumber! > 0)
             ? trackToDownload.discNumber!
-            : 1;
+            : 0;
 
         String payloadSpotifyId = trackToDownload.id;
         String payloadQobuzId = '';

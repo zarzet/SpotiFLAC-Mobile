@@ -1845,10 +1845,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
       albumName: item.albumName ?? '',
       albumId: item.albumId,
       duration: item.durationMs ~/ 1000,
-      trackNumber: 1,
-      discNumber: 1,
+      trackNumber: null,
+      discNumber: null,
       isrc: null,
-      releaseDate: null,
+      releaseDate: item.releaseDate,
       coverUrl: item.coverUrl,
       source: item.providerId ?? 'spotify-web',
     );
@@ -4272,6 +4272,8 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
+      discNumber: data['disc_number'] as int?,
+      releaseDate: data['release_date']?.toString(),
       source: widget.extensionId,
     );
   }
@@ -4429,6 +4431,8 @@ class _ExtensionPlaylistScreenState
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
+      discNumber: data['disc_number'] as int?,
+      releaseDate: data['release_date']?.toString(),
       source: widget.extensionId,
     );
   }

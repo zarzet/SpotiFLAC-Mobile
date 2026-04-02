@@ -552,6 +552,36 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     return parsed;
   }
 
+  String _displayServiceTrackId(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return raw;
+    final spotifyTrackIdPattern = RegExp(r'^[A-Za-z0-9]{22}$');
+
+    if (raw.startsWith('deezer:')) return raw.substring('deezer:'.length);
+    if (raw.startsWith('tidal:')) return raw.substring('tidal:'.length);
+    if (raw.startsWith('qobuz:')) return raw.substring('qobuz:'.length);
+    if (spotifyTrackIdPattern.hasMatch(raw)) return raw;
+
+    if (raw.startsWith('spotify:')) {
+      final last = raw.split(':').last.trim();
+      if (spotifyTrackIdPattern.hasMatch(last)) return last;
+      return raw;
+    }
+
+    final uri = Uri.tryParse(raw);
+    if (uri != null &&
+        uri.host.contains('spotify.com') &&
+        uri.pathSegments.length >= 2 &&
+        uri.pathSegments.first == 'track') {
+      final candidate = uri.pathSegments[1].trim();
+      if (spotifyTrackIdPattern.hasMatch(candidate)) {
+        return candidate;
+      }
+    }
+
+    return raw;
+  }
+
   String? get _displayAudioQuality {
     final fileName = _extractFileNameFromPathOrUri(cleanFilePath);
     final fileExt = fileName.contains('.')
@@ -1102,8 +1132,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   Future<void> _openServiceUrl(BuildContext context) async {
     if (_spotifyId == null) return;
 
-    final isDeezer = _spotifyId!.contains('deezer');
-    final rawId = _spotifyId!.replaceAll('deezer:', '');
+    final isDeezer =
+        _service.toLowerCase() == 'deezer' || _spotifyId!.startsWith('deezer:');
+    final rawId = _displayServiceTrackId(_spotifyId!);
     final svc = _service.toLowerCase();
 
     String webUrl;
@@ -1192,8 +1223,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     ];
 
     if (!_isLocalItem && _spotifyId != null && _spotifyId!.isNotEmpty) {
-      final isDeezer = _spotifyId!.contains('deezer');
-      final cleanId = _spotifyId!.replaceAll('deezer:', '');
+      final isDeezer =
+          _service.toLowerCase() == 'deezer' || _spotifyId!.startsWith('deezer:');
+      final cleanId = _displayServiceTrackId(_spotifyId!);
       String idLabel;
       if (isDeezer) {
         idLabel = 'Deezer ID';
