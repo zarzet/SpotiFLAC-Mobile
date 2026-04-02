@@ -317,6 +317,19 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           resolvedDuration > 0 &&
           (duration == null || duration == 0);
 
+      // Resolve label/copyright from file when the model doesn't carry them
+      // (e.g. local library items, or download history items without these fields).
+      final resolvedLabel = metadata['label']?.toString();
+      final resolvedCopyright = metadata['copyright']?.toString();
+      final needsLabel =
+          resolvedLabel != null &&
+          resolvedLabel.isNotEmpty &&
+          (label == null || label!.isEmpty);
+      final needsCopyright =
+          resolvedCopyright != null &&
+          resolvedCopyright.isNotEmpty &&
+          (copyright == null || copyright!.isEmpty);
+
       final shouldPersistResolvedAudioMetadata =
           resolvedBitDepth != null ||
           resolvedSampleRate != null ||
@@ -326,6 +339,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
               resolvedSampleRate != null ||
               needsAlbum ||
               needsDuration ||
+              needsLabel ||
+              needsCopyright ||
               isPlaceholderQualityLabel(_quality)) &&
           mounted) {
         setState(() {
@@ -337,6 +352,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             if (resolvedSampleRate != null) 'sample_rate': resolvedSampleRate,
             if (needsAlbum) 'album': resolvedAlbum,
             if (needsDuration) 'duration': resolvedDuration,
+            if (needsLabel) 'label': resolvedLabel,
+            if (needsCopyright) 'copyright': resolvedCopyright,
           };
         });
       }
