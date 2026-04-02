@@ -51,7 +51,7 @@ func GetLogBuffer() *LogBuffer {
 		globalLogBuffer = &LogBuffer{
 			entries:        make([]LogEntry, 0, defaultLogBufferSize),
 			maxSize:        defaultLogBufferSize,
-			loggingEnabled: false, // Default: disabled for performance (user can enable in settings)
+			loggingEnabled: false,
 		}
 	})
 	return globalLogBuffer

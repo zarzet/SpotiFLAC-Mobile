@@ -175,7 +175,6 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 		return nil, fmt.Errorf("resolve API returned success=false")
 	}
 
-	// Map resolve API keys to SongLink-compatible platform keys
 	keyMap := map[string]string{
 		"Spotify":      "spotify",
 		"Deezer":       "deezer",
@@ -508,8 +507,6 @@ func extractYouTubeIDFromURL(youtubeURL string) string {
 
 	return ""
 }
-
-// isNumeric is defined in library_scan.go
 
 func (s *SongLinkClient) GetDeezerIDFromSpotify(spotifyTrackID string) (string, error) {
 	availability, err := s.CheckTrackAvailability(spotifyTrackID, "")

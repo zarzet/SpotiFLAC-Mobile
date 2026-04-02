@@ -892,7 +892,6 @@ class FFmpegService {
   ///
   /// Returns a [ReplayGainResult] on success, or null if the scan fails.
   static Future<ReplayGainResult?> scanReplayGain(String filePath) async {
-    // Run FFmpeg with ebur128 filter + astats for true peak.
     // -nostats suppresses the interactive progress line.
     // ebur128=peak=true prints integrated loudness + true peak.
     // framelog=quiet suppresses per-frame measurements (very verbose),
@@ -941,7 +940,6 @@ class FFmpegService {
       }
     }
 
-    // ReplayGain reference level: -18 LUFS
     const replayGainReferenceLufs = -18.0;
     final gainDb = replayGainReferenceLufs - integratedLufs;
 
@@ -949,13 +947,11 @@ class FFmpegService {
     // If no true peak was found, fall back to 1.0 (0 dBFS).
     double peakLinear;
     if (truePeakDbfs != null) {
-      // 10^(dBFS/20) converts dBFS to linear amplitude
       peakLinear = math.pow(10, truePeakDbfs / 20.0).toDouble();
     } else {
       peakLinear = 1.0;
     }
 
-    // Format to standard ReplayGain precision
     final trackGain =
         '${gainDb >= 0 ? "+" : ""}${gainDb.toStringAsFixed(2)} dB';
     final trackPeak = peakLinear.toStringAsFixed(6);
@@ -1791,7 +1787,6 @@ class FFmpegService {
           vorbis['LYRICS'] = value;
           vorbis['UNSYNCEDLYRICS'] = value;
           break;
-        // ReplayGain fields
         case 'REPLAYGAINTRACKGAIN':
           vorbis['REPLAYGAIN_TRACK_GAIN'] = value;
           break;

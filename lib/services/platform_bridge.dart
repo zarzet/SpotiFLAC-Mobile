@@ -354,7 +354,7 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  /// Sets the lyrics provider order. Providers not in the list are disabled.
+  /// Providers not in the list are disabled.
   static Future<void> setLyricsProviders(List<String> providers) async {
     final providersJSON = jsonEncode(providers);
     await _channel.invokeMethod('setLyricsProviders', {
@@ -362,14 +362,12 @@ class PlatformBridge {
     });
   }
 
-  /// Returns the current lyrics provider order.
   static Future<List<String>> getLyricsProviders() async {
     final result = await _channel.invokeMethod('getLyricsProviders');
     final List<dynamic> decoded = jsonDecode(result as String) as List<dynamic>;
     return decoded.cast<String>();
   }
 
-  /// Returns metadata about all available lyrics providers.
   static Future<List<Map<String, dynamic>>>
   getAvailableLyricsProviders() async {
     final result = await _channel.invokeMethod('getAvailableLyricsProviders');
@@ -387,7 +385,6 @@ class PlatformBridge {
     });
   }
 
-  /// Returns current advanced lyrics fetch options.
   static Future<Map<String, dynamic>> getLyricsFetchOptions() async {
     final result = await _channel.invokeMethod('getLyricsFetchOptions');
     return jsonDecode(result as String) as Map<String, dynamic>;

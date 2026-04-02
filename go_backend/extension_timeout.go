@@ -104,7 +104,6 @@ func RunWithTimeout(vm *goja.Runtime, script string, timeout time.Duration) (goj
 func RunWithTimeoutAndRecover(vm *goja.Runtime, script string, timeout time.Duration) (goja.Value, error) {
 	result, err := RunWithTimeout(vm, script, timeout)
 
-	// Clear any interrupt state so VM can be reused
 	if vm != nil {
 		vm.ClearInterrupt()
 	}

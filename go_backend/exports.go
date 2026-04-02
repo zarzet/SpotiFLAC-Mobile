@@ -172,10 +172,6 @@ func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
 	}
 
 	if req.shouldUpdateField("basic_tags") {
-		// Title and Artist are not overwritten — they are used for search matching
-		// and should remain as the user's original values.
-	}
-	if req.shouldUpdateField("basic_tags") {
 		if track.AlbumName != "" {
 			req.AlbumName = track.AlbumName
 		}
@@ -768,8 +764,7 @@ func DownloadTrack(requestJSON string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-// DownloadByStrategy routes a unified download request to the appropriate flow.
-// Routing priority: YouTube service > extension fallback > built-in fallback > direct service.
+// DownloadByStrategy routes download requests with priority: YouTube > extension fallback > built-in fallback > direct service.
 func DownloadByStrategy(requestJSON string) (string, error) {
 	var req DownloadRequest
 	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
@@ -1067,7 +1062,6 @@ func ReadFileMetadata(filePath string) (string, error) {
 			result["copyright"] = metadata.Copyright
 			result["composer"] = metadata.Composer
 			result["comment"] = metadata.Comment
-			// ReplayGain fields
 			result["replaygain_track_gain"] = metadata.ReplayGainTrackGain
 			result["replaygain_track_peak"] = metadata.ReplayGainTrackPeak
 			result["replaygain_album_gain"] = metadata.ReplayGainAlbumGain
@@ -1214,8 +1208,7 @@ func ReadFileMetadata(filePath string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-// ParseCueSheet parses a .cue file and returns JSON with split information.
-// This is called from Dart to get track listing and timing data for CUE splitting.
+// ParseCueSheet is called from Dart to get track listing and timing data for CUE splitting.
 // audioDir, if non-empty, overrides the directory used for resolving the
 // referenced audio file (useful for SAF temp file scenarios).
 func ParseCueSheet(cuePath string, audioDir string) (string, error) {
@@ -1260,9 +1253,7 @@ func ScanCueSheetForLibraryWithCoverCacheKey(cuePath, audioDir, virtualPathPrefi
 	return string(jsonBytes), nil
 }
 
-// EditFileMetadata writes metadata to an audio file.
-// For FLAC files, uses native Go FLAC library.
-// For MP3/Opus, returns the metadata map so Dart can use FFmpeg.
+// EditFileMetadata writes audio file tags: FLAC via native Go library, MP3/Opus returns map for Dart/FFmpeg.
 func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 	var fields map[string]string
 	if err := json.Unmarshal([]byte(metadataJSON), &fields); err != nil {
@@ -1299,20 +1290,19 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 		}
 
 		meta := &AudioMetadata{
-			Title:       fields["title"],
-			Artist:      fields["artist"],
-			Album:       fields["album"],
-			AlbumArtist: fields["album_artist"],
-			Date:        fields["date"],
-			TrackNumber: trackNum,
-			DiscNumber:  discNum,
-			ISRC:        fields["isrc"],
-			Genre:       fields["genre"],
-			Label:       fields["label"],
-			Copyright:   fields["copyright"],
-			Composer:    fields["composer"],
-			Comment:     fields["comment"],
-			// ReplayGain fields
+			Title:               fields["title"],
+			Artist:              fields["artist"],
+			Album:               fields["album"],
+			AlbumArtist:         fields["album_artist"],
+			Date:                fields["date"],
+			TrackNumber:         trackNum,
+			DiscNumber:          discNum,
+			ISRC:                fields["isrc"],
+			Genre:               fields["genre"],
+			Label:               fields["label"],
+			Copyright:           fields["copyright"],
+			Composer:            fields["composer"],
+			Comment:             fields["comment"],
 			ReplayGainTrackGain: fields["replaygain_track_gain"],
 			ReplayGainTrackPeak: fields["replaygain_track_peak"],
 			ReplayGainAlbumGain: fields["replaygain_album_gain"],
@@ -2917,7 +2907,7 @@ func CustomSearchWithExtensionJSON(extensionID, query string, optionsJSON string
 			"album_name":   track.AlbumName,
 			"album_artist": track.AlbumArtist,
 			"duration_ms":  track.DurationMS,
-			"images":       track.ResolvedCoverURL(), // Use helper to get cover URL from either field
+			"images":       track.ResolvedCoverURL(),
 			"release_date": track.ReleaseDate,
 			"track_number": track.TrackNumber,
 			"disc_number":  track.DiscNumber,

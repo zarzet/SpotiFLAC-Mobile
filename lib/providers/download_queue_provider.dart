@@ -2473,7 +2473,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       _locallyCancelledItemIds.remove(id);
     }
 
-    // Clean accumulator entry for non-completed items.
     if (item.status != DownloadStatus.completed) {
       final key = _albumRgKey(item.track);
       final accumulator = _albumRgData[key];
@@ -2499,7 +2498,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   void clearCompleted() {
-    // Purge accumulator entries for failed/skipped items being removed.
     final removedItems = state.items.where(
       (item) =>
           item.status == DownloadStatus.completed ||
@@ -2760,7 +2758,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   void clearFailedDownloads() {
-    // Purge accumulator entries for failed items before removing them.
     final failedItems = state.items
         .where((item) => item.status == DownloadStatus.failed)
         .toList();
@@ -2883,7 +2880,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final key = _albumRgKey(track);
     final accumulator = _albumRgData[key];
     if (accumulator == null) return;
-    // Find the entry for this track and update its file path in-place.
     for (final entry in accumulator.entries) {
       if (entry.trackId == track.id) {
         entry.filePath = finalPath;
@@ -2969,7 +2965,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       'Album ReplayGain for "$key": gain=$albumGain, peak=$albumPeak (${validEntries.length} tracks, album LUFS=${albumLufs.toStringAsFixed(1)})',
     );
 
-    // Write album gain to every completed track file.
     for (final entry in validEntries) {
       try {
         await _writeAlbumReplayGain(entry.filePath, albumGain, albumPeak);

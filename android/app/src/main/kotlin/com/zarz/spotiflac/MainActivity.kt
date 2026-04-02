@@ -163,10 +163,6 @@ class MainActivity: FlutterFragmentActivity() {
             "sm-t225",
             "hammerhead",
         )
-        /**
-         * Check if device should use Skia instead of Impeller.
-         * Returns true for devices with old/problematic GPUs or old Android versions.
-         */
         private fun shouldDisableImpeller(): Boolean {
             val hardware = Build.HARDWARE.lowercase(Locale.ROOT)
             val board = Build.BOARD.lowercase(Locale.ROOT)
@@ -215,7 +211,6 @@ class MainActivity: FlutterFragmentActivity() {
         }
 
     /**
-     * Try to get GPU renderer string.
      * Note: This may return empty on some devices before OpenGL context is created.
      */
         private fun getGpuRenderer(): String {

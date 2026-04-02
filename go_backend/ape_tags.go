@@ -80,13 +80,11 @@ func readAPETagAtOffset(f *os.File, fileSize, footerOffset int64) (*APETag, erro
 		return nil, fmt.Errorf("invalid footer offset")
 	}
 
-	// Read the 32-byte footer/header
 	footer := make([]byte, apeTagHeaderSize)
 	if _, err := f.ReadAt(footer, footerOffset); err != nil {
 		return nil, fmt.Errorf("failed to read APE footer: %w", err)
 	}
 
-	// Verify preamble
 	if string(footer[0:8]) != apeTagPreamble {
 		return nil, fmt.Errorf("APE preamble not found")
 	}
@@ -96,7 +94,6 @@ func readAPETagAtOffset(f *os.File, fileSize, footerOffset int64) (*APETag, erro
 	itemCount := binary.LittleEndian.Uint32(footer[16:20])
 	flags := binary.LittleEndian.Uint32(footer[20:24])
 
-	// Sanity checks
 	if version != apeTagVersion2 && version != 1000 {
 		return nil, fmt.Errorf("unsupported APE tag version: %d", version)
 	}
@@ -113,7 +110,6 @@ func readAPETagAtOffset(f *os.File, fileSize, footerOffset int64) (*APETag, erro
 		return nil, fmt.Errorf("expected APE footer but found header")
 	}
 
-	// Calculate where the items data starts.
 	// tagSize includes items + footer (32 bytes), but NOT the header.
 	itemsSize := int64(tagSize) - apeTagHeaderSize
 	if itemsSize < 0 {
@@ -125,13 +121,11 @@ func readAPETagAtOffset(f *os.File, fileSize, footerOffset int64) (*APETag, erro
 		return nil, fmt.Errorf("APE tag items extend before file start")
 	}
 
-	// Read all items data
 	itemsData := make([]byte, itemsSize)
 	if _, err := f.ReadAt(itemsData, itemsOffset); err != nil {
 		return nil, fmt.Errorf("failed to read APE items: %w", err)
 	}
 
-	// Parse individual items
 	items, err := parseAPEItems(itemsData, int(itemCount))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse APE items: %w", err)
@@ -167,9 +161,8 @@ func parseAPEItems(data []byte, count int) ([]APETagItem, error) {
 		}
 
 		key := string(data[pos:keyEnd])
-		pos = keyEnd + 1 // skip null terminator
+		pos = keyEnd + 1
 
-		// Read value
 		if pos+valueSize > len(data) {
 			break
 		}
@@ -190,19 +183,16 @@ func parseAPEItems(data []byte, count int) ([]APETagItem, error) {
 // If the file already has APEv2 tags, they are replaced.
 // The tag is written with both header and footer.
 func WriteAPETags(filePath string, tag *APETag) error {
-	// First, read existing file to find and strip any existing APE tag
 	existingSize, err := findExistingAPETagSize(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to check existing APE tag: %w", err)
 	}
 
-	// Build the new tag data
 	tagData, err := marshalAPETag(tag)
 	if err != nil {
 		return fmt.Errorf("failed to marshal APE tag: %w", err)
 	}
 
-	// If there's an existing tag, we need to truncate the file first
 	if existingSize > 0 {
 		fi, err := os.Stat(filePath)
 		if err != nil {
@@ -214,7 +204,6 @@ func WriteAPETags(filePath string, tag *APETag) error {
 		}
 	}
 
-	// Append the new tag
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open file for writing: %w", err)
@@ -243,7 +232,6 @@ func findExistingAPETagSize(filePath string) (int64, error) {
 	}
 	fileSize := fi.Size()
 
-	// Try to read footer
 	offsets := []int64{fileSize - apeTagHeaderSize}
 	if fileSize > apeTagHeaderSize+128 {
 		offsets = append(offsets, fileSize-apeTagHeaderSize-128)
@@ -263,7 +251,7 @@ func findExistingAPETagSize(filePath string) (int64, error) {
 
 		flags := binary.LittleEndian.Uint32(footer[20:24])
 		if (flags & apeTagFlagHeader) != 0 {
-			continue // This is a header, not footer
+			continue
 		}
 
 		tagSize := int64(binary.LittleEndian.Uint32(footer[12:16]))
@@ -292,7 +280,6 @@ func marshalAPETag(tag *APETag) ([]byte, error) {
 		return nil, fmt.Errorf("empty APE tag")
 	}
 
-	// Build items data
 	var itemsData []byte
 	for _, item := range tag.Items {
 		keyBytes := []byte(item.Key)
@@ -309,7 +296,7 @@ func marshalAPETag(tag *APETag) ([]byte, error) {
 		itemsData = append(itemsData, sizeBuf...)
 		itemsData = append(itemsData, flagsBuf...)
 		itemsData = append(itemsData, keyBytes...)
-		itemsData = append(itemsData, 0) // null terminator
+		itemsData = append(itemsData, 0)
 		itemsData = append(itemsData, valueBytes...)
 	}
 
@@ -322,12 +309,10 @@ func marshalAPETag(tag *APETag) ([]byte, error) {
 		version = tag.Version
 	}
 
-	// Build header
 	// flags: bit 29 = 1 (is header), bit 31 = 1 (contains header)
 	headerFlags := uint32(apeTagFlagHeader | (1 << 31))
 	header := buildAPEHeaderFooter(version, tagSize, itemCount, headerFlags)
 
-	// Build footer
 	// flags: bit 29 = 0 (is footer), bit 31 = 1 (contains header)
 	footerFlags := uint32(1 << 31)
 	footer := buildAPEHeaderFooter(version, tagSize, itemCount, footerFlags)
@@ -463,7 +448,6 @@ func AudioMetadataToAPEItems(metadata *AudioMetadata) []APETagItem {
 // the metadata fields map sent by the editor.  This is used during merge to
 // ensure that even empty (cleared) fields override old values.
 func apeKeysFromFields(fields map[string]string) map[string]struct{} {
-	// Map from fields-map key → APE tag key.
 	mapping := map[string]string{
 		"title":                 "TITLE",
 		"artist":                "ARTIST",
@@ -490,29 +474,25 @@ func apeKeysFromFields(fields map[string]string) map[string]struct{} {
 			result[strings.ToUpper(apeKey)] = struct{}{}
 		}
 	}
-	// The reader accepts both YEAR and DATE for the date field; the writer
-	// always emits "Year".  Ensure both variants are overridden so that an
-	// old "DATE" tag from another tagger is removed when the user edits date.
+	// Some fields have reader aliases that must also be cleared when the
+	// canonical key is updated (e.g. "Year" writer ↔ DATE/YEAR reader,
+	// DISC ↔ DISCNUMBER, TRACK ↔ TRACKNUMBER, "ALBUM ARTIST" ↔ ALBUMARTIST,
+	// LABEL ↔ PUBLISHER, LYRICS ↔ UNSYNCEDLYRICS).
 	if _, present := fields["date"]; present {
 		result["DATE"] = struct{}{}
 	}
-	// Similarly, DISCNUMBER is an alias for DISC in the reader.
 	if _, present := fields["disc_number"]; present {
 		result["DISCNUMBER"] = struct{}{}
 	}
-	// TRACKNUMBER is an alias for TRACK in the reader.
 	if _, present := fields["track_number"]; present {
 		result["TRACKNUMBER"] = struct{}{}
 	}
-	// ALBUMARTIST is an alias for ALBUM ARTIST in the reader.
 	if _, present := fields["album_artist"]; present {
 		result["ALBUMARTIST"] = struct{}{}
 	}
-	// PUBLISHER is an alias for LABEL in the reader.
 	if _, present := fields["label"]; present {
 		result["PUBLISHER"] = struct{}{}
 	}
-	// UNSYNCEDLYRICS is an alias for LYRICS in the reader.
 	if _, present := fields["lyrics"]; present {
 		result["UNSYNCEDLYRICS"] = struct{}{}
 	}
@@ -538,7 +518,6 @@ func MergeAPEItems(existing, newItems []APETagItem, overrideKeys map[string]stru
 		combined[strings.ToUpper(item.Key)] = struct{}{}
 	}
 
-	// Start with existing items whose keys are NOT in the combined set
 	var merged []APETagItem
 	for _, item := range existing {
 		if _, overwritten := combined[strings.ToUpper(item.Key)]; !overwritten {
@@ -546,7 +525,6 @@ func MergeAPEItems(existing, newItems []APETagItem, overrideKeys map[string]stru
 		}
 	}
 
-	// Append all new items
 	merged = append(merged, newItems...)
 
 	return merged

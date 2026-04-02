@@ -496,7 +496,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     }
   }
 
-  /// Check if live search is available (extension is set as search provider)
   bool _isLiveSearchEnabled() {
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
@@ -564,7 +563,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
     }
   }
 
-  /// Built-in search providers that are not extensions
   static const _builtInSearchProviders = {'tidal', 'qobuz'};
 
   Future<void> _performSearch(String query, {String? filterOverride}) async {
@@ -599,7 +597,6 @@ class _HomeTabState extends ConsumerState<HomeTab>
           .read(trackProvider.notifier)
           .customSearch(searchProvider, query, options: options);
     } else if (isBuiltInProvider) {
-      // Use built-in Tidal or Qobuz search
       await ref
           .read(trackProvider.notifier)
           .search(
@@ -1122,7 +1119,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                       title: Text(
                         context.l10n.homeTitle,
                         style: TextStyle(
-                          fontSize: 20 + (14 * expandRatio), // 20 -> 34
+                          fontSize: 20 + (14 * expandRatio),
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                         ),
@@ -1496,7 +1493,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
   ) {
     final hasGreeting = greeting != null && greeting.isNotEmpty;
     final sectionOffset = hasGreeting ? 1 : 0;
-    final totalCount = sections.length + sectionOffset + 1; // + bottom padding
+    final totalCount = sections.length + sectionOffset + 1;
 
     return [
       SliverList(
@@ -2939,7 +2936,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
           albumId: album.id,
           albumName: album.name,
           coverUrl: album.imageUrl,
-          tracks: const [], // Will be fetched by AlbumScreen
+          tracks: const [],
         ),
       ),
     );
@@ -2965,7 +2962,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
         builder: (context) => PlaylistScreen(
           playlistName: playlist.name,
           coverUrl: playlist.imageUrl,
-          tracks: const [], // Will be fetched
+          tracks: const [],
           playlistId: playlist.id,
         ),
       ),
@@ -3694,7 +3691,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
             thickness: 1,
             indent:
                 thumbWidth +
-                24, // Adjust divider indent based on thumbnail width
+                24,
             endIndent: 12,
             color: colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),

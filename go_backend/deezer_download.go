@@ -62,7 +62,6 @@ func resolveDeezerTrackURL(req DownloadRequest) (string, error) {
 		return trackURL, nil
 	}
 
-	// Try SongLink
 	spotifyID := strings.TrimSpace(req.SpotifyID)
 	if spotifyID != "" && isLikelySpotifyTrackID(spotifyID) {
 		songlink := NewSongLinkClient()
@@ -82,7 +81,6 @@ func resolveDeezerTrackURL(req DownloadRequest) (string, error) {
 		}
 	}
 
-	// Try ISRC
 	isrc := strings.TrimSpace(req.ISRC)
 	if isrc != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), SongLinkTimeout)

@@ -1132,11 +1132,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   String? _filterCacheFormat;
   String? _filterCacheMetadata;
   String _filterCacheSortMode = 'latest';
-  String? _filterSource; // null = all, 'downloaded', 'local'
-  String? _filterQuality; // null = all, 'hires', 'cd', 'lossy'
-  String? _filterFormat; // null = all, 'flac', 'mp3', 'm4a', 'opus', 'ogg'
-  String? _filterMetadata; // null = all, 'complete', 'missing-*'
-  String _sortMode = 'latest'; // 'latest', 'oldest', 'a-z', 'z-a'
+  String? _filterSource;
+  String? _filterQuality;
+  String? _filterFormat;
+  String? _filterMetadata;
+  String _sortMode = 'latest';
 
   double _effectiveTextScale() {
     final textScale = MediaQuery.textScalerOf(context).scale(1.0);
@@ -2036,7 +2036,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       return quality.split('/').first;
     }
 
-    // Supports "MP3 320k", "Opus 256kbps", etc.
     final bitrateTextMatch = RegExp(
       r'(\d+)\s*k(?:bps)?',
       caseSensitive: false,
@@ -2045,7 +2044,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
       return '${bitrateTextMatch.group(1)}k';
     }
 
-    // Supports legacy quality IDs like "opus_256" / "mp3_320".
     final bitrateIdMatch = RegExp(r'_(\d+)$').firstMatch(q);
     if (bitrateIdMatch != null) {
       return '${bitrateIdMatch.group(1)}k';
@@ -2301,7 +2299,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
   List<UnifiedLibraryItem> _applySorting(List<UnifiedLibraryItem> items) {
     if (_sortMode == 'latest') {
-      return items; // Already sorted newest first from _getUnifiedItems
+      return items;
     }
     final sorted = List<UnifiedLibraryItem>.of(items);
     switch (_sortMode) {
@@ -3364,7 +3362,6 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final selectionItems = getFilterData(
       historyFilterMode,
     ).filteredUnifiedItems;
-    // Only sync overlays when selection mode is active
     if (_isSelectionMode || _isPlaylistSelectionMode) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_isSelectionMode) {

@@ -2210,7 +2210,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       final baseName = _buildSaveBaseName();
 
       if (_isSafFile) {
-        // SAF file: save to temp, then copy to SAF tree
         final tempDir = await Directory.systemTemp.createTemp('cover_');
         final tempOutput =
             '${tempDir.path}${Platform.pathSeparator}$baseName.jpg';
@@ -2293,7 +2292,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             }
           }
         } else {
-          // No SAF tree info, keep in temp
           try {
             await Directory(tempDir.path).delete(recursive: true);
           } catch (_) {}
@@ -5192,7 +5190,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       final method = result['method'] as String?;
 
       if (method == 'ffmpeg') {
-        // MP3/Opus: use FFmpeg to write metadata
         // For SAF files, Kotlin returns temp_path + saf_uri
         final tempPath = result['temp_path'] as String?;
         final safUri = result['saf_uri'] as String?;
@@ -5280,7 +5277,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               } catch (_) {}
             }
           } catch (_) {
-            // No cover to preserve, continue without
           }
         }
 

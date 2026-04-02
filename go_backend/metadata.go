@@ -309,7 +309,6 @@ func ReadMetadata(filePath string) (*Metadata, error) {
 			metadata.Composer = getComment(cmt, "COMPOSER")
 			metadata.Comment = getComment(cmt, "COMMENT")
 
-			// ReplayGain tags
 			metadata.ReplayGainTrackGain = getComment(cmt, "REPLAYGAIN_TRACK_GAIN")
 			metadata.ReplayGainTrackPeak = getComment(cmt, "REPLAYGAIN_TRACK_PEAK")
 			metadata.ReplayGainAlbumGain = getComment(cmt, "REPLAYGAIN_ALBUM_GAIN")
@@ -350,7 +349,7 @@ func EditFlacFields(filePath string, fields map[string]string) error {
 		cmt = flacvorbis.New()
 	}
 
-	artistMode := fields["artist_tag_mode"] // may be ""
+	artistMode := fields["artist_tag_mode"]
 
 	// Mapping from fields-map key → one or more Vorbis Comment keys.
 	// Each entry is handled with set-or-clear semantics.
@@ -448,12 +447,10 @@ func EditFlacFields(filePath string, fields map[string]string) error {
 		f.Meta = append(f.Meta, &cmtBlock)
 	}
 
-	// Cover art
 	coverPath := strings.TrimSpace(fields["cover_path"])
 	if coverPath != "" && fileExists(coverPath) {
 		coverData, err := os.ReadFile(coverPath)
 		if err == nil && len(coverData) > 0 {
-			// Remove existing pictures
 			for i := len(f.Meta) - 1; i >= 0; i-- {
 				if f.Meta[i].Type == flac.Picture {
 					f.Meta = append(f.Meta[:i], f.Meta[i+1:]...)
