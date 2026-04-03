@@ -44,11 +44,12 @@ var (
 )
 
 const (
-	qobuzTrackGetBaseURL    = "https://www.qobuz.com/api.json/0.2/track/get?track_id="
-	qobuzTrackSearchBaseURL = "https://www.qobuz.com/api.json/0.2/track/search?query="
-	qobuzAlbumGetBaseURL    = "https://www.qobuz.com/api.json/0.2/album/get?album_id="
-	qobuzArtistGetBaseURL   = "https://www.qobuz.com/api.json/0.2/artist/get?artist_id="
-	qobuzPlaylistGetBaseURL = "https://www.qobuz.com/api.json/0.2/playlist/get?playlist_id="
+	qobuzAPIBaseURL         = "https://api.zarz.moe/v1/qbz/"
+	qobuzTrackGetBaseURL    = qobuzAPIBaseURL + "track/get?track_id="
+	qobuzTrackSearchBaseURL = qobuzAPIBaseURL + "track/search?query="
+	qobuzAlbumGetBaseURL    = qobuzAPIBaseURL + "album/get?album_id="
+	qobuzArtistGetBaseURL   = qobuzAPIBaseURL + "artist/get?artist_id="
+	qobuzPlaylistGetBaseURL = qobuzAPIBaseURL + "playlist/get?playlist_id="
 	qobuzStoreSearchBaseURL = "https://www.qobuz.com/us-en/search/tracks/"
 	qobuzTrackOpenBaseURL   = "https://open.qobuz.com/track/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
@@ -1054,9 +1055,7 @@ func (q *QobuzDownloader) GetAvailableProviders() []qobuzAPIProvider {
 	return []qobuzAPIProvider{
 		{Name: "musicdl", URL: qobuzDownloadAPIURL, Kind: qobuzAPIKindMusicDL},
 		{Name: "dabmusic", URL: qobuzDabMusicAPIURL, Kind: qobuzAPIKindStandard},
-		// "deeb" is mapped from the legacy reference fallback endpoint.
 		{Name: "deeb", URL: qobuzDeebAPIURL, Kind: qobuzAPIKindStandard},
-		// "qbz" comes from the desktop reference app and uses /api/track/{id}?quality=...
 		{Name: "qbz", URL: qobuzAfkarAPIURL, Kind: qobuzAPIKindStandard},
 		{Name: "squid", URL: qobuzSquidAPIURL, Kind: qobuzAPIKindStandard},
 	}
@@ -1359,8 +1358,8 @@ func (q *QobuzDownloader) SearchAll(query string, trackLimit, artistLimit int, f
 	}
 
 	if artistLimit > 0 {
-		searchURL := fmt.Sprintf("https://www.qobuz.com/api.json/0.2/artist/search?query=%s&limit=%d&app_id=%s",
-			url.QueryEscape(cleanQuery), artistLimit, q.appID)
+		searchURL := fmt.Sprintf("%sartist/search?query=%s&limit=%d&app_id=%s",
+			qobuzAPIBaseURL, url.QueryEscape(cleanQuery), artistLimit, q.appID)
 		req, err := http.NewRequest("GET", searchURL, nil)
 		if err == nil {
 			resp, reqErr := DoRequestWithUserAgent(q.client, req)
@@ -1397,8 +1396,8 @@ func (q *QobuzDownloader) SearchAll(query string, trackLimit, artistLimit int, f
 	}
 
 	if albumLimit > 0 {
-		searchURL := fmt.Sprintf("https://www.qobuz.com/api.json/0.2/album/search?query=%s&limit=%d&app_id=%s",
-			url.QueryEscape(cleanQuery), albumLimit, q.appID)
+		searchURL := fmt.Sprintf("%salbum/search?query=%s&limit=%d&app_id=%s",
+			qobuzAPIBaseURL, url.QueryEscape(cleanQuery), albumLimit, q.appID)
 		req, err := http.NewRequest("GET", searchURL, nil)
 		if err == nil {
 			resp, reqErr := DoRequestWithUserAgent(q.client, req)
@@ -1838,7 +1837,8 @@ func (q *QobuzDownloader) searchQobuzTracksViaAlbumSearch(query string, limit in
 	}
 
 	searchURL := fmt.Sprintf(
-		"https://www.qobuz.com/api.json/0.2/album/search?query=%s&limit=%d&app_id=%s",
+		"%salbum/search?query=%s&limit=%d&app_id=%s",
+		qobuzAPIBaseURL,
 		url.QueryEscape(strings.TrimSpace(query)),
 		albumLimit,
 		q.appID,
