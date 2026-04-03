@@ -89,7 +89,7 @@ import Gobackend  // Import Go framework
             }
             self.lastDownloadProgressPayload = payload
             DispatchQueue.main.async { [weak self] in
-                self?.downloadProgressEventSink?(payload)
+                self?.downloadProgressEventSink?(self?.parseJsonPayload(payload))
             }
         }
         downloadProgressTimer = timer
@@ -119,7 +119,7 @@ import Gobackend  // Import Go framework
             }
             self.lastLibraryScanProgressPayload = payload
             DispatchQueue.main.async { [weak self] in
-                self?.libraryScanProgressEventSink?(payload)
+                self?.libraryScanProgressEventSink?(self?.parseJsonPayload(payload))
             }
         }
         libraryScanProgressTimer = timer
@@ -132,6 +132,17 @@ import Gobackend  // Import Go framework
         libraryScanProgressTimer = nil
         libraryScanProgressEventSink = nil
         lastLibraryScanProgressPayload = nil
+    }
+
+    private func parseJsonPayload(_ payload: String) -> Any {
+        guard let data = payload.data(using: .utf8) else {
+            return payload
+        }
+        do {
+            return try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        } catch {
+            return payload
+        }
     }
     
     private func handleMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -169,11 +180,11 @@ import Gobackend  // Import Go framework
 
         case "getDownloadProgress":
             let response = GobackendGetDownloadProgress()
-            return response
+            return parseJsonPayload(response as String? ?? "{}")
             
         case "getAllDownloadProgress":
             let response = GobackendGetAllDownloadProgress()
-            return response
+            return parseJsonPayload(response as String? ?? "{}")
             
         case "initItemProgress":
             let args = call.arguments as! [String: Any]
@@ -933,7 +944,7 @@ import Gobackend  // Import Go framework
             
         case "getLibraryScanProgress":
             let response = GobackendGetLibraryScanProgressJSON()
-            return response
+            return parseJsonPayload(response as String? ?? "{}")
             
         case "cancelLibraryScan":
             GobackendCancelLibraryScanJSON()

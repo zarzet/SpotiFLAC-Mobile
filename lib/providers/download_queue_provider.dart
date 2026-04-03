@@ -1103,6 +1103,7 @@ final downloadHistoryProvider =
 class DownloadQueueState {
   static const Object _noChange = Object();
   final List<DownloadItem> items;
+  final DownloadQueueLookup lookup;
   final DownloadItem? currentDownload;
   final bool isProcessing;
   final bool isPaused;
@@ -1115,6 +1116,7 @@ class DownloadQueueState {
 
   const DownloadQueueState({
     this.items = const [],
+    this.lookup = const DownloadQueueLookup.empty(),
     this.currentDownload,
     this.isProcessing = false,
     this.isPaused = false,
@@ -1128,6 +1130,7 @@ class DownloadQueueState {
 
   DownloadQueueState copyWith({
     List<DownloadItem>? items,
+    DownloadQueueLookup? lookup,
     Object? currentDownload = _noChange,
     bool? isProcessing,
     bool? isPaused,
@@ -1138,8 +1141,14 @@ class DownloadQueueState {
     bool? autoFallback,
     int? concurrentDownloads,
   }) {
+    final resolvedItems = items ?? this.items;
     return DownloadQueueState(
-      items: items ?? this.items,
+      items: resolvedItems,
+      lookup:
+          lookup ??
+          (items != null
+              ? DownloadQueueLookup.fromItems(resolvedItems)
+              : this.lookup),
       currentDownload: identical(currentDownload, _noChange)
           ? this.currentDownload
           : currentDownload as DownloadItem?,
@@ -1624,6 +1633,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (progressUpdates.isNotEmpty) {
       var updatedItems = currentItems;
       bool changed = false;
+      final changedIndices = <int>[];
 
       for (final entry in progressUpdates.entries) {
         final index = itemIndexById[entry.key];
@@ -1652,11 +1662,19 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             changed = true;
           }
           updatedItems[index] = next;
+          changedIndices.add(index);
         }
       }
 
       if (changed) {
-        state = state.copyWith(items: updatedItems);
+        state = state.copyWith(
+          items: updatedItems,
+          lookup: state.lookup.updatedForIndices(
+            previousItems: currentItems,
+            nextItems: updatedItems,
+            changedIndices: changedIndices,
+          ),
+        );
       }
     }
 
@@ -5564,6 +5582,11 @@ class DownloadQueueLookup {
   final Map<String, DownloadItem> byItemId;
   final List<String> itemIds;
 
+  const DownloadQueueLookup.empty()
+    : byTrackId = const {},
+      byItemId = const {},
+      itemIds = const [];
+
   DownloadQueueLookup._({
     required this.byTrackId,
     required this.byItemId,
@@ -5585,11 +5608,53 @@ class DownloadQueueLookup {
       itemIds: itemIds,
     );
   }
+
+  DownloadQueueLookup updatedForIndices({
+    required List<DownloadItem> previousItems,
+    required List<DownloadItem> nextItems,
+    required Iterable<int> changedIndices,
+  }) {
+    if (previousItems.length != nextItems.length ||
+        itemIds.length != nextItems.length) {
+      return DownloadQueueLookup.fromItems(nextItems);
+    }
+
+    final normalizedChanged = <int>[];
+    for (final index in changedIndices) {
+      if (index < 0 || index >= nextItems.length) {
+        return DownloadQueueLookup.fromItems(nextItems);
+      }
+      normalizedChanged.add(index);
+    }
+    if (normalizedChanged.isEmpty) return this;
+
+    final nextByItemId = Map<String, DownloadItem>.from(byItemId);
+    Map<String, DownloadItem>? nextByTrackId;
+
+    for (final index in normalizedChanged) {
+      final previous = previousItems[index];
+      final next = nextItems[index];
+      if (previous.id != next.id || previous.track.id != next.track.id) {
+        return DownloadQueueLookup.fromItems(nextItems);
+      }
+
+      nextByItemId[next.id] = next;
+      if (byTrackId[next.track.id]?.id == previous.id) {
+        nextByTrackId ??= Map<String, DownloadItem>.from(byTrackId);
+        nextByTrackId[next.track.id] = next;
+      }
+    }
+
+    return DownloadQueueLookup._(
+      byTrackId: nextByTrackId ?? byTrackId,
+      byItemId: nextByItemId,
+      itemIds: itemIds,
+    );
+  }
 }
 
 final downloadQueueLookupProvider = Provider<DownloadQueueLookup>((ref) {
-  final items = ref.watch(downloadQueueProvider.select((s) => s.items));
-  return DownloadQueueLookup.fromItems(items);
+  return ref.watch(downloadQueueProvider.select((s) => s.lookup));
 });
 
 // ---------------------------------------------------------------------------

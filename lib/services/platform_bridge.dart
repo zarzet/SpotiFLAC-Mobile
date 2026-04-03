@@ -1181,13 +1181,13 @@ class PlatformBridge {
 
   static Map<String, dynamic> _decodeMapResult(dynamic result) {
     if (result is Map) {
-      return Map<String, dynamic>.from(result);
+      return result.cast<String, dynamic>();
     }
     if (result is String) {
       if (result.isEmpty) return const <String, dynamic>{};
       final decoded = jsonDecode(result);
       if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
+        return decoded.cast<String, dynamic>();
       }
     }
     return const <String, dynamic>{};

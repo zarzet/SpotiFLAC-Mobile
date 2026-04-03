@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
@@ -107,7 +108,7 @@ class DownloadedEmbeddedCoverResolver {
     _pendingPreviewValidation.remove(cleanPath);
     _failedExtract.remove(cleanPath);
     if (cached != null) {
-      _cleanupTempCoverPathSync(cached.previewPath);
+      _scheduleTempCoverCleanup(cached.previewPath);
     }
   }
 
@@ -139,7 +140,7 @@ class DownloadedEmbeddedCoverResolver {
       final oldestKey = _cache.keys.first;
       final removed = _cache.remove(oldestKey);
       if (removed != null) {
-        _cleanupTempCoverPathSync(removed.previewPath);
+        _scheduleTempCoverCleanup(removed.previewPath);
       }
       _pendingExtract.remove(oldestKey);
       _pendingRefresh.remove(oldestKey);
@@ -165,7 +166,7 @@ class DownloadedEmbeddedCoverResolver {
             _failedExtract.remove(cleanPath);
             onChanged?.call();
           }
-          _cleanupTempCoverPathSync(entry.previewPath);
+          _scheduleTempCoverCleanup(entry.previewPath);
         }
       } finally {
         _pendingPreviewValidation.remove(cleanPath);
@@ -203,7 +204,7 @@ class DownloadedEmbeddedCoverResolver {
             result['error'] == null && await File(outputPath).exists();
         if (!hasCover) {
           _failedExtract.add(cleanPath);
-          _cleanupTempCoverPathSync(outputPath);
+          _scheduleTempCoverCleanup(outputPath);
           return;
         }
 
@@ -217,29 +218,32 @@ class DownloadedEmbeddedCoverResolver {
         _trimCacheIfNeeded();
 
         if (previous != null && previous.previewPath != outputPath) {
-          _cleanupTempCoverPathSync(previous.previewPath);
+          _scheduleTempCoverCleanup(previous.previewPath);
         }
         onChanged?.call();
       } catch (_) {
         _failedExtract.add(cleanPath);
-        _cleanupTempCoverPathSync(outputPath);
+        _scheduleTempCoverCleanup(outputPath);
       } finally {
         _pendingExtract.remove(cleanPath);
       }
     });
   }
 
-  static void _cleanupTempCoverPathSync(String? coverPath) {
+  static void _scheduleTempCoverCleanup(String? coverPath) {
+    unawaited(_cleanupTempCoverPath(coverPath));
+  }
+
+  static Future<void> _cleanupTempCoverPath(String? coverPath) async {
     if (coverPath == null || coverPath.isEmpty) return;
     try {
       final file = File(coverPath);
-      if (file.existsSync()) {
-        file.deleteSync();
-      }
-      final parent = file.parent;
-      if (parent.existsSync()) {
-        parent.deleteSync(recursive: true);
-      }
+      try {
+        await file.delete();
+      } catch (_) {}
+      try {
+        await file.parent.delete(recursive: true);
+      } catch (_) {}
     } catch (_) {}
   }
 }
