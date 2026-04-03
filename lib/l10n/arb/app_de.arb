@@ -1690,7 +1690,7 @@
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
-  "extensionDefaultProvider": "Default (Deezer)",
+  "extensionDefaultProvider": "Standard (Deezer)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -3508,7 +3508,7 @@
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
     "description": "Subtitle when Track Artist is used for folder naming"
   },
-  "lyricsProvidersTitle": "Lyrics Providers",
+  "lyricsProvidersTitle": "Lyrics-Anbieter",
   "@lyricsProvidersTitle": {
     "description": "Title for the lyrics provider priority page"
   },
@@ -4162,7 +4162,7 @@
   "@sortAlphaDesc": {
     "description": "Sort option - alphabetical descending"
   },
-  "cancelDownloadTitle": "Cancel download?",
+  "cancelDownloadTitle": "Download abbrechen?",
   "@cancelDownloadTitle": {
     "description": "Dialog title when confirming cancellation of an active download"
   },
@@ -4208,7 +4208,7 @@
   "@errorLoadArtist": {
     "description": "Error state shown when artist fails to load"
   },
-  "notifChannelDownloadName": "Download Progress",
+  "notifChannelDownloadName": "Download Fortschritt",
   "@notifChannelDownloadName": {
     "description": "Android notification channel name for download progress"
   },
@@ -4274,7 +4274,7 @@
       }
     }
   },
-  "notifDownloadComplete": "Download Complete",
+  "notifDownloadComplete": "Download abgeschlossen",
   "@notifDownloadComplete": {
     "description": "Notification title when a single download is complete"
   },
@@ -4347,7 +4347,7 @@
       }
     }
   },
-  "notifLibraryScanExcluded": "{count} excluded",
+  "notifLibraryScanExcluded": "{count} ausgeschlossen",
   "@notifLibraryScanExcluded": {
     "description": "Library scan complete suffix - excluded track count",
     "placeholders": {
