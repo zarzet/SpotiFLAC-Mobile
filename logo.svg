@@ -1,16 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#000000"/>
-  <g fill="none" stroke="#1DB954" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="512" y1="148" x2="512" y2="740" stroke-width="38"/>
-    
-    <line x1="422" y1="217.4" x2="422" y2="458.6" stroke-width="36.1"/>
-    <line x1="602" y1="217.4" x2="602" y2="458.6" stroke-width="36.1"/>
-    
-    <line x1="341" y1="290" x2="341" y2="386" stroke-width="34.2"/>
-    <line x1="683" y1="290" x2="683" y2="386" stroke-width="34.2"/>
-    
-    <polyline points="420,642 512,752 604,642" stroke-width="38"/>
-    
-    <path d="M 290 762 L 290 852 Q 290 924 362 924 L 662 924 Q 734 924 734 852 L 734 762" stroke-width="38"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="#000000" d="M0 0h1024v1024H0z"/><g fill="none" stroke="#1DB954" stroke-linecap="round" stroke-linejoin="round" transform="matrix(.9 0 0 .9 51.2 1.2)"><path stroke-width="38" d="M512 148v592"/><path stroke-width="36.1" d="M422 217.4v241.2m180-241.2v241.2"/><path stroke-width="34.2" d="M341 290v96m342-96v96"/><path stroke-width="38" d="m420 642 92 110 92-110M290 762v90q0 72 72 72h300q72 0 72-72v-90"/></g></svg>
