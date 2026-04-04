@@ -89,6 +89,14 @@
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
+  "downloadSingleFilenameFormat": "Single Filename Format",
+  "@downloadSingleFilenameFormat": {
+    "description": "Setting for output filename pattern for singles/EPs"
+  },
+  "downloadSingleFilenameFormatDescription": "Filename pattern for singles and EPs. Uses the same tags as the album format.",
+  "@downloadSingleFilenameFormatDescription": {
+    "description": "Subtitle description for single filename format setting"
+  },
   "downloadFolderOrganization": "Folder Organization",
   "@downloadFolderOrganization": {
     "description": "Title of the folder organization picker bottom sheet"
@@ -189,6 +197,18 @@
   "optionsMaxQualityCoverSubtitle": "Download highest resolution cover art",
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
+  },
+  "optionsReplayGain": "ReplayGain",
+  "@optionsReplayGain": {
+    "description": "Title for ReplayGain setting toggle"
+  },
+  "optionsReplayGainSubtitleOn": "Scan loudness and embed ReplayGain tags (EBU R128)",
+  "@optionsReplayGainSubtitleOn": {
+    "description": "Subtitle when ReplayGain is enabled"
+  },
+  "optionsReplayGainSubtitleOff": "Disabled: no loudness normalization tags",
+  "@optionsReplayGainSubtitleOff": {
+    "description": "Subtitle when ReplayGain is disabled"
   },
   "optionsArtistTagMode": "Artist Tag Mode",
   "@optionsArtistTagMode": {
@@ -1542,6 +1562,14 @@
   "trackLyricsNotAvailable": "Lyrics not available for this track",
   "@trackLyricsNotAvailable": {
     "description": "Message when lyrics not found"
+  },
+  "trackLyricsNotInFile": "No lyrics found in this file",
+  "@trackLyricsNotInFile": {
+    "description": "Message when no embedded lyrics in audio file"
+  },
+  "trackFetchOnlineLyrics": "Fetch from Online",
+  "@trackFetchOnlineLyrics": {
+    "description": "Action - fetch lyrics from online providers"
   },
   "trackLyricsTimeout": "Request timed out. Try again later.",
   "@trackLyricsTimeout": {
@@ -2954,6 +2982,38 @@
   "@trackReEnrichOnlineSubtitle": {
     "description": "Subtitle for re-enrich metadata action for local items"
   },
+  "trackReEnrichFieldsTitle": "Fields to update",
+  "@trackReEnrichFieldsTitle": {
+    "description": "Section title for field selection in re-enrich dialog"
+  },
+  "trackReEnrichFieldCover": "Cover Art",
+  "@trackReEnrichFieldCover": {
+    "description": "Checkbox label for cover art field in re-enrich"
+  },
+  "trackReEnrichFieldLyrics": "Lyrics",
+  "@trackReEnrichFieldLyrics": {
+    "description": "Checkbox label for lyrics field in re-enrich"
+  },
+  "trackReEnrichFieldBasicTags": "Album, Album Artist",
+  "@trackReEnrichFieldBasicTags": {
+    "description": "Checkbox label for basic tags in re-enrich (title/artist are never overwritten)"
+  },
+  "trackReEnrichFieldTrackInfo": "Track & Disc Number",
+  "@trackReEnrichFieldTrackInfo": {
+    "description": "Checkbox label for track info in re-enrich"
+  },
+  "trackReEnrichFieldReleaseInfo": "Date & ISRC",
+  "@trackReEnrichFieldReleaseInfo": {
+    "description": "Checkbox label for release info in re-enrich"
+  },
+  "trackReEnrichFieldExtra": "Genre, Label, Copyright",
+  "@trackReEnrichFieldExtra": {
+    "description": "Checkbox label for extra metadata in re-enrich"
+  },
+  "trackReEnrichSelectAll": "Select All",
+  "@trackReEnrichSelectAll": {
+    "description": "Select all fields checkbox in re-enrich"
+  },
   "trackEditMetadata": "Edit Metadata",
   "@trackEditMetadata": {
     "description": "Menu action - edit embedded metadata"
@@ -3549,10 +3609,6 @@
   "lyricsProvidersDiscardContent": "You have unsaved changes that will be lost.",
   "@lyricsProvidersDiscardContent": {
     "description": "Body text of the discard-changes dialog on lyrics provider page"
-  },
-  "lyricsProviderSpotifyApiDesc": "Spotify-sourced synced lyrics via community API",
-  "@lyricsProviderSpotifyApiDesc": {
-    "description": "Description for Spotify Lyrics API provider"
   },
   "lyricsProviderLrclibDesc": "Open-source synced lyrics database",
   "@lyricsProviderLrclibDesc": {
