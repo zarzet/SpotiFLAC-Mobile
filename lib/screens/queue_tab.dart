@@ -5853,13 +5853,27 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             final baseName = dotIdx > 0
                 ? oldFileName.substring(0, dotIdx)
                 : oldFileName;
-            final newExt = targetFormat.toLowerCase() == 'opus'
-                ? '.opus'
-                : '.mp3';
+            String newExt;
+            String mimeType;
+            switch (targetFormat.toLowerCase()) {
+              case 'opus':
+                newExt = '.opus';
+                mimeType = 'audio/opus';
+                break;
+              case 'alac':
+                newExt = '.m4a';
+                mimeType = 'audio/mp4';
+                break;
+              case 'flac':
+                newExt = '.flac';
+                mimeType = 'audio/flac';
+                break;
+              default:
+                newExt = '.mp3';
+                mimeType = 'audio/mpeg';
+                break;
+            }
             final newFileName = '$baseName$newExt';
-            final mimeType = targetFormat.toLowerCase() == 'opus'
-                ? 'audio/opus'
-                : 'audio/mpeg';
 
             final safUri = await PlatformBridge.createSafFileFromPath(
               treeUri: treeUri,
@@ -5884,7 +5898,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             try {
               await PlatformBridge.safDelete(item.filePath);
             } catch (_) {}
-            await LibraryDatabase.instance.deleteByPath(item.filePath);
+            await LibraryDatabase.instance.replaceWithConvertedItem(
+              item: item.localItem!,
+              newFilePath: safUri,
+              targetFormat: targetFormat,
+              bitrate: bitrate,
+            );
           }
 
           try {
@@ -5903,7 +5922,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             clearAudioSpecs: true,
           );
         } else if (item.localItem != null) {
-          await LibraryDatabase.instance.deleteByPath(item.filePath);
+          await LibraryDatabase.instance.replaceWithConvertedItem(
+            item: item.localItem!,
+            newFilePath: newPath,
+            targetFormat: targetFormat,
+            bitrate: bitrate,
+          );
         }
 
         successCount++;

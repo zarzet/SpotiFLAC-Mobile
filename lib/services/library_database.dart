@@ -431,6 +431,45 @@ class LibraryDatabase {
     await db.delete('library', where: 'file_path = ?', whereArgs: [filePath]);
   }
 
+  Future<void> replaceWithConvertedItem({
+    required LocalLibraryItem item,
+    required String newFilePath,
+    required String targetFormat,
+    required String bitrate,
+  }) async {
+    final db = await database;
+    final stat = await fileStat(newFilePath);
+    final now = DateTime.now();
+    final normalizedFormat = _normalizeConvertedFormat(targetFormat);
+    final updated = item.toJson()
+      ..['id'] = _generateLibraryId(newFilePath)
+      ..['filePath'] = newFilePath
+      ..['scannedAt'] = now.toIso8601String()
+      ..['fileModTime'] = stat?.modified?.millisecondsSinceEpoch
+      ..['format'] = normalizedFormat
+      ..['bitrate'] = _convertedBitrate(
+        targetFormat: targetFormat,
+        bitrate: bitrate,
+      );
+
+    if (normalizedFormat == 'mp3' || normalizedFormat == 'opus') {
+      updated['bitDepth'] = null;
+    }
+
+    await db.transaction((txn) async {
+      await txn.delete(
+        'library',
+        where: 'id = ? OR file_path = ?',
+        whereArgs: [item.id, item.filePath],
+      );
+      await txn.insert(
+        'library',
+        _jsonToDbRow(updated),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
+  }
+
   Future<void> delete(String id) async {
     final db = await database;
     await db.delete('library', where: 'id = ?', whereArgs: [id]);
@@ -601,5 +640,44 @@ class LibraryDatabase {
       _log.i('Deleted $totalDeleted items from library');
     }
     return totalDeleted;
+  }
+
+  String _normalizeConvertedFormat(String targetFormat) {
+    switch (targetFormat.trim().toLowerCase()) {
+      case 'alac':
+        return 'm4a';
+      case 'flac':
+        return 'flac';
+      case 'opus':
+        return 'opus';
+      default:
+        return 'mp3';
+    }
+  }
+
+  int? _convertedBitrate({
+    required String targetFormat,
+    required String bitrate,
+  }) {
+    switch (targetFormat.trim().toLowerCase()) {
+      case 'mp3':
+      case 'opus':
+        final match = RegExp(r'(\d+)').firstMatch(bitrate);
+        return match != null ? int.tryParse(match.group(1)!) : null;
+      default:
+        return null;
+    }
+  }
+
+  String _generateLibraryId(String filePath) {
+    return 'lib_${_hashString(filePath).toRadixString(16)}';
+  }
+
+  int _hashString(String input) {
+    var hash = 5381;
+    for (final codeUnit in input.codeUnits) {
+      hash = (((hash << 5) + hash) + codeUnit) & 0xffffffff;
+    }
+    return hash;
   }
 }

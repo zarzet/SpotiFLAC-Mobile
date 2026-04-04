@@ -3929,8 +3929,50 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       final newQuality = _buildConvertedQualityLabel(targetFormat, bitrate);
 
       if (isSaf) {
-        final treeUri = _downloadItem?.downloadTreeUri;
-        final relativeDir = _downloadItem?.safRelativeDir ?? '';
+        String? treeUri;
+        String relativeDir = '';
+        String oldFileName = '';
+        if (_isLocalItem) {
+          final uri = Uri.parse(cleanFilePath);
+          final pathSegments = uri.pathSegments;
+          final treeIdx = pathSegments.indexOf('tree');
+          final docIdx = pathSegments.indexOf('document');
+          if (treeIdx >= 0 && treeIdx + 1 < pathSegments.length) {
+            final treeId = pathSegments[treeIdx + 1];
+            treeUri =
+                'content://${uri.authority}/tree/${Uri.encodeComponent(treeId)}';
+          }
+          if (docIdx >= 0 && docIdx + 1 < pathSegments.length) {
+            final docPath = Uri.decodeFull(pathSegments[docIdx + 1]);
+            final slashIdx = docPath.lastIndexOf('/');
+            if (slashIdx >= 0) {
+              oldFileName = docPath.substring(slashIdx + 1);
+              final treeId = treeIdx >= 0 && treeIdx + 1 < pathSegments.length
+                  ? Uri.decodeFull(pathSegments[treeIdx + 1])
+                  : '';
+              if (treeId.isNotEmpty && docPath.startsWith(treeId)) {
+                final afterTree = docPath.substring(treeId.length);
+                final trimmed = afterTree.startsWith('/')
+                    ? afterTree.substring(1)
+                    : afterTree;
+                final lastSlash = trimmed.lastIndexOf('/');
+                relativeDir = lastSlash >= 0
+                    ? trimmed.substring(0, lastSlash)
+                    : '';
+              }
+            } else {
+              oldFileName = docPath;
+            }
+          }
+        } else {
+          treeUri = _downloadItem?.downloadTreeUri;
+          relativeDir = _downloadItem?.safRelativeDir ?? '';
+          oldFileName =
+              (_downloadItem?.safFileName != null &&
+                  _downloadItem!.safFileName!.isNotEmpty)
+              ? _downloadItem!.safFileName!
+              : _extractFileNameFromPathOrUri(cleanFilePath);
+        }
         if (treeUri == null || treeUri.isEmpty) {
           try {
             await File(newPath).delete();
@@ -3949,11 +3991,6 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           return;
         }
 
-        final oldFileName =
-            (_downloadItem?.safFileName != null &&
-                _downloadItem!.safFileName!.isNotEmpty)
-            ? _downloadItem!.safFileName!
-            : _extractFileNameFromPathOrUri(cleanFilePath);
         final dotIdx = oldFileName.lastIndexOf('.');
         final baseName = dotIdx > 0
             ? oldFileName.substring(0, dotIdx)
@@ -4022,6 +4059,14 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             clearAudioSpecs: true,
           );
           await ref.read(downloadHistoryProvider.notifier).reloadFromStorage();
+        } else {
+          await LibraryDatabase.instance.replaceWithConvertedItem(
+            item: _localLibraryItem!,
+            newFilePath: safUri,
+            targetFormat: targetFormat,
+            bitrate: bitrate,
+          );
+          await ref.read(localLibraryProvider.notifier).reloadFromStorage();
         }
 
         try {
@@ -4041,6 +4086,14 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             clearAudioSpecs: true,
           );
           await ref.read(downloadHistoryProvider.notifier).reloadFromStorage();
+        } else {
+          await LibraryDatabase.instance.replaceWithConvertedItem(
+            item: _localLibraryItem!,
+            newFilePath: newPath,
+            targetFormat: targetFormat,
+            bitrate: bitrate,
+          );
+          await ref.read(localLibraryProvider.notifier).reloadFromStorage();
         }
       }
 

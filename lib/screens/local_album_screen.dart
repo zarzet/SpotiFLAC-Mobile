@@ -1631,7 +1631,12 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
             try {
               await PlatformBridge.safDelete(item.filePath);
             } catch (_) {}
-            await localDb.deleteByPath(item.filePath);
+            await localDb.replaceWithConvertedItem(
+              item: item,
+              newFilePath: safUri,
+              targetFormat: targetFormat,
+              bitrate: bitrate,
+            );
           }
 
           try {
@@ -1643,8 +1648,12 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
             } catch (_) {}
           }
         } else {
-          // Regular file: just remove old entry, rescan will find the new one
-          await localDb.deleteByPath(item.filePath);
+          await localDb.replaceWithConvertedItem(
+            item: item,
+            newFilePath: newPath,
+            targetFormat: targetFormat,
+            bitrate: bitrate,
+          );
         }
 
         successCount++;
