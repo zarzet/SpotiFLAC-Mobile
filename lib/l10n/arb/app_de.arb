@@ -89,6 +89,14 @@
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
+  "downloadSingleFilenameFormat": "Single Filename Format",
+  "@downloadSingleFilenameFormat": {
+    "description": "Setting for output filename pattern for singles/EPs"
+  },
+  "downloadSingleFilenameFormatDescription": "Filename pattern for singles and EPs. Uses the same tags as the album format.",
+  "@downloadSingleFilenameFormatDescription": {
+    "description": "Subtitle description for single filename format setting"
+  },
   "downloadFolderOrganization": "Ordnerstruktur",
   "@downloadFolderOrganization": {
     "description": "Title of the folder organization picker bottom sheet"
@@ -190,6 +198,18 @@
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
+  "optionsReplayGain": "ReplayGain",
+  "@optionsReplayGain": {
+    "description": "Title for ReplayGain setting toggle"
+  },
+  "optionsReplayGainSubtitleOn": "Scan loudness and embed ReplayGain tags (EBU R128)",
+  "@optionsReplayGainSubtitleOn": {
+    "description": "Subtitle when ReplayGain is enabled"
+  },
+  "optionsReplayGainSubtitleOff": "Disabled: no loudness normalization tags",
+  "@optionsReplayGainSubtitleOff": {
+    "description": "Subtitle when ReplayGain is disabled"
+  },
   "optionsArtistTagMode": "Künstler Tag-Modus",
   "@optionsArtistTagMode": {
     "description": "Setting title for how artist metadata is written into files"
@@ -202,7 +222,7 @@
   "@optionsArtistTagModeJoined": {
     "description": "Artist tag mode option that joins multiple artists into one value"
   },
-  "optionsArtistTagModeJoinedSubtitle": "Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.",
+  "optionsArtistTagModeJoinedSubtitle": "Einen Künstler wert wie \"Artist A, Artist B\" für maximale Spieler-Kompatibilität schreiben.",
   "@optionsArtistTagModeJoinedSubtitle": {
     "description": "Subtitle for joined artist tag mode"
   },
@@ -1019,7 +1039,7 @@
   "@searchAlbums": {
     "description": "Search result category - albums"
   },
-  "searchPlaylists": "Playlisten",
+  "searchPlaylists": "Playlists",
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
@@ -1543,6 +1563,14 @@
   "@trackLyricsNotAvailable": {
     "description": "Message when lyrics not found"
   },
+  "trackLyricsNotInFile": "No lyrics found in this file",
+  "@trackLyricsNotInFile": {
+    "description": "Message when no embedded lyrics in audio file"
+  },
+  "trackFetchOnlineLyrics": "Fetch from Online",
+  "@trackFetchOnlineLyrics": {
+    "description": "Action - fetch lyrics from online providers"
+  },
   "trackLyricsTimeout": "Anfrage Timeout. Versuche es später erneut.",
   "@trackLyricsTimeout": {
     "description": "Message when lyrics request times out"
@@ -1901,7 +1929,7 @@
   "@downloadLossy320Format": {
     "description": "Title of the Tidal lossy format picker bottom sheet"
   },
-  "downloadLossy320FormatDesc": "Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.",
+  "downloadLossy320FormatDesc": "Wähle das Ausgabeformat für Tidal 320kbps verlustbehaftete Downloads. Der ursprüngliche AAC Stream wird in das ausgewählte Format konvertiert.",
   "@downloadLossy320FormatDesc": {
     "description": "Description in the Tidal lossy format picker"
   },
@@ -1909,7 +1937,7 @@
   "@downloadLossyMp3": {
     "description": "Tidal lossy format option - MP3 320kbps"
   },
-  "downloadLossyMp3Subtitle": "Best compatibility, ~10MB per track",
+  "downloadLossyMp3Subtitle": "Beste Kompatibilität, ~10MB pro Titel",
   "@downloadLossyMp3Subtitle": {
     "description": "Subtitle for MP3 320kbps Tidal lossy option"
   },
@@ -1917,7 +1945,7 @@
   "@downloadLossyOpus256": {
     "description": "Tidal lossy format option - Opus 256kbps"
   },
-  "downloadLossyOpus256Subtitle": "Best quality Opus, ~8MB per track",
+  "downloadLossyOpus256Subtitle": "Beste Qualität, ~8MB pro Titel",
   "@downloadLossyOpus256Subtitle": {
     "description": "Subtitle for Opus 256kbps Tidal lossy option"
   },
@@ -1925,7 +1953,7 @@
   "@downloadLossyOpus128": {
     "description": "Tidal lossy format option - Opus 128kbps"
   },
-  "downloadLossyOpus128Subtitle": "Smallest size, ~4MB per track",
+  "downloadLossyOpus128Subtitle": "Kleinste Größe, ~4MB pro Track",
   "@downloadLossyOpus128Subtitle": {
     "description": "Subtitle for Opus 128kbps Tidal lossy option"
   },
@@ -2449,7 +2477,7 @@
   "@libraryScanning": {
     "description": "Status during scan"
   },
-  "libraryScanFinalizing": "Finalizing library...",
+  "libraryScanFinalizing": "Bibliothek wird aktualisiert...",
   "@libraryScanFinalizing": {
     "description": "Status shown after file scanning finishes but library persistence is still running"
   },
@@ -2954,6 +2982,38 @@
   "@trackReEnrichOnlineSubtitle": {
     "description": "Subtitle for re-enrich metadata action for local items"
   },
+  "trackReEnrichFieldsTitle": "Fields to update",
+  "@trackReEnrichFieldsTitle": {
+    "description": "Section title for field selection in re-enrich dialog"
+  },
+  "trackReEnrichFieldCover": "Cover Art",
+  "@trackReEnrichFieldCover": {
+    "description": "Checkbox label for cover art field in re-enrich"
+  },
+  "trackReEnrichFieldLyrics": "Lyrics",
+  "@trackReEnrichFieldLyrics": {
+    "description": "Checkbox label for lyrics field in re-enrich"
+  },
+  "trackReEnrichFieldBasicTags": "Album, Album Artist",
+  "@trackReEnrichFieldBasicTags": {
+    "description": "Checkbox label for basic tags in re-enrich (title/artist are never overwritten)"
+  },
+  "trackReEnrichFieldTrackInfo": "Track & Disc Number",
+  "@trackReEnrichFieldTrackInfo": {
+    "description": "Checkbox label for track info in re-enrich"
+  },
+  "trackReEnrichFieldReleaseInfo": "Date & ISRC",
+  "@trackReEnrichFieldReleaseInfo": {
+    "description": "Checkbox label for release info in re-enrich"
+  },
+  "trackReEnrichFieldExtra": "Genre, Label, Copyright",
+  "@trackReEnrichFieldExtra": {
+    "description": "Checkbox label for extra metadata in re-enrich"
+  },
+  "trackReEnrichSelectAll": "Select All",
+  "@trackReEnrichSelectAll": {
+    "description": "Select all fields checkbox in re-enrich"
+  },
   "trackEditMetadata": "Metadaten bearbeiten",
   "@trackEditMetadata": {
     "description": "Menu action - edit embedded metadata"
@@ -3000,7 +3060,7 @@
   "@queueFlacAction": {
     "description": "Action/button label for queueing FLAC redownloads for local tracks"
   },
-  "queueFlacConfirmMessage": "Search online matches for the selected tracks and queue FLAC downloads.\n\nExisting files will not be modified or deleted.\n\nOnly high-confidence matches are queued automatically.\n\n{count} selected",
+  "queueFlacConfirmMessage": "Suche Online-Matches für ausgewählte Titel und Playlists für FLAC-Downloads.\n\nVorhandene Dateien werden weder geändert noch gelöscht.\n\nNur eindeutige Treffer werden automatisch zur Warteschlange hinzugefügt.\n\n{count} ausgewählt",
   "@queueFlacConfirmMessage": {
     "description": "Confirmation dialog body before queueing FLAC redownloads for local tracks",
     "placeholders": {
@@ -3085,7 +3145,7 @@
       }
     }
   },
-  "trackConvertConfirmMessageLossless": "Convert from {sourceFormat} to {targetFormat}? (Lossless — no quality loss)\n\nThe original file will be deleted after conversion.",
+  "trackConvertConfirmMessageLossless": "Konvertieren von {sourceFormat} in {targetFormat}? (kein Qualitätsverlust)\n\nDie Originaldatei wird nach der Konvertierung gelöscht.",
   "@trackConvertConfirmMessageLossless": {
     "description": "Confirmation dialog message for lossless-to-lossless conversion",
     "placeholders": {
@@ -3218,7 +3278,7 @@
   "@collectionLoved": {
     "description": "Custom folder for favorite tracks"
   },
-  "collectionPlaylists": "Playlisten",
+  "collectionPlaylists": "Playlists",
   "@collectionPlaylists": {
     "description": "Custom user playlists folder"
   },
@@ -3452,7 +3512,7 @@
       }
     }
   },
-  "selectionBatchConvertConfirmMessageLossless": "Convert {count} {count, plural, =1{track} other{tracks}} to {format}? (Lossless — no quality loss)\n\nOriginal files will be deleted after conversion.",
+  "selectionBatchConvertConfirmMessageLossless": "Konvertiere {count} {count, plural, one {}=1{Titel} other{Titel}} in {format}? (kein Qualitätsverlust)\n\nOriginaldateien werden nach der Konvertierung gelöscht.",
   "@selectionBatchConvertConfirmMessageLossless": {
     "description": "Confirmation dialog message for lossless batch conversion",
     "placeholders": {
@@ -3512,11 +3572,11 @@
   "@lyricsProvidersTitle": {
     "description": "Title for the lyrics provider priority page"
   },
-  "lyricsProvidersDescription": "Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.",
+  "lyricsProvidersDescription": "Lyrics aktivieren, deaktivieren und neu ordnen. Anbieter werden von oben nach unten ausprobiert, bis Lyrics gefunden werden.",
   "@lyricsProvidersDescription": {
     "description": "Description on the lyrics provider priority page"
   },
-  "lyricsProvidersInfoText": "Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.",
+  "lyricsProvidersInfoText": "Erweiterungsanbieter werden immer vor eingebauten ausgeführt. Mindestens ein Anbieter muss aktiviert bleiben.",
   "@lyricsProvidersInfoText": {
     "description": "Info tip on lyrics provider priority page"
   },
@@ -3529,7 +3589,7 @@
       }
     }
   },
-  "lyricsProvidersDisabledSection": "Disabled ({count})",
+  "lyricsProvidersDisabledSection": "({count}) deaktiviert",
   "@lyricsProvidersDisabledSection": {
     "description": "Section header for disabled providers",
     "placeholders": {
@@ -3550,43 +3610,39 @@
   "@lyricsProvidersDiscardContent": {
     "description": "Body text of the discard-changes dialog on lyrics provider page"
   },
-  "lyricsProviderSpotifyApiDesc": "Spotify-sourced synced lyrics via community API",
-  "@lyricsProviderSpotifyApiDesc": {
-    "description": "Description for Spotify Lyrics API provider"
-  },
   "lyricsProviderLrclibDesc": "Open-source synced lyrics database",
   "@lyricsProviderLrclibDesc": {
     "description": "Description for LRCLIB provider"
   },
-  "lyricsProviderNeteaseDesc": "NetEase Cloud Music (good for Asian songs)",
+  "lyricsProviderNeteaseDesc": "NetEase Cloud Music (gut für asiatische Lieder)",
   "@lyricsProviderNeteaseDesc": {
     "description": "Description for Netease provider"
   },
-  "lyricsProviderMusixmatchDesc": "Largest lyrics database (multi-language)",
+  "lyricsProviderMusixmatchDesc": "Größte Lyrics-Datenbank (mehrsprachig)",
   "@lyricsProviderMusixmatchDesc": {
     "description": "Description for Musixmatch provider"
   },
-  "lyricsProviderAppleMusicDesc": "Word-by-word synced lyrics (via proxy)",
+  "lyricsProviderAppleMusicDesc": "Wort-für-Wort-synchronisierte Lyrics (via Proxy)",
   "@lyricsProviderAppleMusicDesc": {
     "description": "Description for Apple Music provider"
   },
-  "lyricsProviderQqMusicDesc": "QQ Music (good for Chinese songs, via proxy)",
+  "lyricsProviderQqMusicDesc": "QQ Music (gut für chinesische Lieder, via Proxy)",
   "@lyricsProviderQqMusicDesc": {
     "description": "Description for QQ Music provider"
   },
-  "lyricsProviderExtensionDesc": "Extension provider",
+  "lyricsProviderExtensionDesc": "Erweiterungsanbieter",
   "@lyricsProviderExtensionDesc": {
     "description": "Generic description for extension-based lyrics providers"
   },
-  "safMigrationTitle": "Storage Update Required",
+  "safMigrationTitle": "Speicheraktualisierung erforderlich",
   "@safMigrationTitle": {
     "description": "Title of SAF migration dialog"
   },
-  "safMigrationMessage1": "SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.",
+  "safMigrationMessage1": "SpotiFLAC verwendet jetzt Android Storage Access Framework (SAF) beim Herunterladen. Dies behebt Fehler bei Android 10+.",
   "@safMigrationMessage1": {
     "description": "First paragraph of SAF migration dialog"
   },
-  "safMigrationMessage2": "Please select your download folder again to switch to the new storage system.",
+  "safMigrationMessage2": "Bitte wähle dein Download-Ordner erneut aus, um zum neuen System zu wechseln.",
   "@safMigrationMessage2": {
     "description": "Second paragraph of SAF migration dialog"
   },
@@ -3710,7 +3766,7 @@
   "@downloadFilenameDescription": {
     "description": "Description text in filename format bottom sheet"
   },
-  "downloadFilenameInsertTag": "Tap to insert tag:",
+  "downloadFilenameInsertTag": "Tippe, um Tag einzufügen:",
   "@downloadFilenameInsertTag": {
     "description": "Label above filename tag chips"
   },
@@ -3846,7 +3902,7 @@
   "@downloadMusixmatchAuto": {
     "description": "Button to reset Musixmatch language to automatic"
   },
-  "downloadNetworkAnySubtitle": "WiFi + Mobile Data",
+  "downloadNetworkAnySubtitle": "WLAN + Mobile Daten",
   "@downloadNetworkAnySubtitle": {
     "description": "Subtitle for 'Any' network mode option"
   },
@@ -3866,7 +3922,7 @@
   "@cacheRefresh": {
     "description": "Tooltip for refresh button on cache management page"
   },
-  "dialogDownloadPlaylistsMessage": "Download {trackCount} {trackCount, plural, =1{track} other{tracks}} from {playlistCount} {playlistCount, plural, =1{playlist} other{playlists}}?",
+  "dialogDownloadPlaylistsMessage": "Lade {trackCount} {trackCount, plural, one {}=1{Titel} other{Titel}} von {playlistCount} {playlistCount, plural, one {}=1{Playlist} other{Playlists}}?",
   "@dialogDownloadPlaylistsMessage": {
     "description": "Dialog message for bulk playlist download confirmation",
     "placeholders": {
@@ -4028,7 +4084,7 @@
       }
     }
   },
-  "queueEmptyAlbums": "No album downloads",
+  "queueEmptyAlbums": "Keine Album-Downloads",
   "@queueEmptyAlbums": {
     "description": "Empty state title when no album downloads exist"
   },
@@ -4072,7 +4128,7 @@
   "@audioAnalysisDescription": {
     "description": "Description for audio analysis tap-to-analyze prompt"
   },
-  "audioAnalysisAnalyzing": "Analyzing audio...",
+  "audioAnalysisAnalyzing": "Audio wird analysiert...",
   "@audioAnalysisAnalyzing": {
     "description": "Loading text while analyzing audio"
   },
@@ -4125,7 +4181,7 @@
       }
     }
   },
-  "extensionsHomeFeedProvider": "Home Feed Provider",
+  "extensionsHomeFeedProvider": "Home Feed Anbieter",
   "@extensionsHomeFeedProvider": {
     "description": "Extensions page - label for home feed provider selector"
   },
@@ -4258,7 +4314,7 @@
       }
     }
   },
-  "notifAlreadyInLibrary": "Already in Library",
+  "notifAlreadyInLibrary": "Bereits in der Bibliothek",
   "@notifAlreadyInLibrary": {
     "description": "Notification title when track is already in library"
   },
