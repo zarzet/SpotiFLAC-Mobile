@@ -57,6 +57,18 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+        }
+
+        getByName("profile") {
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+        }
+
         release {
             // For local builds: use release signing if key.properties exists
             // For CI builds: APK is signed by GitHub Action after build
@@ -71,6 +83,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
     

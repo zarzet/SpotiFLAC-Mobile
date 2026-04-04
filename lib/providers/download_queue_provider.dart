@@ -3918,6 +3918,13 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               _log.d('Track data keys: ${data.keys.toList()}');
               _log.d('ISRC from API: ${data['isrc']}');
               _log.d('album_type from API: ${data['album_type']}');
+              final enrichedTotalTracks = _parsePositiveInt(
+                data['total_tracks'],
+              );
+              final enrichedTotalDiscs = _parsePositiveInt(data['total_discs']);
+              final enrichedComposer = normalizeOptionalString(
+                data['composer']?.toString(),
+              );
               trackToDownload = Track(
                 id: (data['spotify_id'] as String?) ?? trackToDownload.id,
                 name: (data['name'] as String?) ?? trackToDownload.name,
@@ -3940,18 +3947,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 isrc: (data['isrc'] as String?) ?? trackToDownload.isrc,
                 trackNumber: data['track_number'] as int?,
                 discNumber: data['disc_number'] as int?,
-                totalDiscs:
-                    data['total_discs'] as int? ?? trackToDownload.totalDiscs,
+                totalDiscs: enrichedTotalDiscs ?? trackToDownload.totalDiscs,
                 releaseDate: data['release_date'] as String?,
                 deezerId: rawId,
                 availability: trackToDownload.availability,
                 albumType:
                     (data['album_type'] as String?) ??
                     trackToDownload.albumType,
-                totalTracks:
-                    data['total_tracks'] as int? ?? trackToDownload.totalTracks,
-                composer:
-                    data['composer']?.toString() ?? trackToDownload.composer,
+                totalTracks: enrichedTotalTracks ?? trackToDownload.totalTracks,
+                composer: enrichedComposer ?? trackToDownload.composer,
                 source: trackToDownload.source,
               );
               _log.d(
