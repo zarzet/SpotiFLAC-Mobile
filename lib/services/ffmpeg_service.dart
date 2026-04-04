@@ -1760,8 +1760,12 @@ class FFmpegService {
           if (value != '0') vorbis['DISCNUMBER'] = value;
           break;
         case 'DATE':
-        case 'YEAR':
           vorbis['DATE'] = value;
+          break;
+        case 'YEAR':
+          if (!vorbis.containsKey('DATE') || vorbis['DATE']!.isEmpty) {
+            vorbis['DATE'] = value;
+          }
           break;
         case 'GENRE':
           vorbis['GENRE'] = value;
@@ -1921,8 +1925,12 @@ class FFmpegService {
           m4aMap['disc'] = value;
           break;
         case 'DATE':
-        case 'YEAR':
           m4aMap['date'] = value;
+          break;
+        case 'YEAR':
+          if (!m4aMap.containsKey('date') || m4aMap['date']!.isEmpty) {
+            m4aMap['date'] = value;
+          }
           break;
         case 'GENRE':
           m4aMap['genre'] = value;
@@ -2004,8 +2012,12 @@ class FFmpegService {
           }
           break;
         case 'DATE':
-        case 'YEAR':
           id3Map['date'] = value;
+          break;
+        case 'YEAR':
+          if (!id3Map.containsKey('date') || id3Map['date']!.isEmpty) {
+            id3Map['date'] = value;
+          }
           break;
         case 'ISRC':
           id3Map['TSRC'] = value;

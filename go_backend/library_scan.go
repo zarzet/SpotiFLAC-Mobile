@@ -31,6 +31,8 @@ type LibraryScanResult struct {
 	SampleRate           int    `json:"sampleRate,omitempty"`
 	Bitrate              int    `json:"bitrate,omitempty"` // kbps, for lossy formats (MP3, Opus, Vorbis)
 	Genre                string `json:"genre,omitempty"`
+	Label                string `json:"label,omitempty"`
+	Copyright            string `json:"copyright,omitempty"`
 	Format               string `json:"format,omitempty"`
 	MetadataFromFilename bool   `json:"metadataFromFilename,omitempty"`
 }
@@ -368,6 +370,8 @@ func scanFLACFile(filePath string, result *LibraryScanResult, displayNameHint st
 	result.DiscNumber = metadata.DiscNumber
 	result.ReleaseDate = metadata.Date
 	result.Genre = metadata.Genre
+	result.Label = metadata.Label
+	result.Copyright = metadata.Copyright
 
 	quality, err := GetAudioQuality(filePath)
 	if err == nil {
@@ -403,6 +407,8 @@ func scanM4AFile(filePath string, result *LibraryScanResult, displayNameHint str
 			result.ReleaseDate = metadata.Year
 		}
 		result.Genre = metadata.Genre
+		result.Label = metadata.Label
+		result.Copyright = metadata.Copyright
 	}
 
 	quality, err := GetM4AQuality(filePath)
@@ -435,6 +441,8 @@ func scanMP3File(filePath string, result *LibraryScanResult, displayNameHint str
 		result.ReleaseDate = metadata.Year
 	}
 	result.ISRC = metadata.ISRC
+	result.Label = metadata.Label
+	result.Copyright = metadata.Copyright
 
 	quality, err := GetMP3Quality(filePath)
 	if err == nil {
@@ -467,6 +475,8 @@ func scanOggFile(filePath string, result *LibraryScanResult, displayNameHint str
 	result.DiscNumber = metadata.DiscNumber
 	result.Genre = metadata.Genre
 	result.ReleaseDate = metadata.Date
+	result.Label = metadata.Label
+	result.Copyright = metadata.Copyright
 
 	quality, err := GetOggQuality(filePath)
 	if err == nil {
@@ -508,6 +518,8 @@ func scanAPEFile(filePath string, result *LibraryScanResult, displayNameHint str
 	} else {
 		result.ReleaseDate = metadata.Year
 	}
+	result.Label = metadata.Label
+	result.Copyright = metadata.Copyright
 
 	applyDefaultLibraryMetadata(filePath, displayNameHint, result)
 

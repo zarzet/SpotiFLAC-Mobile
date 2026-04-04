@@ -27,6 +27,8 @@ class LocalLibraryItem {
   final int? sampleRate;
   final int? bitrate; // kbps, for lossy formats (mp3, opus, ogg)
   final String? genre;
+  final String? label;
+  final String? copyright;
   final String? format; // flac, mp3, opus, m4a
 
   const LocalLibraryItem({
@@ -48,6 +50,8 @@ class LocalLibraryItem {
     this.sampleRate,
     this.bitrate,
     this.genre,
+    this.label,
+    this.copyright,
     this.format,
   });
 
@@ -70,6 +74,8 @@ class LocalLibraryItem {
     'sampleRate': sampleRate,
     'bitrate': bitrate,
     'genre': genre,
+    'label': label,
+    'copyright': copyright,
     'format': format,
   };
 
@@ -93,6 +99,8 @@ class LocalLibraryItem {
         sampleRate: json['sampleRate'] as int?,
         bitrate: (json['bitrate'] as num?)?.toInt(),
         genre: json['genre'] as String?,
+        label: json['label'] as String?,
+        copyright: json['copyright'] as String?,
         format: json['format'] as String?,
       );
 
@@ -122,7 +130,7 @@ class LibraryDatabase {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onConfigure: (db) async {
         await db.rawQuery('PRAGMA journal_mode = WAL');
         await db.execute('PRAGMA synchronous = NORMAL');
@@ -155,6 +163,8 @@ class LibraryDatabase {
         sample_rate INTEGER,
         bitrate INTEGER,
         genre TEXT,
+        label TEXT,
+        copyright TEXT,
         format TEXT
       )
     ''');
@@ -190,6 +200,12 @@ class LibraryDatabase {
       await db.execute('ALTER TABLE library ADD COLUMN bitrate INTEGER');
       _log.i('Added bitrate column for lossy format quality');
     }
+
+    if (oldVersion < 5) {
+      await db.execute('ALTER TABLE library ADD COLUMN label TEXT');
+      await db.execute('ALTER TABLE library ADD COLUMN copyright TEXT');
+      _log.i('Added label/copyright columns');
+    }
   }
 
   Map<String, dynamic> _jsonToDbRow(Map<String, dynamic> json) {
@@ -212,6 +228,8 @@ class LibraryDatabase {
       'sample_rate': json['sampleRate'],
       'bitrate': json['bitrate'],
       'genre': json['genre'],
+      'label': json['label'],
+      'copyright': json['copyright'],
       'format': json['format'],
     };
   }
@@ -236,6 +254,8 @@ class LibraryDatabase {
       'sampleRate': row['sample_rate'],
       'bitrate': row['bitrate'],
       'genre': row['genre'],
+      'label': row['label'],
+      'copyright': row['copyright'],
       'format': row['format'],
     };
   }

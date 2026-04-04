@@ -252,7 +252,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     }
     if (mounted &&
         exists &&
-        !_isLocalItem &&
+        !_isCueVirtualTrack &&
         !_hasLoadedResolvedAudioMetadata) {
       unawaited(_refreshResolvedAudioMetadataFromFile());
     }
@@ -291,8 +291,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   }
 
   Future<void> _refreshResolvedAudioMetadataFromFile() async {
-    if (_isLocalItem ||
-        _downloadItem == null ||
+    if ((_isLocalItem && _localLibraryItem == null) ||
+        (!_isLocalItem && _downloadItem == null) ||
+        _isCueVirtualTrack ||
         _hasLoadedResolvedAudioMetadata) {
       return;
     }
@@ -338,9 +339,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
           (copyright == null || copyright!.isEmpty);
 
       final shouldPersistResolvedAudioMetadata =
-          resolvedBitDepth != null ||
-          resolvedSampleRate != null ||
-          (isPlaceholderQualityLabel(_quality) && resolvedQuality != null);
+          !_isLocalItem &&
+          (resolvedBitDepth != null ||
+              resolvedSampleRate != null ||
+              (isPlaceholderQualityLabel(_quality) && resolvedQuality != null));
 
       if ((resolvedBitDepth != null ||
               resolvedSampleRate != null ||
@@ -517,10 +519,10 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       (_isLocalItem ? _localLibraryItem!.genre : _downloadItem!.genre);
   String? get label =>
       _editedMetadata?['label']?.toString() ??
-      (_isLocalItem ? null : _downloadItem!.label);
+      (_isLocalItem ? _localLibraryItem!.label : _downloadItem!.label);
   String? get copyright =>
       _editedMetadata?['copyright']?.toString() ??
-      (_isLocalItem ? null : _downloadItem!.copyright);
+      (_isLocalItem ? _localLibraryItem!.copyright : _downloadItem!.copyright);
   int? get duration =>
       _readPositiveInt(_editedMetadata?['duration']) ??
       (_isLocalItem ? _localLibraryItem!.duration : _downloadItem!.duration);
