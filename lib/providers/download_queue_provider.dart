@@ -59,6 +59,7 @@ class DownloadHistoryItem {
   final int? bitDepth;
   final int? sampleRate;
   final String? genre;
+  final String? composer;
   final String? label;
   final String? copyright;
 
@@ -87,6 +88,7 @@ class DownloadHistoryItem {
     this.bitDepth,
     this.sampleRate,
     this.genre,
+    this.composer,
     this.label,
     this.copyright,
   });
@@ -116,6 +118,7 @@ class DownloadHistoryItem {
     'bitDepth': bitDepth,
     'sampleRate': sampleRate,
     'genre': genre,
+    'composer': composer,
     'label': label,
     'copyright': copyright,
   };
@@ -146,6 +149,7 @@ class DownloadHistoryItem {
         bitDepth: json['bitDepth'] as int?,
         sampleRate: json['sampleRate'] as int?,
         genre: json['genre'] as String?,
+        composer: json['composer'] as String?,
         label: json['label'] as String?,
         copyright: json['copyright'] as String?,
       );
@@ -172,6 +176,7 @@ class DownloadHistoryItem {
     int? bitDepth,
     int? sampleRate,
     String? genre,
+    String? composer,
     String? label,
     String? copyright,
   }) {
@@ -200,6 +205,7 @@ class DownloadHistoryItem {
       bitDepth: bitDepth ?? this.bitDepth,
       sampleRate: sampleRate ?? this.sampleRate,
       genre: genre ?? this.genre,
+      composer: composer ?? this.composer,
       label: label ?? this.label,
       copyright: copyright ?? this.copyright,
     );
@@ -578,12 +584,17 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
             trimmedPath.startsWith('content://'));
 
     if (hasResolvedSpecs && !isPlaceholderQualityLabel(item.quality)) {
-      return false;
+      final needsComposerBackfill =
+          normalizeOptionalString(item.composer) == null;
+      return needsComposerBackfill;
     }
 
+    final needsComposerBackfill =
+        normalizeOptionalString(item.composer) == null;
     return needsLosslessSpecProbe ||
         isPlaceholderQualityLabel(item.quality) ||
-        normalizeOptionalString(item.quality) == null;
+        normalizeOptionalString(item.quality) == null ||
+        needsComposerBackfill;
   }
 
   Future<Map<String, dynamic>?> _probeAudioMetadata(
@@ -607,8 +618,12 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         sampleRate: sampleRate,
         storedQuality: fallbackQuality,
       );
+      final composer = normalizeOptionalString(result['composer']?.toString());
 
-      if (quality == null && bitDepth == null && sampleRate == null) {
+      if (quality == null &&
+          bitDepth == null &&
+          sampleRate == null &&
+          composer == null) {
         return null;
       }
 
@@ -616,6 +631,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         'quality': quality,
         'bitDepth': bitDepth,
         'sampleRate': sampleRate,
+        'composer': composer,
       };
     } catch (e) {
       _historyLog.d('Audio metadata probe failed for $filePath: $e');
@@ -682,6 +698,9 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         );
         final resolvedBitDepth = probed['bitDepth'] as int?;
         final resolvedSampleRate = probed['sampleRate'] as int?;
+        final resolvedComposer = normalizeOptionalString(
+          probed['composer'] as String?,
+        );
 
         final qualityChanged =
             resolvedQuality != null && resolvedQuality != item.quality;
@@ -689,8 +708,13 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
             resolvedBitDepth != null && resolvedBitDepth != item.bitDepth;
         final sampleRateChanged =
             resolvedSampleRate != null && resolvedSampleRate != item.sampleRate;
+        final composerChanged =
+            resolvedComposer != null && resolvedComposer != item.composer;
 
-        if (!qualityChanged && !bitDepthChanged && !sampleRateChanged) {
+        if (!qualityChanged &&
+            !bitDepthChanged &&
+            !sampleRateChanged &&
+            !composerChanged) {
           continue;
         }
 
@@ -698,6 +722,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
           quality: resolvedQuality,
           bitDepth: resolvedBitDepth,
           sampleRate: resolvedSampleRate,
+          composer: resolvedComposer,
         );
         updatedItems ??= [...items];
         updatedItems[index] = updated;
@@ -746,6 +771,9 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
             genre:
                 normalizeOptionalString(item.genre) ??
                 normalizeOptionalString(existing.genre),
+            composer:
+                normalizeOptionalString(item.composer) ??
+                normalizeOptionalString(existing.composer),
             label:
                 normalizeOptionalString(item.label) ??
                 normalizeOptionalString(existing.label),
@@ -851,6 +879,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     int? discNumber,
     String? releaseDate,
     String? genre,
+    String? composer,
     String? label,
     String? copyright,
   }) async {
@@ -868,6 +897,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       discNumber: discNumber,
       releaseDate: releaseDate,
       genre: genre,
+      composer: composer,
       label: label,
       copyright: copyright,
     );
@@ -3224,6 +3254,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final backendAlbumArtist = normalizeOptionalString(
       backendResult['album_artist'] as String?,
     );
+    final backendComposer = normalizeOptionalString(
+      backendResult['composer']?.toString(),
+    );
 
     final hasOverrides =
         backendTrackNum != null ||
@@ -3232,7 +3265,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         backendAlbum != null ||
         backendIsrc != null ||
         backendCoverUrl != null ||
-        backendAlbumArtist != null;
+        backendAlbumArtist != null ||
+        backendComposer != null;
 
     if (!hasOverrides) {
       return baseTrack;
@@ -3257,7 +3291,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       availability: baseTrack.availability,
       albumType: baseTrack.albumType,
       totalTracks: baseTrack.totalTracks,
-      composer: baseTrack.composer,
+      composer: backendComposer ?? baseTrack.composer,
       source: baseTrack.source,
     );
   }
@@ -5511,6 +5545,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   bitDepth: historyBitDepth,
                   sampleRate: historySampleRate,
                   genre: effectiveGenre,
+                  composer: trackToDownload.composer,
                   label: effectiveLabel,
                   copyright: effectiveCopyright,
                 ),

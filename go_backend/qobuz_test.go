@@ -241,12 +241,13 @@ func TestExtractQobuzAlbumIDsFromArtistHTML(t *testing.T) {
 
 func TestQobuzAvailableProviders(t *testing.T) {
 	providers := NewQobuzDownloader().GetAvailableProviders()
-	if len(providers) != 5 {
-		t.Fatalf("expected 5 Qobuz providers, got %d", len(providers))
+	if len(providers) != 6 {
+		t.Fatalf("expected 6 Qobuz providers, got %d", len(providers))
 	}
 
 	want := map[string]string{
 		"musicdl":  qobuzAPIKindMusicDL,
+		"zarz":     qobuzAPIKindMusicDL,
 		"dabmusic": qobuzAPIKindStandard,
 		"deeb":     qobuzAPIKindStandard,
 		"qbz":      qobuzAPIKindStandard,
@@ -516,5 +517,39 @@ func TestQobuzTrackMatchesRequest_SongLinkBypassesArtistAndTitle(t *testing.T) {
 
 	if !qobuzTrackMatchesRequest(req, track, "Qobuz", "SongLink Qobuz ID", true) {
 		t.Fatal("expected SongLink Qobuz source to bypass artist/title verification")
+	}
+}
+
+func TestQobuzTrackMetadataIncludesComposer(t *testing.T) {
+	track := &QobuzTrack{
+		ID:          40681594,
+		Title:       "Sign of the Times",
+		ISRC:        "USSM11703595",
+		Duration:    340,
+		TrackNumber: 1,
+		MediaNumber: 1,
+	}
+	track.Performer.ID = 729886
+	track.Performer.Name = "Harry Styles"
+	track.Composer.ID = 729886
+	track.Composer.Name = "Harry Styles"
+	track.Album.ID = "0886446451985"
+	track.Album.Title = "Harry Styles"
+	track.Album.ReleaseDate = "2017-05-12"
+	track.Album.TracksCount = 10
+	track.Album.ReleaseType = "album"
+	track.Album.ProductType = "album"
+	track.Album.Artist.ID = 729886
+	track.Album.Artist.Name = "Harry Styles"
+	track.Album.Artists = []qobuzArtistRef{{ID: 729886, Name: "Harry Styles"}}
+
+	trackMeta := qobuzTrackToTrackMetadata(track)
+	if trackMeta.Composer != "Harry Styles" {
+		t.Fatalf("track composer = %q", trackMeta.Composer)
+	}
+
+	albumTrackMeta := qobuzTrackToAlbumTrackMetadata(track)
+	if albumTrackMeta.Composer != "Harry Styles" {
+		t.Fatalf("album track composer = %q", albumTrackMeta.Composer)
 	}
 }

@@ -2770,6 +2770,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             discNumber: discNumber,
             releaseDate: normalizedOrNull(releaseDate),
             genre: normalizedOrNull(genre),
+            composer: normalizedOrNull(composer),
             label: normalizedOrNull(label),
             copyright: normalizedOrNull(copyright),
           );

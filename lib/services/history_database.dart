@@ -31,7 +31,7 @@ class HistoryDatabase {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onConfigure: (db) async {
         await db.rawQuery('PRAGMA journal_mode = WAL');
         await db.execute('PRAGMA synchronous = NORMAL');
@@ -70,6 +70,7 @@ class HistoryDatabase {
         bit_depth INTEGER,
         sample_rate INTEGER,
         genre TEXT,
+        composer TEXT,
         label TEXT,
         copyright TEXT
       )
@@ -97,6 +98,15 @@ class HistoryDatabase {
     }
     if (oldVersion < 3) {
       await db.execute('ALTER TABLE history ADD COLUMN saf_repaired INTEGER');
+    }
+    if (oldVersion < 4) {
+      final columns = await db.rawQuery('PRAGMA table_info(history)');
+      final hasComposer = columns.any(
+        (row) => (row['name']?.toString().toLowerCase() ?? '') == 'composer',
+      );
+      if (!hasComposer) {
+        await db.execute('ALTER TABLE history ADD COLUMN composer TEXT');
+      }
     }
   }
 
@@ -265,6 +275,7 @@ class HistoryDatabase {
       'bit_depth': json['bitDepth'],
       'sample_rate': json['sampleRate'],
       'genre': json['genre'],
+      'composer': json['composer'],
       'label': json['label'],
       'copyright': json['copyright'],
     };
@@ -296,6 +307,7 @@ class HistoryDatabase {
       'bitDepth': row['bit_depth'],
       'sampleRate': row['sample_rate'],
       'genre': row['genre'],
+      'composer': row['composer'],
       'label': row['label'],
       'copyright': row['copyright'],
     };

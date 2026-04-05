@@ -55,6 +55,7 @@ const (
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
 	qobuzStoreBaseURL       = "https://www.qobuz.com/us-en"
 	qobuzDownloadAPIURL     = "https://dl.musicdl.me/qobuz/download"
+	qobuzZarzDownloadAPIURL = "https://api.zarz.moe/dl/qbz"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
 	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"
@@ -105,6 +106,10 @@ type QobuzTrack struct {
 		ID   int64  `json:"id"`
 		Name string `json:"name"`
 	} `json:"performer"`
+	Composer struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	} `json:"composer"`
 }
 
 type qobuzImageSet struct {
@@ -349,6 +354,7 @@ func qobuzTrackToTrackMetadata(track *QobuzTrack) TrackMetadata {
 		AlbumID:     qobuzPrefixedID(track.Album.ID),
 		ArtistID:    qobuzTrackArtistID(track),
 		AlbumType:   qobuzTrackAlbumType(track),
+		Composer:    strings.TrimSpace(track.Composer.Name),
 	}
 }
 
@@ -373,6 +379,7 @@ func qobuzTrackToAlbumTrackMetadata(track *QobuzTrack) AlbumTrackMetadata {
 		AlbumID:     qobuzPrefixedID(track.Album.ID),
 		AlbumURL:    fmt.Sprintf("https://play.qobuz.com/album/%s", strings.TrimSpace(track.Album.ID)),
 		AlbumType:   qobuzTrackAlbumType(track),
+		Composer:    strings.TrimSpace(track.Composer.Name),
 	}
 }
 
@@ -1133,6 +1140,7 @@ func (q *QobuzDownloader) GetArtistMetadata(resourceID string) (*ArtistResponseP
 func (q *QobuzDownloader) GetAvailableAPIs() []string {
 	return []string{
 		qobuzDownloadAPIURL,
+		qobuzZarzDownloadAPIURL,
 		qobuzDabMusicAPIURL,
 		qobuzDeebAPIURL,
 		qobuzAfkarAPIURL,
@@ -1154,6 +1162,7 @@ const (
 func (q *QobuzDownloader) GetAvailableProviders() []qobuzAPIProvider {
 	return []qobuzAPIProvider{
 		{Name: "musicdl", URL: qobuzDownloadAPIURL, Kind: qobuzAPIKindMusicDL},
+		{Name: "zarz", URL: qobuzZarzDownloadAPIURL, Kind: qobuzAPIKindMusicDL},
 		{Name: "dabmusic", URL: qobuzDabMusicAPIURL, Kind: qobuzAPIKindStandard},
 		{Name: "deeb", URL: qobuzDeebAPIURL, Kind: qobuzAPIKindStandard},
 		{Name: "qbz", URL: qobuzAfkarAPIURL, Kind: qobuzAPIKindStandard},
