@@ -931,6 +931,17 @@ class AppLocalizationsId extends AppLocalizations {
       'Jika lagu tidak tersedia di provider pertama, aplikasi akan otomatis mencoba yang berikutnya.';
 
   @override
+  String get providerPriorityFallbackExtensionsTitle => 'Fallback Ekstensi';
+
+  @override
+  String get providerPriorityFallbackExtensionsDescription =>
+      'Pilih ekstensi unduhan terpasang mana yang boleh dipakai saat fallback otomatis. Provider bawaan tetap mengikuti urutan prioritas di atas.';
+
+  @override
+  String get providerPriorityFallbackExtensionsHint =>
+      'Hanya ekstensi aktif dengan kemampuan download provider yang ditampilkan di sini.';
+
+  @override
   String get providerBuiltIn => 'Bawaan';
 
   @override
@@ -1422,6 +1433,13 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get extensionsDownloadPrioritySubtitle =>
       'Atur urutan layanan unduhan';
+
+  @override
+  String get extensionsFallbackTitle => 'Fallback Extensions';
+
+  @override
+  String get extensionsFallbackSubtitle =>
+      'Pilih ekstensi unduhan terpasang yang boleh dipakai saat fallback';
 
   @override
   String get extensionsNoDownloadProvider =>

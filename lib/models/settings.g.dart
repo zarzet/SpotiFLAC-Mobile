@@ -35,6 +35,10 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   askQualityBeforeDownload: json['askQualityBeforeDownload'] as bool? ?? true,
   enableLogging: json['enableLogging'] as bool? ?? false,
   useExtensionProviders: json['useExtensionProviders'] as bool? ?? true,
+  downloadFallbackExtensionIds:
+      (json['downloadFallbackExtensionIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
   searchProvider: json['searchProvider'] as String?,
   homeFeedProvider: json['homeFeedProvider'] as String?,
   separateSingles: json['separateSingles'] as bool? ?? false,
@@ -105,6 +109,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'askQualityBeforeDownload': instance.askQualityBeforeDownload,
   'enableLogging': instance.enableLogging,
   'useExtensionProviders': instance.useExtensionProviders,
+  'downloadFallbackExtensionIds': instance.downloadFallbackExtensionIds,
   'searchProvider': instance.searchProvider,
   'homeFeedProvider': instance.homeFeedProvider,
   'separateSingles': instance.separateSingles,

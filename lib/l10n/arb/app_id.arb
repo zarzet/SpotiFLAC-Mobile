@@ -1119,6 +1119,18 @@
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
+  "providerPriorityFallbackExtensionsTitle": "Fallback Ekstensi",
+  "@providerPriorityFallbackExtensionsTitle": {
+    "description": "Section title for choosing which download extensions can be used as fallback providers"
+  },
+  "providerPriorityFallbackExtensionsDescription": "Pilih ekstensi unduhan terpasang mana yang boleh dipakai saat fallback otomatis. Provider bawaan tetap mengikuti urutan prioritas di atas.",
+  "@providerPriorityFallbackExtensionsDescription": {
+    "description": "Section description for extension fallback selection"
+  },
+  "providerPriorityFallbackExtensionsHint": "Hanya ekstensi aktif dengan kemampuan download provider yang ditampilkan di sini.",
+  "@providerPriorityFallbackExtensionsHint": {
+    "description": "Hint below the extension fallback selection list"
+  },
   "providerBuiltIn": "Bawaan",
   "@providerBuiltIn": {
     "description": "Label for built-in providers (Tidal/Qobuz)"
@@ -1712,6 +1724,14 @@
   "extensionsDownloadPrioritySubtitle": "Atur urutan layanan unduhan",
   "@extensionsDownloadPrioritySubtitle": {
     "description": "Subtitle for download priority"
+  },
+  "extensionsFallbackTitle": "Fallback Extensions",
+  "@extensionsFallbackTitle": {
+    "description": "Setting and page title for choosing which download extensions can be used during fallback"
+  },
+  "extensionsFallbackSubtitle": "Pilih ekstensi unduhan terpasang yang boleh dipakai saat fallback",
+  "@extensionsFallbackSubtitle": {
+    "description": "Subtitle for download fallback extensions menu"
   },
   "extensionsNoDownloadProvider": "Tidak ada ekstensi dengan provider unduhan",
   "@extensionsNoDownloadProvider": {

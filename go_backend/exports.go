@@ -2665,6 +2665,30 @@ func GetProviderPriorityJSON() (string, error) {
 	return string(jsonBytes), nil
 }
 
+func SetExtensionFallbackProviderIDsJSON(providerIDsJSON string) error {
+	if strings.TrimSpace(providerIDsJSON) == "" {
+		SetExtensionFallbackProviderIDs(nil)
+		return nil
+	}
+
+	var providerIDs []string
+	if err := json.Unmarshal([]byte(providerIDsJSON), &providerIDs); err != nil {
+		return err
+	}
+
+	SetExtensionFallbackProviderIDs(providerIDs)
+	return nil
+}
+
+func GetExtensionFallbackProviderIDsJSON() (string, error) {
+	providerIDs := GetExtensionFallbackProviderIDs()
+	jsonBytes, err := json.Marshal(providerIDs)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
 func SetMetadataProviderPriorityJSON(priorityJSON string) error {
 	var priority []string
 	if err := json.Unmarshal([]byte(priorityJSON), &priority); err != nil {

@@ -2965,6 +2965,13 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
+                        "setDownloadFallbackExtensionIds" -> {
+                            val extensionIdsJson = call.argument<String>("extension_ids") ?: ""
+                            withContext(Dispatchers.IO) {
+                                Gobackend.setExtensionFallbackProviderIDsJSON(extensionIdsJson)
+                            }
+                            result.success(null)
+                        }
                         "setMetadataProviderPriority" -> {
                             val priorityJson = call.argument<String>("priority") ?: "[]"
                             withContext(Dispatchers.IO) {

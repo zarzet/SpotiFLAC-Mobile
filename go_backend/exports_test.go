@@ -2,6 +2,21 @@ package gobackend
 
 import "testing"
 
+func TestSetExtensionFallbackProviderIDsJSONEmptyStringResetsDefault(t *testing.T) {
+	original := GetExtensionFallbackProviderIDs()
+	defer SetExtensionFallbackProviderIDs(original)
+
+	SetExtensionFallbackProviderIDs([]string{"custom-ext"})
+
+	if err := SetExtensionFallbackProviderIDsJSON(""); err != nil {
+		t.Fatalf("SetExtensionFallbackProviderIDsJSON returned error: %v", err)
+	}
+
+	if got := GetExtensionFallbackProviderIDs(); got != nil {
+		t.Fatalf("expected nil fallback provider list after reset, got %v", got)
+	}
+}
+
 func TestBuildDownloadSuccessResponsePrefersRequestedAlbumMetadata(t *testing.T) {
 	req := DownloadRequest{
 		TrackName:   "Bonus Track",

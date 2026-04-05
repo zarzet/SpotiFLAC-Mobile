@@ -35,8 +35,18 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final prefs = await _prefs;
     final json = prefs.getString(_settingsKey);
     if (json != null) {
-      state = AppSettings.fromJson(
+      final loaded = AppSettings.fromJson(
         Map<String, dynamic>.from(jsonDecode(json) as Map),
+      );
+      final sanitizedDownloadFallbackExtensionIds =
+          _sanitizeDownloadFallbackExtensionIds(
+            loaded.downloadFallbackExtensionIds,
+          );
+      state = loaded.copyWith(
+        downloadFallbackExtensionIds: sanitizedDownloadFallbackExtensionIds,
+        clearDownloadFallbackExtensionIds:
+            loaded.downloadFallbackExtensionIds != null &&
+            sanitizedDownloadFallbackExtensionIds == null,
       );
 
       await _runMigrations(prefs);
@@ -50,6 +60,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
     _syncLyricsSettingsToBackend();
     _syncNetworkCompatibilitySettingsToBackend();
+    _syncExtensionFallbackSettingsToBackend();
   }
 
   void _syncLyricsSettingsToBackend() {
@@ -80,6 +91,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
       insecureTls: compatibilityMode,
     ).catchError((Object e) {
       _log.w('Failed to sync network compatibility options to backend: $e');
+    });
+  }
+
+  void _syncExtensionFallbackSettingsToBackend() {
+    if (!PlatformBridge.supportsCoreBackend) return;
+
+    PlatformBridge.setDownloadFallbackExtensionIds(
+      state.downloadFallbackExtensionIds,
+    ).catchError((Object e) {
+      _log.w('Failed to sync extension fallback settings to backend: $e');
     });
   }
 
@@ -170,6 +191,22 @@ class SettingsNotifier extends Notifier<AppSettings> {
     if (normalized == state.songLinkRegion) return;
     state = state.copyWith(songLinkRegion: normalized);
     await _saveSettings();
+  }
+
+  List<String>? _sanitizeDownloadFallbackExtensionIds(List<String>? ids) {
+    if (ids == null) {
+      return null;
+    }
+
+    final result = <String>[];
+    for (final id in ids) {
+      final normalized = id.trim();
+      if (normalized.isEmpty || result.contains(normalized)) {
+        continue;
+      }
+      result.add(normalized);
+    }
+    return result;
   }
 
   Future<void> _cleanupRetiredSpotifySettings() async {
@@ -388,6 +425,17 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setUseExtensionProviders(bool enabled) {
     state = state.copyWith(useExtensionProviders: enabled);
     _saveSettings();
+  }
+
+  void setDownloadFallbackExtensionIds(List<String>? extensionIds) {
+    final sanitized = _sanitizeDownloadFallbackExtensionIds(extensionIds);
+    state = state.copyWith(
+      downloadFallbackExtensionIds: sanitized,
+      clearDownloadFallbackExtensionIds:
+          extensionIds == null && state.downloadFallbackExtensionIds != null,
+    );
+    _saveSettings();
+    _syncExtensionFallbackSettingsToBackend();
   }
 
   void setSeparateSingles(bool enabled) {

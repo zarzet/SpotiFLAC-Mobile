@@ -1738,6 +1738,24 @@ abstract class AppLocalizations {
   /// **'If a track is not available on the first provider, the app will automatically try the next one.'**
   String get providerPriorityInfo;
 
+  /// Section title for choosing which download extensions can be used as fallback providers
+  ///
+  /// In en, this message translates to:
+  /// **'Extension Fallback'**
+  String get providerPriorityFallbackExtensionsTitle;
+
+  /// Section description for extension fallback selection
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.'**
+  String get providerPriorityFallbackExtensionsDescription;
+
+  /// Hint below the extension fallback selection list
+  ///
+  /// In en, this message translates to:
+  /// **'Only enabled extensions with download-provider capability are listed here.'**
+  String get providerPriorityFallbackExtensionsHint;
+
   /// Label for built-in providers (Tidal/Qobuz)
   ///
   /// In en, this message translates to:
@@ -2643,6 +2661,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set download service order'**
   String get extensionsDownloadPrioritySubtitle;
+
+  /// Setting and page title for choosing which download extensions can be used during fallback
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback Extensions'**
+  String get extensionsFallbackTitle;
+
+  /// Subtitle for download fallback extensions menu
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which installed download extensions can be used as fallback'**
+  String get extensionsFallbackSubtitle;
 
   /// Empty state - no download providers
   ///

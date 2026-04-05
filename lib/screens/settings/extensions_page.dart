@@ -8,9 +8,10 @@ import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/explore_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/screens/settings/download_fallback_extensions_page.dart';
 import 'package:spotiflac_android/screens/settings/extension_detail_page.dart';
-import 'package:spotiflac_android/screens/settings/provider_priority_page.dart';
 import 'package:spotiflac_android/screens/settings/metadata_provider_priority_page.dart';
+import 'package:spotiflac_android/screens/settings/provider_priority_page.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -151,6 +152,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
               child: SettingsGroup(
                 children: [
                   _DownloadPriorityItem(),
+                  _DownloadFallbackItem(),
                   _MetadataPriorityItem(),
                   _SearchProviderSelector(),
                   _HomeFeedProviderSelector(),
@@ -578,6 +580,73 @@ class _MetadataPriorityItem extends ConsumerWidget {
             Icon(
               Icons.chevron_right,
               color: hasMetadataExtensions
+                  ? colorScheme.onSurfaceVariant
+                  : colorScheme.outline,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DownloadFallbackItem extends ConsumerWidget {
+  const _DownloadFallbackItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final extState = ref.watch(extensionProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final hasDownloadExtensions = extState.extensions.any(
+      (e) => e.enabled && e.hasDownloadProvider,
+    );
+
+    return InkWell(
+      onTap: hasDownloadExtensions
+          ? () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const DownloadFallbackExtensionsPage(),
+              ),
+            )
+          : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              Icons.alt_route,
+              color: hasDownloadExtensions
+                  ? colorScheme.onSurfaceVariant
+                  : colorScheme.outline,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.extensionsFallbackTitle,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: hasDownloadExtensions ? null : colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hasDownloadExtensions
+                        ? context.l10n.extensionsFallbackSubtitle
+                        : context.l10n.extensionsNoDownloadProvider,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: hasDownloadExtensions
                   ? colorScheme.onSurfaceVariant
                   : colorScheme.outline,
             ),

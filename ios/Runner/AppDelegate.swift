@@ -607,6 +607,13 @@ import Gobackend  // Import Go framework
             let response = GobackendGetProviderPriorityJSON(&error)
             if let error = error { throw error }
             return response
+
+        case "setDownloadFallbackExtensionIds":
+            let args = call.arguments as! [String: Any]
+            let extensionIdsJson = args["extension_ids"] as? String ?? ""
+            GobackendSetExtensionFallbackProviderIDsJSON(extensionIdsJson, &error)
+            if let error = error { throw error }
+            return nil
             
         case "setMetadataProviderPriority":
             let args = call.arguments as! [String: Any]

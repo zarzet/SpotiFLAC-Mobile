@@ -941,6 +941,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wenn kein Titel bei dem ersten Anbieter nicht verfügbar ist, wird die App automatisch den nächsten versuchen.';
 
   @override
+  String get providerPriorityFallbackExtensionsTitle => 'Extension Fallback';
+
+  @override
+  String get providerPriorityFallbackExtensionsDescription =>
+      'Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.';
+
+  @override
+  String get providerPriorityFallbackExtensionsHint =>
+      'Only enabled extensions with download-provider capability are listed here.';
+
+  @override
   String get providerBuiltIn => 'Integriert';
 
   @override
@@ -1437,6 +1448,13 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get extensionsDownloadPrioritySubtitle =>
       'Download-Service-Reihenfolge festlegen';
+
+  @override
+  String get extensionsFallbackTitle => 'Fallback Extensions';
+
+  @override
+  String get extensionsFallbackSubtitle =>
+      'Choose which installed download extensions can be used as fallback';
 
   @override
   String get extensionsNoDownloadProvider =>

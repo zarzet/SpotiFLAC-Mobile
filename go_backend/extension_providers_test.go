@@ -19,6 +19,55 @@ func TestSetMetadataProviderPriorityAddsBuiltIns(t *testing.T) {
 	}
 }
 
+func TestSetExtensionFallbackProviderIDsSkipsBuiltInsAndDuplicates(t *testing.T) {
+	original := GetExtensionFallbackProviderIDs()
+	defer SetExtensionFallbackProviderIDs(original)
+
+	SetExtensionFallbackProviderIDs([]string{"ext-a", "tidal", "ext-a", " ext-b "})
+
+	got := GetExtensionFallbackProviderIDs()
+	want := []string{"ext-a", "ext-b"}
+	if len(got) != len(want) {
+		t.Fatalf("unexpected fallback provider length: got %v want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("unexpected fallback provider at %d: got %v want %v", i, got, want)
+		}
+	}
+}
+
+func TestIsExtensionFallbackAllowedDefaultsToAllExtensions(t *testing.T) {
+	original := GetExtensionFallbackProviderIDs()
+	defer SetExtensionFallbackProviderIDs(original)
+
+	SetExtensionFallbackProviderIDs(nil)
+
+	if !isExtensionFallbackAllowed("custom-ext") {
+		t.Fatal("expected custom extension to be allowed when no fallback allowlist is configured")
+	}
+	if !isExtensionFallbackAllowed("qobuz") {
+		t.Fatal("expected built-in provider to remain allowed")
+	}
+}
+
+func TestIsExtensionFallbackAllowedRespectsAllowlist(t *testing.T) {
+	original := GetExtensionFallbackProviderIDs()
+	defer SetExtensionFallbackProviderIDs(original)
+
+	SetExtensionFallbackProviderIDs([]string{"allowed-ext"})
+
+	if !isExtensionFallbackAllowed("allowed-ext") {
+		t.Fatal("expected explicitly allowed extension to be permitted")
+	}
+	if isExtensionFallbackAllowed("blocked-ext") {
+		t.Fatal("expected extension outside allowlist to be blocked")
+	}
+	if !isExtensionFallbackAllowed("deezer") {
+		t.Fatal("expected built-in provider to ignore extension allowlist")
+	}
+}
+
 func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 	originalPriority := GetMetadataProviderPriority()
 	originalSearch := searchBuiltInMetadataTracksFunc

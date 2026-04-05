@@ -909,6 +909,17 @@ class AppLocalizationsKo extends AppLocalizations {
       'If a track is not available on the first provider, the app will automatically try the next one.';
 
   @override
+  String get providerPriorityFallbackExtensionsTitle => 'Extension Fallback';
+
+  @override
+  String get providerPriorityFallbackExtensionsDescription =>
+      'Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.';
+
+  @override
+  String get providerPriorityFallbackExtensionsHint =>
+      'Only enabled extensions with download-provider capability are listed here.';
+
+  @override
   String get providerBuiltIn => 'Built-in';
 
   @override
@@ -1394,6 +1405,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get extensionsDownloadPrioritySubtitle => 'Set download service order';
+
+  @override
+  String get extensionsFallbackTitle => 'Fallback Extensions';
+
+  @override
+  String get extensionsFallbackSubtitle =>
+      'Choose which installed download extensions can be used as fallback';
 
   @override
   String get extensionsNoDownloadProvider =>

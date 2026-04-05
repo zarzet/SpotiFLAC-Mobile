@@ -941,6 +941,17 @@ class AppLocalizationsRu extends AppLocalizations {
       'Если трек не доступен у первого провайдера, приложение автоматически попробует следующий.';
 
   @override
+  String get providerPriorityFallbackExtensionsTitle => 'Extension Fallback';
+
+  @override
+  String get providerPriorityFallbackExtensionsDescription =>
+      'Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.';
+
+  @override
+  String get providerPriorityFallbackExtensionsHint =>
+      'Only enabled extensions with download-provider capability are listed here.';
+
+  @override
   String get providerBuiltIn => 'Встроенные';
 
   @override
@@ -1438,6 +1449,13 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get extensionsDownloadPrioritySubtitle =>
       'Установка порядок сервисов скачивания';
+
+  @override
+  String get extensionsFallbackTitle => 'Fallback Extensions';
+
+  @override
+  String get extensionsFallbackSubtitle =>
+      'Choose which installed download extensions can be used as fallback';
 
   @override
   String get extensionsNoDownloadProvider =>

@@ -33,6 +33,7 @@ class AppSettings {
   final bool askQualityBeforeDownload;
   final bool enableLogging;
   final bool useExtensionProviders;
+  final List<String>? downloadFallbackExtensionIds;
   final String? searchProvider;
   final String? homeFeedProvider;
   final bool separateSingles;
@@ -108,6 +109,7 @@ class AppSettings {
     this.askQualityBeforeDownload = true,
     this.enableLogging = false,
     this.useExtensionProviders = true,
+    this.downloadFallbackExtensionIds,
     this.searchProvider,
     this.homeFeedProvider,
     this.separateSingles = false,
@@ -170,6 +172,8 @@ class AppSettings {
     bool? askQualityBeforeDownload,
     bool? enableLogging,
     bool? useExtensionProviders,
+    List<String>? downloadFallbackExtensionIds,
+    bool clearDownloadFallbackExtensionIds = false,
     String? searchProvider,
     bool clearSearchProvider = false,
     String? homeFeedProvider,
@@ -232,6 +236,9 @@ class AppSettings {
       enableLogging: enableLogging ?? this.enableLogging,
       useExtensionProviders:
           useExtensionProviders ?? this.useExtensionProviders,
+      downloadFallbackExtensionIds: clearDownloadFallbackExtensionIds
+          ? null
+          : (downloadFallbackExtensionIds ?? this.downloadFallbackExtensionIds),
       searchProvider: clearSearchProvider
           ? null
           : (searchProvider ?? this.searchProvider),

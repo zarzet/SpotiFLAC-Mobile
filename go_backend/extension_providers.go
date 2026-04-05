@@ -676,6 +676,9 @@ func (m *extensionManager) SearchTracksWithExtensions(query string, limit int) (
 var providerPriority []string
 var providerPriorityMu sync.RWMutex
 
+var extensionFallbackProviderIDs []string
+var extensionFallbackProviderIDsMu sync.RWMutex
+
 var metadataProviderPriority []string
 var metadataProviderPriorityMu sync.RWMutex
 
@@ -699,6 +702,65 @@ func GetProviderPriority() []string {
 	result := make([]string, len(providerPriority))
 	copy(result, providerPriority)
 	return result
+}
+
+func SetExtensionFallbackProviderIDs(providerIDs []string) {
+	extensionFallbackProviderIDsMu.Lock()
+	defer extensionFallbackProviderIDsMu.Unlock()
+
+	if providerIDs == nil {
+		extensionFallbackProviderIDs = nil
+		GoLog("[Extension] Extension fallback providers reset to default (all enabled download extensions)\n")
+		return
+	}
+
+	sanitized := make([]string, 0, len(providerIDs))
+	seen := map[string]struct{}{}
+	for _, providerID := range providerIDs {
+		providerID = strings.TrimSpace(providerID)
+		if providerID == "" || isBuiltInProvider(strings.ToLower(providerID)) {
+			continue
+		}
+		if _, exists := seen[providerID]; exists {
+			continue
+		}
+		seen[providerID] = struct{}{}
+		sanitized = append(sanitized, providerID)
+	}
+
+	extensionFallbackProviderIDs = sanitized
+	GoLog("[Extension] Extension fallback providers set: %v\n", sanitized)
+}
+
+func GetExtensionFallbackProviderIDs() []string {
+	extensionFallbackProviderIDsMu.RLock()
+	defer extensionFallbackProviderIDsMu.RUnlock()
+
+	if extensionFallbackProviderIDs == nil {
+		return nil
+	}
+
+	result := make([]string, len(extensionFallbackProviderIDs))
+	copy(result, extensionFallbackProviderIDs)
+	return result
+}
+
+func isExtensionFallbackAllowed(providerID string) bool {
+	if isBuiltInProvider(strings.ToLower(providerID)) {
+		return true
+	}
+
+	allowed := GetExtensionFallbackProviderIDs()
+	if allowed == nil {
+		return true
+	}
+
+	for _, allowedProviderID := range allowed {
+		if allowedProviderID == providerID {
+			return true
+		}
+	}
+	return false
 }
 
 func SetMetadataProviderPriority(providerIDs []string) {
@@ -1305,6 +1367,11 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 		if skipBuiltIn && isBuiltInProvider(providerIDNormalized) {
 			GoLog("[DownloadWithExtensionFallback] Skipping built-in provider %s (skipBuiltInFallback)\n", providerID)
+			continue
+		}
+
+		if !isBuiltInProvider(providerIDNormalized) && !isExtensionFallbackAllowed(providerID) {
+			GoLog("[DownloadWithExtensionFallback] Skipping extension provider %s (not enabled for fallback)\n", providerID)
 			continue
 		}
 

@@ -781,6 +781,15 @@ class PlatformBridge {
     return list.map((e) => e as String).toList();
   }
 
+  static Future<void> setDownloadFallbackExtensionIds(
+    List<String>? extensionIds,
+  ) async {
+    _log.d('setDownloadFallbackExtensionIds: $extensionIds');
+    await _channel.invokeMethod('setDownloadFallbackExtensionIds', {
+      'extension_ids': extensionIds == null ? '' : jsonEncode(extensionIds),
+    });
+  }
+
   static Future<void> setMetadataProviderPriority(
     List<String> providerIds,
   ) async {
