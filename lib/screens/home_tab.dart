@@ -3031,6 +3031,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
           albumId: albumItem.id,
           albumName: albumItem.name,
           coverUrl: albumItem.coverUrl,
+          initialAlbumType: albumItem.albumType,
+          initialTotalTracks: albumItem.totalTracks,
         ),
       ),
     );
@@ -4315,6 +4317,8 @@ class ExtensionAlbumScreen extends ConsumerStatefulWidget {
   final String albumId;
   final String albumName;
   final String? coverUrl;
+  final String? initialAlbumType;
+  final int? initialTotalTracks;
 
   const ExtensionAlbumScreen({
     super.key,
@@ -4322,6 +4326,8 @@ class ExtensionAlbumScreen extends ConsumerStatefulWidget {
     required this.albumId,
     required this.albumName,
     this.coverUrl,
+    this.initialAlbumType,
+    this.initialTotalTracks,
   });
 
   @override
@@ -4335,10 +4341,14 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
   String? _error;
   String? _artistId;
   String? _artistName;
+  String? _albumType;
+  int? _albumTotalTracks;
 
   @override
   void initState() {
     super.initState();
+    _albumType = normalizeOptionalString(widget.initialAlbumType);
+    _albumTotalTracks = widget.initialTotalTracks;
     _fetchTracks();
   }
 
@@ -4372,17 +4382,28 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
         return;
       }
 
-      final tracks = trackList
-          .map((t) => _parseTrack(t as Map<String, dynamic>))
-          .toList();
-
       final artistId = (result['artist_id'] ?? result['artistId'])?.toString();
       final artistName = result['artists'] as String?;
+      final albumType =
+          normalizeOptionalString(result['album_type']?.toString()) ??
+          _albumType;
+      final totalTracks = result['total_tracks'] as int? ?? _albumTotalTracks;
+      final tracks = trackList
+          .map(
+            (t) => _parseTrack(
+              t as Map<String, dynamic>,
+              albumTypeFallback: albumType,
+              totalTracksFallback: totalTracks,
+            ),
+          )
+          .toList();
 
       setState(() {
         _tracks = tracks;
         _artistId = artistId;
         _artistName = artistName;
+        _albumType = albumType;
+        _albumTotalTracks = totalTracks;
         _isLoading = false;
       });
     } catch (e) {
@@ -4394,7 +4415,11 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
     }
   }
 
-  Track _parseTrack(Map<String, dynamic> data) {
+  Track _parseTrack(
+    Map<String, dynamic> data, {
+    String? albumTypeFallback,
+    int? totalTracksFallback,
+  }) {
     int durationMs = 0;
     final durationValue = data['duration_ms'];
     if (durationValue is int) {
@@ -4422,7 +4447,14 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       discNumber: data['disc_number'] as int?,
       totalDiscs: data['total_discs'] as int?,
       releaseDate: data['release_date']?.toString(),
-      totalTracks: data['total_tracks'] as int?,
+      albumType:
+          normalizeOptionalString(data['album_type']?.toString()) ??
+          albumTypeFallback ??
+          _albumType,
+      totalTracks:
+          data['total_tracks'] as int? ??
+          totalTracksFallback ??
+          _albumTotalTracks,
       composer: data['composer']?.toString(),
       source: widget.extensionId,
     );

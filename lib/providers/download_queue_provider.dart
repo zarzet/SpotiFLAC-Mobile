@@ -2000,6 +2000,33 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     state = state.copyWith(outputDir: dir);
   }
 
+  bool _shouldTreatAsSingleRelease(Track track) {
+    if (track.isSingle) {
+      return true;
+    }
+
+    final normalizedAlbumType = normalizeOptionalString(
+      track.albumType,
+    )?.toLowerCase();
+    if (normalizedAlbumType != null && normalizedAlbumType.isNotEmpty) {
+      return false;
+    }
+
+    final totalTracks = track.totalTracks;
+    if (totalTracks == 1) {
+      return true;
+    }
+
+    final normalizedAlbumName = normalizeOptionalString(
+      track.albumName,
+    )?.toLowerCase();
+    if (normalizedAlbumName == 'single' || normalizedAlbumName == 'singles') {
+      return totalTracks == null || totalTracks <= 2;
+    }
+
+    return false;
+  }
+
   Future<String> _buildOutputDir(
     Track track,
     String folderOrganization, {
@@ -2036,7 +2063,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
 
     if (separateSingles) {
-      final isSingle = track.isSingle;
+      final isSingle = _shouldTreatAsSingleRelease(track);
       final artistName = _sanitizeFolderName(folderArtist);
 
       if (albumFolderStructure == 'artist_album_singles') {
@@ -2215,7 +2242,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
 
     if (separateSingles) {
-      final isSingle = track.isSingle;
+      final isSingle = _shouldTreatAsSingleRelease(track);
       final artistName = _sanitizeFolderName(folderArtist);
 
       if (albumFolderStructure == 'artist_album_singles') {
@@ -4137,7 +4164,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       String? safBaseName;
       String safOutputExt = _determineOutputExt(quality, item.service);
       if (isSafMode) {
-        final effectiveFormat = trackToDownload.isSingle
+        final effectiveFormat = _shouldTreatAsSingleRelease(trackToDownload)
             ? state.singleFilenameFormat
             : state.filenameFormat;
         final baseName = await PlatformBridge.buildFilename(effectiveFormat, {
@@ -4552,7 +4579,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               ? (trackToDownload.coverUrl ?? '')
               : '',
           outputDir: outputDir,
-          filenameFormat: trackToDownload.isSingle
+          filenameFormat: _shouldTreatAsSingleRelease(trackToDownload)
               ? state.singleFilenameFormat
               : state.filenameFormat,
           quality: quality,

@@ -412,7 +412,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       discNumber: data['disc_number'] as int?,
       totalDiscs: data['total_discs'] as int?,
       releaseDate: data['release_date']?.toString(),
-      albumType: data['album_type']?.toString() ?? album?.albumType,
+      albumType:
+          normalizeOptionalString(data['album_type']?.toString()) ??
+          album?.albumType,
       totalTracks: data['total_tracks'] as int? ?? album?.totalTracks,
       composer: data['composer']?.toString(),
       source: data['provider_id']?.toString() ?? widget.extensionId,
@@ -1057,9 +1059,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       );
       if (result != null && result['tracks'] != null) {
         final tracksList = result['tracks'] as List<dynamic>;
-        return tracksList
+        final parsedTracks = tracksList
             .map((t) => _parseTrack(t as Map<String, dynamic>, album: album))
             .toList();
+        return parsedTracks;
       }
     } else if (album.id.startsWith('deezer:')) {
       final deezerId = album.id.replaceFirst('deezer:', '');
@@ -1934,6 +1937,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
             albumId: album.id,
             albumName: album.name,
             coverUrl: album.coverUrl,
+            initialAlbumType: album.albumType,
+            initialTotalTracks: album.totalTracks,
           ),
         ),
       );

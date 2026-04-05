@@ -75,6 +75,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   String? _error;
   bool _showTitleInAppBar = false;
   String? _artistId;
+  String? _albumType;
+  int? _albumTotalTracks;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -112,6 +114,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       _tracks = _AlbumCache.get(widget.albumId);
     }
     _artistId = widget.artistId;
+    _albumType = _tracks?.firstOrNull?.albumType;
+    _albumTotalTracks = _tracks?.firstOrNull?.totalTracks;
 
     if (_tracks == null || _tracks!.isEmpty) {
       _fetchTracks();
@@ -179,13 +183,22 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           deezerAlbumId,
         );
         final trackList = metadata['track_list'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-
         final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
         final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
             ?.toString();
+        final albumType = normalizeOptionalString(
+          albumInfo?['album_type']?.toString(),
+        );
+        final totalTracks = albumInfo?['total_tracks'] as int?;
+        final tracks = trackList
+            .map(
+              (t) => _parseTrack(
+                t as Map<String, dynamic>,
+                albumTypeFallback: albumType,
+                totalTracksFallback: totalTracks,
+              ),
+            )
+            .toList();
 
         _AlbumCache.set(widget.albumId, tracks);
 
@@ -193,6 +206,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           setState(() {
             _tracks = tracks;
             _artistId = artistId;
+            _albumType = albumType;
+            _albumTotalTracks = totalTracks;
             _isLoading = false;
           });
         }
@@ -204,13 +219,22 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           qobuzAlbumId,
         );
         final trackList = metadata['track_list'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-
         final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
         final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
             ?.toString();
+        final albumType = normalizeOptionalString(
+          albumInfo?['album_type']?.toString(),
+        );
+        final totalTracks = albumInfo?['total_tracks'] as int?;
+        final tracks = trackList
+            .map(
+              (t) => _parseTrack(
+                t as Map<String, dynamic>,
+                albumTypeFallback: albumType,
+                totalTracksFallback: totalTracks,
+              ),
+            )
+            .toList();
 
         _AlbumCache.set(widget.albumId, tracks);
 
@@ -218,6 +242,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           setState(() {
             _tracks = tracks;
             _artistId = artistId;
+            _albumType = albumType;
+            _albumTotalTracks = totalTracks;
             _isLoading = false;
           });
         }
@@ -229,13 +255,22 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           tidalAlbumId,
         );
         final trackList = metadata['track_list'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-
         final albumInfo = metadata['album_info'] as Map<String, dynamic>?;
         final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
             ?.toString();
+        final albumType = normalizeOptionalString(
+          albumInfo?['album_type']?.toString(),
+        );
+        final totalTracks = albumInfo?['total_tracks'] as int?;
+        final tracks = trackList
+            .map(
+              (t) => _parseTrack(
+                t as Map<String, dynamic>,
+                albumTypeFallback: albumType,
+                totalTracksFallback: totalTracks,
+              ),
+            )
+            .toList();
 
         _AlbumCache.set(widget.albumId, tracks);
 
@@ -243,6 +278,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           setState(() {
             _tracks = tracks;
             _artistId = artistId;
+            _albumType = albumType;
+            _albumTotalTracks = totalTracks;
             _isLoading = false;
           });
         }
@@ -255,13 +292,22 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
         }
 
         final trackList = result['tracks'] as List<dynamic>;
-        final tracks = trackList
-            .map((t) => _parseTrack(t as Map<String, dynamic>))
-            .toList();
-
         final albumInfo = result['album'] as Map<String, dynamic>?;
         final artistId = (albumInfo?['artist_id'] ?? albumInfo?['artistId'])
             ?.toString();
+        final albumType = normalizeOptionalString(
+          albumInfo?['album_type']?.toString(),
+        );
+        final totalTracks = albumInfo?['total_tracks'] as int?;
+        final tracks = trackList
+            .map(
+              (t) => _parseTrack(
+                t as Map<String, dynamic>,
+                albumTypeFallback: albumType,
+                totalTracksFallback: totalTracks,
+              ),
+            )
+            .toList();
 
         _AlbumCache.set(widget.albumId, tracks);
 
@@ -269,6 +315,8 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           setState(() {
             _tracks = tracks;
             _artistId = artistId;
+            _albumType = albumType;
+            _albumTotalTracks = totalTracks;
             _isLoading = false;
           });
         }
@@ -284,7 +332,11 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  Track _parseTrack(Map<String, dynamic> data) {
+  Track _parseTrack(
+    Map<String, dynamic> data, {
+    String? albumTypeFallback,
+    int? totalTracksFallback,
+  }) {
     return Track(
       id: data['spotify_id'] as String? ?? '',
       name: data['name'] as String? ?? '',
@@ -301,8 +353,14 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       discNumber: data['disc_number'] as int?,
       totalDiscs: data['total_discs'] as int?,
       releaseDate: data['release_date'] as String?,
-      albumType: data['album_type'] as String?,
-      totalTracks: data['total_tracks'] as int?,
+      albumType:
+          normalizeOptionalString(data['album_type']?.toString()) ??
+          albumTypeFallback ??
+          _albumType,
+      totalTracks:
+          data['total_tracks'] as int? ??
+          totalTracksFallback ??
+          _albumTotalTracks,
       composer: data['composer']?.toString(),
     );
   }
