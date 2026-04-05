@@ -183,6 +183,12 @@ func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
 	}
 
 	if req.shouldUpdateField("basic_tags") {
+		if track.Name != "" {
+			req.TrackName = track.Name
+		}
+		if track.Artists != "" {
+			req.ArtistName = track.Artists
+		}
 		if track.AlbumName != "" {
 			req.AlbumName = track.AlbumName
 		}
@@ -236,6 +242,29 @@ func applyReEnrichTrackMetadata(req *reEnrichRequest, track ExtTrackMetadata) {
 	}
 }
 
+func isPlaceholderReEnrichValue(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "unknown", "unknown artist", "unknown title", "unknown album":
+		return true
+	default:
+		return false
+	}
+}
+
+func buildReEnrichSearchQuery(req reEnrichRequest) string {
+	parts := make([]string, 0, 2)
+	if !isPlaceholderReEnrichValue(req.TrackName) {
+		parts = append(parts, strings.TrimSpace(req.TrackName))
+	}
+	if !isPlaceholderReEnrichValue(req.ArtistName) {
+		parts = append(parts, strings.TrimSpace(req.ArtistName))
+	}
+	if len(parts) == 0 && !isPlaceholderReEnrichValue(req.AlbumName) {
+		parts = append(parts, strings.TrimSpace(req.AlbumName))
+	}
+	return strings.TrimSpace(strings.Join(parts, " "))
+}
+
 func reEnrichDownloadRequest(req reEnrichRequest) DownloadRequest {
 	return DownloadRequest{
 		TrackName:     req.TrackName,
@@ -256,6 +285,12 @@ func reEnrichDownloadRequest(req reEnrichRequest) DownloadRequest {
 func buildReEnrichFFmpegMetadata(req *reEnrichRequest, lyricsLRC string) map[string]string {
 	metadata := map[string]string{}
 	if req.shouldUpdateField("basic_tags") {
+		if req.TrackName != "" {
+			metadata["TITLE"] = req.TrackName
+		}
+		if req.ArtistName != "" {
+			metadata["ARTIST"] = req.ArtistName
+		}
 		if req.AlbumName != "" {
 			metadata["ALBUM"] = req.AlbumName
 		}
@@ -2295,9 +2330,7 @@ func ReEnrichFile(requestJSON string) (string, error) {
 
 	// When search_online is true, search for metadata from internet using the
 	// configured metadata-provider priority.
-	if req.SearchOnline && req.TrackName != "" && req.ArtistName != "" {
-		GoLog("[ReEnrich] Searching online metadata for: %s - %s\n", req.TrackName, req.ArtistName)
-		searchQuery := req.TrackName + " " + req.ArtistName
+	if req.SearchOnline {
 		found := false
 
 		deezerClient := GetDeezerClient()
@@ -2310,17 +2343,23 @@ func ReEnrichFile(requestJSON string) (string, error) {
 			found = true
 		}
 
-		tracks, searchErr := manager.SearchTracksWithMetadataProviders(searchQuery, 5, true)
-		if searchErr == nil && len(tracks) > 0 {
-			track := selectBestReEnrichTrack(req, tracks)
-			if track != nil {
-				GoLog("[ReEnrich] Metadata match (%s): %s - %s (album: %s, date: %s)\n",
-					track.ProviderID, track.Name, track.Artists, track.AlbumName, track.ReleaseDate)
-				applyReEnrichTrackMetadata(&req, *track)
-				found = true
+		searchQuery := buildReEnrichSearchQuery(req)
+		if searchQuery != "" {
+			GoLog("[ReEnrich] Searching online metadata for query: %s\n", searchQuery)
+			tracks, searchErr := manager.SearchTracksWithMetadataProviders(searchQuery, 5, true)
+			if searchErr == nil && len(tracks) > 0 {
+				track := selectBestReEnrichTrack(req, tracks)
+				if track != nil {
+					GoLog("[ReEnrich] Metadata match (%s): %s - %s (album: %s, date: %s)\n",
+						track.ProviderID, track.Name, track.Artists, track.AlbumName, track.ReleaseDate)
+					applyReEnrichTrackMetadata(&req, *track)
+					found = true
+				}
+			} else if searchErr != nil {
+				GoLog("[ReEnrich] Metadata provider search failed: %v\n", searchErr)
 			}
-		} else if searchErr != nil {
-			GoLog("[ReEnrich] Metadata provider search failed: %v\n", searchErr)
+		} else {
+			GoLog("[ReEnrich] Skipping provider search: no usable title/artist/album query\n")
 		}
 
 		// Try to get extended metadata from Deezer if not already set
@@ -2439,6 +2478,8 @@ func ReEnrichFile(requestJSON string) (string, error) {
 		"duration_ms": req.DurationMs,
 	}
 	if req.shouldUpdateField("basic_tags") {
+		enrichedMeta["track_name"] = req.TrackName
+		enrichedMeta["artist_name"] = req.ArtistName
 		enrichedMeta["album_name"] = req.AlbumName
 		enrichedMeta["album_artist"] = req.AlbumArtist
 	}
@@ -2471,6 +2512,8 @@ func ReEnrichFile(requestJSON string) (string, error) {
 			ArtistTagMode: req.ArtistTagMode,
 		}
 		if req.shouldUpdateField("basic_tags") {
+			metadata.Title = req.TrackName
+			metadata.Artist = req.ArtistName
 			metadata.Album = req.AlbumName
 			metadata.AlbumArtist = req.AlbumArtist
 		}

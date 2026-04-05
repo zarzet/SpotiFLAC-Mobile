@@ -210,13 +210,11 @@ func TestBuildReEnrichFFmpegMetadataOmitsEmptyFields(t *testing.T) {
 
 	metadata := buildReEnrichFFmpegMetadata(&req, "")
 
-	// Title and Artist are never written by re-enrich (they are search keys
-	// preserved as-is from the file).
-	if _, exists := metadata["TITLE"]; exists {
-		t.Fatalf("TITLE should not be in metadata: %#v", metadata)
+	if metadata["TITLE"] != "Song" {
+		t.Fatalf("title = %q", metadata["TITLE"])
 	}
-	if _, exists := metadata["ARTIST"]; exists {
-		t.Fatalf("ARTIST should not be in metadata: %#v", metadata)
+	if metadata["ARTIST"] != "Artist" {
+		t.Fatalf("artist = %q", metadata["ARTIST"])
 	}
 	if metadata["ALBUM"] != "Album" {
 		t.Fatalf("album = %q", metadata["ALBUM"])
@@ -240,10 +238,35 @@ func TestBuildReEnrichFFmpegMetadataOmitsEmptyFields(t *testing.T) {
 	}
 }
 
+func TestBuildReEnrichSearchQuerySkipsPlaceholderArtist(t *testing.T) {
+	req := reEnrichRequest{
+		TrackName:  "Sign of the Times",
+		ArtistName: "Unknown Artist",
+		AlbumName:  "Harry Styles",
+	}
+
+	query := buildReEnrichSearchQuery(req)
+	if query != "Sign of the Times" {
+		t.Fatalf("query = %q", query)
+	}
+
+	req = reEnrichRequest{
+		TrackName:  "Unknown Title",
+		ArtistName: "Unknown Artist",
+		AlbumName:  "Harry Styles",
+	}
+	query = buildReEnrichSearchQuery(req)
+	if query != "Harry Styles" {
+		t.Fatalf("fallback album query = %q", query)
+	}
+}
+
 func TestApplyReEnrichTrackMetadataCopiesComposerAndTotals(t *testing.T) {
 	req := reEnrichRequest{}
 
 	applyReEnrichTrackMetadata(&req, ExtTrackMetadata{
+		Name:        "Resolved Song",
+		Artists:     "Resolved Artist",
 		TrackNumber: 7,
 		TotalTracks: 12,
 		DiscNumber:  2,
@@ -256,6 +279,9 @@ func TestApplyReEnrichTrackMetadataCopiesComposerAndTotals(t *testing.T) {
 	}
 	if req.DiscNumber != 2 || req.TotalDiscs != 3 {
 		t.Fatalf("disc metadata = %d/%d", req.DiscNumber, req.TotalDiscs)
+	}
+	if req.TrackName != "Resolved Song" || req.ArtistName != "Resolved Artist" {
+		t.Fatalf("basic tags = %q / %q", req.TrackName, req.ArtistName)
 	}
 	if req.Composer != "Composer" {
 		t.Fatalf("composer = %q", req.Composer)
