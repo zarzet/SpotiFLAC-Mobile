@@ -2391,6 +2391,297 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     );
   }
 
+  String? _extractKnownDeezerTrackId(Track track) {
+    final deezerId = track.deezerId?.trim();
+    if (deezerId != null && deezerId.isNotEmpty) {
+      return deezerId;
+    }
+
+    if (track.id.startsWith('deezer:')) {
+      final rawId = track.id.substring('deezer:'.length).trim();
+      if (rawId.isNotEmpty) {
+        return rawId;
+      }
+    }
+
+    final availabilityDeezerId = track.availability?.deezerId?.trim();
+    if (availabilityDeezerId != null && availabilityDeezerId.isNotEmpty) {
+      return availabilityDeezerId;
+    }
+
+    return null;
+  }
+
+  Future<String?> _searchDeezerTrackIdByIsrc(
+    String? isrc, {
+    required String lookupContext,
+  }) async {
+    final normalizedIsrc = normalizeOptionalString(isrc);
+    if (normalizedIsrc == null || !_isValidISRC(normalizedIsrc)) {
+      return null;
+    }
+
+    try {
+      _log.d('No Deezer ID, searching by $lookupContext: $normalizedIsrc');
+      final deezerResult = await PlatformBridge.searchDeezerByISRC(
+        normalizedIsrc,
+      );
+      if (deezerResult['success'] == true && deezerResult['track_id'] != null) {
+        final deezerTrackId = deezerResult['track_id'].toString();
+        _log.d('Found Deezer track ID via $lookupContext: $deezerTrackId');
+        return deezerTrackId;
+      }
+    } catch (e) {
+      _log.w('Failed to search Deezer by $lookupContext: $e');
+    }
+
+    return null;
+  }
+
+  Track _copyTrackWithResolvedMetadata(
+    Track track, {
+    String? resolvedIsrc,
+    int? trackNumber,
+    int? totalTracks,
+    int? discNumber,
+    int? totalDiscs,
+    String? releaseDate,
+    String? deezerId,
+    String? composer,
+  }) {
+    final normalizedIsrc = normalizeOptionalString(resolvedIsrc);
+    final normalizedComposer = normalizeOptionalString(composer);
+
+    return Track(
+      id: track.id,
+      name: track.name,
+      artistName: track.artistName,
+      albumName: track.albumName,
+      albumArtist: track.albumArtist,
+      artistId: track.artistId,
+      albumId: track.albumId,
+      coverUrl: normalizeCoverReference(track.coverUrl),
+      duration: track.duration,
+      isrc: (normalizedIsrc != null && _isValidISRC(normalizedIsrc))
+          ? normalizedIsrc
+          : track.isrc,
+      trackNumber: (track.trackNumber != null && track.trackNumber! > 0)
+          ? track.trackNumber
+          : trackNumber,
+      discNumber: (track.discNumber != null && track.discNumber! > 0)
+          ? track.discNumber
+          : discNumber,
+      totalDiscs: (track.totalDiscs != null && track.totalDiscs! > 0)
+          ? track.totalDiscs
+          : totalDiscs,
+      releaseDate: track.releaseDate ?? normalizeOptionalString(releaseDate),
+      deezerId: deezerId ?? track.deezerId,
+      availability: track.availability,
+      source: track.source,
+      albumType: track.albumType,
+      totalTracks: (track.totalTracks != null && track.totalTracks! > 0)
+          ? track.totalTracks
+          : totalTracks,
+      composer: (track.composer != null && track.composer!.isNotEmpty)
+          ? track.composer
+          : normalizedComposer,
+      itemType: track.itemType,
+    );
+  }
+
+  Future<_DeezerLookupPreparation> _resolveProviderTrackForDeezerLookup(
+    Track track,
+  ) async {
+    try {
+      final colonIdx = track.id.indexOf(':');
+      final provider = track.id.substring(0, colonIdx);
+      final providerTrackId = track.id.substring(colonIdx + 1);
+
+      _log.d('No ISRC, fetching from $provider API: $providerTrackId');
+      final providerData = provider == 'tidal'
+          ? await PlatformBridge.getTidalMetadata('track', providerTrackId)
+          : await PlatformBridge.getQobuzMetadata('track', providerTrackId);
+
+      final trackData = providerData['track'] as Map<String, dynamic>?;
+      if (trackData == null) {
+        return _DeezerLookupPreparation(
+          track: track,
+          deezerTrackId: _extractKnownDeezerTrackId(track),
+        );
+      }
+
+      final resolvedIsrc = normalizeOptionalString(
+        trackData['isrc'] as String?,
+      );
+      if (resolvedIsrc == null || !_isValidISRC(resolvedIsrc)) {
+        return _DeezerLookupPreparation(
+          track: track,
+          deezerTrackId: _extractKnownDeezerTrackId(track),
+        );
+      }
+
+      _log.d('Resolved ISRC from $provider: $resolvedIsrc');
+
+      final updatedTrack = _copyTrackWithResolvedMetadata(
+        track,
+        resolvedIsrc: resolvedIsrc,
+        releaseDate: trackData['release_date'] as String?,
+        trackNumber: trackData['track_number'] as int?,
+        totalTracks: trackData['total_tracks'] as int?,
+        discNumber: trackData['disc_number'] as int?,
+        totalDiscs: trackData['total_discs'] as int?,
+        composer: trackData['composer'] as String?,
+      );
+      final deezerTrackId = await _searchDeezerTrackIdByIsrc(
+        resolvedIsrc,
+        lookupContext: '$provider ISRC',
+      );
+
+      return _DeezerLookupPreparation(
+        track: deezerTrackId == null
+            ? updatedTrack
+            : _copyTrackWithResolvedMetadata(
+                updatedTrack,
+                deezerId: deezerTrackId,
+              ),
+        deezerTrackId:
+            deezerTrackId ?? _extractKnownDeezerTrackId(updatedTrack),
+      );
+    } catch (e) {
+      _log.w('Failed to resolve ISRC from provider: $e');
+      return _DeezerLookupPreparation(
+        track: track,
+        deezerTrackId: _extractKnownDeezerTrackId(track),
+      );
+    }
+  }
+
+  Future<_DeezerLookupPreparation> _resolveSpotifyTrackViaDeezer(
+    Track track,
+  ) async {
+    try {
+      var spotifyId = track.id;
+      if (spotifyId.startsWith('spotify:track:')) {
+        spotifyId = spotifyId.split(':').last;
+      }
+      _log.d('No Deezer ID, converting from Spotify via SongLink: $spotifyId');
+
+      final deezerData = await PlatformBridge.convertSpotifyToDeezer(
+        'track',
+        spotifyId,
+      );
+      final trackData = deezerData['track'];
+
+      String? deezerTrackId;
+      if (trackData is Map<String, dynamic>) {
+        final rawId = trackData['spotify_id'] as String?;
+        if (rawId != null && rawId.startsWith('deezer:')) {
+          deezerTrackId = rawId.split(':')[1];
+          _log.d('Found Deezer track ID via SongLink: $deezerTrackId');
+        } else if (deezerData['id'] != null) {
+          deezerTrackId = deezerData['id'].toString();
+          _log.d('Found Deezer track ID via SongLink (legacy): $deezerTrackId');
+        }
+
+        final deezerIsrc = normalizeOptionalString(
+          trackData['isrc'] as String?,
+        );
+        final needsEnrich =
+            (track.releaseDate == null &&
+                normalizeOptionalString(trackData['release_date'] as String?) !=
+                    null) ||
+            (track.isrc == null && deezerIsrc != null) ||
+            (!_isValidISRC(track.isrc ?? '') && deezerIsrc != null) ||
+            ((track.trackNumber == null || track.trackNumber! <= 0) &&
+                (trackData['track_number'] as int?) != null &&
+                (trackData['track_number'] as int?)! > 0) ||
+            ((track.totalTracks == null || track.totalTracks! <= 0) &&
+                (trackData['total_tracks'] as int?) != null &&
+                (trackData['total_tracks'] as int?)! > 0) ||
+            ((track.discNumber == null || track.discNumber! <= 0) &&
+                (trackData['disc_number'] as int?) != null &&
+                (trackData['disc_number'] as int?)! > 0) ||
+            ((track.totalDiscs == null || track.totalDiscs! <= 0) &&
+                (trackData['total_discs'] as int?) != null &&
+                (trackData['total_discs'] as int?)! > 0) ||
+            ((track.composer == null || track.composer!.isEmpty) &&
+                normalizeOptionalString(trackData['composer'] as String?) !=
+                    null) ||
+            deezerTrackId != null;
+
+        final updatedTrack = needsEnrich
+            ? _copyTrackWithResolvedMetadata(
+                track,
+                resolvedIsrc: deezerIsrc,
+                releaseDate: trackData['release_date'] as String?,
+                trackNumber: trackData['track_number'] as int?,
+                totalTracks: trackData['total_tracks'] as int?,
+                discNumber: trackData['disc_number'] as int?,
+                totalDiscs: trackData['total_discs'] as int?,
+                composer: trackData['composer'] as String?,
+                deezerId: deezerTrackId,
+              )
+            : track;
+
+        if (needsEnrich) {
+          _log.d(
+            'Enriched track from Deezer - date: ${updatedTrack.releaseDate}, ISRC: ${updatedTrack.isrc}, track: ${updatedTrack.trackNumber}, disc: ${updatedTrack.discNumber}',
+          );
+        }
+
+        return _DeezerLookupPreparation(
+          track: updatedTrack,
+          deezerTrackId:
+              deezerTrackId ?? _extractKnownDeezerTrackId(updatedTrack),
+        );
+      }
+
+      if (deezerData['id'] != null) {
+        deezerTrackId = deezerData['id'].toString();
+        _log.d('Found Deezer track ID via SongLink (flat): $deezerTrackId');
+        return _DeezerLookupPreparation(
+          track: _copyTrackWithResolvedMetadata(track, deezerId: deezerTrackId),
+          deezerTrackId: deezerTrackId,
+        );
+      }
+    } catch (e) {
+      _log.w('Failed to convert Spotify to Deezer via SongLink: $e');
+    }
+
+    return _DeezerLookupPreparation(
+      track: track,
+      deezerTrackId: _extractKnownDeezerTrackId(track),
+    );
+  }
+
+  Future<_DeezerExtendedMetadataFields> _loadDeezerExtendedMetadata(
+    String deezerTrackId,
+  ) async {
+    try {
+      final extendedMetadata = await PlatformBridge.getDeezerExtendedMetadata(
+        deezerTrackId,
+      );
+      if (extendedMetadata == null) {
+        return const _DeezerExtendedMetadataFields();
+      }
+
+      final metadata = _DeezerExtendedMetadataFields(
+        genre: normalizeOptionalString(extendedMetadata['genre']),
+        label: normalizeOptionalString(extendedMetadata['label']),
+        copyright: normalizeOptionalString(extendedMetadata['copyright']),
+      );
+      if (metadata.hasAnyValue) {
+        _log.d(
+          'Extended metadata - Genre: ${metadata.genre}, Label: ${metadata.label}, Copyright: ${metadata.copyright}',
+        );
+      }
+      return metadata;
+    } catch (e) {
+      _log.w('Failed to fetch extended metadata from Deezer: $e');
+      return const _DeezerExtendedMetadataFields();
+    }
+  }
+
   String _newQueueItemId(Track track, {Set<String>? takenIds}) {
     final trimmedIsrc = track.isrc?.trim();
     final trimmedTrackId = track.id.trim();
@@ -4204,32 +4495,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 e.id.toLowerCase() == trackSource,
           );
 
-      String? deezerTrackId = trackToDownload.deezerId;
-      if (deezerTrackId == null && trackToDownload.id.startsWith('deezer:')) {
-        deezerTrackId = trackToDownload.id.split(':')[1];
-      }
-      if (deezerTrackId == null &&
-          trackToDownload.availability?.deezerId != null) {
-        deezerTrackId = trackToDownload.availability!.deezerId;
-      }
+      String? deezerTrackId = _extractKnownDeezerTrackId(trackToDownload);
 
       if (deezerTrackId == null &&
           trackToDownload.isrc != null &&
           trackToDownload.isrc!.isNotEmpty &&
           _isValidISRC(trackToDownload.isrc!)) {
-        try {
-          _log.d('No Deezer ID, searching by ISRC: ${trackToDownload.isrc}');
-          final deezerResult = await PlatformBridge.searchDeezerByISRC(
-            trackToDownload.isrc!,
-          );
-          if (deezerResult['success'] == true &&
-              deezerResult['track_id'] != null) {
-            deezerTrackId = deezerResult['track_id'].toString();
-            _log.d('Found Deezer track ID via ISRC: $deezerTrackId');
-          }
-        } catch (e) {
-          _log.w('Failed to search Deezer by ISRC: $e');
-        }
+        deezerTrackId = await _searchDeezerTrackIdByIsrc(
+          trackToDownload.isrc,
+          lookupContext: 'ISRC',
+        );
 
         if (shouldAbortWork('during Deezer ISRC lookup')) {
           return;
@@ -4244,94 +4519,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               !_isValidISRC(trackToDownload.isrc!)) &&
           (trackToDownload.id.startsWith('tidal:') ||
               trackToDownload.id.startsWith('qobuz:'))) {
-        try {
-          final colonIdx = trackToDownload.id.indexOf(':');
-          final provider = trackToDownload.id.substring(0, colonIdx);
-          final providerTrackId = trackToDownload.id.substring(colonIdx + 1);
-
-          _log.d('No ISRC, fetching from $provider API: $providerTrackId');
-          final providerData = provider == 'tidal'
-              ? await PlatformBridge.getTidalMetadata('track', providerTrackId)
-              : await PlatformBridge.getQobuzMetadata('track', providerTrackId);
-
-          final trackData = providerData['track'] as Map<String, dynamic>?;
-          if (trackData != null) {
-            final resolvedIsrc = normalizeOptionalString(
-              trackData['isrc'] as String?,
-            );
-
-            if (resolvedIsrc != null && _isValidISRC(resolvedIsrc)) {
-              _log.d('Resolved ISRC from $provider: $resolvedIsrc');
-
-              final provReleaseDate = normalizeOptionalString(
-                trackData['release_date'] as String?,
-              );
-              final provTrackNum = trackData['track_number'] as int?;
-              final provTotalTracks = trackData['total_tracks'] as int?;
-              final provDiscNum = trackData['disc_number'] as int?;
-              final provTotalDiscs = trackData['total_discs'] as int?;
-              final provComposer = normalizeOptionalString(
-                trackData['composer'] as String?,
-              );
-
-              trackToDownload = Track(
-                id: trackToDownload.id,
-                name: trackToDownload.name,
-                artistName: trackToDownload.artistName,
-                albumName: trackToDownload.albumName,
-                albumArtist: trackToDownload.albumArtist,
-                artistId: trackToDownload.artistId,
-                albumId: trackToDownload.albumId,
-                coverUrl: normalizeCoverReference(trackToDownload.coverUrl),
-                duration: trackToDownload.duration,
-                isrc: resolvedIsrc,
-                trackNumber:
-                    (trackToDownload.trackNumber != null &&
-                        trackToDownload.trackNumber! > 0)
-                    ? trackToDownload.trackNumber
-                    : provTrackNum,
-                discNumber:
-                    (trackToDownload.discNumber != null &&
-                        trackToDownload.discNumber! > 0)
-                    ? trackToDownload.discNumber
-                    : provDiscNum,
-                totalDiscs:
-                    (trackToDownload.totalDiscs != null &&
-                        trackToDownload.totalDiscs! > 0)
-                    ? trackToDownload.totalDiscs
-                    : provTotalDiscs,
-                releaseDate: trackToDownload.releaseDate ?? provReleaseDate,
-                deezerId: trackToDownload.deezerId,
-                availability: trackToDownload.availability,
-                albumType: trackToDownload.albumType,
-                totalTracks:
-                    (trackToDownload.totalTracks != null &&
-                        trackToDownload.totalTracks! > 0)
-                    ? trackToDownload.totalTracks
-                    : provTotalTracks,
-                composer: trackToDownload.composer ?? provComposer,
-                source: trackToDownload.source,
-              );
-
-              try {
-                final deezerResult = await PlatformBridge.searchDeezerByISRC(
-                  resolvedIsrc,
-                );
-                if (deezerResult['success'] == true &&
-                    deezerResult['track_id'] != null) {
-                  deezerTrackId = deezerResult['track_id'].toString();
-                  _log.d(
-                    'Found Deezer track ID via $provider ISRC: $deezerTrackId',
-                  );
-                }
-              } catch (e) {
-                _log.w('Failed to search Deezer by $provider ISRC: $e');
-              }
-            }
-          }
-        } catch (e) {
-          _log.w('Failed to resolve ISRC from provider: $e');
-        }
+        final providerLookup = await _resolveProviderTrackForDeezerLookup(
+          trackToDownload,
+        );
+        trackToDownload = providerLookup.track;
+        deezerTrackId ??= providerLookup.deezerTrackId;
 
         if (shouldAbortWork('during provider ISRC resolution')) {
           return;
@@ -4346,124 +4538,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           !trackToDownload.id.startsWith('extension:') &&
           !trackToDownload.id.startsWith('tidal:') &&
           !trackToDownload.id.startsWith('qobuz:')) {
-        try {
-          String spotifyId = trackToDownload.id;
-          if (spotifyId.startsWith('spotify:track:')) {
-            spotifyId = spotifyId.split(':').last;
-          }
-          _log.d(
-            'No Deezer ID, converting from Spotify via SongLink: $spotifyId',
-          );
-          final deezerData = await PlatformBridge.convertSpotifyToDeezer(
-            'track',
-            spotifyId,
-          );
-          final trackData = deezerData['track'];
-          if (trackData is Map<String, dynamic>) {
-            final rawId = trackData['spotify_id'] as String?;
-            if (rawId != null && rawId.startsWith('deezer:')) {
-              deezerTrackId = rawId.split(':')[1];
-              _log.d('Found Deezer track ID via SongLink: $deezerTrackId');
-            } else if (deezerData['id'] != null) {
-              deezerTrackId = deezerData['id'].toString();
-              _log.d(
-                'Found Deezer track ID via SongLink (legacy): $deezerTrackId',
-              );
-            }
-
-            // Enrich track metadata from Deezer response (release_date, isrc, etc.)
-            final deezerReleaseDate = normalizeOptionalString(
-              trackData['release_date'] as String?,
-            );
-            final deezerIsrc = normalizeOptionalString(
-              trackData['isrc'] as String?,
-            );
-            final deezerTrackNum = trackData['track_number'] as int?;
-            final deezerTotalTracks = trackData['total_tracks'] as int?;
-            final deezerDiscNum = trackData['disc_number'] as int?;
-            final deezerTotalDiscs = trackData['total_discs'] as int?;
-            final deezerComposer = normalizeOptionalString(
-              trackData['composer'] as String?,
-            );
-
-            final needsEnrich =
-                (trackToDownload.releaseDate == null &&
-                    deezerReleaseDate != null) ||
-                (trackToDownload.isrc == null && deezerIsrc != null) ||
-                (!_isValidISRC(trackToDownload.isrc ?? '') &&
-                    deezerIsrc != null) ||
-                ((trackToDownload.trackNumber == null ||
-                        trackToDownload.trackNumber! <= 0) &&
-                    deezerTrackNum != null &&
-                    deezerTrackNum > 0) ||
-                ((trackToDownload.totalTracks == null ||
-                        trackToDownload.totalTracks! <= 0) &&
-                    deezerTotalTracks != null &&
-                    deezerTotalTracks > 0) ||
-                ((trackToDownload.discNumber == null ||
-                        trackToDownload.discNumber! <= 0) &&
-                    deezerDiscNum != null &&
-                    deezerDiscNum > 0) ||
-                ((trackToDownload.totalDiscs == null ||
-                        trackToDownload.totalDiscs! <= 0) &&
-                    deezerTotalDiscs != null &&
-                    deezerTotalDiscs > 0) ||
-                ((trackToDownload.composer == null ||
-                        trackToDownload.composer!.isEmpty) &&
-                    deezerComposer != null);
-
-            if (needsEnrich) {
-              trackToDownload = Track(
-                id: trackToDownload.id,
-                name: trackToDownload.name,
-                artistName: trackToDownload.artistName,
-                albumName: trackToDownload.albumName,
-                albumArtist: trackToDownload.albumArtist,
-                artistId: trackToDownload.artistId,
-                albumId: trackToDownload.albumId,
-                coverUrl: normalizeCoverReference(trackToDownload.coverUrl),
-                duration: trackToDownload.duration,
-                isrc: (deezerIsrc != null && _isValidISRC(deezerIsrc))
-                    ? deezerIsrc
-                    : trackToDownload.isrc,
-                trackNumber:
-                    (trackToDownload.trackNumber != null &&
-                        trackToDownload.trackNumber! > 0)
-                    ? trackToDownload.trackNumber
-                    : deezerTrackNum,
-                discNumber:
-                    (trackToDownload.discNumber != null &&
-                        trackToDownload.discNumber! > 0)
-                    ? trackToDownload.discNumber
-                    : deezerDiscNum,
-                totalDiscs:
-                    (trackToDownload.totalDiscs != null &&
-                        trackToDownload.totalDiscs! > 0)
-                    ? trackToDownload.totalDiscs
-                    : deezerTotalDiscs,
-                releaseDate: trackToDownload.releaseDate ?? deezerReleaseDate,
-                deezerId: deezerTrackId,
-                availability: trackToDownload.availability,
-                albumType: trackToDownload.albumType,
-                totalTracks:
-                    (trackToDownload.totalTracks != null &&
-                        trackToDownload.totalTracks! > 0)
-                    ? trackToDownload.totalTracks
-                    : deezerTotalTracks,
-                composer: trackToDownload.composer ?? deezerComposer,
-                source: trackToDownload.source,
-              );
-              _log.d(
-                'Enriched track from Deezer - date: ${trackToDownload.releaseDate}, ISRC: ${trackToDownload.isrc}, track: ${trackToDownload.trackNumber}, disc: ${trackToDownload.discNumber}',
-              );
-            }
-          } else if (deezerData['id'] != null) {
-            deezerTrackId = deezerData['id'].toString();
-            _log.d('Found Deezer track ID via SongLink (flat): $deezerTrackId');
-          }
-        } catch (e) {
-          _log.w('Failed to convert Spotify to Deezer via SongLink: $e');
-        }
+        final spotifyLookup = await _resolveSpotifyTrackViaDeezer(
+          trackToDownload,
+        );
+        trackToDownload = spotifyLookup.track;
+        deezerTrackId ??= spotifyLookup.deezerTrackId;
 
         if (shouldAbortWork('during SongLink availability lookup')) {
           return;
@@ -4480,22 +4559,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
 
       if (deezerTrackId != null && deezerTrackId.isNotEmpty) {
-        try {
-          final extendedMetadata =
-              await PlatformBridge.getDeezerExtendedMetadata(deezerTrackId);
-          if (extendedMetadata != null) {
-            genre = extendedMetadata['genre'];
-            label = extendedMetadata['label'];
-            copyright = extendedMetadata['copyright'];
-            if (genre != null && genre.isNotEmpty) {
-              _log.d(
-                'Extended metadata - Genre: $genre, Label: $label, Copyright: $copyright',
-              );
-            }
-          }
-        } catch (e) {
-          _log.w('Failed to fetch extended metadata from Deezer: $e');
-        }
+        final extendedMetadata = await _loadDeezerExtendedMetadata(
+          deezerTrackId,
+        );
+        genre = extendedMetadata.genre;
+        label = extendedMetadata.label;
+        copyright = extendedMetadata.copyright;
 
         if (shouldAbortWork('during extended metadata lookup')) {
           return;
@@ -4726,8 +4795,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final actualService =
             ((result['service'] as String?)?.toLowerCase()) ??
             item.service.toLowerCase();
-        final decryptionKey =
-            (result['decryption_key'] as String?)?.trim() ?? '';
+        final decryptionDescriptor =
+            DownloadDecryptionDescriptor.fromDownloadResult(result);
         trackToDownload = _buildTrackForMetadataEmbedding(
           trackToDownload,
           result,
@@ -4737,8 +4806,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           'Track coverUrl after download result: ${trackToDownload.coverUrl}',
         );
 
-        if (!wasExisting && decryptionKey.isNotEmpty && filePath != null) {
-          _log.i('Encrypted stream detected, decrypting via FFmpeg...');
+        if (!wasExisting && decryptionDescriptor != null && filePath != null) {
+          _log.i(
+            'Encrypted stream detected, decrypting via ${decryptionDescriptor.normalizedStrategy}...',
+          );
           updateItemStatus(item.id, DownloadStatus.finalizing, progress: 0.9);
 
           if (effectiveSafMode && isContentUri(filePath)) {
@@ -4757,9 +4828,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
             String? decryptedTempPath;
             try {
-              decryptedTempPath = await FFmpegService.decryptAudioFile(
+              decryptedTempPath = await FFmpegService.decryptWithDescriptor(
                 inputPath: tempPath,
-                decryptionKey: decryptionKey,
+                descriptor: decryptionDescriptor,
                 deleteOriginal: false,
               );
               if (decryptedTempPath == null) {
@@ -4819,9 +4890,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               }
             }
           } else {
-            final decryptedPath = await FFmpegService.decryptAudioFile(
+            final decryptedPath = await FFmpegService.decryptWithDescriptor(
               inputPath: filePath,
-              decryptionKey: decryptionKey,
+              descriptor: decryptionDescriptor,
               deleteOriginal: true,
             );
             if (decryptedPath == null) {
@@ -5322,7 +5393,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             !effectiveSafMode &&
             isFlacFile &&
             !wasExisting &&
-            decryptionKey.isNotEmpty) {
+            decryptionDescriptor != null) {
           _log.d(
             'Local FLAC after decrypt detected, embedding metadata and cover...',
           );
@@ -5892,4 +5963,24 @@ class _AlbumRgTrackEntry {
 
 class _AlbumRgAccumulator {
   final List<_AlbumRgTrackEntry> entries = [];
+}
+
+class _DeezerLookupPreparation {
+  final Track track;
+  final String? deezerTrackId;
+
+  const _DeezerLookupPreparation({required this.track, this.deezerTrackId});
+}
+
+class _DeezerExtendedMetadataFields {
+  final String? genre;
+  final String? label;
+  final String? copyright;
+
+  const _DeezerExtendedMetadataFields({this.genre, this.label, this.copyright});
+
+  bool get hasAnyValue =>
+      (genre != null && genre!.isNotEmpty) ||
+      (label != null && label!.isNotEmpty) ||
+      (copyright != null && copyright!.isNotEmpty);
 }

@@ -159,7 +159,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     }
     if (widget.artistId.startsWith('tidal:')) return 'tidal';
     if (widget.artistId.startsWith('qobuz:')) return 'qobuz';
-    if (widget.artistId.startsWith('deezer:')) return 'deezer';
     return null;
   }
 

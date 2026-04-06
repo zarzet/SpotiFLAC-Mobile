@@ -74,33 +74,34 @@ type DownloadRequest struct {
 }
 
 type DownloadResponse struct {
-	Success                bool   `json:"success"`
-	Message                string `json:"message"`
-	FilePath               string `json:"file_path,omitempty"`
-	Error                  string `json:"error,omitempty"`
-	ErrorType              string `json:"error_type,omitempty"`
-	AlreadyExists          bool   `json:"already_exists,omitempty"`
-	ActualBitDepth         int    `json:"actual_bit_depth,omitempty"`
-	ActualSampleRate       int    `json:"actual_sample_rate,omitempty"`
-	Service                string `json:"service,omitempty"`
-	Title                  string `json:"title,omitempty"`
-	Artist                 string `json:"artist,omitempty"`
-	Album                  string `json:"album,omitempty"`
-	AlbumArtist            string `json:"album_artist,omitempty"`
-	ReleaseDate            string `json:"release_date,omitempty"`
-	TrackNumber            int    `json:"track_number,omitempty"`
-	DiscNumber             int    `json:"disc_number,omitempty"`
-	TotalTracks            int    `json:"total_tracks,omitempty"`
-	TotalDiscs             int    `json:"total_discs,omitempty"`
-	ISRC                   string `json:"isrc,omitempty"`
-	CoverURL               string `json:"cover_url,omitempty"`
-	Genre                  string `json:"genre,omitempty"`
-	Label                  string `json:"label,omitempty"`
-	Copyright              string `json:"copyright,omitempty"`
-	Composer               string `json:"composer,omitempty"`
-	SkipMetadataEnrichment bool   `json:"skip_metadata_enrichment,omitempty"`
-	LyricsLRC              string `json:"lyrics_lrc,omitempty"`
-	DecryptionKey          string `json:"decryption_key,omitempty"`
+	Success                bool                    `json:"success"`
+	Message                string                  `json:"message"`
+	FilePath               string                  `json:"file_path,omitempty"`
+	Error                  string                  `json:"error,omitempty"`
+	ErrorType              string                  `json:"error_type,omitempty"`
+	AlreadyExists          bool                    `json:"already_exists,omitempty"`
+	ActualBitDepth         int                     `json:"actual_bit_depth,omitempty"`
+	ActualSampleRate       int                     `json:"actual_sample_rate,omitempty"`
+	Service                string                  `json:"service,omitempty"`
+	Title                  string                  `json:"title,omitempty"`
+	Artist                 string                  `json:"artist,omitempty"`
+	Album                  string                  `json:"album,omitempty"`
+	AlbumArtist            string                  `json:"album_artist,omitempty"`
+	ReleaseDate            string                  `json:"release_date,omitempty"`
+	TrackNumber            int                     `json:"track_number,omitempty"`
+	DiscNumber             int                     `json:"disc_number,omitempty"`
+	TotalTracks            int                     `json:"total_tracks,omitempty"`
+	TotalDiscs             int                     `json:"total_discs,omitempty"`
+	ISRC                   string                  `json:"isrc,omitempty"`
+	CoverURL               string                  `json:"cover_url,omitempty"`
+	Genre                  string                  `json:"genre,omitempty"`
+	Label                  string                  `json:"label,omitempty"`
+	Copyright              string                  `json:"copyright,omitempty"`
+	Composer               string                  `json:"composer,omitempty"`
+	SkipMetadataEnrichment bool                    `json:"skip_metadata_enrichment,omitempty"`
+	LyricsLRC              string                  `json:"lyrics_lrc,omitempty"`
+	DecryptionKey          string                  `json:"decryption_key,omitempty"`
+	Decryption             *DownloadDecryptionInfo `json:"decryption,omitempty"`
 }
 
 type DownloadResult struct {
@@ -123,6 +124,7 @@ type DownloadResult struct {
 	Composer      string
 	LyricsLRC     string
 	DecryptionKey string
+	Decryption    *DownloadDecryptionInfo
 }
 
 type reEnrichRequest struct {
@@ -634,6 +636,7 @@ func buildDownloadSuccessResponse(
 		Composer:         composer,
 		LyricsLRC:        result.LyricsLRC,
 		DecryptionKey:    result.DecryptionKey,
+		Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
 	}
 }
 
@@ -781,24 +784,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = qobuzErr
-	case "deezer":
-		deezerResult, deezerErr := downloadFromDeezer(req)
-		if deezerErr == nil {
-			result = DownloadResult{
-				FilePath:    deezerResult.FilePath,
-				BitDepth:    deezerResult.BitDepth,
-				SampleRate:  deezerResult.SampleRate,
-				Title:       deezerResult.Title,
-				Artist:      deezerResult.Artist,
-				Album:       deezerResult.Album,
-				ReleaseDate: deezerResult.ReleaseDate,
-				TrackNumber: deezerResult.TrackNumber,
-				DiscNumber:  deezerResult.DiscNumber,
-				ISRC:        deezerResult.ISRC,
-				LyricsLRC:   deezerResult.LyricsLRC,
-			}
-		}
-		err = deezerErr
 	default:
 		return errorResponse("Unknown service: " + req.Service)
 	}
@@ -849,7 +834,7 @@ func DownloadByStrategy(requestJSON string) (string, error) {
 	serviceNormalized := strings.ToLower(serviceRaw)
 
 	normalizedReq := req
-	if isBuiltInProvider(serviceNormalized) {
+	if isBuiltInDownloadProvider(serviceNormalized) {
 		normalizedReq.Service = serviceNormalized
 	}
 
@@ -862,7 +847,7 @@ func DownloadByStrategy(requestJSON string) (string, error) {
 	if req.UseExtensions {
 		// Respect strict mode when auto fallback is disabled:
 		// for built-in providers, route directly to selected service only.
-		if !req.UseFallback && isBuiltInProvider(serviceNormalized) {
+		if !req.UseFallback && isBuiltInDownloadProvider(serviceNormalized) {
 			return DownloadTrack(normalizedJSON)
 		}
 		resp, err := DownloadWithExtensionsJSON(normalizedJSON)
@@ -901,9 +886,9 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	enrichRequestExtendedMetadata(&req)
 
-	allServices := []string{"tidal", "qobuz", "deezer"}
+	allServices := []string{"tidal", "qobuz"}
 	preferredService := req.Service
-	if preferredService == "" {
+	if !isBuiltInDownloadProvider(preferredService) {
 		preferredService = "tidal"
 	}
 
@@ -969,26 +954,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
 			}
 			err = qobuzErr
-		case "deezer":
-			deezerResult, deezerErr := downloadFromDeezer(req)
-			if deezerErr == nil {
-				result = DownloadResult{
-					FilePath:    deezerResult.FilePath,
-					BitDepth:    deezerResult.BitDepth,
-					SampleRate:  deezerResult.SampleRate,
-					Title:       deezerResult.Title,
-					Artist:      deezerResult.Artist,
-					Album:       deezerResult.Album,
-					ReleaseDate: deezerResult.ReleaseDate,
-					TrackNumber: deezerResult.TrackNumber,
-					DiscNumber:  deezerResult.DiscNumber,
-					ISRC:        deezerResult.ISRC,
-					LyricsLRC:   deezerResult.LyricsLRC,
-				}
-			} else if !errors.Is(deezerErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Deezer error: %v\n", deezerErr)
-			}
-			err = deezerErr
 		}
 
 		if err != nil && errors.Is(err, ErrDownloadCancelled) {

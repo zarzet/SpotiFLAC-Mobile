@@ -64,17 +64,6 @@ const _builtInServices = [
       ),
     ],
   ),
-  BuiltInService(
-    id: 'deezer',
-    label: 'Deezer',
-    qualityOptions: [
-      QualityOption(
-        id: 'FLAC',
-        label: 'FLAC Best Quality',
-        description: 'Up to 24-bit / 48kHz+',
-      ),
-    ],
-  ),
 ];
 
 class DownloadServicePicker extends ConsumerStatefulWidget {
@@ -137,6 +126,18 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
       _selectedService = recommended;
     } else {
       _selectedService = ref.read(settingsProvider).defaultService;
+    }
+    if (!_builtInServices.any((service) => service.id == _selectedService)) {
+      final extensionState = ref.read(extensionProvider);
+      final hasMatchingExtension = extensionState.extensions.any(
+        (ext) =>
+            ext.enabled &&
+            ext.hasDownloadProvider &&
+            ext.id == _selectedService,
+      );
+      if (!hasMatchingExtension) {
+        _selectedService = 'tidal';
+      }
     }
   }
 

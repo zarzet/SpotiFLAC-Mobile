@@ -96,6 +96,15 @@ type ExtDownloadURLResult struct {
 	SampleRate int    `json:"sample_rate,omitempty"`
 }
 
+type DownloadDecryptionInfo struct {
+	Strategy        string                 `json:"strategy,omitempty"`
+	Key             string                 `json:"key,omitempty"`
+	IV              string                 `json:"iv,omitempty"`
+	InputFormat     string                 `json:"input_format,omitempty"`
+	OutputExtension string                 `json:"output_extension,omitempty"`
+	Options         map[string]interface{} `json:"options,omitempty"`
+}
+
 type ExtDownloadResult struct {
 	Success      bool   `json:"success"`
 	FilePath     string `json:"file_path,omitempty"`
@@ -104,16 +113,90 @@ type ExtDownloadResult struct {
 	ErrorMessage string `json:"error_message,omitempty"`
 	ErrorType    string `json:"error_type,omitempty"`
 
-	Title         string `json:"title,omitempty"`
-	Artist        string `json:"artist,omitempty"`
-	Album         string `json:"album,omitempty"`
-	AlbumArtist   string `json:"album_artist,omitempty"`
-	TrackNumber   int    `json:"track_number,omitempty"`
-	DiscNumber    int    `json:"disc_number,omitempty"`
-	ReleaseDate   string `json:"release_date,omitempty"`
-	CoverURL      string `json:"cover_url,omitempty"`
-	ISRC          string `json:"isrc,omitempty"`
-	DecryptionKey string `json:"decryption_key,omitempty"`
+	Title         string                  `json:"title,omitempty"`
+	Artist        string                  `json:"artist,omitempty"`
+	Album         string                  `json:"album,omitempty"`
+	AlbumArtist   string                  `json:"album_artist,omitempty"`
+	TrackNumber   int                     `json:"track_number,omitempty"`
+	DiscNumber    int                     `json:"disc_number,omitempty"`
+	ReleaseDate   string                  `json:"release_date,omitempty"`
+	CoverURL      string                  `json:"cover_url,omitempty"`
+	ISRC          string                  `json:"isrc,omitempty"`
+	DecryptionKey string                  `json:"decryption_key,omitempty"`
+	Decryption    *DownloadDecryptionInfo `json:"decryption,omitempty"`
+}
+
+const genericFFmpegMOVDecryptionStrategy = "ffmpeg.mov_key"
+
+func cloneDownloadDecryptionInfo(info *DownloadDecryptionInfo) *DownloadDecryptionInfo {
+	if info == nil {
+		return nil
+	}
+
+	cloned := &DownloadDecryptionInfo{
+		Strategy:        strings.TrimSpace(info.Strategy),
+		Key:             strings.TrimSpace(info.Key),
+		IV:              strings.TrimSpace(info.IV),
+		InputFormat:     strings.TrimSpace(info.InputFormat),
+		OutputExtension: strings.TrimSpace(info.OutputExtension),
+	}
+	if len(info.Options) > 0 {
+		cloned.Options = make(map[string]interface{}, len(info.Options))
+		for key, value := range info.Options {
+			cloned.Options[key] = value
+		}
+	}
+	return cloned
+}
+
+func normalizeDownloadDecryptionStrategy(strategy string) string {
+	switch strings.ToLower(strings.TrimSpace(strategy)) {
+	case "", "ffmpeg.mov_key", "ffmpeg_mov_key", "mov_decryption_key", "mp4_decryption_key", "ffmpeg.mp4_decryption_key":
+		return genericFFmpegMOVDecryptionStrategy
+	default:
+		return strings.TrimSpace(strategy)
+	}
+}
+
+func normalizeDownloadDecryptionInfo(info *DownloadDecryptionInfo, legacyKey string) *DownloadDecryptionInfo {
+	normalized := cloneDownloadDecryptionInfo(info)
+	trimmedLegacyKey := strings.TrimSpace(legacyKey)
+
+	if normalized == nil {
+		if trimmedLegacyKey == "" {
+			return nil
+		}
+		return &DownloadDecryptionInfo{
+			Strategy:    genericFFmpegMOVDecryptionStrategy,
+			Key:         trimmedLegacyKey,
+			InputFormat: "mov",
+		}
+	}
+
+	normalized.Strategy = normalizeDownloadDecryptionStrategy(normalized.Strategy)
+	if normalized.Key == "" && trimmedLegacyKey != "" {
+		normalized.Key = trimmedLegacyKey
+	}
+	if normalized.Strategy == "" && normalized.Key != "" {
+		normalized.Strategy = genericFFmpegMOVDecryptionStrategy
+	}
+	if normalized.Strategy == genericFFmpegMOVDecryptionStrategy && normalized.InputFormat == "" {
+		normalized.InputFormat = "mov"
+	}
+	if normalized.Strategy == genericFFmpegMOVDecryptionStrategy && normalized.Key == "" {
+		return nil
+	}
+
+	return normalized
+}
+
+func normalizedDownloadDecryptionKey(info *DownloadDecryptionInfo, legacyKey string) string {
+	if normalized := normalizeDownloadDecryptionInfo(info, legacyKey); normalized != nil {
+		if normalized.Strategy == genericFFmpegMOVDecryptionStrategy {
+			return normalized.Key
+		}
+	}
+	return strings.TrimSpace(legacyKey)
 }
 
 type extensionProviderWrapper struct {
@@ -600,6 +683,14 @@ func (p *extensionProviderWrapper) Download(trackID, quality, outputPath, itemID
 			ErrorType:    "internal_error",
 		}, nil
 	}
+	downloadResult.Decryption = normalizeDownloadDecryptionInfo(
+		downloadResult.Decryption,
+		downloadResult.DecryptionKey,
+	)
+	downloadResult.DecryptionKey = normalizedDownloadDecryptionKey(
+		downloadResult.Decryption,
+		downloadResult.DecryptionKey,
+	)
 
 	return &downloadResult, nil
 }
@@ -687,8 +778,8 @@ var searchBuiltInMetadataTracksFunc = searchBuiltInMetadataTracks
 func SetProviderPriority(providerIDs []string) {
 	providerPriorityMu.Lock()
 	defer providerPriorityMu.Unlock()
-	providerPriority = providerIDs
-	GoLog("[Extension] Download provider priority set: %v\n", providerIDs)
+	providerPriority = sanitizeDownloadProviderPriority(providerIDs)
+	GoLog("[Extension] Download provider priority set: %v\n", providerPriority)
 }
 
 func GetProviderPriority() []string {
@@ -696,12 +787,49 @@ func GetProviderPriority() []string {
 	defer providerPriorityMu.RUnlock()
 
 	if len(providerPriority) == 0 {
-		return []string{"tidal", "qobuz", "deezer"}
+		return []string{"tidal", "qobuz"}
 	}
 
 	result := make([]string, len(providerPriority))
 	copy(result, providerPriority)
 	return result
+}
+
+func sanitizeDownloadProviderPriority(providerIDs []string) []string {
+	sanitized := make([]string, 0, len(providerIDs)+2)
+	seen := map[string]struct{}{}
+
+	for _, providerID := range providerIDs {
+		providerID = strings.TrimSpace(providerID)
+		if providerID == "" {
+			continue
+		}
+
+		normalizedBuiltIn := strings.ToLower(providerID)
+		if normalizedBuiltIn == "deezer" {
+			continue
+		}
+		if isBuiltInDownloadProvider(normalizedBuiltIn) {
+			providerID = normalizedBuiltIn
+		}
+
+		seenKey := strings.ToLower(providerID)
+		if _, exists := seen[seenKey]; exists {
+			continue
+		}
+		seen[seenKey] = struct{}{}
+		sanitized = append(sanitized, providerID)
+	}
+
+	for _, providerID := range []string{"tidal", "qobuz"} {
+		if _, exists := seen[providerID]; exists {
+			continue
+		}
+		seen[providerID] = struct{}{}
+		sanitized = append(sanitized, providerID)
+	}
+
+	return sanitized
 }
 
 func SetExtensionFallbackProviderIDs(providerIDs []string) {
@@ -718,7 +846,7 @@ func SetExtensionFallbackProviderIDs(providerIDs []string) {
 	seen := map[string]struct{}{}
 	for _, providerID := range providerIDs {
 		providerID = strings.TrimSpace(providerID)
-		if providerID == "" || isBuiltInProvider(strings.ToLower(providerID)) {
+		if providerID == "" || isBuiltInDownloadProvider(strings.ToLower(providerID)) {
 			continue
 		}
 		if _, exists := seen[providerID]; exists {
@@ -746,7 +874,7 @@ func GetExtensionFallbackProviderIDs() []string {
 }
 
 func isExtensionFallbackAllowed(providerID string) bool {
-	if isBuiltInProvider(strings.ToLower(providerID)) {
+	if isBuiltInDownloadProvider(strings.ToLower(providerID)) {
 		return true
 	}
 
@@ -808,6 +936,15 @@ func GetMetadataProviderPriority() []string {
 func isBuiltInProvider(providerID string) bool {
 	switch providerID {
 	case "tidal", "qobuz", "deezer":
+		return true
+	default:
+		return false
+	}
+}
+
+func isBuiltInDownloadProvider(providerID string) bool {
+	switch providerID {
+	case "tidal", "qobuz":
 		return true
 	default:
 		return false
@@ -992,7 +1129,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		}
 	}
 
-	if !strictMode && req.Service != "" && isBuiltInProvider(strings.ToLower(req.Service)) {
+	if !strictMode && req.Service != "" && isBuiltInDownloadProvider(strings.ToLower(req.Service)) {
 		GoLog("[DownloadWithExtensionFallback] User selected service: %s, prioritizing it first\n", req.Service)
 		newPriority := []string{req.Service}
 		for _, p := range priority {
@@ -1002,7 +1139,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		}
 		priority = newPriority
 		GoLog("[DownloadWithExtensionFallback] New priority order: %v\n", priority)
-	} else if !strictMode && req.Service != "" && !isBuiltInProvider(strings.ToLower(req.Service)) {
+	} else if !strictMode && req.Service != "" && !isBuiltInDownloadProvider(strings.ToLower(req.Service)) {
 		found := false
 		for _, p := range priority {
 			if strings.EqualFold(p, req.Service) {
@@ -1260,14 +1397,17 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Label:            req.Label,
 					Copyright:        req.Copyright,
 					DecryptionKey:    result.DecryptionKey,
+					Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
 				}
 
-				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(result.FilePath) {
 					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
 						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
 					} else {
 						GoLog("[DownloadWithExtensionFallback] Embedded genre=%q label=%q\n", req.Genre, req.Label)
 					}
+				} else if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", result.FilePath)
 				}
 
 				if ext.Manifest.SkipMetadataEnrichment {
@@ -1365,19 +1505,19 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			continue
 		}
 
-		if skipBuiltIn && isBuiltInProvider(providerIDNormalized) {
+		if skipBuiltIn && isBuiltInDownloadProvider(providerIDNormalized) {
 			GoLog("[DownloadWithExtensionFallback] Skipping built-in provider %s (skipBuiltInFallback)\n", providerID)
 			continue
 		}
 
-		if !isBuiltInProvider(providerIDNormalized) && !isExtensionFallbackAllowed(providerID) {
+		if !isBuiltInDownloadProvider(providerIDNormalized) && !isExtensionFallbackAllowed(providerID) {
 			GoLog("[DownloadWithExtensionFallback] Skipping extension provider %s (not enabled for fallback)\n", providerID)
 			continue
 		}
 
 		GoLog("[DownloadWithExtensionFallback] Trying provider: %s\n", providerID)
 
-		if isBuiltInProvider(providerIDNormalized) {
+		if isBuiltInDownloadProvider(providerIDNormalized) {
 			if (req.Genre == "" || req.Label == "" || req.Copyright == "") &&
 				req.ISRC != "" {
 				GoLog("[DownloadWithExtensionFallback] Enriching extended metadata from Deezer for ISRC: %s\n", req.ISRC)
@@ -1491,14 +1631,17 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 					Label:            req.Label,
 					Copyright:        req.Copyright,
 					DecryptionKey:    result.DecryptionKey,
+					Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
 				}
 
-				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(result.FilePath) {
 					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
 						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
 					} else {
 						GoLog("[DownloadWithExtensionFallback] Embedded genre=%q label=%q\n", req.Genre, req.Label)
 					}
+				} else if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", result.FilePath)
 				}
 
 				if ext.Manifest.SkipMetadataEnrichment {
@@ -1631,24 +1774,6 @@ func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadRespon
 			}
 		}
 		err = qobuzErr
-	case "deezer":
-		deezerResult, deezerErr := downloadFromDeezer(req)
-		if deezerErr == nil {
-			result = DownloadResult{
-				FilePath:    deezerResult.FilePath,
-				BitDepth:    deezerResult.BitDepth,
-				SampleRate:  deezerResult.SampleRate,
-				Title:       deezerResult.Title,
-				Artist:      deezerResult.Artist,
-				Album:       deezerResult.Album,
-				ReleaseDate: deezerResult.ReleaseDate,
-				TrackNumber: deezerResult.TrackNumber,
-				DiscNumber:  deezerResult.DiscNumber,
-				ISRC:        deezerResult.ISRC,
-				LyricsLRC:   deezerResult.LyricsLRC,
-			}
-		}
-		err = deezerErr
 	default:
 		return nil, fmt.Errorf("unknown built-in provider: %s", providerID)
 	}
@@ -1676,6 +1801,7 @@ func tryBuiltInProvider(providerID string, req DownloadRequest) (*DownloadRespon
 		Copyright:        req.Copyright,
 		LyricsLRC:        result.LyricsLRC,
 		DecryptionKey:    result.DecryptionKey,
+		Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
 	}, nil
 }
 
@@ -1717,19 +1843,24 @@ func buildOutputPath(req DownloadRequest) string {
 	outputDir := req.OutputDir
 	if strings.TrimSpace(outputDir) == "" {
 		outputDir = filepath.Join(os.TempDir(), "spotiflac-downloads")
-		os.MkdirAll(outputDir, 0755)
-		AddAllowedDownloadDir(outputDir)
 	}
+	os.MkdirAll(outputDir, 0755)
+	AddAllowedDownloadDir(outputDir)
 
 	return filepath.Join(outputDir, filename+ext)
 }
 
 func buildOutputPathForExtension(req DownloadRequest, ext *loadedExtension) string {
 	if strings.TrimSpace(req.OutputPath) != "" {
-		return strings.TrimSpace(req.OutputPath)
+		outputPath := strings.TrimSpace(req.OutputPath)
+		AddAllowedDownloadDir(filepath.Dir(outputPath))
+		return outputPath
 	}
 
-	if strings.TrimSpace(req.OutputDir) != "" {
+	// SAF downloads hand extensions a detached output FD owned by the host.
+	// Extensions still need a real local temp file so Android can copy it into
+	// the target document after provider-specific post-processing completes.
+	if !isFDOutput(req.OutputFD) && strings.TrimSpace(req.OutputDir) != "" {
 		return buildOutputPath(req)
 	}
 
@@ -1768,6 +1899,18 @@ func buildOutputPathForExtension(req DownloadRequest, ext *loadedExtension) stri
 	}
 
 	return filepath.Join(tempDir, filename+outputExt)
+}
+
+func canEmbedGenreLabel(filePath string) bool {
+	path := strings.TrimSpace(filePath)
+	if path == "" || strings.HasPrefix(path, "content://") || strings.HasPrefix(path, "/proc/self/fd/") {
+		return false
+	}
+	if !filepath.IsAbs(path) {
+		return false
+	}
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir() && info.Size() > 0
 }
 
 func (p *extensionProviderWrapper) CustomSearch(query string, options map[string]interface{}) ([]ExtTrackMetadata, error) {

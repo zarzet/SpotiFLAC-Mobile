@@ -61,7 +61,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     if (playlistId != null) {
       if (playlistId.startsWith('tidal:')) return 'tidal';
       if (playlistId.startsWith('qobuz:')) return 'qobuz';
-      if (playlistId.startsWith('deezer:')) return 'deezer';
     }
 
     final source = _tracks.firstOrNull?.source;
@@ -72,7 +71,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     final trackId = _tracks.firstOrNull?.id ?? '';
     if (trackId.startsWith('tidal:')) return 'tidal';
     if (trackId.startsWith('qobuz:')) return 'qobuz';
-    if (trackId.startsWith('deezer:')) return 'deezer';
     return null;
   }
 

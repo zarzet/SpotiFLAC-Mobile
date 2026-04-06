@@ -13,6 +13,95 @@ import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('FFmpeg');
 
+class DownloadDecryptionDescriptor {
+  final String strategy;
+  final String key;
+  final String? iv;
+  final String? inputFormat;
+  final String? outputExtension;
+  final Map<String, dynamic> options;
+
+  const DownloadDecryptionDescriptor({
+    required this.strategy,
+    required this.key,
+    this.iv,
+    this.inputFormat,
+    this.outputExtension,
+    this.options = const {},
+  });
+
+  factory DownloadDecryptionDescriptor.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json['options'];
+    return DownloadDecryptionDescriptor(
+      strategy: (json['strategy'] as String? ?? '').trim(),
+      key: (json['key'] as String? ?? '').trim(),
+      iv: (json['iv'] as String?)?.trim(),
+      inputFormat: (json['input_format'] as String?)?.trim(),
+      outputExtension: (json['output_extension'] as String?)?.trim(),
+      options: rawOptions is Map
+          ? Map<String, dynamic>.from(rawOptions)
+          : const {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{'strategy': strategy, 'key': key};
+    if (iv != null && iv!.isNotEmpty) {
+      json['iv'] = iv;
+    }
+    if (inputFormat != null && inputFormat!.isNotEmpty) {
+      json['input_format'] = inputFormat;
+    }
+    if (outputExtension != null && outputExtension!.isNotEmpty) {
+      json['output_extension'] = outputExtension;
+    }
+    if (options.isNotEmpty) {
+      json['options'] = options;
+    }
+    return json;
+  }
+
+  static DownloadDecryptionDescriptor? fromDownloadResult(
+    Map<String, dynamic> result,
+  ) {
+    final rawDecryption = result['decryption'];
+    if (rawDecryption is Map) {
+      final descriptor = DownloadDecryptionDescriptor.fromJson(
+        Map<String, dynamic>.from(rawDecryption),
+      );
+      if (descriptor.normalizedStrategy == 'ffmpeg.mov_key' &&
+          descriptor.key.isNotEmpty) {
+        return descriptor;
+      }
+    }
+
+    final legacyKey = (result['decryption_key'] as String?)?.trim() ?? '';
+    if (legacyKey.isEmpty) {
+      return null;
+    }
+
+    return DownloadDecryptionDescriptor(
+      strategy: 'ffmpeg.mov_key',
+      key: legacyKey,
+      inputFormat: 'mov',
+    );
+  }
+
+  String get normalizedStrategy {
+    switch (strategy.trim().toLowerCase()) {
+      case '':
+      case 'ffmpeg.mov_key':
+      case 'ffmpeg_mov_key':
+      case 'mov_decryption_key':
+      case 'mp4_decryption_key':
+      case 'ffmpeg.mp4_decryption_key':
+        return 'ffmpeg.mov_key';
+      default:
+        return strategy.trim();
+    }
+  }
+}
+
 class FFmpegService {
   static const int _commandLogPreviewLength = 300;
   static const Duration _liveTunnelStartupTimeout = Duration(seconds: 8);
@@ -22,6 +111,7 @@ class FFmpegService {
   static const Duration _liveTunnelStabilizationDelay = Duration(
     milliseconds: 900,
   );
+  static const String _genericMovKeyDecryptionStrategy = 'ffmpeg.mov_key';
   static int _tempEmbedCounter = 0;
   static FFmpegSession? _activeLiveDecryptSession;
   static String? _activeLiveDecryptUrl;
@@ -216,12 +306,56 @@ class FFmpegService {
     required String decryptionKey,
     bool deleteOriginal = true,
   }) async {
-    final trimmedKey = decryptionKey.trim();
-    if (trimmedKey.isEmpty) return inputPath;
+    return decryptWithDescriptor(
+      inputPath: inputPath,
+      descriptor: DownloadDecryptionDescriptor(
+        strategy: _genericMovKeyDecryptionStrategy,
+        key: decryptionKey,
+        inputFormat: 'mov',
+      ),
+      deleteOriginal: deleteOriginal,
+    );
+  }
 
-    // Encrypted streams are commonly MP4 container with FLAC audio.
-    // Prefer FLAC output to avoid MP4 muxing errors during decrypt copy.
-    final preferredExt = inputPath.toLowerCase().endsWith('.m4a')
+  static Future<String?> decryptWithDescriptor({
+    required String inputPath,
+    required DownloadDecryptionDescriptor descriptor,
+    bool deleteOriginal = true,
+  }) async {
+    final key = descriptor.key.trim();
+
+    switch (descriptor.normalizedStrategy) {
+      case _genericMovKeyDecryptionStrategy:
+        if (key.isEmpty) {
+          return inputPath;
+        }
+        return _decryptMovKeyFile(
+          inputPath: inputPath,
+          decryptionKey: key,
+          inputFormat: descriptor.inputFormat,
+          outputExtension: descriptor.outputExtension,
+          deleteOriginal: deleteOriginal,
+        );
+      default:
+        _log.e(
+          'Unsupported download decryption strategy: ${descriptor.strategy}',
+        );
+        return null;
+    }
+  }
+
+  static String _resolvePreferredDecryptionExtension(
+    String inputPath,
+    String? requestedExtension,
+  ) {
+    final trimmedRequested = (requestedExtension ?? '').trim();
+    if (trimmedRequested.isNotEmpty) {
+      return trimmedRequested.startsWith('.')
+          ? trimmedRequested
+          : '.$trimmedRequested';
+    }
+
+    return inputPath.toLowerCase().endsWith('.m4a')
         ? '.flac'
         : inputPath.toLowerCase().endsWith('.flac')
         ? '.flac'
@@ -230,7 +364,23 @@ class FFmpegService {
         : inputPath.toLowerCase().endsWith('.opus')
         ? '.opus'
         : '.flac';
+  }
+
+  static Future<String?> _decryptMovKeyFile({
+    required String inputPath,
+    required String decryptionKey,
+    String? inputFormat,
+    String? outputExtension,
+    bool deleteOriginal = true,
+  }) async {
+    final preferredExt = _resolvePreferredDecryptionExtension(
+      inputPath,
+      outputExtension,
+    );
     var tempOutput = _buildOutputPath(inputPath, preferredExt);
+    final demuxerFormat = (inputFormat ?? '').trim().isNotEmpty
+        ? inputFormat!.trim()
+        : 'mov';
 
     String buildDecryptCommand(
       String outputPath, {
@@ -241,10 +391,10 @@ class FFmpegService {
       // Force MOV demuxer: -decryption_key is only supported by the MOV/MP4
       // demuxer. The input may carry a .flac extension (SAF mode) while actually
       // containing an encrypted M4A stream, so we must override auto-detection.
-      return '-v error -decryption_key "$key" -f mov -i "$inputPath" $audioMap-c copy "$outputPath" -y';
+      return '-v error -decryption_key "$key" -f $demuxerFormat -i "$inputPath" $audioMap-c copy "$outputPath" -y';
     }
 
-    final keyCandidates = _buildDecryptionKeyCandidates(trimmedKey);
+    final keyCandidates = _buildDecryptionKeyCandidates(decryptionKey);
     if (keyCandidates.isEmpty) {
       _log.e('No usable decryption key candidates');
       return null;

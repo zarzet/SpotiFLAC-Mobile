@@ -12,7 +12,7 @@ import 'package:spotiflac_android/utils/logger.dart';
 
 const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
-const _currentMigrationVersion = 9;
+const _currentMigrationVersion = 10;
 const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
@@ -132,8 +132,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
         );
       }
       state = state.copyWith(lastSeenVersion: AppInfo.version);
-      // Migration 7: YouTube is no longer a built-in service — reset to Tidal
-      if (state.defaultService == 'youtube') {
+      // Migration 7/10: retired built-in services reset back to Tidal
+      if (state.defaultService == 'youtube' ||
+          state.defaultService == 'deezer') {
         state = state.copyWith(defaultService: 'tidal');
       }
       await prefs.setInt(_migrationVersionKey, _currentMigrationVersion);

@@ -371,7 +371,6 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
     if (widget.albumId.startsWith('tidal:')) return 'tidal';
     if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
-    if (widget.albumId.startsWith('deezer:')) return 'deezer';
     return null;
   }
 

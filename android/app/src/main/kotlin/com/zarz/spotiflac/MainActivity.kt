@@ -944,16 +944,19 @@ class MainActivity: FlutterFragmentActivity() {
                 ) {
                     try {
                         val srcFile = java.io.File(goFilePath)
-                        if (srcFile.exists() && srcFile.length() > 0) {
-                            contentResolver.openOutputStream(document.uri, "wt")?.use { output ->
-                                srcFile.inputStream().use { input ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            srcFile.delete()
+                        if (!srcFile.exists() || srcFile.length() <= 0) {
+                            throw IllegalStateException("extension output missing or empty: $goFilePath")
                         }
+                        contentResolver.openOutputStream(document.uri, "wt")?.use { output ->
+                            srcFile.inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                        } ?: throw IllegalStateException("failed to open SAF output stream")
+                        srcFile.delete()
                     } catch (e: Exception) {
+                        document.delete()
                         android.util.Log.w("SpotiFLAC", "Failed to copy extension output to SAF: ${e.message}")
+                        return errorJson("Failed to copy extension output to SAF: ${e.message}")
                     }
                 }
                 respObj.put("file_path", document.uri.toString())

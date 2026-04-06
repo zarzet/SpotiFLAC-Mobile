@@ -820,7 +820,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }
     }
 
-    for (final provider in const ['tidal', 'qobuz', 'deezer']) {
+    for (final provider in const ['tidal', 'qobuz']) {
       if (!result.contains(provider)) {
         result.add(provider);
       }
@@ -896,7 +896,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   }
 
   List<String> getAllDownloadProviders() {
-    final providers = ['tidal', 'qobuz', 'deezer'];
+    final providers = ['tidal', 'qobuz'];
     for (final ext in state.extensions) {
       if (ext.enabled && ext.hasDownloadProvider) {
         providers.add(ext.id);

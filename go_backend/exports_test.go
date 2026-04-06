@@ -129,6 +129,38 @@ func TestBuildDownloadSuccessResponsePrefersProviderCoverURL(t *testing.T) {
 	}
 }
 
+func TestBuildDownloadSuccessResponseNormalizesDecryptionDescriptor(t *testing.T) {
+	req := DownloadRequest{
+		TrackName:  "Track",
+		ArtistName: "Artist",
+	}
+
+	result := DownloadResult{
+		Title:         "Track",
+		Artist:        "Artist",
+		DecryptionKey: "00112233",
+	}
+
+	resp := buildDownloadSuccessResponse(
+		req,
+		result,
+		"amazon",
+		"ok",
+		"/tmp/test.m4a",
+		false,
+	)
+
+	if resp.Decryption == nil {
+		t.Fatal("expected decryption descriptor to be present")
+	}
+	if resp.Decryption.Strategy != genericFFmpegMOVDecryptionStrategy {
+		t.Fatalf("strategy = %q", resp.Decryption.Strategy)
+	}
+	if resp.Decryption.Key != result.DecryptionKey {
+		t.Fatalf("key = %q, want %q", resp.Decryption.Key, result.DecryptionKey)
+	}
+}
+
 func TestApplyReEnrichTrackMetadataPreservesExistingReleaseDateWhenCandidateMissing(t *testing.T) {
 	req := reEnrichRequest{
 		SpotifyID:   "spotify-track-id",

@@ -346,6 +346,104 @@ func (r *extensionRuntime) fileRead(call goja.FunctionCall) goja.Value {
 	})
 }
 
+func (r *extensionRuntime) fileReadBytes(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) < 1 {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   "path is required",
+		})
+	}
+
+	path := call.Arguments[0].String()
+	fullPath, err := r.validatePath(path)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	options := parseRuntimeOptionsArgument(call, 1)
+	offset := runtimeOptionInt64(options, "offset", 0)
+	length := runtimeOptionInt64(options, "length", -1)
+	encoding := runtimeOptionString(options, "encoding", "base64")
+	if offset < 0 {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   "offset must be >= 0",
+		})
+	}
+
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	size := info.Size()
+	if offset > size {
+		offset = size
+	}
+	if _, err := file.Seek(offset, io.SeekStart); err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   fmt.Sprintf("failed to seek file: %v", err),
+		})
+	}
+
+	var data []byte
+	switch {
+	case length == 0:
+		data = []byte{}
+	case length > 0:
+		buf := make([]byte, int(length))
+		n, readErr := file.Read(buf)
+		if readErr != nil && readErr != io.EOF {
+			return r.vm.ToValue(map[string]interface{}{
+				"success": false,
+				"error":   fmt.Sprintf("failed to read file: %v", readErr),
+			})
+		}
+		data = buf[:n]
+	default:
+		data, err = io.ReadAll(file)
+		if err != nil {
+			return r.vm.ToValue(map[string]interface{}{
+				"success": false,
+				"error":   fmt.Sprintf("failed to read file: %v", err),
+			})
+		}
+	}
+
+	encoded, err := encodeRuntimeBytes(data, encoding)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	return r.vm.ToValue(map[string]interface{}{
+		"success":    true,
+		"data":       encoded,
+		"bytes_read": len(data),
+		"offset":     offset,
+		"size":       size,
+		"eof":        offset+int64(len(data)) >= size,
+	})
+}
+
 func (r *extensionRuntime) fileWrite(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) < 2 {
 		return r.vm.ToValue(map[string]interface{}{
@@ -383,6 +481,107 @@ func (r *extensionRuntime) fileWrite(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(map[string]interface{}{
 		"success": true,
 		"path":    fullPath,
+	})
+}
+
+func (r *extensionRuntime) fileWriteBytes(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) < 2 {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   "path and data are required",
+		})
+	}
+
+	path := call.Arguments[0].String()
+	fullPath, err := r.validatePath(path)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	options := parseRuntimeOptionsArgument(call, 2)
+	appendMode := runtimeOptionBool(options, "append", false)
+	truncate := runtimeOptionBool(options, "truncate", false)
+	hasOffset := runtimeOptionHasKey(options, "offset")
+	offset := runtimeOptionInt64(options, "offset", 0)
+	encoding := runtimeOptionString(options, "encoding", "base64")
+
+	if appendMode && hasOffset {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   "append and offset cannot be used together",
+		})
+	}
+	if offset < 0 {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   "offset must be >= 0",
+		})
+	}
+
+	data, err := decodeRuntimeBytesValue(call.Arguments[1].Export(), encoding)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	dir := filepath.Dir(fullPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   fmt.Sprintf("failed to create directory: %v", err),
+		})
+	}
+
+	flags := os.O_CREATE | os.O_WRONLY
+	if appendMode {
+		flags |= os.O_APPEND
+	}
+	if truncate {
+		flags |= os.O_TRUNC
+	}
+
+	file, err := os.OpenFile(fullPath, flags, 0644)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+	defer file.Close()
+
+	if hasOffset && !appendMode {
+		if _, err := file.Seek(offset, io.SeekStart); err != nil {
+			return r.vm.ToValue(map[string]interface{}{
+				"success": false,
+				"error":   fmt.Sprintf("failed to seek file: %v", err),
+			})
+		}
+	}
+
+	written, err := file.Write(data)
+	if err != nil {
+		return r.vm.ToValue(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	info, statErr := file.Stat()
+	size := int64(0)
+	if statErr == nil {
+		size = info.Size()
+	}
+
+	return r.vm.ToValue(map[string]interface{}{
+		"success":       true,
+		"path":          fullPath,
+		"bytes_written": written,
+		"size":          size,
 	})
 }
 
