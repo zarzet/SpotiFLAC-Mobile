@@ -1203,6 +1203,18 @@
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
+  "providerPriorityFallbackExtensionsTitle": "Extension Fallback",
+  "@providerPriorityFallbackExtensionsTitle": {
+    "description": "Section title for choosing which download extensions can be used as fallback providers"
+  },
+  "providerPriorityFallbackExtensionsDescription": "Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.",
+  "@providerPriorityFallbackExtensionsDescription": {
+    "description": "Section description for extension fallback selection"
+  },
+  "providerPriorityFallbackExtensionsHint": "Only enabled extensions with download-provider capability are listed here.",
+  "@providerPriorityFallbackExtensionsHint": {
+    "description": "Hint below the extension fallback selection list"
+  },
   "providerBuiltIn": "Built-in",
   "@providerBuiltIn": {
     "description": "Label for built-in providers (Tidal/Qobuz)"
@@ -1856,6 +1868,14 @@
   "extensionsDownloadPrioritySubtitle": "Set download service order",
   "@extensionsDownloadPrioritySubtitle": {
     "description": "Subtitle for download priority"
+  },
+  "extensionsFallbackTitle": "Fallback Extensions",
+  "@extensionsFallbackTitle": {
+    "description": "Setting and page title for choosing which download extensions can be used during fallback"
+  },
+  "extensionsFallbackSubtitle": "Choose which installed download extensions can be used as fallback",
+  "@extensionsFallbackSubtitle": {
+    "description": "Subtitle for download fallback extensions menu"
   },
   "extensionsNoDownloadProvider": "No extensions with download provider",
   "@extensionsNoDownloadProvider": {
