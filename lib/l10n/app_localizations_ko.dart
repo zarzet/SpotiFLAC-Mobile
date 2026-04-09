@@ -324,6 +324,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get aboutPCSource => 'PC 소스 코드';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => '문제 신고';
 
   @override

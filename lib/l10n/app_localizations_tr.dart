@@ -338,6 +338,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get aboutPCSource => 'PC kaynak kodu';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Sorun bildir';
 
   @override

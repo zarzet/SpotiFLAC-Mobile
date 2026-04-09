@@ -335,6 +335,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutPCSource => 'PC source code';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Report an issue';
 
   @override

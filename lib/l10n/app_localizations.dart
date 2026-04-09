@@ -718,6 +718,12 @@ abstract class AppLocalizations {
   /// **'PC source code'**
   String get aboutPCSource;
 
+  /// Link to Keep Android Open campaign website
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Android Open'**
+  String get aboutKeepAndroidOpen;
+
   /// Link to report bugs
   ///
   /// In en, this message translates to:

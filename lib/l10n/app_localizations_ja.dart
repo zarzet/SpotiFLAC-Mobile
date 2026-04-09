@@ -331,6 +331,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutPCSource => 'PC 版のソースコード';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => '問題を報告する';
 
   @override

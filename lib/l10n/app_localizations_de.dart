@@ -342,6 +342,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutPCSource => 'PC Quellcode';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Problem melden';
 
   @override

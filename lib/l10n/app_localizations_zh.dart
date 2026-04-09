@@ -335,6 +335,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutPCSource => 'PC source code';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Report an issue';
 
   @override
@@ -3690,6 +3693,9 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get aboutPCSource => '桌面版本源代码';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => '报告一个问题';
 
   @override
@@ -6082,6 +6088,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get aboutPCSource => 'PC source code';
+
+  @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
 
   @override
   String get aboutReportIssue => 'Report an issue';

@@ -183,6 +183,13 @@ class AboutPage extends StatelessWidget {
                     showDivider: true,
                   ),
                   _AboutSettingsItem(
+                    icon: Icons.campaign_outlined,
+                    title: context.l10n.aboutKeepAndroidOpen,
+                    subtitle: 'keepandroidopen.org',
+                    onTap: () => _launchUrl('https://keepandroidopen.org/'),
+                    showDivider: true,
+                  ),
+                  _AboutSettingsItem(
                     icon: Icons.bug_report_outlined,
                     title: context.l10n.aboutReportIssue,
                     subtitle: context.l10n.aboutReportIssueSubtitle,

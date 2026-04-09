@@ -338,6 +338,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get aboutPCSource => 'Kode sumber PC';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Laporkan masalah';
 
   @override

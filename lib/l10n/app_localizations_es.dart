@@ -335,6 +335,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aboutPCSource => 'PC source code';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Report an issue';
 
   @override
@@ -3706,6 +3709,9 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
 
   @override
   String get aboutPCSource => 'Código fuente de PC';
+
+  @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
 
   @override
   String get aboutReportIssue => 'Reportar un problema';

@@ -378,6 +378,10 @@
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
+  "aboutKeepAndroidOpen": "Keep Android Open",
+  "@aboutKeepAndroidOpen": {
+    "description": "Link to Keep Android Open campaign website"
+  },
   "aboutReportIssue": "报告一个问题",
   "@aboutReportIssue": {
     "description": "Link to report bugs"

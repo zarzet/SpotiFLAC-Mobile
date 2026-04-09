@@ -341,6 +341,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aboutPCSource => 'Исходный код ПК версии';
 
   @override
+  String get aboutKeepAndroidOpen => 'Keep Android Open';
+
+  @override
   String get aboutReportIssue => 'Сообщить о проблеме';
 
   @override
