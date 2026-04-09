@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 var (
@@ -17,19 +19,42 @@ var (
 )
 
 func sanitizeFilename(filename string) string {
-	sanitized := invalidChars.ReplaceAllString(filename, "_")
+	sanitized := strings.ReplaceAll(filename, "/", " ")
+	sanitized = invalidChars.ReplaceAllString(sanitized, " ")
 
+	var builder strings.Builder
+	for _, r := range sanitized {
+		if r < 0x20 && r != 0x09 && r != 0x0A && r != 0x0D {
+			continue
+		}
+		if r == 0x7F {
+			continue
+		}
+		if unicode.IsControl(r) && r != 0x09 && r != 0x0A && r != 0x0D {
+			continue
+		}
+		builder.WriteRune(r)
+	}
+
+	sanitized = builder.String()
 	sanitized = strings.TrimSpace(sanitized)
-	sanitized = strings.Trim(sanitized, ".")
-
+	sanitized = strings.Trim(sanitized, ". ")
+	sanitized = strings.Join(strings.Fields(sanitized), " ")
 	sanitized = multiUnderscore.ReplaceAllString(sanitized, "_")
+	sanitized = strings.Trim(sanitized, "_ ")
+
+	if !utf8.ValidString(sanitized) {
+		sanitized = strings.ToValidUTF8(sanitized, "_")
+	}
 
 	if len(sanitized) > 200 {
 		sanitized = sanitized[:200]
+		sanitized = strings.TrimSpace(strings.Trim(sanitized, ". "))
+		sanitized = strings.Trim(sanitized, "_ ")
 	}
 
 	if sanitized == "" {
-		sanitized = "untitled"
+		return "Unknown"
 	}
 
 	return sanitized

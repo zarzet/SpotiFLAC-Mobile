@@ -1139,20 +1139,28 @@ class FFmpegService {
         : '.tmp';
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, ext);
-
-    final sanitizedGain = albumGain.replaceAll('"', '\\"');
-    final sanitizedPeak = albumPeak.replaceAll('"', '\\"');
-
-    // -map_metadata 0 preserves all existing metadata from the input.
-    // -metadata flags add/overwrite only the specified keys.
-    final command =
-        '-v error -hide_banner -i "$filePath" -map 0 -c copy -map_metadata 0 '
-        '-metadata REPLAYGAIN_ALBUM_GAIN="$sanitizedGain" '
-        '-metadata REPLAYGAIN_ALBUM_PEAK="$sanitizedPeak" '
-        '"$tempOutput" -y';
+    final arguments = <String>[
+      '-v',
+      'error',
+      '-hide_banner',
+      '-i',
+      filePath,
+      '-map',
+      '0',
+      '-c',
+      'copy',
+      '-map_metadata',
+      '0',
+      '-metadata',
+      'REPLAYGAIN_ALBUM_GAIN=$albumGain',
+      '-metadata',
+      'REPLAYGAIN_ALBUM_PEAK=$albumPeak',
+      tempOutput,
+      '-y',
+    ];
 
     _log.d('Writing album ReplayGain tags via FFmpeg');
-    final result = await _execute(command);
+    final result = await _executeWithArguments(arguments);
 
     if (result.success) {
       try {
@@ -1194,41 +1202,50 @@ class FFmpegService {
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.flac');
-
-    final StringBuffer cmdBuffer = StringBuffer();
-    cmdBuffer.write('-v error -hide_banner ');
-    cmdBuffer.write('-i "$flacPath" ');
+    final arguments = <String>['-v', 'error', '-hide_banner', '-i', flacPath];
 
     if (coverPath != null) {
-      cmdBuffer.write('-i "$coverPath" ');
+      arguments
+        ..add('-i')
+        ..add(coverPath);
     }
 
-    cmdBuffer.write('-map 0:a ');
+    arguments
+      ..add('-map')
+      ..add('0:a');
 
     if (coverPath != null) {
-      cmdBuffer.write('-map 1:0 ');
-      cmdBuffer.write('-c:v copy ');
-      cmdBuffer.write('-disposition:v attached_pic ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
+      arguments
+        ..add('-map')
+        ..add('1:0')
+        ..add('-c:v')
+        ..add('copy')
+        ..add('-disposition:v')
+        ..add('attached_pic')
+        ..add('-metadata:s:v')
+        ..add('title=Album cover')
+        ..add('-metadata:s:v')
+        ..add('comment=Cover (front)');
     }
 
-    cmdBuffer.write('-c:a copy ');
+    arguments
+      ..add('-c:a')
+      ..add('copy');
 
     if (metadata != null) {
-      _appendVorbisMetadataToCommandBuffer(
-        cmdBuffer,
+      _appendVorbisMetadataToArguments(
+        arguments,
         metadata,
         artistTagMode: artistTagMode,
       );
     }
 
-    cmdBuffer.write('"$tempOutput" -y');
+    arguments
+      ..add(tempOutput)
+      ..add('-y');
 
-    final command = cmdBuffer.toString();
-    _log.d('Executing FFmpeg command: ${_previewCommandForLog(command)}');
-
-    final result = await _execute(command);
+    _log.d('Executing FFmpeg FLAC embed command');
+    final result = await _executeWithArguments(arguments);
 
     if (result.success) {
       try {
@@ -1274,46 +1291,50 @@ class FFmpegService {
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.mp3');
-
-    final StringBuffer cmdBuffer = StringBuffer();
-    cmdBuffer.write('-v error -hide_banner ');
-    cmdBuffer.write('-i "$mp3Path" ');
+    final arguments = <String>['-v', 'error', '-hide_banner', '-i', mp3Path];
 
     if (coverPath != null) {
-      cmdBuffer.write('-i "$coverPath" ');
+      arguments
+        ..add('-i')
+        ..add(coverPath);
     }
 
-    cmdBuffer.write('-map 0:a ');
-    cmdBuffer.write(
-      preserveMetadata ? '-map_metadata 0 ' : '-map_metadata -1 ',
-    );
+    arguments
+      ..add('-map')
+      ..add('0:a')
+      ..add('-map_metadata')
+      ..add(preserveMetadata ? '0' : '-1');
 
     if (coverPath != null) {
-      cmdBuffer.write('-map 1:0 ');
-      cmdBuffer.write('-c:v:0 copy ');
-      cmdBuffer.write('-id3v2_version 3 ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
+      arguments
+        ..add('-map')
+        ..add('1:0')
+        ..add('-c:v:0')
+        ..add('copy')
+        ..add('-id3v2_version')
+        ..add('3')
+        ..add('-metadata:s:v')
+        ..add('title=Album cover')
+        ..add('-metadata:s:v')
+        ..add('comment=Cover (front)');
     }
 
-    cmdBuffer.write('-c:a copy ');
+    arguments
+      ..add('-c:a')
+      ..add('copy');
 
     if (metadata != null) {
-      final id3Metadata = _convertToId3Tags(metadata);
-      id3Metadata.forEach((key, value) {
-        final sanitizedValue = value.replaceAll('"', '\\"');
-        cmdBuffer.write('-metadata $key="$sanitizedValue" ');
-      });
+      _appendMappedMetadataToArguments(arguments, _convertToId3Tags(metadata));
     }
 
-    cmdBuffer.write('-id3v2_version 3 "$tempOutput" -y');
+    arguments
+      ..add('-id3v2_version')
+      ..add('3')
+      ..add(tempOutput)
+      ..add('-y');
 
-    final command = cmdBuffer.toString();
-    _log.d(
-      'Executing FFmpeg MP3 embed command: ${_previewCommandForLog(command)}',
-    );
-
-    final result = await _execute(command);
+    _log.d('Executing FFmpeg MP3 embed command');
+    final result = await _executeWithArguments(arguments);
 
     if (result.success) {
       try {
@@ -1456,10 +1477,7 @@ class FFmpegService {
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.m4a');
-
-    final cmdBuffer = StringBuffer();
-    cmdBuffer.write('-v error -hide_banner ');
-    cmdBuffer.write('-i "$m4aPath" ');
+    final arguments = <String>['-v', 'error', '-hide_banner', '-i', m4aPath];
 
     final normalizedCoverPath = coverPath?.trim();
     final hasCover =
@@ -1467,48 +1485,61 @@ class FFmpegService {
         normalizedCoverPath.isNotEmpty &&
         await File(normalizedCoverPath).exists();
     if (hasCover) {
-      cmdBuffer.write('-i "$normalizedCoverPath" ');
+      arguments
+        ..add('-i')
+        ..add(normalizedCoverPath);
     }
 
     final preserveExistingStreams = preserveMetadata && !hasCover;
     if (preserveExistingStreams) {
       // When no replacement cover is provided, preserve all input streams so
       // the existing attached artwork is not dropped during the metadata rewrite.
-      cmdBuffer.write('-map 0 -c copy ');
+      arguments
+        ..add('-map')
+        ..add('0')
+        ..add('-c')
+        ..add('copy');
     } else {
-      cmdBuffer.write('-map 0:a -c:a copy ');
+      arguments
+        ..add('-map')
+        ..add('0:a')
+        ..add('-c:a')
+        ..add('copy');
     }
-    cmdBuffer.write(
-      preserveMetadata ? '-map_metadata 0 ' : '-map_metadata -1 ',
-    );
+    arguments
+      ..add('-map_metadata')
+      ..add(preserveMetadata ? '0' : '-1');
 
     // For M4A cover replacements, mark the image as an attached picture so the
     // mp4 muxer writes a proper covr atom instead of a generic MJPEG video track.
     // Force the mp4 muxer because the default ipod muxer (auto-selected for .m4a)
     // does not register a codec tag for mjpeg on FFmpeg 8.0+.
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy -disposition:v:0 attached_pic ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
-      cmdBuffer.write('-f mp4 ');
+      arguments
+        ..add('-map')
+        ..add('1:v')
+        ..add('-c:v')
+        ..add('copy')
+        ..add('-disposition:v:0')
+        ..add('attached_pic')
+        ..add('-metadata:s:v')
+        ..add('title=Album cover')
+        ..add('-metadata:s:v')
+        ..add('comment=Cover (front)')
+        ..add('-f')
+        ..add('mp4');
     }
 
     if (metadata != null) {
-      final m4aMetadata = _convertToM4aTags(metadata);
-      for (final entry in m4aMetadata.entries) {
-        final sanitizedValue = entry.value.replaceAll('"', '\\"');
-        cmdBuffer.write('-metadata ${entry.key}="$sanitizedValue" ');
-      }
+      _appendMappedMetadataToArguments(arguments, _convertToM4aTags(metadata));
     }
 
-    cmdBuffer.write('"$tempOutput" -y');
+    arguments
+      ..add(tempOutput)
+      ..add('-y');
 
-    final command = cmdBuffer.toString();
-    _log.d(
-      'Executing FFmpeg M4A embed command: ${_previewCommandForLog(command)}',
-    );
-
-    final result = await _execute(command);
+    _log.d('Executing FFmpeg M4A embed command');
+    final result = await _executeWithArguments(arguments);
 
     if (result.success) {
       try {
@@ -1767,40 +1798,50 @@ class FFmpegService {
     bool deleteOriginal = true,
   }) async {
     final outputPath = _buildOutputPath(inputPath, '.m4a');
-
-    final cmdBuffer = StringBuffer();
-    cmdBuffer.write('-v error -hide_banner ');
-    cmdBuffer.write('-i "$inputPath" ');
+    final arguments = <String>['-v', 'error', '-hide_banner', '-i', inputPath];
 
     final hasCover =
         coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
-      cmdBuffer.write('-i "$coverPath" ');
+      arguments
+        ..add('-i')
+        ..add(coverPath);
     }
 
-    cmdBuffer.write('-map 0:a ');
+    arguments
+      ..add('-map')
+      ..add('0:a');
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy -disposition:v:0 attached_pic ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
+      arguments
+        ..add('-map')
+        ..add('1:v')
+        ..add('-c:v')
+        ..add('copy')
+        ..add('-disposition:v:0')
+        ..add('attached_pic')
+        ..add('-metadata:s:v')
+        ..add('title=Album cover')
+        ..add('-metadata:s:v')
+        ..add('comment=Cover (front)');
     }
-    cmdBuffer.write('-c:a alac ');
-    cmdBuffer.write('-map_metadata -1 ');
+    arguments
+      ..add('-c:a')
+      ..add('alac')
+      ..add('-map_metadata')
+      ..add('-1');
 
-    final m4aTags = _convertToM4aTags(metadata);
-    for (final entry in m4aTags.entries) {
-      final sanitized = entry.value.replaceAll('"', '\\"');
-      cmdBuffer.write('-metadata ${entry.key}="$sanitized" ');
-    }
+    _appendMappedMetadataToArguments(arguments, _convertToM4aTags(metadata));
 
-    cmdBuffer.write('"$outputPath" -y');
+    arguments
+      ..add(outputPath)
+      ..add('-y');
 
     _log.i(
       'Converting ${inputPath.split(Platform.pathSeparator).last} to ALAC',
     );
-    final result = await _execute(cmdBuffer.toString());
+    final result = await _executeWithArguments(arguments);
 
     if (!result.success) {
       _log.e('ALAC conversion failed: ${result.output}');
@@ -1830,40 +1871,56 @@ class FFmpegService {
     bool deleteOriginal = true,
   }) async {
     final outputPath = _buildOutputPath(inputPath, '.flac');
-
-    final cmdBuffer = StringBuffer();
-    cmdBuffer.write('-v error -hide_banner ');
-    cmdBuffer.write('-i "$inputPath" ');
+    final arguments = <String>['-v', 'error', '-hide_banner', '-i', inputPath];
 
     final hasCover =
         coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
-      cmdBuffer.write('-i "$coverPath" ');
+      arguments
+        ..add('-i')
+        ..add(coverPath);
     }
 
-    cmdBuffer.write('-map 0:a ');
+    arguments
+      ..add('-map')
+      ..add('0:a');
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy -disposition:v:0 attached_pic ');
-      cmdBuffer.write('-metadata:s:v title="Album cover" ');
-      cmdBuffer.write('-metadata:s:v comment="Cover (front)" ');
+      arguments
+        ..add('-map')
+        ..add('1:v')
+        ..add('-c:v')
+        ..add('copy')
+        ..add('-disposition:v:0')
+        ..add('attached_pic')
+        ..add('-metadata:s:v')
+        ..add('title=Album cover')
+        ..add('-metadata:s:v')
+        ..add('comment=Cover (front)');
     }
-    cmdBuffer.write('-c:a flac -compression_level 8 ');
-    cmdBuffer.write('-map_metadata 0 ');
+    arguments
+      ..add('-c:a')
+      ..add('flac')
+      ..add('-compression_level')
+      ..add('8')
+      ..add('-map_metadata')
+      ..add('0');
 
-    _appendVorbisMetadataToCommandBuffer(
-      cmdBuffer,
+    _appendVorbisMetadataToArguments(
+      arguments,
       metadata,
       artistTagMode: artistTagMode,
     );
 
-    cmdBuffer.write('"$outputPath" -y');
+    arguments
+      ..add(outputPath)
+      ..add('-y');
 
     _log.i(
       'Converting ${inputPath.split(Platform.pathSeparator).last} to FLAC',
     );
-    final result = await _execute(cmdBuffer.toString());
+    final result = await _executeWithArguments(arguments);
 
     if (!result.success) {
       _log.e('FLAC conversion failed: ${result.output}');
@@ -1969,20 +2026,6 @@ class FFmpegService {
     return vorbis;
   }
 
-  static void _appendVorbisMetadataToCommandBuffer(
-    StringBuffer cmdBuffer,
-    Map<String, String> metadata, {
-    String artistTagMode = artistTagModeJoined,
-  }) {
-    for (final entry in _buildVorbisMetadataEntries(
-      metadata,
-      artistTagMode: artistTagMode,
-    )) {
-      final sanitized = entry.value.replaceAll('"', '\\"');
-      cmdBuffer.write('-metadata ${entry.key}="$sanitized" ');
-    }
-  }
-
   static void _appendVorbisMetadataToArguments(
     List<String> arguments,
     Map<String, String> metadata, {
@@ -1992,6 +2035,17 @@ class FFmpegService {
       metadata,
       artistTagMode: artistTagMode,
     )) {
+      arguments
+        ..add('-metadata')
+        ..add('${entry.key}=${entry.value}');
+    }
+  }
+
+  static void _appendMappedMetadataToArguments(
+    List<String> arguments,
+    Map<String, String> metadata,
+  ) {
+    for (final entry in metadata.entries) {
       arguments
         ..add('-metadata')
         ..add('${entry.key}=${entry.value}');
@@ -2255,23 +2309,36 @@ class FFmpegService {
       final trackNumStr = track.number.toString().padLeft(2, '0');
       final outputFileName = '$trackNumStr - $sanitizedTitle.$outputExt';
       final outputPath = '$outputDir${Platform.pathSeparator}$outputFileName';
-
-      final StringBuffer cmdBuffer = StringBuffer();
-      cmdBuffer.write('-v error -hide_banner ');
-      cmdBuffer.write('-i "$audioPath" ');
+      final arguments = <String>[
+        '-v',
+        'error',
+        '-hide_banner',
+        '-i',
+        audioPath,
+      ];
 
       final startTime = _formatSecondsForFFmpeg(track.startSec);
-      cmdBuffer.write('-ss $startTime ');
+      arguments
+        ..add('-ss')
+        ..add(startTime);
 
       if (track.endSec > 0) {
         final endTime = _formatSecondsForFFmpeg(track.endSec);
-        cmdBuffer.write('-to $endTime ');
+        arguments
+          ..add('-to')
+          ..add(endTime);
       }
 
       if (outputExt == 'flac') {
-        cmdBuffer.write('-c:a flac -compression_level 8 ');
+        arguments
+          ..add('-c:a')
+          ..add('flac')
+          ..add('-compression_level')
+          ..add('8');
       } else {
-        cmdBuffer.write('-c:a copy ');
+        arguments
+          ..add('-c:a')
+          ..add('copy');
       }
 
       final artist = track.artist.isNotEmpty
@@ -2280,11 +2347,11 @@ class FFmpegService {
       final album = albumMetadata['album'] ?? '';
       final genre = albumMetadata['genre'] ?? '';
       final date = albumMetadata['date'] ?? '';
+      final cueMetadata = <String, String>{};
 
       void addMeta(String key, String value) {
         if (value.isNotEmpty) {
-          final sanitized = value.replaceAll('"', '\\"');
-          cmdBuffer.write('-metadata $key="$sanitized" ');
+          cueMetadata[key] = value;
         }
       }
 
@@ -2298,14 +2365,13 @@ class FFmpegService {
       if (track.isrc.isNotEmpty) addMeta('ISRC', track.isrc);
       if (track.composer.isNotEmpty) addMeta('COMPOSER', track.composer);
 
-      cmdBuffer.write('"$outputPath" -y');
+      _appendMappedMetadataToArguments(arguments, cueMetadata);
+      arguments
+        ..add(outputPath)
+        ..add('-y');
 
-      final command = cmdBuffer.toString();
-      _log.d(
-        'CUE split track ${track.number}: ${_previewCommandForLog(command)}',
-      );
-
-      final result = await _execute(command);
+      _log.d('CUE split track ${track.number}');
+      final result = await _executeWithArguments(arguments);
       if (!result.success) {
         _log.e('CUE split failed for track ${track.number}: ${result.output}');
         continue;

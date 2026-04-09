@@ -83,3 +83,18 @@ func TestBuildFilenameFromTemplate_DateStrftimeFormattingWithYearOnly(t *testing
 		t.Fatalf("expected %q, got %q", expected, formatted)
 	}
 }
+
+func TestSanitizeFilenameMatchesDesktopSpacingBehavior(t *testing.T) {
+	got := sanitizeFilename(`  "Text In Quotes"?%* / Demo  `)
+	want := "Text In Quotes % Demo"
+	if got != want {
+		t.Fatalf("expected %q, got %q", want, got)
+	}
+}
+
+func TestSanitizeFilenameFallsBackToUnknownWhenEmpty(t *testing.T) {
+	got := sanitizeFilename(`<>:"/\|?*`)
+	if got != "Unknown" {
+		t.Fatalf("expected %q, got %q", "Unknown", got)
+	}
+}

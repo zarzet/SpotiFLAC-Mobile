@@ -1361,6 +1361,7 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 			DiscNumber:          discNum,
 			TotalDiscs:          totalDiscs,
 			ISRC:                fields["isrc"],
+			Lyrics:              fields["lyrics"],
 			Genre:               fields["genre"],
 			Label:               fields["label"],
 			Copyright:           fields["copyright"],

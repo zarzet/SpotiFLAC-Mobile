@@ -308,7 +308,24 @@ class MainActivity: FlutterFragmentActivity() {
     }
 
     private fun sanitizeFilename(name: String): String {
-        return name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim()
+        var sanitized = name
+            .replace("/", " ")
+            .replace(Regex("[\\\\:*?\"<>|]"), " ")
+            .filter { ch ->
+                val code = ch.code
+                !((code < 0x20 && ch != '\t' && ch != '\n' && ch != '\r') ||
+                    code == 0x7F ||
+                    (Character.isISOControl(ch) && ch != '\t' && ch != '\n' && ch != '\r'))
+            }
+            .trim()
+            .trim('.', ' ')
+
+        sanitized = sanitized
+            .replace(Regex("\\s+"), " ")
+            .replace(Regex("_+"), "_")
+            .trim('_', ' ')
+
+        return if (sanitized.isBlank()) "Unknown" else sanitized
     }
 
     private fun sanitizeRelativeDir(relativeDir: String): String {

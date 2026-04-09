@@ -4270,7 +4270,11 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       'copyright': val('copyright', copyright),
       'composer': val('composer', composer),
       'comment': fileMetadata?['comment']?.toString() ?? '',
+      'lyrics': fileMetadata?['lyrics']?.toString() ?? '',
     };
+
+    final initialDurationSeconds =
+        _readPositiveInt(fileMetadata?['duration']) ?? duration ?? 0;
 
     if (!context.mounted) return;
 
@@ -4287,6 +4291,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         initialValues: initialValues,
         filePath: cleanFilePath,
         sourceTrackId: _spotifyId,
+        durationMs: initialDurationSeconds > 0
+            ? initialDurationSeconds * 1000
+            : 0,
         artistTagMode: ref.read(settingsProvider).artistTagMode,
       ),
     );
@@ -4297,7 +4304,24 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       );
       try {
         final refreshed = await PlatformBridge.readFileMetadata(cleanFilePath);
-        setState(() => _editedMetadata = refreshed);
+        final refreshedLyrics = refreshed['lyrics']?.toString().trim() ?? '';
+        setState(() {
+          _editedMetadata = refreshed;
+          _lyricsError = null;
+          _isInstrumental = false;
+          _embeddedLyricsChecked = true;
+          if (refreshedLyrics.isNotEmpty) {
+            _lyrics = _cleanLrcForDisplay(refreshedLyrics);
+            _rawLyrics = refreshedLyrics;
+            _lyricsSource = 'Embedded';
+            _lyricsEmbedded = true;
+          } else {
+            _lyrics = null;
+            _rawLyrics = null;
+            _lyricsSource = null;
+            _lyricsEmbedded = false;
+          }
+        });
       } catch (_) {
         setState(() {});
       }
@@ -4514,6 +4538,7 @@ class _EditMetadataSheet extends StatefulWidget {
   final Map<String, String> initialValues;
   final String filePath;
   final String? sourceTrackId;
+  final int durationMs;
   final String artistTagMode;
 
   const _EditMetadataSheet({
@@ -4521,6 +4546,7 @@ class _EditMetadataSheet extends StatefulWidget {
     required this.initialValues,
     required this.filePath,
     this.sourceTrackId,
+    required this.durationMs,
     required this.artistTagMode,
   });
 
@@ -4560,6 +4586,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     'total_discs': 'total_discs',
     'genre': 'genre',
     'isrc': 'isrc',
+    'lyrics': 'lyrics',
     'label': 'label',
     'copyright': 'copyright',
     'composer': 'composer',
@@ -4577,6 +4604,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
   late final TextEditingController _discTotalCtrl;
   late final TextEditingController _genreCtrl;
   late final TextEditingController _isrcCtrl;
+  late final TextEditingController _lyricsCtrl;
   late final TextEditingController _labelCtrl;
   late final TextEditingController _copyrightCtrl;
   late final TextEditingController _composerCtrl;
@@ -4772,6 +4800,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         return l10n.editMetadataFieldGenre;
       case 'isrc':
         return l10n.editMetadataFieldIsrc;
+      case 'lyrics':
+        return l10n.trackLyrics;
       case 'label':
         return l10n.editMetadataFieldLabel;
       case 'copyright':
@@ -4809,6 +4839,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         return _genreCtrl;
       case 'isrc':
         return _isrcCtrl;
+      case 'lyrics':
+        return _lyricsCtrl;
       case 'label':
         return _labelCtrl;
       case 'copyright':
@@ -5107,19 +5139,23 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       final artist = _artistCtrl.text.trim();
       final album = _albumCtrl.text.trim();
       final currentIsrc = _isrcCtrl.text.trim().toUpperCase();
+      final shouldFetchLyrics = _autoFillFields.contains('lyrics');
+      final needsTrackLookup = _autoFillFields.any((key) => key != 'lyrics');
       Map<String, dynamic>? best;
       String? deezerId;
 
-      try {
-        final resolved = await _resolveAutoFillTrackFromIdentifiers(
-          currentIsrc,
-        );
-        if (resolved != null) {
-          best = resolved.track;
-          deezerId = resolved.deezerId;
+      if (needsTrackLookup) {
+        try {
+          final resolved = await _resolveAutoFillTrackFromIdentifiers(
+            currentIsrc,
+          );
+          if (resolved != null) {
+            best = resolved.track;
+            deezerId = resolved.deezerId;
+          }
+        } catch (e) {
+          _log.w('Identifier-first autofill lookup failed: $e');
         }
-      } catch (e) {
-        _log.w('Identifier-first autofill lookup failed: $e');
       }
 
       final queryParts = <String>[];
@@ -5127,7 +5163,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       if (artist.isNotEmpty) queryParts.add(artist);
       if (queryParts.isEmpty && album.isNotEmpty) queryParts.add(album);
 
-      if (best == null && queryParts.isEmpty) {
+      if (needsTrackLookup && best == null && queryParts.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.l10n.editMetadataAutoFillNoResults)),
@@ -5140,7 +5176,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       final normalizedArtist = _normalizeMetadataText(artist);
       final normalizedAlbum = _normalizeMetadataText(album);
 
-      if (best == null) {
+      if (needsTrackLookup && best == null) {
         final query = queryParts.join(' ');
         final results = await PlatformBridge.searchTracksWithMetadataProviders(
           query,
@@ -5175,39 +5211,47 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       }
 
       final selectedBest = best;
-      if (selectedBest == null) {
+      if (needsTrackLookup && selectedBest == null) {
         throw StateError('No metadata match resolved for auto-fill');
       }
 
-      final enriched = <String, String>{
-        'title': (selectedBest['name'] ?? '').toString(),
-        'artist': (selectedBest['artists'] ?? selectedBest['artist'] ?? '')
-            .toString(),
-        'album': (selectedBest['album_name'] ?? selectedBest['album'] ?? '')
-            .toString(),
-        'album_artist': (selectedBest['album_artist'] ?? '').toString(),
-        'date': (selectedBest['release_date'] ?? '').toString(),
-        'track_number': (selectedBest['track_number'] ?? '').toString(),
-        'total_tracks': (selectedBest['total_tracks'] ?? '').toString(),
-        'disc_number': (selectedBest['disc_number'] ?? '').toString(),
-        'total_discs': (selectedBest['total_discs'] ?? '').toString(),
-        'isrc': (selectedBest['isrc'] ?? '').toString(),
-        'composer': (selectedBest['composer'] ?? '').toString(),
-      };
-      _mergeOnlineTrackData(enriched, selectedBest);
+      final enriched = <String, String>{};
+      if (selectedBest != null) {
+        enriched.addAll(<String, String>{
+          'title': (selectedBest['name'] ?? '').toString(),
+          'artist': (selectedBest['artists'] ?? selectedBest['artist'] ?? '')
+              .toString(),
+          'album': (selectedBest['album_name'] ?? selectedBest['album'] ?? '')
+              .toString(),
+          'album_artist': (selectedBest['album_artist'] ?? '').toString(),
+          'date': (selectedBest['release_date'] ?? '').toString(),
+          'track_number': (selectedBest['track_number'] ?? '').toString(),
+          'total_tracks': (selectedBest['total_tracks'] ?? '').toString(),
+          'disc_number': (selectedBest['disc_number'] ?? '').toString(),
+          'total_discs': (selectedBest['total_discs'] ?? '').toString(),
+          'isrc': (selectedBest['isrc'] ?? '').toString(),
+          'composer': (selectedBest['composer'] ?? '').toString(),
+        });
+        _mergeOnlineTrackData(enriched, selectedBest);
+      }
 
+      final enrichedIsrc = (enriched['isrc'] ?? '').trim();
       final needsIsrc =
-          _autoFillFields.contains('isrc') && enriched['isrc']!.isEmpty;
+          _autoFillFields.contains('isrc') && enrichedIsrc.isEmpty;
       final needsExtended =
           _autoFillFields.contains('genre') ||
           _autoFillFields.contains('label') ||
           _autoFillFields.contains('copyright') ||
           _autoFillFields.contains('composer');
 
-      final rawSpotifyId = _extractRawSpotifyTrackId(selectedBest);
+      final rawSpotifyId = selectedBest == null
+          ? _extractRawSpotifyTrackIdFromValue(widget.sourceTrackId)
+          : _extractRawSpotifyTrackId(selectedBest);
 
-      deezerId ??= _extractRawDeezerTrackId(selectedBest);
-      final candidateIsrc = enriched['isrc']!.trim().toUpperCase();
+      deezerId ??= selectedBest == null
+          ? null
+          : _extractRawDeezerTrackId(selectedBest);
+      final candidateIsrc = enrichedIsrc.toUpperCase();
       final deezerLookupIsrc = _looksLikeIsrc(currentIsrc)
           ? currentIsrc
           : (_looksLikeIsrc(candidateIsrc) ? candidateIsrc : '');
@@ -5243,7 +5287,9 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       if (!mounted) return;
 
       // Fetch ISRC from Deezer track metadata if still missing
-      if (needsIsrc && enriched['isrc']!.isEmpty && deezerId != null) {
+      if (needsIsrc &&
+          (enriched['isrc'] ?? '').trim().isEmpty &&
+          deezerId != null) {
         try {
           final deezerMeta = await PlatformBridge.getDeezerMetadata(
             'track',
@@ -5275,6 +5321,37 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         }
       }
 
+      if (shouldFetchLyrics) {
+        final lyricsTitle =
+            ((selectedBest?['name'] ?? selectedBest?['title'] ?? title)
+                    .toString())
+                .trim();
+        final lyricsArtist =
+            ((selectedBest?['artists'] ?? selectedBest?['artist'] ?? artist)
+                    .toString())
+                .trim();
+
+        if (lyricsTitle.isNotEmpty && lyricsArtist.isNotEmpty) {
+          try {
+            final lyricsResult = await PlatformBridge.getLyricsLRCWithSource(
+              rawSpotifyId ?? '',
+              lyricsTitle,
+              lyricsArtist,
+              durationMs: widget.durationMs,
+            );
+            final lyricsText = lyricsResult['lyrics']?.toString().trim() ?? '';
+            final instrumental =
+                (lyricsResult['instrumental'] as bool? ?? false) ||
+                lyricsText == '[instrumental:true]';
+            if (!instrumental && lyricsText.isNotEmpty) {
+              enriched['lyrics'] = lyricsText;
+            }
+          } catch (e) {
+            _log.w('Lyrics autofill failed: $e');
+          }
+        }
+      }
+
       if (!mounted) return;
 
       var filledCount = 0;
@@ -5293,7 +5370,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         }
       }
 
-      if (_autoFillFields.contains('cover')) {
+      if (_autoFillFields.contains('cover') && selectedBest != null) {
         final coverUrl =
             (selectedBest['cover_url'] ?? selectedBest['images'] ?? '')
                 .toString();
@@ -5369,6 +5446,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     _discTotalCtrl = TextEditingController(text: v['total_discs'] ?? '');
     _genreCtrl = TextEditingController(text: v['genre'] ?? '');
     _isrcCtrl = TextEditingController(text: v['isrc'] ?? '');
+    _lyricsCtrl = TextEditingController(text: v['lyrics'] ?? '');
     _labelCtrl = TextEditingController(text: v['label'] ?? '');
     _copyrightCtrl = TextEditingController(text: v['copyright'] ?? '');
     _composerCtrl = TextEditingController(text: v['composer'] ?? '');
@@ -5391,6 +5469,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     _discTotalCtrl.dispose();
     _genreCtrl.dispose();
     _isrcCtrl.dispose();
+    _lyricsCtrl.dispose();
     _labelCtrl.dispose();
     _copyrightCtrl.dispose();
     _composerCtrl.dispose();
@@ -5413,6 +5492,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
       'disc_total': _discTotalCtrl.text,
       'genre': _genreCtrl.text,
       'isrc': _isrcCtrl.text,
+      'lyrics': _lyricsCtrl.text,
       'label': _labelCtrl.text,
       'copyright': _copyrightCtrl.text,
       'composer': _composerCtrl.text,
@@ -5477,6 +5557,8 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               : '',
           'GENRE': metadata['genre'] ?? '',
           'ISRC': metadata['isrc'] ?? '',
+          'LYRICS': metadata['lyrics'] ?? '',
+          'UNSYNCEDLYRICS': metadata['lyrics'] ?? '',
           'ORGANIZATION': metadata['label'] ?? '',
           'COPYRIGHT': metadata['copyright'] ?? '',
           'COMPOSER': metadata['composer'] ?? '',
@@ -5486,11 +5568,6 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
           final existingMetadata = await PlatformBridge.readFileMetadata(
             ffmpegTarget,
           );
-          final existingLyrics = existingMetadata['lyrics']?.toString().trim();
-          if (existingLyrics != null && existingLyrics.isNotEmpty) {
-            vorbisMap['LYRICS'] = existingLyrics;
-            vorbisMap['UNSYNCEDLYRICS'] = existingLyrics;
-          }
           // Preserve ReplayGain tags if present — these are computed once
           // during download and should survive manual metadata edits.
           final rgFields = <String, String>{
@@ -5717,6 +5794,12 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                   ),
                   _field('Genre', _genreCtrl),
                   _field('ISRC', _isrcCtrl),
+                  _field(
+                    context.l10n.trackLyrics,
+                    _lyricsCtrl,
+                    maxLines: 8,
+                    keyboard: TextInputType.multiline,
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
                     child: InkWell(

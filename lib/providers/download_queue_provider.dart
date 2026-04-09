@@ -26,7 +26,10 @@ final _log = AppLogger('DownloadQueue');
 final _historyLog = AppLogger('DownloadHistory');
 
 final _invalidFolderChars = RegExp(r'[<>:"/\\|?*]');
-final _trailingDotsRegex = RegExp(r'\.+$');
+final _trimDotsAndSpacesRegex = RegExp(r'^[. ]+|[. ]+$');
+final _trimUnderscoresAndSpacesRegex = RegExp(r'^[_ ]+|[_ ]+$');
+final _multiWhitespaceRegex = RegExp(r'\s+');
+final _multiUnderscoreRegex = RegExp(r'_+');
 
 /// log10 helper using dart:math's natural log.
 double _log10(num x) => log(x) / ln10;
@@ -2165,10 +2168,29 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   String _sanitizeFolderName(String name) {
-    return name
-        .replaceAll(_invalidFolderChars, '_')
-        .replaceAll(_trailingDotsRegex, '')
-        .trim();
+    final buffer = StringBuffer();
+    for (final rune in name.runes) {
+      if (rune < 0x20 || rune == 0x7f) {
+        continue;
+      }
+      final char = String.fromCharCode(rune);
+      if (_invalidFolderChars.hasMatch(char)) {
+        buffer.write(' ');
+        continue;
+      }
+      buffer.write(char);
+    }
+
+    var sanitized = buffer.toString().trim();
+    sanitized = sanitized.replaceAll(_trimDotsAndSpacesRegex, '');
+    sanitized = sanitized.replaceAll(_multiWhitespaceRegex, ' ');
+    sanitized = sanitized.replaceAll(_multiUnderscoreRegex, '_');
+    sanitized = sanitized.replaceAll(_trimUnderscoresAndSpacesRegex, '');
+
+    if (sanitized.isEmpty) {
+      return 'Unknown';
+    }
+    return sanitized;
   }
 
   static final _featuredArtistPattern = RegExp(
