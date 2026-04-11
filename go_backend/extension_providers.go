@@ -1327,21 +1327,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 		if req.ISRC != "" &&
 			(req.Genre == "" || req.Label == "" || req.Copyright == "") {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			extMeta, err := GetDeezerClient().GetExtendedMetadataByISRC(ctx, req.ISRC)
-			cancel()
-			if err == nil && extMeta != nil {
-				if req.Genre == "" && extMeta.Genre != "" {
-					req.Genre = extMeta.Genre
-				}
-				if req.Label == "" && extMeta.Label != "" {
-					req.Label = extMeta.Label
-				}
-				if req.Copyright == "" && extMeta.Copyright != "" {
-					req.Copyright = extMeta.Copyright
-				}
-				GoLog("[DownloadWithExtensionFallback] Extended metadata from Deezer: genre=%s, label=%s, copyright=%s\n", req.Genre, req.Label, req.Copyright)
-			}
+			enrichExtraMetadataByISRC("DownloadWithExtensionFallback", req.ISRC, &req.Genre, &req.Label, &req.Copyright)
 		}
 	}
 
@@ -1520,27 +1506,8 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		if isBuiltInDownloadProvider(providerIDNormalized) {
 			if (req.Genre == "" || req.Label == "" || req.Copyright == "") &&
 				req.ISRC != "" {
-				GoLog("[DownloadWithExtensionFallback] Enriching extended metadata from Deezer for ISRC: %s\n", req.ISRC)
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				deezerClient := GetDeezerClient()
-				extMeta, err := deezerClient.GetExtendedMetadataByISRC(ctx, req.ISRC)
-				cancel()
-				if err == nil && extMeta != nil {
-					if req.Genre == "" && extMeta.Genre != "" {
-						req.Genre = extMeta.Genre
-						GoLog("[DownloadWithExtensionFallback] Genre from Deezer: %s\n", req.Genre)
-					}
-					if req.Label == "" && extMeta.Label != "" {
-						req.Label = extMeta.Label
-						GoLog("[DownloadWithExtensionFallback] Label from Deezer: %s\n", req.Label)
-					}
-					if req.Copyright == "" && extMeta.Copyright != "" {
-						req.Copyright = extMeta.Copyright
-						GoLog("[DownloadWithExtensionFallback] Copyright from Deezer: %s\n", req.Copyright)
-					}
-				} else if err != nil {
-					GoLog("[DownloadWithExtensionFallback] Failed to get extended metadata from Deezer: %v\n", err)
-				}
+				GoLog("[DownloadWithExtensionFallback] Enriching extra metadata from ISRC: %s\n", req.ISRC)
+				enrichExtraMetadataByISRC("DownloadWithExtensionFallback", req.ISRC, &req.Genre, &req.Label, &req.Copyright)
 			}
 
 			result, err := tryBuiltInProvider(providerIDNormalized, req)

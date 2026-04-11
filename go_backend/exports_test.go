@@ -1,6 +1,9 @@
 package gobackend
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestSetExtensionFallbackProviderIDsJSONEmptyStringResetsDefault(t *testing.T) {
 	original := GetExtensionFallbackProviderIDs()
@@ -158,6 +161,92 @@ func TestBuildDownloadSuccessResponseNormalizesDecryptionDescriptor(t *testing.T
 	}
 	if resp.Decryption.Key != result.DecryptionKey {
 		t.Fatalf("key = %q, want %q", resp.Decryption.Key, result.DecryptionKey)
+	}
+}
+
+func TestFormatMusicBrainzGenrePrefersHighestCountTag(t *testing.T) {
+	got := formatMusicBrainzGenre([]musicBrainzTag{
+		{Name: "art pop", Count: 3},
+		{Name: "pop", Count: 8},
+		{Name: "dance pop", Count: 5},
+	})
+
+	if got != "Pop" {
+		t.Fatalf("genre = %q, want %q", got, "Pop")
+	}
+}
+
+func TestEnrichExtraMetadataByISRCFallsBackToMusicBrainzGenre(t *testing.T) {
+	origDeezerFetcher := fetchDeezerExtendedMetadataByISRC
+	origMusicBrainzFetcher := fetchMusicBrainzGenreByISRC
+	defer func() {
+		fetchDeezerExtendedMetadataByISRC = origDeezerFetcher
+		fetchMusicBrainzGenreByISRC = origMusicBrainzFetcher
+	}()
+
+	fetchDeezerExtendedMetadataByISRC = func(ctx context.Context, isrc string) (*AlbumExtendedMetadata, error) {
+		return nil, nil
+	}
+	fetchMusicBrainzGenreByISRC = func(isrc string) (string, error) {
+		if isrc != "TEST123" {
+			t.Fatalf("unexpected isrc: %q", isrc)
+		}
+		return "Alternative Rock", nil
+	}
+
+	genre := ""
+	label := ""
+	copyright := ""
+	enrichExtraMetadataByISRC("DownloadWithFallback", "TEST123", &genre, &label, &copyright)
+
+	if genre != "Alternative Rock" {
+		t.Fatalf("genre = %q, want fallback genre", genre)
+	}
+	if label != "" {
+		t.Fatalf("label = %q, want empty", label)
+	}
+	if copyright != "" {
+		t.Fatalf("copyright = %q, want empty", copyright)
+	}
+}
+
+func TestEnrichExtraMetadataByISRCPrefersDeezerGenre(t *testing.T) {
+	origDeezerFetcher := fetchDeezerExtendedMetadataByISRC
+	origMusicBrainzFetcher := fetchMusicBrainzGenreByISRC
+	defer func() {
+		fetchDeezerExtendedMetadataByISRC = origDeezerFetcher
+		fetchMusicBrainzGenreByISRC = origMusicBrainzFetcher
+	}()
+
+	musicBrainzCalled := false
+	fetchDeezerExtendedMetadataByISRC = func(ctx context.Context, isrc string) (*AlbumExtendedMetadata, error) {
+		return &AlbumExtendedMetadata{
+			Genre:     "Synthpop",
+			Label:     "EMI",
+			Copyright: "(C) Test",
+		}, nil
+	}
+	fetchMusicBrainzGenreByISRC = func(isrc string) (string, error) {
+		musicBrainzCalled = true
+		return "Rock", nil
+	}
+
+	genre := ""
+	label := ""
+	copyright := ""
+	enrichExtraMetadataByISRC("DownloadWithFallback", "TEST456", &genre, &label, &copyright)
+
+	if genre != "Synthpop" {
+		t.Fatalf("genre = %q, want Deezer genre", genre)
+	}
+	if label != "EMI" {
+		t.Fatalf("label = %q, want Deezer label", label)
+	}
+	if copyright != "(C) Test" {
+		t.Fatalf("copyright = %q, want Deezer copyright", copyright)
+	}
+	if musicBrainzCalled {
+		t.Fatal("expected MusicBrainz not to be called when Deezer already provides genre")
 	}
 }
 

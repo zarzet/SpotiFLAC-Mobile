@@ -5,12 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/dop251/goja"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func CheckAvailability(spotifyID, isrc string) (string, error) {
@@ -31,6 +35,113 @@ func CheckAvailability(spotifyID, isrc string) (string, error) {
 // SetSongLinkNetworkOptions is kept for backward compatibility.
 func SetSongLinkNetworkOptions(allowHTTP, insecureTLS bool) {
 	SetNetworkCompatibilityOptions(allowHTTP, insecureTLS)
+}
+
+const musicBrainzAPIBase = "https://musicbrainz.org/ws/2"
+
+type musicBrainzTag struct {
+	Count int    `json:"count"`
+	Name  string `json:"name"`
+}
+
+type musicBrainzRecordingResponse struct {
+	Recordings []struct {
+		Tags []musicBrainzTag `json:"tags"`
+	} `json:"recordings"`
+}
+
+func formatMusicBrainzGenre(tags []musicBrainzTag) string {
+	if len(tags) == 0 {
+		return ""
+	}
+
+	caser := cases.Title(language.English)
+	seen := make(map[string]struct{}, len(tags))
+	maxCount := -1
+	bestTag := ""
+
+	for _, tag := range tags {
+		name := strings.TrimSpace(tag.Name)
+		if name == "" {
+			continue
+		}
+
+		key := strings.ToLower(name)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+
+		formatted := caser.String(name)
+		if tag.Count > maxCount {
+			maxCount = tag.Count
+			bestTag = formatted
+		}
+	}
+
+	return bestTag
+}
+
+func FetchMusicBrainzGenreByISRC(isrc string) (string, error) {
+	normalizedISRC := strings.ToUpper(strings.TrimSpace(isrc))
+	if normalizedISRC == "" {
+		return "", fmt.Errorf("no ISRC provided")
+	}
+
+	client := NewMetadataHTTPClient(10 * time.Second)
+	query := fmt.Sprintf("isrc:%s", normalizedISRC)
+	reqURL := fmt.Sprintf(
+		"%s/recording?query=%s&fmt=json&inc=tags",
+		musicBrainzAPIBase,
+		url.QueryEscape(query),
+	)
+
+	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", getRandomUserAgent())
+
+	var resp *http.Response
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		resp, lastErr = client.Do(req)
+		if lastErr == nil && resp.StatusCode == http.StatusOK {
+			break
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+		if attempt < 2 {
+			time.Sleep(2 * time.Second)
+		}
+	}
+
+	if lastErr != nil {
+		return "", lastErr
+	}
+	if resp == nil {
+		return "", fmt.Errorf("MusicBrainz request failed without response")
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return "", fmt.Errorf("MusicBrainz API returned status: %d", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+
+	var payload musicBrainzRecordingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		return "", err
+	}
+	if len(payload.Recordings) == 0 {
+		return "", fmt.Errorf("no recordings found for ISRC: %s", normalizedISRC)
+	}
+
+	genre := formatMusicBrainzGenre(payload.Recordings[0].Tags)
+	if genre == "" {
+		return "", fmt.Errorf("no MusicBrainz genre tags found for ISRC: %s", normalizedISRC)
+	}
+	return genre, nil
 }
 
 type DownloadRequest struct {
@@ -126,6 +237,12 @@ type DownloadResult struct {
 	DecryptionKey string
 	Decryption    *DownloadDecryptionInfo
 }
+
+var fetchDeezerExtendedMetadataByISRC = func(ctx context.Context, isrc string) (*AlbumExtendedMetadata, error) {
+	return GetDeezerClient().GetExtendedMetadataByISRC(ctx, isrc)
+}
+
+var fetchMusicBrainzGenreByISRC = FetchMusicBrainzGenreByISRC
 
 type reEnrichRequest struct {
 	FilePath      string   `json:"file_path"`
@@ -679,6 +796,75 @@ func enrichResultQualityFromFile(result *DownloadResult) {
 	LogDebug("Download", "Post-download quality probe unavailable for %s: %v", path, qErr)
 }
 
+func applyExtendedMetadataFields(
+	genre *string,
+	label *string,
+	copyright *string,
+	extMeta *AlbumExtendedMetadata,
+) {
+	if extMeta == nil {
+		return
+	}
+
+	if genre != nil && *genre == "" && extMeta.Genre != "" {
+		*genre = extMeta.Genre
+	}
+	if label != nil && *label == "" && extMeta.Label != "" {
+		*label = extMeta.Label
+	}
+	if copyright != nil && *copyright == "" && extMeta.Copyright != "" {
+		*copyright = extMeta.Copyright
+	}
+}
+
+func enrichExtraMetadataByISRC(
+	logPrefix string,
+	isrc string,
+	genre *string,
+	label *string,
+	copyright *string,
+) {
+	normalizedISRC := strings.TrimSpace(isrc)
+	if normalizedISRC == "" {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	extMeta, err := fetchDeezerExtendedMetadataByISRC(ctx, normalizedISRC)
+	if err != nil {
+		GoLog("[%s] Failed to get extended metadata from Deezer: %v\n", logPrefix, err)
+	}
+	applyExtendedMetadataFields(genre, label, copyright, extMeta)
+
+	if genre != nil && *genre == "" {
+		musicBrainzGenre, err := fetchMusicBrainzGenreByISRC(normalizedISRC)
+		if err != nil {
+			GoLog("[%s] Failed to get genre from MusicBrainz: %v\n", logPrefix, err)
+		} else if musicBrainzGenre != "" {
+			*genre = musicBrainzGenre
+			GoLog("[%s] Genre fallback from MusicBrainz: %s\n", logPrefix, *genre)
+		}
+	}
+
+	currentGenre := ""
+	currentLabel := ""
+	currentCopyright := ""
+	if genre != nil {
+		currentGenre = *genre
+	}
+	if label != nil {
+		currentLabel = *label
+	}
+	if copyright != nil {
+		currentCopyright = *copyright
+	}
+	if currentGenre != "" || currentLabel != "" || currentCopyright != "" {
+		GoLog("[%s] Extended metadata ready: genre=%s, label=%s, copyright=%s\n", logPrefix, currentGenre, currentLabel, currentCopyright)
+	}
+}
+
 func enrichRequestExtendedMetadata(req *DownloadRequest) {
 	if req == nil {
 		return
@@ -688,30 +874,13 @@ func enrichRequestExtendedMetadata(req *DownloadRequest) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	deezerClient := GetDeezerClient()
-	extMeta, err := deezerClient.GetExtendedMetadataByISRC(ctx, req.ISRC)
-	if err != nil || extMeta == nil {
-		if err != nil {
-			GoLog("[DownloadWithFallback] Failed to get extended metadata from Deezer: %v\n", err)
-		}
-		return
-	}
-
-	if req.Genre == "" && extMeta.Genre != "" {
-		req.Genre = extMeta.Genre
-	}
-	if req.Label == "" && extMeta.Label != "" {
-		req.Label = extMeta.Label
-	}
-	if req.Copyright == "" && extMeta.Copyright != "" {
-		req.Copyright = extMeta.Copyright
-	}
-	if req.Genre != "" || req.Label != "" || req.Copyright != "" {
-		GoLog("[DownloadWithFallback] Extended metadata ready: genre=%s, label=%s, copyright=%s\n", req.Genre, req.Label, req.Copyright)
-	}
+	enrichExtraMetadataByISRC(
+		"DownloadWithFallback",
+		req.ISRC,
+		&req.Genre,
+		&req.Label,
+		&req.Copyright,
+	)
 }
 
 func applySongLinkRegionFromRequest(req *DownloadRequest) {
@@ -2299,7 +2468,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	if req.SearchOnline {
 		found := false
 
-		deezerClient := GetDeezerClient()
 		GoLog("[ReEnrich] Trying metadata providers in configured priority...\n")
 		manager := getExtensionManager()
 		if identifierTrack, err := resolveReEnrichTrackFromIdentifiers(req); err == nil && identifierTrack != nil {
@@ -2328,23 +2496,9 @@ func ReEnrichFile(requestJSON string) (string, error) {
 			GoLog("[ReEnrich] Skipping provider search: no usable title/artist/album query\n")
 		}
 
-		// Try to get extended metadata from Deezer if not already set
+		// Try to enrich extra metadata from ISRC if not already set.
 		if found && req.ISRC != "" && req.shouldUpdateField("extra") && (req.Genre == "" || req.Label == "" || req.Copyright == "") {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			extMeta, err := deezerClient.GetExtendedMetadataByISRC(ctx, req.ISRC)
-			cancel()
-			if err == nil && extMeta != nil {
-				if req.Genre == "" && extMeta.Genre != "" {
-					req.Genre = extMeta.Genre
-				}
-				if req.Label == "" && extMeta.Label != "" {
-					req.Label = extMeta.Label
-				}
-				if req.Copyright == "" && extMeta.Copyright != "" {
-					req.Copyright = extMeta.Copyright
-				}
-				GoLog("[ReEnrich] Extended metadata: genre=%s, label=%s, copyright=%s\n", req.Genre, req.Label, req.Copyright)
-			}
+			enrichExtraMetadataByISRC("ReEnrich", req.ISRC, &req.Genre, &req.Label, &req.Copyright)
 		}
 
 		if !found {
