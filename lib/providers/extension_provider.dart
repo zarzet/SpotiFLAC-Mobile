@@ -483,6 +483,7 @@ class ExtensionState {
 class ExtensionNotifier extends Notifier<ExtensionState> {
   AppLifecycleListener? _appLifecycleListener;
   bool _cleanupInFlight = false;
+  Completer<void>? _initializationCompleter;
 
   @override
   ExtensionState build() {
@@ -520,6 +521,13 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   Future<void> initialize(String extensionsDir, String dataDir) async {
     if (state.isInitialized) return;
+    if (_initializationCompleter != null) {
+      await _initializationCompleter!.future;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _initializationCompleter = completer;
 
     state = state.copyWith(isLoading: true, error: null);
 
@@ -531,6 +539,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         error: null,
       );
       _log.i('Extension system disabled on this platform');
+      completer.complete();
+      _initializationCompleter = null;
       return;
     }
 
@@ -544,6 +554,32 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     } catch (e) {
       _log.e('Failed to initialize extension system: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
+    } finally {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+      if (identical(_initializationCompleter, completer)) {
+        _initializationCompleter = null;
+      }
+    }
+  }
+
+  Future<void> waitForInitialization({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (state.isInitialized || !PlatformBridge.supportsExtensionSystem) {
+      return;
+    }
+
+    final future = _initializationCompleter?.future;
+    if (future == null) {
+      return;
+    }
+
+    try {
+      await future.timeout(timeout);
+    } on TimeoutException {
+      _log.w('Timed out waiting for extension initialization after $timeout');
     }
   }
 

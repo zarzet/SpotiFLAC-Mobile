@@ -13,27 +13,9 @@ class ShareIntentService {
   static final RegExp _spotifyUriPattern = RegExp(
     r'spotify:(track|album|playlist|artist):[a-zA-Z0-9]+',
   );
-  static final RegExp _spotifyUrlPattern = RegExp(
-    r'https?://open\.spotify\.com/(track|album|playlist|artist)/[a-zA-Z0-9]+(\?[^\s]*)?',
-  );
-
-  static final RegExp _deezerUrlPattern = RegExp(
-    r'https?://(www\.)?deezer\.com/(track|album|playlist|artist)/\d+(\?[^\s]*)?',
-  );
-  static final RegExp _deezerShortLinkPattern = RegExp(
-    r'https?://deezer\.page\.link/[a-zA-Z0-9]+',
-  );
-
-  static final RegExp _tidalUrlPattern = RegExp(
-    r'https?://(listen\.)?tidal\.com/(track|album|playlist|artist)/[a-zA-Z0-9-]+(\?[^\s]*)?',
-  );
-
-  static final RegExp _ytMusicUrlPattern = RegExp(
-    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/|browse/)[a-zA-Z0-9_-]+([?&][^\s]*)?',
-  );
-
-  static final RegExp _youtubeUrlPattern = RegExp(
-    r'https?://(youtu\.be/[a-zA-Z0-9_-]+|www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]+)([?&][^\s]*)?',
+  static final RegExp _genericHttpUrlPattern = RegExp(
+    "https?://[^\\s<>\\\"']+",
+    caseSensitive: false,
   );
 
   final _sharedUrlController = StreamController<String>.broadcast();
@@ -99,24 +81,17 @@ class ShareIntentService {
       return uriMatch.group(0);
     }
 
-    final patterns = [
-      _spotifyUrlPattern,
-      _deezerUrlPattern,
-      _deezerShortLinkPattern,
-      _tidalUrlPattern,
-      _ytMusicUrlPattern,
-      _youtubeUrlPattern,
-    ];
+    // Keep share parsing generic and let manifest-based URL handlers decide
+    // which installed extension can handle the incoming link.
+    for (final match in _genericHttpUrlPattern.allMatches(text)) {
+      final rawUrl = match.group(0);
+      if (rawUrl == null || rawUrl.isEmpty) {
+        continue;
+      }
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        final fullUrl = match.group(0)!;
-        if (pattern == _ytMusicUrlPattern || pattern == _youtubeUrlPattern) {
-          return fullUrl;
-        }
-        final queryIndex = fullUrl.indexOf('?');
-        return queryIndex > 0 ? fullUrl.substring(0, queryIndex) : fullUrl;
+      final sanitizedUrl = rawUrl.replaceFirst(RegExp(r'[.,;:!?)\]}]+$'), '');
+      if (sanitizedUrl.isNotEmpty) {
+        return sanitizedUrl;
       }
     }
 

@@ -7,6 +7,7 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
 final _log = AppLogger('TrackProvider');
+const _extensionInitRetryTimeout = Duration(seconds: 30);
 
 class TrackState {
   final List<Track> tracks;
@@ -203,13 +204,36 @@ class TrackNotifier extends Notifier<TrackState> {
 
   bool _isRequestValid(int requestId) => requestId == _currentRequestId;
 
+  bool _usesBuiltInUrlResolver(String url) {
+    final normalized = url.toLowerCase();
+    return normalized.contains('deezer.com') ||
+        normalized.contains('deezer.page.link') ||
+        normalized.contains('qobuz.com') ||
+        normalized.startsWith('qobuzapp://') ||
+        normalized.contains('tidal.com');
+  }
+
   Future<void> fetchFromUrl(String url, {bool useDeezerFallback = true}) async {
     final requestId = ++_currentRequestId;
 
     state = TrackState(isLoading: true, hasSearchText: state.hasSearchText);
 
     try {
-      final extensionHandler = await PlatformBridge.findURLHandler(url);
+      var extensionHandler = await PlatformBridge.findURLHandler(url);
+      if (extensionHandler == null && !_usesBuiltInUrlResolver(url)) {
+        final extensionState = ref.read(extensionProvider);
+        if (!extensionState.isInitialized && extensionState.isLoading) {
+          _log.i(
+            'Extension URL handlers not ready yet, waiting for initialization...',
+          );
+          await ref
+              .read(extensionProvider.notifier)
+              .waitForInitialization(timeout: _extensionInitRetryTimeout);
+          if (!_isRequestValid(requestId)) return;
+          extensionHandler = await PlatformBridge.findURLHandler(url);
+        }
+      }
+
       if (extensionHandler != null) {
         _log.i('Found extension URL handler: $extensionHandler for URL: $url');
 
