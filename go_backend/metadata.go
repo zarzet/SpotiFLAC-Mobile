@@ -1423,14 +1423,80 @@ func GetM4AQuality(filePath string) (AudioQuality, error) {
 	//   [28:32] samplerate (16.16 fixed-point)
 	sampleRate := int(buf[28])<<8 | int(buf[29])
 	bitDepth := int(buf[22])<<8 | int(buf[23])
-	if bitDepth <= 0 {
-		bitDepth = 16
-		if atomType == "alac" {
-			bitDepth = 24
+
+	if atomType == "alac" {
+		if alacBitDepth, alacSampleRate, ok := readALACSpecificConfig(f, sampleOffset, fileSize); ok {
+			if alacBitDepth > 0 {
+				bitDepth = alacBitDepth
+			}
+			if alacSampleRate > 0 {
+				sampleRate = alacSampleRate
+			}
 		}
 	}
 
+	if bitDepth <= 0 {
+		bitDepth = 16
+	}
+
 	return AudioQuality{BitDepth: bitDepth, SampleRate: sampleRate}, nil
+}
+
+func readALACSpecificConfig(f *os.File, sampleOffset, fileSize int64) (int, int, bool) {
+	if sampleOffset < 4 {
+		return 0, 0, false
+	}
+
+	sampleEntryHeader, err := readAtomHeaderAt(f, sampleOffset-4, fileSize)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	childStart := sampleOffset + 32
+	childEnd := sampleEntryHeader.offset + sampleEntryHeader.size
+	if childStart >= childEnd {
+		return 0, 0, false
+	}
+
+	configHeader, found, err := findAtomInRange(f, childStart, childEnd-childStart, "alac", fileSize)
+	if err != nil || !found {
+		return 0, 0, false
+	}
+
+	payloadSize := configHeader.size - configHeader.headerSize
+	if payloadSize <= 0 {
+		return 0, 0, false
+	}
+
+	payload := make([]byte, payloadSize)
+	if _, err := f.ReadAt(payload, configHeader.offset+configHeader.headerSize); err != nil {
+		return 0, 0, false
+	}
+
+	return parseALACSpecificConfig(payload)
+}
+
+func parseALACSpecificConfig(payload []byte) (int, int, bool) {
+	if len(payload) < 24 {
+		return 0, 0, false
+	}
+
+	bitDepth := int(payload[5])
+	sampleRate := int(binary.BigEndian.Uint32(payload[20:24]))
+	if bitDepth > 0 && sampleRate > 0 {
+		return bitDepth, sampleRate, true
+	}
+
+	// Some encoders prepend 4 bytes before the ALACSpecificConfig payload.
+	if len(payload) >= 28 {
+		bitDepth = int(payload[9])
+		sampleRate = int(binary.BigEndian.Uint32(payload[24:28]))
+		if bitDepth > 0 && sampleRate > 0 {
+			return bitDepth, sampleRate, true
+		}
+	}
+
+	return 0, 0, false
 }
 
 type atomHeader struct {
