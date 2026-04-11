@@ -719,13 +719,39 @@ class _MetadataSourceSelector extends ConsumerWidget {
 
   static const _builtInProviders = {'tidal': 'Tidal', 'qobuz': 'Qobuz'};
 
+  Extension? _defaultSearchExtension(List<Extension> extensions) {
+    return extensions
+            .where(
+              (ext) =>
+                  ext.enabled &&
+                  ext.hasCustomSearch &&
+                  ext.searchBehavior?.primary == true,
+            )
+            .firstOrNull ??
+        extensions
+            .where((ext) => ext.enabled && ext.hasCustomSearch)
+            .firstOrNull;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
 
-    final searchProvider = settings.searchProvider ?? '';
+    final rawSearchProvider = settings.searchProvider?.trim() ?? '';
+    final isValidBuiltIn = _builtInProviders.containsKey(rawSearchProvider);
+    final primarySearchExtension = _defaultSearchExtension(extState.extensions);
+    final defaultProviderLabel =
+        primarySearchExtension?.displayName ?? 'Deezer';
+    final searchProvider =
+        isValidBuiltIn ||
+            extState.extensions.any(
+              (e) =>
+                  e.enabled && e.hasCustomSearch && e.id == rawSearchProvider,
+            )
+        ? rawSearchProvider
+        : '';
     final isBuiltIn = _builtInProviders.containsKey(searchProvider);
 
     Extension? activeExtension;
@@ -772,7 +798,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
             children: [
               _SourceChip(
                 icon: Icons.graphic_eq,
-                label: 'Deezer',
+                label: defaultProviderLabel,
                 isSelected: searchProvider.isEmpty,
                 onTap: () {
                   if (hasNonDefaultProvider) {
@@ -816,7 +842,7 @@ class _MetadataSourceSelector extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Tap Deezer to switch back from extension',
+                    'Tap $defaultProviderLabel to switch back from extension',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

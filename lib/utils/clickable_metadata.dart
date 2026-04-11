@@ -10,6 +10,19 @@ import 'package:spotiflac_android/utils/artist_utils.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
 final _log = AppLogger('ClickableMetadata');
+const _deezerExtensionId = 'deezer';
+
+Future<List<Map<String, dynamic>>> _searchDeezerExtension(
+  String query, {
+  required String filter,
+  int limit = 5,
+}) {
+  return PlatformBridge.customSearchWithExtension(
+    _deezerExtensionId,
+    query,
+    options: {'filter': filter, 'limit': limit},
+  );
+}
 
 Future<void> navigateToArtist(
   BuildContext context, {
@@ -39,15 +52,14 @@ Future<void> navigateToArtist(
 
   _showLoadingSnackBar(context, 'Looking up artist...');
   try {
-    final results = await PlatformBridge.searchDeezerAll(
+    final artistList = await _searchDeezerExtension(
       artistName,
-      trackLimit: 0,
-      artistLimit: 3,
+      filter: 'artist',
+      limit: 3,
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    final artistList = results['artists'] as List<dynamic>? ?? [];
     if (artistList.isEmpty) {
       _showUnavailable(context, 'Artist');
       return;
@@ -56,15 +68,13 @@ Future<void> navigateToArtist(
     Map<String, dynamic>? bestMatch;
     final lowerName = artistName.toLowerCase().trim();
     for (final a in artistList) {
-      if (a is Map<String, dynamic>) {
-        final name = (a['name'] as String? ?? '').toLowerCase().trim();
-        if (name == lowerName) {
-          bestMatch = a;
-          break;
-        }
+      final name = (a['name'] as String? ?? '').toLowerCase().trim();
+      if (name == lowerName) {
+        bestMatch = a;
+        break;
       }
     }
-    bestMatch ??= artistList.first as Map<String, dynamic>;
+    bestMatch ??= artistList.first;
 
     final resolvedId = bestMatch['id'] as String? ?? '';
     final resolvedName = bestMatch['name'] as String? ?? artistName;
@@ -81,6 +91,7 @@ Future<void> navigateToArtist(
       artistId: resolvedId,
       artistName: resolvedName,
       coverUrl: resolvedImage ?? coverUrl,
+      extensionId: _deezerExtensionId,
     );
   } catch (e) {
     _log.e('Failed to look up artist "$artistName": $e', e);
@@ -125,15 +136,14 @@ Future<void> navigateToAlbum(
         ? '$albumName $artistName'
         : albumName;
 
-    final results = await PlatformBridge.searchDeezerAll(
+    final albumList = await _searchDeezerExtension(
       query,
-      trackLimit: 0,
-      artistLimit: 0,
+      filter: 'album',
+      limit: 5,
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    final albumList = results['albums'] as List<dynamic>? ?? [];
     if (albumList.isEmpty) {
       _showUnavailable(context, 'Album');
       return;
@@ -142,15 +152,13 @@ Future<void> navigateToAlbum(
     Map<String, dynamic>? bestMatch;
     final lowerName = albumName.toLowerCase().trim();
     for (final a in albumList) {
-      if (a is Map<String, dynamic>) {
-        final name = (a['name'] as String? ?? '').toLowerCase().trim();
-        if (name == lowerName) {
-          bestMatch = a;
-          break;
-        }
+      final name = (a['name'] as String? ?? '').toLowerCase().trim();
+      if (name == lowerName) {
+        bestMatch = a;
+        break;
       }
     }
-    bestMatch ??= albumList.first as Map<String, dynamic>;
+    bestMatch ??= albumList.first;
 
     final resolvedId = bestMatch['id'] as String? ?? '';
     final resolvedName = bestMatch['name'] as String? ?? albumName;
@@ -167,6 +175,7 @@ Future<void> navigateToAlbum(
       albumId: resolvedId,
       albumName: resolvedName,
       coverUrl: resolvedImage ?? coverUrl,
+      extensionId: _deezerExtensionId,
     );
   } catch (e) {
     _log.e('Failed to look up album "$albumName": $e', e);
@@ -207,7 +216,7 @@ void _pushAlbumScreen(
   String? coverUrl,
   String? extensionId,
 }) {
-  const builtInProviders = {'tidal', 'qobuz', 'deezer'};
+  const builtInProviders = {'tidal', 'qobuz'};
   final isExtension =
       extensionId != null && !builtInProviders.contains(extensionId);
   final resolvedExtensionId = extensionId;

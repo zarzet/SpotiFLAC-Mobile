@@ -583,8 +583,97 @@ class TrackNotifier extends Notifier<TrackState> {
     String? builtInSearchProvider,
   }) async {
     final requestId = ++_currentRequestId;
-
     final currentFilter = filterOverride ?? state.selectedSearchFilter;
+    final settings = ref.read(settingsProvider);
+    final extensionState = ref.read(extensionProvider);
+
+    String? resolvedProvider = builtInSearchProvider;
+    if (resolvedProvider == null || resolvedProvider.isEmpty) {
+      final explicitProvider = settings.searchProvider?.trim();
+      if (explicitProvider != null && explicitProvider.isNotEmpty) {
+        resolvedProvider = explicitProvider;
+      } else {
+        resolvedProvider =
+            extensionState.extensions
+                .where(
+                  (ext) =>
+                      ext.enabled &&
+                      ext.hasCustomSearch &&
+                      ext.searchBehavior?.primary == true,
+                )
+                .map((ext) => ext.id)
+                .firstOrNull ??
+            extensionState.extensions
+                .where((ext) => ext.enabled && ext.hasCustomSearch)
+                .map((ext) => ext.id)
+                .firstOrNull;
+      }
+    }
+
+    final isEnabledExtensionProvider =
+        resolvedProvider != null &&
+        resolvedProvider.isNotEmpty &&
+        extensionState.extensions.any(
+          (ext) => ext.enabled && ext.id == resolvedProvider,
+        );
+
+    if (resolvedProvider != null &&
+        resolvedProvider.isNotEmpty &&
+        resolvedProvider != 'tidal' &&
+        resolvedProvider != 'qobuz' &&
+        !isEnabledExtensionProvider &&
+        settings.searchProvider?.trim() == resolvedProvider) {
+      ref.read(settingsProvider.notifier).setSearchProvider(null);
+      resolvedProvider =
+          extensionState.extensions
+              .where(
+                (ext) =>
+                    ext.enabled &&
+                    ext.hasCustomSearch &&
+                    ext.searchBehavior?.primary == true,
+              )
+              .map((ext) => ext.id)
+              .firstOrNull ??
+          extensionState.extensions
+              .where((ext) => ext.enabled && ext.hasCustomSearch)
+              .map((ext) => ext.id)
+              .firstOrNull;
+    }
+
+    if (resolvedProvider != null &&
+        resolvedProvider.isNotEmpty &&
+        resolvedProvider != 'tidal' &&
+        resolvedProvider != 'qobuz' &&
+        extensionState.extensions.any(
+          (ext) => ext.enabled && ext.id == resolvedProvider,
+        )) {
+      final resolvedFilter = currentFilter ?? 'track';
+      Map<String, dynamic>? options;
+      options = {'filter': resolvedFilter};
+      await customSearch(
+        resolvedProvider,
+        query,
+        options: options,
+        selectedFilter: resolvedFilter,
+      );
+      return;
+    }
+
+    final effectiveBuiltInProvider =
+        resolvedProvider == 'tidal' || resolvedProvider == 'qobuz'
+        ? resolvedProvider
+        : builtInSearchProvider;
+
+    if (effectiveBuiltInProvider == null || effectiveBuiltInProvider.isEmpty) {
+      state = TrackState(
+        isLoading: false,
+        error: 'No active search provider available',
+        hasSearchText: state.hasSearchText,
+        isShowingRecentAccess: state.isShowingRecentAccess,
+        selectedSearchFilter: currentFilter,
+      );
+      return;
+    }
 
     state = TrackState(
       isLoading: true,
@@ -594,15 +683,13 @@ class TrackNotifier extends Notifier<TrackState> {
     );
 
     try {
-      final settings = ref.read(settingsProvider);
-      final extensionState = ref.read(extensionProvider);
       final hasActiveMetadataExtensions = extensionState.extensions.any(
         (e) => e.enabled && e.hasMetadataProvider,
       );
       final includeExtensions =
           settings.useExtensionProviders && hasActiveMetadataExtensions;
 
-      final effectiveProvider = builtInSearchProvider ?? 'deezer';
+      final effectiveProvider = effectiveBuiltInProvider;
 
       _log.i(
         'Search started: provider=$effectiveProvider, query="$query", includeExtensions=$includeExtensions, filter=$currentFilter',
@@ -610,25 +697,6 @@ class TrackNotifier extends Notifier<TrackState> {
 
       Map<String, dynamic> results;
       List<Map<String, dynamic>> metadataTrackResults = [];
-
-      if (effectiveProvider == 'deezer') {
-        try {
-          _log.d('Calling metadata provider search API...');
-          metadataTrackResults =
-              await PlatformBridge.searchTracksWithMetadataProviders(
-                query,
-                limit: 20,
-                includeExtensions: includeExtensions,
-              );
-          _log.i(
-            'Metadata providers returned ${metadataTrackResults.length} tracks',
-          );
-        } catch (e) {
-          _log.w(
-            'Metadata provider search failed, falling back to Deezer tracks: $e',
-          );
-        }
-      }
 
       switch (effectiveProvider) {
         case 'tidal':
@@ -650,13 +718,19 @@ class TrackNotifier extends Notifier<TrackState> {
           );
           break;
         default:
-          _log.d('Calling Deezer search API...');
-          results = await PlatformBridge.searchDeezerAll(
-            query,
-            trackLimit: 20,
-            artistLimit: 2,
-            filter: currentFilter,
-          );
+          _log.d('Calling metadata provider track search API...');
+          metadataTrackResults =
+              await PlatformBridge.searchTracksWithMetadataProviders(
+                query,
+                limit: 20,
+                includeExtensions: includeExtensions,
+              );
+          results = const <String, List<dynamic>>{
+            'tracks': <dynamic>[],
+            'artists': <dynamic>[],
+            'albums': <dynamic>[],
+            'playlists': <dynamic>[],
+          };
           break;
       }
       _log.i(

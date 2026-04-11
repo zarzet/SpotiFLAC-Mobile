@@ -426,14 +426,18 @@ class _HomeTabState extends ConsumerState<HomeTab>
     String? currentSearchProvider,
     List<Extension> extensions,
   ) {
+    final resolvedSearchProvider = _resolveSearchProvider(
+      currentSearchProvider,
+      extensions,
+    );
     final isUsingExtensionSearch =
-        currentSearchProvider != null &&
-        currentSearchProvider.isNotEmpty &&
-        extensions.any((e) => e.id == currentSearchProvider && e.enabled);
+        resolvedSearchProvider != null &&
+        resolvedSearchProvider.isNotEmpty &&
+        extensions.any((e) => e.id == resolvedSearchProvider && e.enabled);
 
     if (isUsingExtensionSearch) {
       final currentSearchExtension = extensions
-          .where((e) => e.id == currentSearchProvider && e.enabled)
+          .where((e) => e.id == resolvedSearchProvider && e.enabled)
           .firstOrNull;
       final filters = currentSearchExtension?.searchBehavior?.filters;
       if (filters != null && filters.isNotEmpty) {
@@ -447,6 +451,36 @@ class _HomeTabState extends ConsumerState<HomeTab>
       SearchFilter(id: 'album', label: 'Albums', icon: 'album'),
       SearchFilter(id: 'playlist', label: 'Playlists', icon: 'playlist'),
     ];
+  }
+
+  Extension? _defaultSearchExtension(List<Extension> extensions) {
+    return extensions
+            .where(
+              (ext) =>
+                  ext.enabled &&
+                  ext.hasCustomSearch &&
+                  ext.searchBehavior?.primary == true,
+            )
+            .firstOrNull ??
+        extensions
+            .where((ext) => ext.enabled && ext.hasCustomSearch)
+            .firstOrNull;
+  }
+
+  String? _resolveSearchProvider(
+    String? explicitSearchProvider,
+    List<Extension> extensions,
+  ) {
+    final explicit = explicitSearchProvider?.trim();
+    if (explicit != null &&
+        explicit.isNotEmpty &&
+        (_builtInSearchProviders.contains(explicit) ||
+            extensions.any(
+              (ext) => ext.enabled && ext.hasCustomSearch && ext.id == explicit,
+            ))) {
+      return explicit;
+    }
+    return _defaultSearchExtension(extensions)?.id;
   }
 
   String? _sanitizeSearchFilterForProvider(
@@ -585,7 +619,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
   bool _isLiveSearchEnabled() {
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
-    final searchProvider = settings.searchProvider;
+    final searchProvider = _resolveSearchProvider(
+      settings.searchProvider,
+      extState.extensions,
+    );
 
     if (searchProvider == null || searchProvider.isEmpty) return false;
 
@@ -654,7 +691,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
   Future<void> _performSearch(String query, {String? filterOverride}) async {
     final settings = ref.read(settingsProvider);
     final extState = ref.read(extensionProvider);
-    final searchProvider = settings.searchProvider;
+    final searchProvider = _resolveSearchProvider(
+      settings.searchProvider,
+      extState.extensions,
+    );
     final selectedFilter =
         _sanitizeSearchFilterForProvider(
           filterOverride,
@@ -2166,17 +2206,25 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
   }
 
+  bool _isEnabledMetadataExtension(String? providerId) {
+    final normalized = providerId?.trim();
+    if (normalized == null || normalized.isEmpty) return false;
+
+    return ref
+        .read(extensionProvider)
+        .extensions
+        .any(
+          (ext) =>
+              ext.enabled && ext.hasMetadataProvider && ext.id == normalized,
+        );
+  }
+
   void _navigateToRecentItem(RecentAccessItem item) {
     _searchFocusNode.unfocus();
 
     switch (item.type) {
       case RecentAccessType.artist:
-        if (item.providerId != null &&
-            item.providerId!.isNotEmpty &&
-            item.providerId != 'deezer' &&
-            item.providerId != 'spotify' &&
-            item.providerId != 'tidal' &&
-            item.providerId != 'qobuz') {
+        if (_isEnabledMetadataExtension(item.providerId)) {
           Navigator.push(
             context,
             MaterialPageRoute<void>(
@@ -2213,12 +2261,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
               ),
             ),
           );
-        } else if (item.providerId != null &&
-            item.providerId!.isNotEmpty &&
-            item.providerId != 'deezer' &&
-            item.providerId != 'spotify' &&
-            item.providerId != 'tidal' &&
-            item.providerId != 'qobuz') {
+        } else if (_isEnabledMetadataExtension(item.providerId)) {
           Navigator.push(
             context,
             MaterialPageRoute<void>(
@@ -2263,12 +2306,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
           return;
         }
 
-        if (item.providerId != null &&
-            item.providerId!.isNotEmpty &&
-            item.providerId != 'deezer' &&
-            item.providerId != 'spotify' &&
-            item.providerId != 'tidal' &&
-            item.providerId != 'qobuz') {
+        if (_isEnabledMetadataExtension(item.providerId)) {
           Navigator.push(
             context,
             MaterialPageRoute<void>(
@@ -3185,8 +3223,11 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
   String _getSearchHint() {
     final settings = ref.read(settingsProvider);
-    final searchProvider = settings.searchProvider;
     final extState = ref.read(extensionProvider);
+    final searchProvider = _resolveSearchProvider(
+      settings.searchProvider,
+      extState.extensions,
+    );
 
     if (!extState.isInitialized) {
       return 'Paste supported URL or search...';
@@ -3387,9 +3428,23 @@ class _SearchProviderDropdown extends ConsumerWidget {
 
   const _SearchProviderDropdown({this.onProviderChanged});
 
+  Extension? _defaultSearchExtension(List<Extension> extensions) {
+    return extensions
+            .where(
+              (ext) =>
+                  ext.enabled &&
+                  ext.hasCustomSearch &&
+                  ext.searchBehavior?.primary == true,
+            )
+            .firstOrNull ??
+        extensions
+            .where((ext) => ext.enabled && ext.hasCustomSearch)
+            .firstOrNull;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentProvider = ref.watch(
+    final rawCurrentProvider = ref.watch(
       settingsProvider.select((s) => s.searchProvider),
     );
     final extensions = ref.watch(extensionProvider.select((s) => s.extensions));
@@ -3398,6 +3453,17 @@ class _SearchProviderDropdown extends ConsumerWidget {
     final searchProviders = extensions
         .where((ext) => ext.enabled && ext.hasCustomSearch)
         .toList();
+    final primarySearchExtension = _defaultSearchExtension(searchProviders);
+    final defaultProviderLabel =
+        primarySearchExtension?.displayName ?? 'Deezer';
+    final defaultProviderIconPath = primarySearchExtension?.iconPath;
+    final currentProvider =
+        rawCurrentProvider != null &&
+            rawCurrentProvider.isNotEmpty &&
+            ({'tidal', 'qobuz'}.contains(rawCurrentProvider) ||
+                searchProviders.any((e) => e.id == rawCurrentProvider))
+        ? rawCurrentProvider
+        : null;
 
     Extension? currentExt;
     if (currentProvider != null && currentProvider.isNotEmpty) {
@@ -3416,6 +3482,19 @@ class _SearchProviderDropdown extends ConsumerWidget {
       iconPath = currentExt.iconPath;
       if (currentExt.searchBehavior?.icon != null) {
         displayIcon = _getIconFromName(currentExt.searchBehavior!.icon!);
+      }
+    } else if (primarySearchExtension?.searchBehavior?.icon != null) {
+      displayIcon = _getIconFromName(
+        primarySearchExtension!.searchBehavior!.icon!,
+      );
+      iconPath = defaultProviderIconPath;
+    } else if (defaultProviderIconPath != null &&
+        defaultProviderIconPath.isNotEmpty) {
+      iconPath = defaultProviderIconPath;
+      if (primarySearchExtension?.searchBehavior?.icon != null) {
+        displayIcon = _getIconFromName(
+          primarySearchExtension!.searchBehavior!.icon!,
+        );
       }
     } else if (isBuiltInProvider) {
       displayIcon = Icons.music_note;
@@ -3471,7 +3550,7 @@ class _SearchProviderDropdown extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Deezer',
+                    defaultProviderLabel,
                     style: TextStyle(
                       fontWeight:
                           currentProvider == null || currentProvider.isEmpty

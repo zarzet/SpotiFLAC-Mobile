@@ -12,7 +12,7 @@ func TestSetMetadataProviderPriorityAddsBuiltIns(t *testing.T) {
 
 	SetMetadataProviderPriority([]string{"tidal"})
 	got := GetMetadataProviderPriority()
-	want := []string{"tidal", "deezer", "qobuz"}
+	want := []string{"tidal", "qobuz"}
 	if len(got) != len(want) {
 		t.Fatalf("unexpected priority length: got %v want %v", got, want)
 	}
@@ -208,7 +208,7 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 		searchBuiltInMetadataTracksFunc = originalSearch
 	}()
 
-	SetMetadataProviderPriority([]string{"qobuz", "tidal", "deezer"})
+	SetMetadataProviderPriority([]string{"qobuz", "tidal"})
 
 	var calls []string
 	searchBuiltInMetadataTracksFunc = func(providerID, query string, limit int) ([]ExtTrackMetadata, error) {
@@ -223,10 +223,6 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 				{ProviderID: "tidal", SpotifyID: "tidal:2", ISRC: "AAA111", Name: "Duplicate"},
 				{ProviderID: "tidal", SpotifyID: "tidal:3", ISRC: "BBB222", Name: "Second"},
 			}, nil
-		case "deezer":
-			return []ExtTrackMetadata{
-				{ProviderID: "deezer", SpotifyID: "deezer:4", ISRC: "CCC333", Name: "Third"},
-			}, nil
 		default:
 			return nil, nil
 		}
@@ -237,13 +233,13 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SearchTracksWithMetadataProviders returned error: %v", err)
 	}
-	if len(tracks) != 3 {
-		t.Fatalf("unexpected track count: got %d want 3", len(tracks))
+	if len(tracks) != 2 {
+		t.Fatalf("unexpected track count: got %d want 2", len(tracks))
 	}
-	if tracks[0].ProviderID != "qobuz" || tracks[1].ProviderID != "tidal" || tracks[2].ProviderID != "deezer" {
+	if tracks[0].ProviderID != "qobuz" || tracks[1].ProviderID != "tidal" {
 		t.Fatalf("unexpected track provider order: %+v", tracks)
 	}
-	if len(calls) != 3 || calls[0] != "qobuz" || calls[1] != "tidal" || calls[2] != "deezer" {
+	if len(calls) != 2 || calls[0] != "qobuz" || calls[1] != "tidal" {
 		t.Fatalf("unexpected provider call order: %v", calls)
 	}
 }

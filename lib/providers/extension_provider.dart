@@ -481,6 +481,7 @@ class ExtensionState {
 }
 
 class ExtensionNotifier extends Notifier<ExtensionState> {
+  static const _builtInMetadataProviders = ['qobuz', 'tidal'];
   AppLifecycleListener? _appLifecycleListener;
   bool _cleanupInFlight = false;
   Completer<void>? _initializationCompleter;
@@ -883,10 +884,15 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         );
         await PlatformBridge.setMetadataProviderPriority(priority);
       } else {
-        priority = _sanitizeMetadataProviderPriority(
-          await PlatformBridge.getMetadataProviderPriority(),
-        );
+        final backendPriority =
+            await PlatformBridge.getMetadataProviderPriority();
+        priority = _sanitizeMetadataProviderPriority(backendPriority);
         _log.d('Using default metadata provider priority: $priority');
+        await prefs.setString(
+          _metadataProviderPriorityKey,
+          jsonEncode(priority),
+        );
+        await PlatformBridge.setMetadataProviderPriority(priority);
       }
 
       state = state.copyWith(metadataProviderPriority: priority);
@@ -942,17 +948,26 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
   }
 
   List<String> getAllMetadataProviders() {
-    final providers = ['deezer', 'qobuz', 'tidal'];
-    for (final ext in state.extensions) {
-      if (ext.enabled && ext.hasMetadataProvider) {
-        providers.add(ext.id);
-      }
-    }
-    return providers;
+    final metadataExtensions = state.extensions
+        .where((ext) => ext.enabled && ext.hasMetadataProvider)
+        .toList();
+    final primarySearchMetadataExtensions = metadataExtensions
+        .where((ext) => ext.searchBehavior?.primary == true)
+        .map((ext) => ext.id);
+    final otherMetadataExtensions = metadataExtensions
+        .where((ext) => ext.searchBehavior?.primary != true)
+        .map((ext) => ext.id);
+
+    return [
+      ...primarySearchMetadataExtensions,
+      ..._builtInMetadataProviders,
+      ...otherMetadataExtensions,
+    ];
   }
 
   List<String> _sanitizeMetadataProviderPriority(List<String> input) {
     final allowed = getAllMetadataProviders().toSet();
+    final preferredOrder = getAllMetadataProviders();
     final result = <String>[];
 
     for (final provider in input) {
@@ -961,7 +976,18 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }
     }
 
-    for (final provider in const ['deezer', 'qobuz', 'tidal']) {
+    final hasPreferredExtension = preferredOrder.any(
+      (provider) => !_builtInMetadataProviders.contains(provider),
+    );
+    final hasSavedExtension = result.any(
+      (provider) => !_builtInMetadataProviders.contains(provider),
+    );
+
+    if (!hasSavedExtension && hasPreferredExtension) {
+      return List<String>.from(preferredOrder);
+    }
+
+    for (final provider in preferredOrder) {
       if (!result.contains(provider)) {
         result.add(provider);
       }

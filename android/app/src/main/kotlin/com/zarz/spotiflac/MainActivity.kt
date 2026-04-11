@@ -2734,16 +2734,6 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(null)
                         }
-                        "searchDeezerAll" -> {
-                            val query = call.argument<String>("query") ?: ""
-                            val trackLimit = call.argument<Int>("track_limit") ?: 15
-                            val artistLimit = call.argument<Int>("artist_limit") ?: 2
-                            val filter = call.argument<String>("filter") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.searchDeezerAll(query, trackLimit.toLong(), artistLimit.toLong(), filter)
-                            }
-                            result.success(response)
-                        }
                         "searchTidalAll" -> {
                             val query = call.argument<String>("query") ?: ""
                             val trackLimit = call.argument<Int>("track_limit") ?: 15

@@ -61,32 +61,29 @@ class CsvImportService {
         if (trackData == null) {
           try {
             final query = '${track.artistName} ${track.name}';
-            final searchResult = await PlatformBridge.searchDeezerAll(
+            final searchResult = await PlatformBridge.customSearchWithExtension(
+              'deezer',
               query,
-              trackLimit: 5,
+              options: {'filter': 'track', 'limit': 5},
             );
 
-            if (searchResult.containsKey('tracks')) {
-              final tracksList = searchResult['tracks'] as List<dynamic>?;
-              if (tracksList != null && tracksList.isNotEmpty) {
-                for (final result in tracksList) {
-                  final resultMap = result as Map<String, dynamic>;
-                  final resultName =
-                      (resultMap['name'] as String?)?.toLowerCase() ?? '';
-                  final trackNameLower = track.name.toLowerCase();
+            if (searchResult.isNotEmpty) {
+              for (final resultMap in searchResult) {
+                final resultName =
+                    (resultMap['name'] as String?)?.toLowerCase() ?? '';
+                final trackNameLower = track.name.toLowerCase();
 
-                  if (resultName.contains(trackNameLower) ||
-                      trackNameLower.contains(resultName)) {
-                    trackData = resultMap;
-                    _log.d('Text search match for ${track.name}: $resultName');
-                    break;
-                  }
+                if (resultName.contains(trackNameLower) ||
+                    trackNameLower.contains(resultName)) {
+                  trackData = resultMap;
+                  _log.d('Text search match for ${track.name}: $resultName');
+                  break;
                 }
+              }
 
-                if (trackData == null && tracksList.isNotEmpty) {
-                  trackData = tracksList.first as Map<String, dynamic>;
-                  _log.d('Using first search result for ${track.name}');
-                }
+              if (trackData == null) {
+                trackData = searchResult.first;
+                _log.d('Using first search result for ${track.name}');
               }
             }
           } catch (e) {

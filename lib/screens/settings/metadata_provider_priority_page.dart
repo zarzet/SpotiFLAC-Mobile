@@ -225,8 +225,8 @@ class _MetadataProviderItem extends StatelessWidget {
         return _MetadataProviderInfo(
           name: 'Deezer',
           icon: Icons.album,
-          description: context.l10n.metadataNoRateLimits,
-          isBuiltIn: true,
+          description: context.l10n.providerExtension,
+          isBuiltIn: false,
         );
       case 'qobuz':
         return _MetadataProviderInfo(

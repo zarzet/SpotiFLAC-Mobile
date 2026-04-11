@@ -1842,24 +1842,6 @@ func ClearTrackIDCache() {
 	ClearTrackCache()
 }
 
-func SearchDeezerAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client := GetDeezerClient()
-	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit, filter)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
 func SearchTidalAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
 	downloader := NewTidalDownloader()
 	results, err := downloader.SearchAll(query, trackLimit, artistLimit, filter)

@@ -1,7 +1,6 @@
 package gobackend
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -895,7 +894,7 @@ func SetMetadataProviderPriority(providerIDs []string) {
 	metadataProviderPriorityMu.Lock()
 	defer metadataProviderPriorityMu.Unlock()
 
-	sanitized := make([]string, 0, len(providerIDs)+3)
+	sanitized := make([]string, 0, len(providerIDs)+2)
 	seen := map[string]struct{}{}
 	for _, providerID := range providerIDs {
 		providerID = strings.TrimSpace(providerID)
@@ -908,7 +907,7 @@ func SetMetadataProviderPriority(providerIDs []string) {
 		seen[providerID] = struct{}{}
 		sanitized = append(sanitized, providerID)
 	}
-	for _, providerID := range []string{"deezer", "qobuz", "tidal"} {
+	for _, providerID := range []string{"qobuz", "tidal"} {
 		if _, exists := seen[providerID]; exists {
 			continue
 		}
@@ -925,7 +924,7 @@ func GetMetadataProviderPriority() []string {
 	defer metadataProviderPriorityMu.RUnlock()
 
 	if len(metadataProviderPriority) == 0 {
-		return []string{"deezer", "qobuz", "tidal"}
+		return []string{"qobuz", "tidal"}
 	}
 
 	result := make([]string, len(metadataProviderPriority))
@@ -935,7 +934,7 @@ func GetMetadataProviderPriority() []string {
 
 func isBuiltInProvider(providerID string) bool {
 	switch providerID {
-	case "tidal", "qobuz", "deezer":
+	case "tidal", "qobuz":
 		return true
 	default:
 		return false
@@ -1006,20 +1005,6 @@ func metadataTrackDedupKey(track ExtTrackMetadata) string {
 
 func searchBuiltInMetadataTracks(providerID, query string, limit int) ([]ExtTrackMetadata, error) {
 	switch providerID {
-	case "deezer":
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-
-		results, err := GetDeezerClient().SearchAll(ctx, query, limit, 0, "track")
-		if err != nil {
-			return nil, err
-		}
-
-		tracks := make([]ExtTrackMetadata, 0, len(results.Tracks))
-		for _, track := range results.Tracks {
-			tracks = append(tracks, normalizeBuiltInMetadataTrack(track, "deezer"))
-		}
-		return tracks, nil
 	case "qobuz":
 		return NewQobuzDownloader().SearchTracks(query, limit)
 	case "tidal":

@@ -496,21 +496,6 @@ class PlatformBridge {
     await _channel.invokeMethod('clearTrackCache');
   }
 
-  static Future<Map<String, dynamic>> searchDeezerAll(
-    String query, {
-    int trackLimit = 15,
-    int artistLimit = 2,
-    String? filter,
-  }) async {
-    final result = await _channel.invokeMethod('searchDeezerAll', {
-      'query': query,
-      'track_limit': trackLimit,
-      'artist_limit': artistLimit,
-      'filter': filter ?? '',
-    });
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
   static Future<Map<String, dynamic>> searchTidalAll(
     String query, {
     int trackLimit = 15,
