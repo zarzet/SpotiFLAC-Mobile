@@ -35,6 +35,7 @@ class AppSettings {
   final bool useExtensionProviders;
   final List<String>? downloadFallbackExtensionIds;
   final String? searchProvider;
+  final String defaultSearchTab;
   final String? homeFeedProvider;
   final bool separateSingles;
   final String singleFilenameFormat;
@@ -111,6 +112,7 @@ class AppSettings {
     this.useExtensionProviders = true,
     this.downloadFallbackExtensionIds,
     this.searchProvider,
+    this.defaultSearchTab = 'all',
     this.homeFeedProvider,
     this.separateSingles = false,
     this.singleFilenameFormat = '{title} - {artist}',
@@ -176,6 +178,7 @@ class AppSettings {
     bool clearDownloadFallbackExtensionIds = false,
     String? searchProvider,
     bool clearSearchProvider = false,
+    String? defaultSearchTab,
     String? homeFeedProvider,
     bool clearHomeFeedProvider = false,
     bool? separateSingles,
@@ -242,6 +245,7 @@ class AppSettings {
       searchProvider: clearSearchProvider
           ? null
           : (searchProvider ?? this.searchProvider),
+      defaultSearchTab: defaultSearchTab ?? this.defaultSearchTab,
       homeFeedProvider: clearHomeFeedProvider
           ? null
           : (homeFeedProvider ?? this.homeFeedProvider),

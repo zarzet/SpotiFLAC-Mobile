@@ -150,6 +150,14 @@
       }
     }
   },
+  "optionsDefaultSearchTab": "Tab Pencarian Default",
+  "@optionsDefaultSearchTab": {
+    "description": "Title for the preferred default search tab setting"
+  },
+  "optionsDefaultSearchTabSubtitle": "Pilih tab yang dibuka lebih dulu untuk hasil pencarian baru.",
+  "@optionsDefaultSearchTabSubtitle": {
+    "description": "Subtitle for the preferred default search tab setting"
+  },
   "optionsSwitchBack": "Ketuk Deezer atau Spotify untuk beralih dari ekstensi",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"

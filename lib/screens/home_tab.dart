@@ -449,6 +449,61 @@ class _HomeTabState extends ConsumerState<HomeTab>
     ];
   }
 
+  String? _sanitizeSearchFilterForProvider(
+    String? filter,
+    String? currentSearchProvider,
+    List<Extension> extensions,
+  ) {
+    if (filter == null || filter.isEmpty) {
+      return null;
+    }
+
+    if (currentSearchProvider == null ||
+        currentSearchProvider.isEmpty ||
+        _builtInSearchProviders.contains(currentSearchProvider)) {
+      switch (filter) {
+        case 'track':
+        case 'artist':
+        case 'album':
+        case 'playlist':
+          return filter;
+        default:
+          return null;
+      }
+    }
+
+    final extension = extensions
+        .where((e) => e.id == currentSearchProvider && e.enabled)
+        .firstOrNull;
+    final filters = extension?.searchBehavior?.filters;
+    if (filters == null || filters.isEmpty) {
+      return null;
+    }
+
+    final match = filters
+        .where((candidate) => candidate.id == filter)
+        .firstOrNull;
+    return match?.id;
+  }
+
+  String? _preferredSearchFilter(
+    String preferredSearchTab,
+    String? currentSearchProvider,
+    List<Extension> extensions,
+  ) {
+    final preferred = switch (preferredSearchTab) {
+      'track' => 'track',
+      'album' => 'album',
+      _ => null,
+    };
+
+    return _sanitizeSearchFilterForProvider(
+      preferred,
+      currentSearchProvider,
+      extensions,
+    );
+  }
+
   _SearchResultBuckets _getSearchResultBuckets(List<Track> tracks) {
     final cached = _searchBucketsCache;
     if (cached != null && identical(tracks, _searchBucketsSourceTracks)) {
@@ -601,7 +656,21 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final extState = ref.read(extensionProvider);
     final searchProvider = settings.searchProvider;
     final selectedFilter =
-        filterOverride ?? ref.read(trackProvider).selectedSearchFilter;
+        _sanitizeSearchFilterForProvider(
+          filterOverride,
+          searchProvider,
+          extState.extensions,
+        ) ??
+        _sanitizeSearchFilterForProvider(
+          ref.read(trackProvider).selectedSearchFilter,
+          searchProvider,
+          extState.extensions,
+        ) ??
+        _preferredSearchFilter(
+          settings.defaultSearchTab,
+          searchProvider,
+          extState.extensions,
+        );
 
     final searchKey =
         '${searchProvider ?? 'default'}:$query:${selectedFilter ?? 'all'}';
@@ -627,7 +696,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
       }
       await ref
           .read(trackProvider.notifier)
-          .customSearch(searchProvider, query, options: options);
+          .customSearch(
+            searchProvider,
+            query,
+            options: options,
+            selectedFilter: selectedFilter,
+          );
     } else if (isBuiltInProvider) {
       await ref
           .read(trackProvider.notifier)

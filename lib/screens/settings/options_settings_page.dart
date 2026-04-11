@@ -70,7 +70,12 @@ class OptionsSettingsPage extends ConsumerWidget {
               ),
             ),
             SliverToBoxAdapter(
-              child: SettingsGroup(children: [const _MetadataSourceSelector()]),
+              child: SettingsGroup(
+                children: const [
+                  _MetadataSourceSelector(),
+                  _DefaultSearchTabSelector(),
+                ],
+              ),
             ),
 
             SliverToBoxAdapter(
@@ -820,6 +825,71 @@ class _MetadataSourceSelector extends ConsumerWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DefaultSearchTabSelector extends ConsumerWidget {
+  const _DefaultSearchTabSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final selectedTab = ref.watch(
+      settingsProvider.select((s) => s.defaultSearchTab),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.optionsDefaultSearchTab,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            context.l10n.optionsDefaultSearchTabSubtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _SourceChip(
+                icon: Icons.dashboard_outlined,
+                label: context.l10n.historyFilterAll,
+                isSelected: selectedTab == 'all',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setDefaultSearchTab('all'),
+              ),
+              _SourceChip(
+                icon: Icons.music_note,
+                label: context.l10n.searchSongs,
+                isSelected: selectedTab == 'track',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setDefaultSearchTab('track'),
+              ),
+              _SourceChip(
+                icon: Icons.album,
+                label: context.l10n.searchAlbums,
+                isSelected: selectedTab == 'album',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setDefaultSearchTab('album'),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -130,6 +130,13 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get optionsDefaultSearchTab => 'Default Search Tab';
+
+  @override
+  String get optionsDefaultSearchTabSubtitle =>
+      'Choose which tab opens first for new search results.';
+
+  @override
   String get optionsSwitchBack =>
       'Нажмите Deezer или Spotify для возврата с расширения';
 

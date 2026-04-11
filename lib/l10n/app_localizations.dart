@@ -352,6 +352,18 @@ abstract class AppLocalizations {
   /// **'Using extension: {extensionName}'**
   String optionsUsingExtension(String extensionName);
 
+  /// Title for the preferred default search tab setting
+  ///
+  /// In en, this message translates to:
+  /// **'Default Search Tab'**
+  String get optionsDefaultSearchTab;
+
+  /// Subtitle for the preferred default search tab setting
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which tab opens first for new search results.'**
+  String get optionsDefaultSearchTabSubtitle;
+
   /// Hint to switch back to built-in providers
   ///
   /// In en, this message translates to:

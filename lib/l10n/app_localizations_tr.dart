@@ -130,6 +130,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get optionsDefaultSearchTab => 'Default Search Tab';
+
+  @override
+  String get optionsDefaultSearchTabSubtitle =>
+      'Choose which tab opens first for new search results.';
+
+  @override
   String get optionsSwitchBack =>
       'Dahili kaynaklara dönmek için Deezer veya Spotify\'a tıkla';
 

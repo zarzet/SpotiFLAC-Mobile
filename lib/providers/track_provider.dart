@@ -741,14 +741,16 @@ class TrackNotifier extends Notifier<TrackState> {
     String extensionId,
     String query, {
     Map<String, dynamic>? options,
+    String? selectedFilter,
   }) async {
     final requestId = ++_currentRequestId;
+    final currentFilter = selectedFilter ?? state.selectedSearchFilter;
 
     state = TrackState(
       isLoading: true,
       hasSearchText: state.hasSearchText,
       isShowingRecentAccess: state.isShowingRecentAccess,
-      selectedSearchFilter: state.selectedSearchFilter,
+      selectedSearchFilter: currentFilter,
     );
 
     try {
@@ -788,7 +790,7 @@ class TrackNotifier extends Notifier<TrackState> {
         hasSearchText: state.hasSearchText,
         isShowingRecentAccess: state.isShowingRecentAccess,
         searchExtensionId: extensionId,
-        selectedSearchFilter: state.selectedSearchFilter,
+        selectedSearchFilter: currentFilter,
       );
     } catch (e, stackTrace) {
       if (!_isRequestValid(requestId)) return;
@@ -798,6 +800,7 @@ class TrackNotifier extends Notifier<TrackState> {
         error: e.toString(),
         hasSearchText: state.hasSearchText,
         isShowingRecentAccess: state.isShowingRecentAccess,
+        selectedSearchFilter: currentFilter,
       );
     }
   }

@@ -130,6 +130,13 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get optionsDefaultSearchTab => 'Tab Pencarian Default';
+
+  @override
+  String get optionsDefaultSearchTabSubtitle =>
+      'Pilih tab yang dibuka lebih dulu untuk hasil pencarian baru.';
+
+  @override
   String get optionsSwitchBack =>
       'Ketuk Deezer atau Spotify untuk beralih dari ekstensi';
 

@@ -18,6 +18,7 @@ final _log = AppLogger('SettingsProvider');
 
 class SettingsNotifier extends Notifier<AppSettings> {
   static final RegExp _isoRegionPattern = RegExp(r'^[A-Z]{2}$');
+  static const Set<String> _searchTabValues = {'all', 'track', 'album'};
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -42,11 +43,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
           _sanitizeDownloadFallbackExtensionIds(
             loaded.downloadFallbackExtensionIds,
           );
+      final sanitizedDefaultSearchTab = _normalizeDefaultSearchTab(
+        loaded.defaultSearchTab,
+      );
       state = loaded.copyWith(
         downloadFallbackExtensionIds: sanitizedDownloadFallbackExtensionIds,
         clearDownloadFallbackExtensionIds:
             loaded.downloadFallbackExtensionIds != null &&
             sanitizedDownloadFallbackExtensionIds == null,
+        defaultSearchTab: sanitizedDefaultSearchTab,
       );
 
       await _runMigrations(prefs);
@@ -185,6 +190,12 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final normalized = region.trim().toUpperCase();
     if (_isoRegionPattern.hasMatch(normalized)) return normalized;
     return 'US';
+  }
+
+  String _normalizeDefaultSearchTab(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (_searchTabValues.contains(normalized)) return normalized;
+    return 'all';
   }
 
   Future<void> _normalizeSongLinkRegionIfNeeded() async {
@@ -405,6 +416,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
     } else {
       state = state.copyWith(searchProvider: provider);
     }
+    _saveSettings();
+  }
+
+  void setDefaultSearchTab(String tab) {
+    state = state.copyWith(defaultSearchTab: _normalizeDefaultSearchTab(tab));
     _saveSettings();
   }
 

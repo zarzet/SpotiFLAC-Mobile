@@ -126,6 +126,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get optionsDefaultSearchTab => 'Default Search Tab';
+
+  @override
+  String get optionsDefaultSearchTabSubtitle =>
+      'Choose which tab opens first for new search results.';
+
+  @override
   String get optionsSwitchBack => 'Deezer 또는 Spotify를 탭하여 확장 기능에서 다시 전환하세요.';
 
   @override

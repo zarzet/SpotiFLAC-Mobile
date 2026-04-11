@@ -158,6 +158,14 @@
       }
     }
   },
+  "optionsDefaultSearchTab": "Default Search Tab",
+  "@optionsDefaultSearchTab": {
+    "description": "Title for the preferred default search tab setting"
+  },
+  "optionsDefaultSearchTabSubtitle": "Choose which tab opens first for new search results.",
+  "@optionsDefaultSearchTabSubtitle": {
+    "description": "Subtitle for the preferred default search tab setting"
+  },
   "optionsSwitchBack": "Tap Deezer or Spotify to switch back from extension",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
