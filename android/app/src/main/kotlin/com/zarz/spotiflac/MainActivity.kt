@@ -2154,7 +2154,6 @@ class MainActivity: FlutterFragmentActivity() {
                                 result.error("saf_pending", "SAF picker already active", null)
                                 return@launch
                             }
-                            pendingSafTreeResult = result
                             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
                             intent.addFlags(
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
@@ -2162,7 +2161,24 @@ class MainActivity: FlutterFragmentActivity() {
                                     Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
                                     Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
                             )
-                            safTreeLauncher.launch(intent)
+                            val resolver = intent.resolveActivity(packageManager)
+                            if (resolver == null) {
+                                result.error("saf_unavailable", "No folder picker available on this device", null)
+                                return@launch
+                            }
+                            pendingSafTreeResult = result
+                            try {
+                                android.util.Log.i("SpotiFLAC", "Launching SAF picker via $resolver")
+                                safTreeLauncher.launch(intent)
+                            } catch (e: Exception) {
+                                pendingSafTreeResult = null
+                                android.util.Log.e("SpotiFLAC", "Failed to launch SAF picker: ${e.message}", e)
+                                result.error(
+                                    "saf_launch_failed",
+                                    e.message ?: "Failed to launch folder picker",
+                                    null
+                                )
+                            }
                         }
                         "safExists" -> {
                             val uriStr = call.argument<String>("uri") ?: ""

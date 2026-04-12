@@ -10,6 +10,9 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
+import 'package:spotiflac_android/utils/logger.dart';
+
+final _log = AppLogger('SetupScreen');
 
 class SetupScreen extends ConsumerStatefulWidget {
   const SetupScreen({super.key});
@@ -233,7 +236,21 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       if (Platform.isIOS) {
         await _showIOSDirectoryOptions();
       } else if (Platform.isAndroid) {
-        final result = await PlatformBridge.pickSafTree();
+        Map<String, dynamic>? result;
+        try {
+          result = await PlatformBridge.pickSafTree();
+        } catch (e) {
+          _log.w('Failed to open Android SAF picker: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  context.l10n.snackbarCannotOpenFile(e.toString()),
+                ),
+              ),
+            );
+          }
+        }
         if (result != null) {
           final treeUri = result['tree_uri'] as String? ?? '';
           final displayName = result['display_name'] as String? ?? '';

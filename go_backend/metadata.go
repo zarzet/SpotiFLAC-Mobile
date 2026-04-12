@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -1242,6 +1243,281 @@ func readM4AFreeformValue(f *os.File, parent atomHeader, fileSize int64) (string
 	}
 
 	return nameValue, dataValue, nil
+}
+
+type m4aMetadataPath struct {
+	moov atomHeader
+	udta *atomHeader
+	meta atomHeader
+	ilst atomHeader
+}
+
+func findM4AMetadataPath(f *os.File, fileSize int64) (m4aMetadataPath, error) {
+	moov, found, err := findAtomInRange(f, 0, fileSize, "moov", fileSize)
+	if err != nil || !found {
+		return m4aMetadataPath{}, fmt.Errorf("moov not found")
+	}
+
+	moovBodyStart := moov.offset + moov.headerSize
+	moovBodySize := moov.size - moov.headerSize
+
+	if udta, ok, _ := findAtomInRange(f, moovBodyStart, moovBodySize, "udta", fileSize); ok {
+		udtaBodyStart := udta.offset + udta.headerSize
+		udtaBodySize := udta.size - udta.headerSize
+		if meta, ok2, _ := findAtomInRange(f, udtaBodyStart, udtaBodySize, "meta", fileSize); ok2 {
+			metaBodyStart := meta.offset + meta.headerSize + 4
+			metaBodySize := meta.size - meta.headerSize - 4
+			if ilst, ok3, _ := findAtomInRange(f, metaBodyStart, metaBodySize, "ilst", fileSize); ok3 {
+				udtaCopy := udta
+				return m4aMetadataPath{
+					moov: moov,
+					udta: &udtaCopy,
+					meta: meta,
+					ilst: ilst,
+				}, nil
+			}
+		}
+	}
+
+	if meta, ok, _ := findAtomInRange(f, moovBodyStart, moovBodySize, "meta", fileSize); ok {
+		metaBodyStart := meta.offset + meta.headerSize + 4
+		metaBodySize := meta.size - meta.headerSize - 4
+		if ilst, ok2, _ := findAtomInRange(f, metaBodyStart, metaBodySize, "ilst", fileSize); ok2 {
+			return m4aMetadataPath{
+				moov: moov,
+				meta: meta,
+				ilst: ilst,
+			}, nil
+		}
+	}
+
+	return m4aMetadataPath{}, fmt.Errorf("ilst not found (tried moov>udta>meta>ilst and moov>meta>ilst)")
+}
+
+func buildM4AAtom(typ string, payload []byte) []byte {
+	size := int64(8 + len(payload))
+	buf := make([]byte, 8+len(payload))
+	binary.BigEndian.PutUint32(buf[0:4], uint32(size))
+	copy(buf[4:8], []byte(typ))
+	copy(buf[8:], payload)
+	return buf
+}
+
+func buildM4AFreeformAtom(name, value string) []byte {
+	meanPayload := append([]byte{0, 0, 0, 0}, []byte("com.apple.iTunes")...)
+	namePayload := append([]byte{0, 0, 0, 0}, []byte(name)...)
+	dataPayload := make([]byte, 8+len(value))
+	binary.BigEndian.PutUint32(dataPayload[0:4], 1) // UTF-8 text
+	copy(dataPayload[8:], []byte(value))
+
+	payload := append([]byte{}, buildM4AAtom("mean", meanPayload)...)
+	payload = append(payload, buildM4AAtom("name", namePayload)...)
+	payload = append(payload, buildM4AAtom("data", dataPayload)...)
+	return buildM4AAtom("----", payload)
+}
+
+func buildITunNORMTag(trackGain, trackPeak string) string {
+	gainDb, ok := parseReplayGainDb(trackGain)
+	if !ok {
+		return ""
+	}
+	peakLinear, ok := parseReplayGainPeak(trackPeak)
+	if !ok {
+		return ""
+	}
+
+	clamp := func(v int64) int64 {
+		if v < 0 {
+			return 0
+		}
+		if v > 65534 {
+			return 65534
+		}
+		return v
+	}
+
+	g1 := clamp(int64(math.Round(math.Pow(10, gainDb/-10.0) * 1000.0)))
+	g2 := clamp(int64(math.Round(math.Pow(10, gainDb/-10.0) * 2500.0)))
+	peak := clamp(int64(math.Round(peakLinear * 32768.0)))
+	values := []int64{g1, g1, g2, g2, 0, 0, peak, peak, 0, 0}
+	parts := make([]string, 0, len(values))
+	for _, value := range values {
+		parts = append(parts, strings.ToUpper(fmt.Sprintf("%08x", value)))
+	}
+	return strings.Join(parts, " ")
+}
+
+func parseReplayGainDb(value string) (float64, bool) {
+	match := regexp.MustCompile(`([+-]?\d+(?:\.\d+)?)`).FindStringSubmatch(strings.TrimSpace(value))
+	if len(match) < 2 {
+		return 0, false
+	}
+	parsed, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return 0, false
+	}
+	return parsed, true
+}
+
+func parseReplayGainPeak(value string) (float64, bool) {
+	parsed, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+	if err != nil || parsed <= 0 {
+		return 0, false
+	}
+	return parsed, true
+}
+
+func collectM4AReplayGainFields(fields map[string]string) map[string]string {
+	result := map[string]string{}
+	if value := strings.TrimSpace(fields["replaygain_track_gain"]); value != "" {
+		result["replaygain_track_gain"] = value
+	}
+	if value := strings.TrimSpace(fields["replaygain_track_peak"]); value != "" {
+		result["replaygain_track_peak"] = value
+	}
+	if value := strings.TrimSpace(fields["replaygain_album_gain"]); value != "" {
+		result["replaygain_album_gain"] = value
+	}
+	if value := strings.TrimSpace(fields["replaygain_album_peak"]); value != "" {
+		result["replaygain_album_peak"] = value
+	}
+
+	if norm := buildITunNORMTag(result["replaygain_track_gain"], result["replaygain_track_peak"]); norm != "" {
+		result["iTunNORM"] = norm
+	}
+
+	return result
+}
+
+func writeAtomSize(buf []byte, header atomHeader, newSize int64) error {
+	if newSize <= 0 {
+		return fmt.Errorf("invalid size for %s", header.typ)
+	}
+	if header.headerSize == 16 {
+		if int(header.offset)+16 > len(buf) {
+			return io.ErrUnexpectedEOF
+		}
+		binary.BigEndian.PutUint32(buf[header.offset:header.offset+4], 1)
+		binary.BigEndian.PutUint64(buf[header.offset+8:header.offset+16], uint64(newSize))
+		return nil
+	}
+	if newSize > math.MaxUint32 {
+		return fmt.Errorf("atom %s too large for 32-bit header", header.typ)
+	}
+	if int(header.offset)+8 > len(buf) {
+		return io.ErrUnexpectedEOF
+	}
+	binary.BigEndian.PutUint32(buf[header.offset:header.offset+4], uint32(newSize))
+	return nil
+}
+
+func EditM4AReplayGain(filePath string, fields map[string]string) error {
+	replayGainFields := collectM4AReplayGainFields(fields)
+	if len(replayGainFields) == 0 {
+		return nil
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+
+	path, err := findM4AMetadataPath(f, info.Size())
+	if err != nil {
+		return err
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	bodyStart := path.ilst.offset + path.ilst.headerSize
+	bodyEnd := path.ilst.offset + path.ilst.size
+	newBody := make([]byte, 0, int(path.ilst.size))
+	targets := map[string]struct{}{
+		"REPLAYGAIN_TRACK_GAIN": {},
+		"REPLAYGAIN_TRACK_PEAK": {},
+		"REPLAYGAIN_ALBUM_GAIN": {},
+		"REPLAYGAIN_ALBUM_PEAK": {},
+		"ITUNNORM":              {},
+	}
+
+	for pos := bodyStart; pos+8 <= bodyEnd; {
+		header, readErr := readAtomHeaderAt(f, pos, info.Size())
+		if readErr != nil {
+			return readErr
+		}
+		if header.size == 0 {
+			header.size = bodyEnd - pos
+		}
+		if header.size < header.headerSize {
+			return fmt.Errorf("invalid atom size for %s", header.typ)
+		}
+
+		keep := true
+		if header.typ == "----" {
+			name, _, freeformErr := readM4AFreeformValue(f, header, info.Size())
+			if freeformErr == nil {
+				if _, ok := targets[strings.ToUpper(strings.TrimSpace(name))]; ok {
+					keep = false
+				}
+			}
+		}
+		if keep {
+			newBody = append(newBody, data[pos:pos+header.size]...)
+		}
+
+		pos += header.size
+	}
+
+	order := []string{
+		"replaygain_track_gain",
+		"replaygain_track_peak",
+		"replaygain_album_gain",
+		"replaygain_album_peak",
+		"iTunNORM",
+	}
+	for _, key := range order {
+		value := strings.TrimSpace(replayGainFields[key])
+		if value == "" {
+			continue
+		}
+		name := key
+		if key != "iTunNORM" {
+			name = strings.ToLower(key)
+		}
+		newBody = append(newBody, buildM4AFreeformAtom(name, value)...)
+	}
+
+	newIlst := buildM4AAtom("ilst", newBody)
+	updated := append([]byte{}, data[:path.ilst.offset]...)
+	updated = append(updated, newIlst...)
+	updated = append(updated, data[path.ilst.offset+path.ilst.size:]...)
+
+	delta := int64(len(newIlst)) - path.ilst.size
+	if err := writeAtomSize(updated, path.ilst, path.ilst.size+delta); err != nil {
+		return err
+	}
+	if err := writeAtomSize(updated, path.meta, path.meta.size+delta); err != nil {
+		return err
+	}
+	if path.udta != nil {
+		if err := writeAtomSize(updated, *path.udta, path.udta.size+delta); err != nil {
+			return err
+		}
+	}
+	if err := writeAtomSize(updated, path.moov, path.moov.size+delta); err != nil {
+		return err
+	}
+
+	return os.WriteFile(filePath, updated, 0o644)
 }
 
 func extractLyricsFromSidecarLRC(filePath string) (string, error) {

@@ -1485,6 +1485,7 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 	lower := strings.ToLower(filePath)
 	isFlac := strings.HasSuffix(lower, ".flac")
 	isApeFile := strings.HasSuffix(lower, ".ape") || strings.HasSuffix(lower, ".wv") || strings.HasSuffix(lower, ".mpc")
+	isM4AFile := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".mp4") || strings.HasSuffix(lower, ".m4b")
 	coverPath := strings.TrimSpace(fields["cover_path"])
 
 	if isFlac {
@@ -1597,6 +1598,19 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 		return string(jsonBytes), nil
 	}
 
+	if isM4AFile && hasOnlyM4AReplayGainFields(fields) {
+		if err := EditM4AReplayGain(filePath, fields); err != nil {
+			return "", fmt.Errorf("failed to write M4A metadata: %w", err)
+		}
+
+		resp := map[string]any{
+			"success": true,
+			"method":  "native_m4a_replaygain",
+		}
+		jsonBytes, _ := json.Marshal(resp)
+		return string(jsonBytes), nil
+	}
+
 	resp := map[string]any{
 		"success": true,
 		"method":  "ffmpeg",
@@ -1604,6 +1618,29 @@ func EditFileMetadata(filePath, metadataJSON string) (string, error) {
 	}
 	jsonBytes, _ := json.Marshal(resp)
 	return string(jsonBytes), nil
+}
+
+func hasOnlyM4AReplayGainFields(fields map[string]string) bool {
+	allowed := map[string]struct{}{
+		"replaygain_track_gain": {},
+		"replaygain_track_peak": {},
+		"replaygain_album_gain": {},
+		"replaygain_album_peak": {},
+	}
+
+	hasReplayGain := false
+	for key, value := range fields {
+		if strings.TrimSpace(value) == "" {
+			continue
+		}
+		if _, ok := allowed[strings.ToLower(strings.TrimSpace(key))]; ok {
+			hasReplayGain = true
+			continue
+		}
+		return false
+	}
+
+	return hasReplayGain
 }
 
 func SetDownloadDirectory(path string) error {

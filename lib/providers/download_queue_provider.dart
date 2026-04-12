@@ -3910,11 +3910,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
       }
 
-      // ── ReplayGain (MP3/Opus: scan before FFmpeg, add to metadata) ─
+      ReplayGainResult? scannedReplayGain;
+
+      // ── ReplayGain (MP3/Opus/M4A: scan before FFmpeg, add to metadata) ─
       if (settings.embedReplayGain && !isFlac) {
         try {
           final rgResult = await FFmpegService.scanReplayGain(filePath);
           if (rgResult != null) {
+            scannedReplayGain = rgResult;
             metadata['REPLAYGAIN_TRACK_GAIN'] = rgResult.trackGain;
             metadata['REPLAYGAIN_TRACK_PEAK'] = rgResult.trackPeak;
             _log.d(
@@ -3965,6 +3968,20 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         _log.d('Metadata embedded to $format via FFmpeg');
       } else {
         _log.w('FFmpeg $format metadata embed failed');
+      }
+
+      if (isM4a && settings.embedReplayGain && scannedReplayGain != null) {
+        try {
+          await PlatformBridge.editFileMetadata(filePath, {
+            'replaygain_track_gain': scannedReplayGain.trackGain,
+            'replaygain_track_peak': scannedReplayGain.trackPeak,
+          });
+          _log.d(
+            'ReplayGain compatibility tags written for $format: gain=${scannedReplayGain.trackGain}, peak=${scannedReplayGain.trackPeak}',
+          );
+        } catch (e) {
+          _log.w('Failed to write native ReplayGain tags for $format: $e');
+        }
       }
 
       // ── FLAC post-processing ────────────────────────────────────────

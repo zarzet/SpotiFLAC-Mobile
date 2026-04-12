@@ -2169,19 +2169,6 @@ class FFmpegService {
         case 'UNSYNCEDLYRICS':
           m4aMap['lyrics'] = value;
           break;
-        // ReplayGain as iTunes freeform atoms (com.apple.iTunes:replaygain_*)
-        case 'REPLAYGAINTRACKGAIN':
-          m4aMap['REPLAYGAIN_TRACK_GAIN'] = value;
-          break;
-        case 'REPLAYGAINTRACKPEAK':
-          m4aMap['REPLAYGAIN_TRACK_PEAK'] = value;
-          break;
-        case 'REPLAYGAINALBUMGAIN':
-          m4aMap['REPLAYGAIN_ALBUM_GAIN'] = value;
-          break;
-        case 'REPLAYGAINALBUMPEAK':
-          m4aMap['REPLAYGAIN_ALBUM_PEAK'] = value;
-          break;
       }
     }
 
