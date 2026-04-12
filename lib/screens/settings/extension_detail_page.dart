@@ -8,6 +8,7 @@ import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ExtensionDetailPage extends ConsumerStatefulWidget {
   final String extensionId;
@@ -399,6 +400,7 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
                         onChanged: (value) =>
                             _updateSetting(setting.key, value),
                         extensionId: widget.extensionId,
+                        onActionPayload: _handleExtensionActionPayload,
                       );
                     }).toList(),
                   ),
@@ -440,6 +442,25 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
         .setExtensionSettings(widget.extensionId, _settings);
   }
 
+  /// Extensions may return `setting_updates` from button actions (e.g. OAuth URL field).
+  Future<void> _handleExtensionActionPayload(Map<String, dynamic> payload) async {
+    final raw = payload['setting_updates'];
+    if (raw is! Map) return;
+    final partial = <String, dynamic>{};
+    for (final entry in raw.entries) {
+      partial[entry.key.toString()] = entry.value;
+    }
+    if (partial.isEmpty) return;
+    final merged = Map<String, dynamic>.from(_settings);
+    merged.addAll(partial);
+    await ref
+        .read(extensionProvider.notifier)
+        .setExtensionSettings(widget.extensionId, merged);
+    if (mounted) {
+      setState(() => _settings = merged);
+    }
+  }
+
   Future<void> _confirmRemove(BuildContext context) async {
     final colorScheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
@@ -470,6 +491,41 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
         Navigator.pop(this.context);
       }
     }
+  }
+}
+
+/// Long OAuth URLs: selectable text so users can copy without relying on snackbars.
+class _OauthLoginLinkPreview extends StatelessWidget {
+  final String? value;
+  final ColorScheme colorScheme;
+
+  const _OauthLoginLinkPreview({
+    required this.value,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) {
+      return Text(
+        'Tap Connect to Spotify to fill this field.',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+      );
+    }
+    return SelectionArea(
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.primary,
+              fontFamily: 'monospace',
+              fontSize: 11,
+            ),
+      ),
+    );
   }
 }
 
@@ -640,12 +696,14 @@ class _SettingItem extends StatefulWidget {
   final bool showDivider;
   final ValueChanged<dynamic> onChanged;
   final String extensionId;
+  final Future<void> Function(Map<String, dynamic> payload)? onActionPayload;
 
   const _SettingItem({
     required this.setting,
     required this.value,
     required this.onChanged,
     required this.extensionId,
+    this.onActionPayload,
     this.showDivider = true,
   });
 
@@ -767,11 +825,17 @@ class _SettingItemState extends State<_SettingItem> {
                       if (widget.setting.type == 'string' ||
                           widget.setting.type == 'number') ...[
                         const SizedBox(height: 4),
-                        Text(
-                          widget.value?.toString() ?? 'Not set',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: colorScheme.primary),
-                        ),
+                        if (widget.setting.key == 'oauth_login_url')
+                          _OauthLoginLinkPreview(
+                            value: widget.value?.toString(),
+                            colorScheme: colorScheme,
+                          )
+                        else
+                          Text(
+                            widget.value?.toString() ?? 'Not set',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.primary),
+                          ),
                       ],
                     ],
                   ),
@@ -810,15 +874,45 @@ class _SettingItemState extends State<_SettingItem> {
       );
 
       if (context.mounted) {
-        final success = result['success'] as bool? ?? false;
+        // Go may return either a flat map or { success, result: { ... } }.
+        Map<String, dynamic> payload = result;
+        final nested = result['result'];
+        if (nested is Map) {
+          payload = Map<String, dynamic>.from(nested as Map);
+        }
+
+        final success = payload['success'] as bool? ?? false;
         if (!success) {
-          final error = result['error'] as String? ?? 'Action failed';
+          final error =
+              payload['error'] as String? ??
+              result['error'] as String? ??
+              'Action failed';
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(error)));
         } else {
-          final message = result['message'] as String?;
-          if (message != null) {
+          if (widget.onActionPayload != null) {
+            await widget.onActionPayload!(payload);
+          }
+          final openAuth = payload['open_auth_url'] as String?;
+          if (openAuth != null && openAuth.isNotEmpty) {
+            final uri = Uri.parse(openAuth);
+            final launched = await launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+            if (!launched && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    context.l10n.snackbarError('Could not open browser'),
+                  ),
+                ),
+              );
+            }
+          }
+          final message = payload['message'] as String?;
+          if (message != null && message.isNotEmpty && context.mounted) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(message)));

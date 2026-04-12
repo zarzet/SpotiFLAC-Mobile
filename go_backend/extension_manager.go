@@ -1053,14 +1053,28 @@ func (m *extensionManager) InvokeAction(extensionID string, actionName string) (
 	}
 	defer ext.VMMu.Unlock()
 
+	// Merge extension return values onto the top-level JSON object so Flutter can read
+	// message, open_auth_url, setting_updates without unwrapping a nested "result" key.
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.%s === 'function') {
 				try {
 					var result = extension.%s();
 					if (result && typeof result.then === 'function') {
-						// Handle promise - return pending status
 						return { success: true, pending: true, message: 'Action started' };
+					}
+					if (result !== null && result !== undefined && typeof result === 'object') {
+						var isArr = false;
+						if (typeof Array !== 'undefined' && Array.isArray) {
+							isArr = Array.isArray(result);
+						}
+						if (!isArr) {
+							var out = { success: true };
+							for (var k in result) {
+								out[k] = result[k];
+							}
+							return out;
+						}
 					}
 					return { success: true, result: result };
 				} catch (e) {

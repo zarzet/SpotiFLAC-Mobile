@@ -250,7 +250,17 @@ func (s *extensionStore) fetchRegistry(forceRefresh bool) (*storeRegistry, error
 	LogInfo("ExtensionStore", "Fetching registry from %s", s.registryURL)
 
 	client := NewHTTPClientWithTimeout(30 * time.Second)
-	resp, err := client.Get(s.registryURL)
+	req, err := http.NewRequest(http.MethodGet, s.registryURL, nil)
+	if err != nil {
+		if s.cache != nil {
+			LogWarn("ExtensionStore", "Failed to build registry request, using cached registry: %v", err)
+			return s.cache, nil
+		}
+		return nil, fmt.Errorf("failed to build registry request: %w", err)
+	}
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Pragma", "no-cache")
+	resp, err := client.Do(req)
 	if err != nil {
 		if s.cache != nil {
 			LogWarn("ExtensionStore", "Network error, using cached registry: %v", err)
@@ -345,7 +355,13 @@ func (s *extensionStore) downloadExtension(extensionID string, destPath string) 
 	LogInfo("ExtensionStore", "Downloading %s from %s", ext.getDisplayName(), ext.getDownloadURL())
 
 	client := NewHTTPClientWithTimeout(5 * time.Minute)
-	resp, err := client.Get(ext.getDownloadURL())
+	req, err := http.NewRequest(http.MethodGet, ext.getDownloadURL(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to build download request: %w", err)
+	}
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Pragma", "no-cache")
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}

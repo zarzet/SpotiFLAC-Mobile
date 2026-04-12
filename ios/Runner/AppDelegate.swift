@@ -69,7 +69,53 @@ import Gobackend  // Import Go framework
         )
         
         GeneratedPluginRegistrant.register(with: self)
+        if let url = launchOptions?[.url] as? URL {
+            handleExtensionOAuthRedirect(url: url)
+        }
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    /// PKCE OAuth return URL: spotiflac://callback?code=...&state=<extension_id>
+    private func handleExtensionOAuthRedirect(url: URL) {
+        guard let scheme = url.scheme?.lowercased(), scheme == "spotiflac" else { return }
+        let host = (url.host ?? "").lowercased()
+        let path = url.path.lowercased()
+        let ok =
+            host == "callback" || host == "spotify-callback" || path.contains("callback")
+        guard ok else { return }
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return
+        }
+        let q = components.queryItems ?? []
+        let code =
+            q.first { $0.name == "code" }?.value?.trimmingCharacters(
+                in: .whitespacesAndNewlines) ?? ""
+        let state =
+            q.first { $0.name == "state" }?.value?.trimmingCharacters(
+                in: .whitespacesAndNewlines) ?? ""
+        if code.isEmpty { return }
+        if state.isEmpty {
+            NSLog("SpotiFLAC: Extension OAuth redirect missing state (extension id)")
+            return
+        }
+        streamQueue.async {
+            var err: NSError?
+            GobackendSetExtensionAuthCodeByID(state, code)
+            _ = GobackendInvokeExtensionActionJSON(state, "completeSpotifyLogin", &err)
+            if let err = err {
+                NSLog(
+                    "SpotiFLAC: Extension OAuth complete failed: \(err.localizedDescription)")
+            }
+        }
+    }
+
+    override func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        handleExtensionOAuthRedirect(url: url)
+        return super.application(app, open: url, options: options)
     }
 
     deinit {

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
@@ -1951,9 +1952,54 @@ class MainActivity: FlutterFragmentActivity() {
     // We handle these URLs ourselves via receive_sharing_intent + ShareIntentService.
     override fun shouldHandleDeeplinking(): Boolean = false
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleExtensionOAuthIntent(intent)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleExtensionOAuthIntent(intent)
+    }
+
+    /**
+     * Deliver Spotify (or other) OAuth authorization code to the extension runtime
+     * and run its token exchange (e.g. completeSpotifyLogin). State must be the extension id.
+     */
+    private fun handleExtensionOAuthIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (!uri.scheme.equals("spotiflac", ignoreCase = true)) {
+            return
+        }
+        val host = (uri.host ?: "").lowercase(Locale.US)
+        val path = (uri.path ?: "").lowercase(Locale.US)
+        val isCallback =
+            host == "callback" ||
+                host == "spotify-callback" ||
+                path.contains("callback")
+        if (!isCallback) {
+            return
+        }
+        val code = uri.getQueryParameter("code")?.trim().orEmpty()
+        if (code.isEmpty()) {
+            return
+        }
+        val extId = uri.getQueryParameter("state")?.trim().orEmpty()
+        if (extId.isEmpty()) {
+            android.util.Log.w("SpotiFLAC", "Extension OAuth redirect missing state (extension id)")
+            return
+        }
+        intent.data = null
+        scope.launch(Dispatchers.IO) {
+            try {
+                Gobackend.setExtensionAuthCodeByID(extId, code)
+                val json = Gobackend.invokeExtensionActionJSON(extId, "completeSpotifyLogin")
+                android.util.Log.i("SpotiFLAC", "Extension OAuth complete for $extId: $json")
+            } catch (e: Exception) {
+                android.util.Log.w("SpotiFLAC", "Extension OAuth failed: ${e.message}")
+            }
+        }
     }
 
     override fun onDestroy() {
