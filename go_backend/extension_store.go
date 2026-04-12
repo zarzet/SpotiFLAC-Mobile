@@ -26,7 +26,6 @@ type storeExtension struct {
 	Name             string   `json:"name"`
 	DisplayName      string   `json:"display_name,omitempty"`
 	Version          string   `json:"version"`
-	Author           string   `json:"author"`
 	Description      string   `json:"description"`
 	DownloadURL      string   `json:"download_url,omitempty"`
 	IconURL          string   `json:"icon_url,omitempty"`
@@ -83,7 +82,6 @@ type storeExtensionResponse struct {
 	Name             string   `json:"name"`
 	DisplayName      string   `json:"display_name"`
 	Version          string   `json:"version"`
-	Author           string   `json:"author"`
 	Description      string   `json:"description"`
 	DownloadURL      string   `json:"download_url"`
 	IconURL          string   `json:"icon_url,omitempty"`
@@ -103,7 +101,6 @@ func (e *storeExtension) toResponse() storeExtensionResponse {
 		Name:          e.Name,
 		DisplayName:   e.getDisplayName(),
 		Version:       e.Version,
-		Author:        e.Author,
 		Description:   e.Description,
 		DownloadURL:   e.getDownloadURL(),
 		IconURL:       e.getIconURL(),
@@ -481,8 +478,7 @@ func (s *extensionStore) searchExtensions(query string, category string) ([]stor
 		if query != "" {
 			if !containsIgnoreCase(ext.Name, queryLower) &&
 				!containsIgnoreCase(ext.DisplayName, queryLower) &&
-				!containsIgnoreCase(ext.Description, queryLower) &&
-				!containsIgnoreCase(ext.Author, queryLower) {
+				!containsIgnoreCase(ext.Description, queryLower) {
 				found := false
 				for _, tag := range ext.Tags {
 					if containsIgnoreCase(tag, queryLower) {

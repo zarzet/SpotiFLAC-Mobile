@@ -105,7 +105,6 @@ type ExtensionManifest struct {
 	Name                   string                 `json:"name"`
 	DisplayName            string                 `json:"displayName"`
 	Version                string                 `json:"version"`
-	Author                 string                 `json:"author"`
 	Description            string                 `json:"description"`
 	Homepage               string                 `json:"homepage,omitempty"`
 	Icon                   string                 `json:"icon,omitempty"`
@@ -153,10 +152,6 @@ func (m *ExtensionManifest) Validate() error {
 
 	if strings.TrimSpace(m.Version) == "" {
 		return &ManifestValidationError{Field: "version", Message: "version is required"}
-	}
-
-	if strings.TrimSpace(m.Author) == "" {
-		return &ManifestValidationError{Field: "author", Message: "author is required"}
 	}
 
 	if strings.TrimSpace(m.Description) == "" {

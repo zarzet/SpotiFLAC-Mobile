@@ -12,7 +12,6 @@ func TestParseManifest_Valid(t *testing.T) {
 		"name": "test-provider",
 		"displayName": "Test Provider",
 		"version": "1.0.0",
-		"author": "Test Author",
 		"description": "A test extension",
 		"type": ["metadata_provider"],
 		"permissions": {
@@ -46,7 +45,6 @@ func TestParseManifest_Valid(t *testing.T) {
 func TestParseManifest_MissingName(t *testing.T) {
 	invalidManifest := `{
 		"version": "1.0.0",
-		"author": "Test Author",
 		"description": "A test extension",
 		"type": ["metadata_provider"]
 	}`
@@ -61,7 +59,6 @@ func TestParseManifest_MissingType(t *testing.T) {
 	invalidManifest := `{
 		"name": "test-provider",
 		"version": "1.0.0",
-		"author": "Test Author",
 		"description": "A test extension"
 	}`
 

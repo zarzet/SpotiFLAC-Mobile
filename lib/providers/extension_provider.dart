@@ -20,7 +20,6 @@ class Extension {
   final String name;
   final String displayName;
   final String version;
-  final String author;
   final String description;
   final bool enabled;
   final String status;
@@ -45,7 +44,6 @@ class Extension {
     required this.name,
     required this.displayName,
     required this.version,
-    required this.author,
     required this.description,
     required this.enabled,
     required this.status,
@@ -73,7 +71,6 @@ class Extension {
       displayName:
           json['display_name'] as String? ?? json['name'] as String? ?? '',
       version: json['version'] as String? ?? '0.0.0',
-      author: json['author'] as String? ?? 'Unknown',
       description: json['description'] as String? ?? '',
       enabled: json['enabled'] as bool? ?? false,
       status: json['status'] as String? ?? 'loaded',
@@ -124,7 +121,6 @@ class Extension {
     String? name,
     String? displayName,
     String? version,
-    String? author,
     String? description,
     bool? enabled,
     String? status,
@@ -149,7 +145,6 @@ class Extension {
       name: name ?? this.name,
       displayName: displayName ?? this.displayName,
       version: version ?? this.version,
-      author: author ?? this.author,
       description: description ?? this.description,
       enabled: enabled ?? this.enabled,
       status: status ?? this.status,

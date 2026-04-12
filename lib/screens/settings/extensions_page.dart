@@ -425,7 +425,7 @@ class _ExtensionItem extends StatelessWidget {
                         hasError
                             ? extension.errorMessage ??
                                   context.l10n.extensionsErrorLoading
-                            : 'v${extension.version} ${context.l10n.extensionsAuthor(extension.author)}',
+                            : 'v${extension.version}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: hasError
                               ? colorScheme.error

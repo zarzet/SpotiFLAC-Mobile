@@ -171,12 +171,6 @@ class _ExtensionDetailsScreenState
                                   color: colorScheme.onSurface,
                                 ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            context.l10n.extensionsAuthor(ext.author),
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
                         ],
                       ),
                     ),

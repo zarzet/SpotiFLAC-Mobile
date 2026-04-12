@@ -789,13 +789,6 @@ class _ExtensionItem extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'by ${extension.author}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
                       if (extension.requiresNewerApp) ...[
                         const SizedBox(height: 4),
                         Container(

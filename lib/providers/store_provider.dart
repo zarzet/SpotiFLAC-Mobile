@@ -63,7 +63,6 @@ class StoreExtension {
   final String name;
   final String displayName;
   final String version;
-  final String author;
   final String description;
   final String downloadUrl;
   final String? iconUrl;
@@ -81,7 +80,6 @@ class StoreExtension {
     required this.name,
     required this.displayName,
     required this.version,
-    required this.author,
     required this.description,
     required this.downloadUrl,
     this.iconUrl,
@@ -102,7 +100,6 @@ class StoreExtension {
       displayName:
           json['display_name'] as String? ?? json['name'] as String? ?? '',
       version: json['version'] as String? ?? '0.0.0',
-      author: json['author'] as String? ?? 'Unknown',
       description: json['description'] as String? ?? '',
       downloadUrl: json['download_url'] as String? ?? '',
       iconUrl: json['icon_url'] as String?,
@@ -194,7 +191,6 @@ class StoreState {
                 e.name.toLowerCase().contains(query) ||
                 e.displayName.toLowerCase().contains(query) ||
                 e.description.toLowerCase().contains(query) ||
-                e.author.toLowerCase().contains(query) ||
                 e.tags.any((t) => t.toLowerCase().contains(query)),
           )
           .toList();

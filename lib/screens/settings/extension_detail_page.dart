@@ -49,7 +49,6 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
         name: '',
         displayName: 'Unknown',
         version: '0.0.0',
-        author: 'Unknown',
         description: '',
         enabled: false,
         status: 'error',
@@ -205,10 +204,6 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
                         ),
                       ],
                       const SizedBox(height: 16),
-                      _InfoRow(
-                        label: context.l10n.extensionAuthor,
-                        value: extension.author,
-                      ),
                       _InfoRow(
                         label: context.l10n.extensionId,
                         value: extension.id,
