@@ -1473,7 +1473,7 @@ class FFmpegService {
     required String m4aPath,
     String? coverPath,
     Map<String, String>? metadata,
-    bool preserveMetadata = false,
+    bool preserveMetadata = true,
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.m4a');
