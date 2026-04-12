@@ -803,9 +803,9 @@ class _MetadataSourceSelector extends ConsumerWidget {
                   isSelected: searchProvider.isEmpty,
                   onTap: () {
                     if (hasNonDefaultProvider) {
-                      ref.read(settingsProvider.notifier).setSearchProvider(
-                        null,
-                      );
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setSearchProvider(null);
                     }
                   },
                 ),
@@ -894,41 +894,50 @@ class _DefaultSearchTabSelector extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Row(
             children: [
-              _SourceChip(
-                icon: Icons.dashboard_outlined,
-                label: context.l10n.historyFilterAll,
-                isSelected: selectedTab == 'all',
-                onTap: () => ref
-                    .read(settingsProvider.notifier)
-                    .setDefaultSearchTab('all'),
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.dashboard_outlined,
+                  label: context.l10n.historyFilterAll,
+                  isSelected: selectedTab == 'all',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setDefaultSearchTab('all'),
+                ),
               ),
-              _SourceChip(
-                icon: Icons.music_note,
-                label: context.l10n.searchSongs,
-                isSelected: selectedTab == 'track',
-                onTap: () => ref
-                    .read(settingsProvider.notifier)
-                    .setDefaultSearchTab('track'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.music_note,
+                  label: context.l10n.searchSongs,
+                  isSelected: selectedTab == 'track',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setDefaultSearchTab('track'),
+                ),
               ),
-              _SourceChip(
-                icon: Icons.person,
-                label: context.l10n.searchArtists,
-                isSelected: selectedTab == 'artist',
-                onTap: () => ref
-                    .read(settingsProvider.notifier)
-                    .setDefaultSearchTab('artist'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.person,
+                  label: context.l10n.searchArtists,
+                  isSelected: selectedTab == 'artist',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setDefaultSearchTab('artist'),
+                ),
               ),
-              _SourceChip(
-                icon: Icons.album,
-                label: context.l10n.searchAlbums,
-                isSelected: selectedTab == 'album',
-                onTap: () => ref
-                    .read(settingsProvider.notifier)
-                    .setDefaultSearchTab('album'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.album,
+                  label: context.l10n.searchAlbums,
+                  isSelected: selectedTab == 'album',
+                  onTap: () => ref
+                      .read(settingsProvider.notifier)
+                      .setDefaultSearchTab('album'),
+                ),
               ),
             ],
           ),
@@ -986,9 +995,7 @@ class _SourceChip extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected
-                      ? FontWeight.w600
-                      : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onSurfaceVariant,
