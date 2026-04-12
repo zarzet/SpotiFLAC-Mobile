@@ -239,6 +239,58 @@ func TestExtensionRuntime_UtilityFunctions(t *testing.T) {
 	if result.String() == "" {
 		t.Error("Expected non-empty JSON string")
 	}
+
+	result, err = vm.RunString(`utils.sleep(1)`)
+	if err != nil {
+		t.Fatalf("sleep failed: %v", err)
+	}
+	if !result.ToBoolean() {
+		t.Error("Expected sleep to complete successfully")
+	}
+
+	runtime.setActiveDownloadItemID("test-item")
+	cancelDownload("test-item")
+	t.Cleanup(func() {
+		clearDownloadCancel("test-item")
+		runtime.clearActiveDownloadItemID()
+	})
+
+	result, err = vm.RunString(`utils.isDownloadCancelled()`)
+	if err != nil {
+		t.Fatalf("isDownloadCancelled failed: %v", err)
+	}
+	if !result.ToBoolean() {
+		t.Error("Expected active download cancellation to be visible to JS")
+	}
+
+	SetAppVersion("4.2.2")
+	t.Cleanup(func() {
+		SetAppVersion("")
+	})
+
+	result, err = vm.RunString(`utils.appVersion()`)
+	if err != nil {
+		t.Fatalf("appVersion failed: %v", err)
+	}
+	if got := result.String(); got != "4.2.2" {
+		t.Fatalf("Expected appVersion 4.2.2, got %q", got)
+	}
+
+	result, err = vm.RunString(`utils.appUserAgent()`)
+	if err != nil {
+		t.Fatalf("appUserAgent failed: %v", err)
+	}
+	if got := result.String(); got != "SpotiFLAC-Mobile/4.2.2" {
+		t.Fatalf("Expected appUserAgent SpotiFLAC-Mobile/4.2.2, got %q", got)
+	}
+
+	result, err = vm.RunString(`utils.sleep(50)`)
+	if err != nil {
+		t.Fatalf("cancel-aware sleep failed: %v", err)
+	}
+	if result.ToBoolean() {
+		t.Error("Expected sleep to abort when download is cancelled")
+	}
 }
 
 func TestExtensionRuntime_SSRFProtection(t *testing.T) {

@@ -171,6 +171,7 @@ class _RecentDonorsCard extends StatelessWidget {
       'R4ND0MIZ3D',
       'Isra',
       'bigJr48',
+      'Mick',
     ];
 
     // Match SettingsGroup color logic

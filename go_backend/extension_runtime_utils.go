@@ -249,6 +249,69 @@ func (r *extensionRuntime) randomUserAgent(call goja.FunctionCall) goja.Value {
 	return r.vm.ToValue(getRandomUserAgent())
 }
 
+func (r *extensionRuntime) appVersion(call goja.FunctionCall) goja.Value {
+	return r.vm.ToValue(GetAppVersion())
+}
+
+func (r *extensionRuntime) appUserAgent(call goja.FunctionCall) goja.Value {
+	return r.vm.ToValue(appUserAgent())
+}
+
+func (r *extensionRuntime) sleep(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) < 1 {
+		return r.vm.ToValue(true)
+	}
+
+	sleepMs := 0
+	switch value := call.Arguments[0].Export().(type) {
+	case int64:
+		sleepMs = int(value)
+	case int32:
+		sleepMs = int(value)
+	case int:
+		sleepMs = value
+	case float64:
+		sleepMs = int(value)
+	default:
+		sleepMs = 0
+	}
+
+	if sleepMs <= 0 {
+		return r.vm.ToValue(true)
+	}
+	if sleepMs > 5*60*1000 {
+		sleepMs = 5 * 60 * 1000
+	}
+
+	itemID := r.getActiveDownloadItemID()
+	deadline := time.Now().Add(time.Duration(sleepMs) * time.Millisecond)
+
+	for {
+		if itemID != "" && isDownloadCancelled(itemID) {
+			return r.vm.ToValue(false)
+		}
+
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return r.vm.ToValue(true)
+		}
+
+		step := 100 * time.Millisecond
+		if remaining < step {
+			step = remaining
+		}
+		time.Sleep(step)
+	}
+}
+
+func (r *extensionRuntime) isDownloadCancelled(call goja.FunctionCall) goja.Value {
+	itemID := r.getActiveDownloadItemID()
+	if itemID == "" {
+		return r.vm.ToValue(false)
+	}
+	return r.vm.ToValue(isDownloadCancelled(itemID))
+}
+
 func (r *extensionRuntime) logDebug(call goja.FunctionCall) goja.Value {
 	msg := r.formatLogArgs(call.Arguments)
 	GoLog("[Extension:%s:DEBUG] %s\n", r.extensionID, msg)

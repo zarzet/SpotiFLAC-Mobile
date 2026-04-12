@@ -101,7 +101,7 @@ func GetCloudflareBypassClient() *http.Client {
 }
 
 func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", userAgentForURL(req.URL))
 
 	resp, err := sharedClient.Do(req)
 	if err == nil {
@@ -129,7 +129,7 @@ func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
 					LogDebug("HTTP", "Cloudflare detected, retrying with Chrome TLS fingerprint...")
 
 					reqCopy := req.Clone(req.Context())
-					reqCopy.Header.Set("User-Agent", getRandomUserAgent())
+					reqCopy.Header.Set("User-Agent", userAgentForURL(reqCopy.URL))
 
 					return cloudflareBypassClient.Do(reqCopy)
 				}
@@ -155,7 +155,7 @@ func DoRequestWithCloudflareBypass(req *http.Request) (*http.Response, error) {
 		LogDebug("HTTP", "TLS error detected, retrying with Chrome TLS fingerprint: %v", err)
 
 		reqCopy := req.Clone(req.Context())
-		reqCopy.Header.Set("User-Agent", getRandomUserAgent())
+		reqCopy.Header.Set("User-Agent", userAgentForURL(reqCopy.URL))
 
 		return cloudflareBypassClient.Do(reqCopy)
 	}

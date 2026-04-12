@@ -413,6 +413,10 @@ func (r *extensionRuntime) RegisterAPIs(vm *goja.Runtime) {
 	utilsObj.Set("decryptBlockCipher", r.decryptBlockCipher)
 	utilsObj.Set("generateKey", r.cryptoGenerateKey)
 	utilsObj.Set("randomUserAgent", r.randomUserAgent)
+	utilsObj.Set("appVersion", r.appVersion)
+	utilsObj.Set("appUserAgent", r.appUserAgent)
+	utilsObj.Set("sleep", r.sleep)
+	utilsObj.Set("isDownloadCancelled", r.isDownloadCancelled)
 	vm.Set("utils", utilsObj)
 
 	logObj := vm.NewObject()

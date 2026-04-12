@@ -16,6 +16,19 @@ import (
 	"time"
 )
 
+func userAgentForURL(u *url.URL) string {
+	if u == nil {
+		return getRandomUserAgent()
+	}
+
+	host := strings.ToLower(strings.TrimSpace(u.Hostname()))
+	if host == "api.zarz.moe" {
+		return appUserAgent()
+	}
+
+	return getRandomUserAgent()
+}
+
 func getRandomUserAgent() string {
 	chromeVersion := rand.Intn(26) + 120
 	chromeBuild := rand.Intn(1500) + 6000
@@ -225,7 +238,7 @@ func cloneRequestWithHTTPScheme(req *http.Request, scheme string) (*http.Request
 }
 
 func DoRequestWithUserAgent(client *http.Client, req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", userAgentForURL(req.URL))
 	resp, err := client.Do(req)
 	if err != nil {
 		CheckAndLogISPBlocking(err, req.URL.String(), "HTTP")
@@ -255,7 +268,7 @@ func DoRequestWithRetry(client *http.Client, req *http.Request, config RetryConf
 
 	for attempt := 0; attempt <= config.MaxRetries; attempt++ {
 		reqCopy := req.Clone(req.Context())
-		reqCopy.Header.Set("User-Agent", getRandomUserAgent())
+		reqCopy.Header.Set("User-Agent", userAgentForURL(reqCopy.URL))
 
 		resp, err := client.Do(reqCopy)
 		if err != nil {

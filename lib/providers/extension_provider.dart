@@ -178,6 +178,12 @@ class Extension {
   bool get hasPostProcessing => postProcessing?.enabled ?? false;
   bool get hasHomeFeed => capabilities['homeFeed'] == true;
   bool get hasBrowseCategories => capabilities['browseCategories'] == true;
+  String? get preferredDownloadOutputExtension {
+    final value = capabilities['downloadOutputExtension'];
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
 }
 
 class SearchFilter {

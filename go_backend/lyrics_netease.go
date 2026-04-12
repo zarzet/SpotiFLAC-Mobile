@@ -70,7 +70,7 @@ func (c *NeteaseClient) SearchSong(trackName, artistName string) (int64, error) 
 	for k, v := range neteaseHeaders {
 		req.Header.Set(k, v)
 	}
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", appUserAgent())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *NeteaseClient) FetchLyricsByID(songID int64, includeTranslation, includ
 	for k, v := range neteaseHeaders {
 		req.Header.Set(k, v)
 	}
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", appUserAgent())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

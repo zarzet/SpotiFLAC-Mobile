@@ -2344,7 +2344,36 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     return '$prefix/$suffix';
   }
 
+  String? _extensionPreferredOutputExt(String service) {
+    final normalizedService = service.trim().toLowerCase();
+    if (normalizedService.isEmpty) return null;
+
+    final extensionState = ref.read(extensionProvider);
+    for (final ext in extensionState.extensions) {
+      if (!ext.enabled || !ext.hasDownloadProvider) continue;
+      if (ext.id.toLowerCase() != normalizedService) continue;
+
+      final preferred = ext.preferredDownloadOutputExtension;
+      if (preferred == null) return null;
+
+      final normalized = preferred.startsWith('.')
+          ? preferred.toLowerCase()
+          : '.${preferred.toLowerCase()}';
+      const allowed = <String>{'.flac', '.m4a', '.mp3', '.opus'};
+      if (allowed.contains(normalized)) {
+        return normalized;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
   String _determineOutputExt(String quality, String service) {
+    final extensionPreferred = _extensionPreferredOutputExt(service);
+    if (extensionPreferred != null) {
+      return extensionPreferred;
+    }
     if (service.toLowerCase() == 'tidal' && quality == 'HIGH') {
       return '.m4a';
     }
@@ -3718,8 +3747,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   /// Unified metadata, cover, lyrics, and ReplayGain embedding for all formats.
   ///
-  /// [format] must be one of `'flac'`, `'mp3'`, or `'opus'`.
-  /// [writeExternalLrc] only applies to FLAC (non-SAF paths handle LRC separately).
+  /// [format] must be one of `'flac'`, `'m4a'`, `'mp3'`, or `'opus'`.
+  /// [writeExternalLrc] only applies to FLAC and M4A (non-SAF paths handle LRC separately).
   Future<void> _embedMetadataToFile(
     String filePath,
     Track track, {
@@ -3739,6 +3768,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
 
     final isFlac = format == 'flac';
+    final isM4a = format == 'm4a';
     final isMp3 = format == 'mp3';
 
     // ── Cover download ──────────────────────────────────────────────
@@ -3862,9 +3892,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       if (shouldEmbedLyrics && lrcContent != null) {
         metadata['LYRICS'] = lrcContent;
         if (isFlac || isMp3) metadata['UNSYNCEDLYRICS'] = lrcContent;
-      } else if (isFlac && !shouldEmbedLyrics) {
+      } else if ((isFlac || isM4a) && !shouldEmbedLyrics) {
         metadata['LYRICS'] = '';
-        metadata['UNSYNCEDLYRICS'] = '';
+        if (isFlac) {
+          metadata['UNSYNCEDLYRICS'] = '';
+        }
       }
 
       if (writeExternalLrc && shouldSaveExternalLyrics && lrcContent != null) {
@@ -3907,6 +3939,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           coverPath: validCover,
           metadata: metadata,
           artistTagMode: settings.artistTagMode,
+        );
+      } else if (isM4a) {
+        ffmpegResult = await FFmpegService.embedMetadataToM4a(
+          m4aPath: filePath,
+          coverPath: validCover,
+          metadata: metadata,
         );
       } else if (isMp3) {
         ffmpegResult = await FFmpegService.embedMetadataToMp3(
@@ -4957,7 +4995,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
         if (shouldForceTidalSafM4aHandling) {
           _log.w(
-            'Tidal SAF file is labeled FLAC but backend returned DASH/M4A stream; forcing FFmpeg conversion to FLAC.',
+            'Tidal SAF file is labeled FLAC but backend returned DASH/M4A stream; preserving it as M4A instead.',
           );
         }
 
@@ -5075,82 +5113,61 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 }
               }
             } else {
-              _log.d('M4A file detected (SAF), converting to FLAC...');
+              _log.d('M4A file detected (SAF), preserving native container...');
               final tempPath = await _copySafToTemp(currentFilePath);
               if (tempPath != null) {
-                String? flacPath;
                 try {
-                  final length = await File(tempPath).length();
-                  if (length < 1024) {
-                    _log.w('Temp M4A is too small (<1KB), skipping conversion');
-                  } else {
+                  if (metadataEmbeddingEnabled) {
                     updateItemStatus(
                       item.id,
                       DownloadStatus.finalizing,
-                      progress: 0.95,
+                      progress: 0.99,
                     );
-                    flacPath = await FFmpegService.convertM4aToFlac(tempPath);
-                    if (flacPath != null) {
-                      _log.d('Converted to FLAC (temp): $flacPath');
-                      _log.d(
-                        'Embedding metadata and cover to converted FLAC...',
-                      );
-                      final finalTrack = _buildTrackForMetadataEmbedding(
-                        trackToDownload,
-                        result,
-                        resolvedAlbumArtist,
-                      );
+                    final finalTrack = _buildTrackForMetadataEmbedding(
+                      trackToDownload,
+                      result,
+                      resolvedAlbumArtist,
+                    );
+                    final backendGenre = result['genre'] as String?;
+                    final backendLabel = result['label'] as String?;
+                    final backendCopyright = result['copyright'] as String?;
 
-                      final backendGenre = result['genre'] as String?;
-                      final backendLabel = result['label'] as String?;
-                      final backendCopyright = result['copyright'] as String?;
+                    await _embedMetadataToFile(
+                      tempPath,
+                      finalTrack,
+                      format: 'm4a',
+                      genre: backendGenre ?? genre,
+                      label: backendLabel ?? label,
+                      copyright: backendCopyright,
+                      downloadService: item.service,
+                      writeExternalLrc: false,
+                    );
+                  }
 
-                      await _embedMetadataToFile(
-                        flacPath,
-                        finalTrack,
-                        format: 'flac',
-                        genre: backendGenre ?? genre,
-                        label: backendLabel ?? label,
-                        copyright: backendCopyright,
-                        downloadService: item.service,
-                        writeExternalLrc: false,
-                      );
+                  final newFileName = '${safBaseName ?? 'track'}.m4a';
+                  final newUri = await _writeTempToSaf(
+                    treeUri: settings.downloadTreeUri,
+                    relativeDir: effectiveOutputDir,
+                    fileName: newFileName,
+                    mimeType: _mimeTypeForExt('.m4a'),
+                    srcPath: tempPath,
+                  );
 
-                      final newFileName = '${safBaseName ?? 'track'}.flac';
-                      final newUri = await _writeTempToSaf(
-                        treeUri: settings.downloadTreeUri,
-                        relativeDir: effectiveOutputDir,
-                        fileName: newFileName,
-                        mimeType: _mimeTypeForExt('.flac'),
-                        srcPath: flacPath,
-                      );
-
-                      if (newUri != null) {
-                        if (newUri != currentFilePath) {
-                          await _deleteSafFile(currentFilePath);
-                        }
-                        filePath = newUri;
-                        finalSafFileName = newFileName;
-                      } else {
-                        _log.w('Failed to write FLAC to SAF, keeping M4A');
-                      }
-                    } else {
-                      _log.w(
-                        'FFmpeg conversion returned null, keeping M4A file',
-                      );
+                  if (newUri != null) {
+                    if (newUri != currentFilePath) {
+                      await _deleteSafFile(currentFilePath);
                     }
+                    filePath = newUri;
+                    finalSafFileName = newFileName;
+                  } else {
+                    _log.w('Failed to write M4A to SAF, keeping original');
                   }
                 } catch (e) {
-                  _log.w('SAF M4A->FLAC conversion failed: $e');
+                  _log.w('SAF native M4A handling failed: $e');
                 } finally {
                   try {
                     await File(tempPath).delete();
                   } catch (_) {}
-                  if (flacPath != null) {
-                    try {
-                      await File(flacPath).delete();
-                    } catch (_) {}
-                  }
                 }
               }
             }
@@ -5230,82 +5247,58 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 actualQuality = 'AAC 320kbps';
               }
             } else {
-              _log.d(
-                'M4A file detected (Hi-Res DASH stream), attempting conversion to FLAC...',
-              );
+              _log.d('M4A file detected, preserving native container...');
 
               try {
-                final file = File(currentFilePath);
+                var targetPath = currentFilePath;
+                final file = File(targetPath);
                 if (!await file.exists()) {
                   _log.e('File does not exist at path: $filePath');
                 } else {
-                  final length = await file.length();
-                  _log.i('File size before conversion: ${length / 1024} KB');
-
-                  if (length < 1024) {
-                    _log.w(
-                      'File is too small (<1KB), skipping conversion. Download might be corrupt.',
+                  if (!targetPath.toLowerCase().endsWith('.m4a')) {
+                    final renamedPath = targetPath.replaceAll(
+                      RegExp(r'\.[^.]+$'),
+                      '.m4a',
                     );
+                    final finalRenamedPath = renamedPath == targetPath
+                        ? '$targetPath.m4a'
+                        : renamedPath;
+                    await file.rename(finalRenamedPath);
+                    targetPath = finalRenamedPath;
+                    filePath = finalRenamedPath;
                   } else {
+                    filePath = targetPath;
+                  }
+
+                  if (metadataEmbeddingEnabled) {
                     updateItemStatus(
                       item.id,
                       DownloadStatus.finalizing,
-                      progress: 0.95,
+                      progress: 0.99,
                     );
-                    final flacPath = await FFmpegService.convertM4aToFlac(
-                      currentFilePath,
+                    final finalTrack = _buildTrackForMetadataEmbedding(
+                      trackToDownload,
+                      result,
+                      resolvedAlbumArtist,
                     );
 
-                    if (flacPath != null) {
-                      filePath = flacPath;
-                      _log.d('Converted to FLAC: $flacPath');
+                    final backendGenre = result['genre'] as String?;
+                    final backendLabel = result['label'] as String?;
+                    final backendCopyright = result['copyright'] as String?;
 
-                      _log.d(
-                        'Embedding metadata and cover to converted FLAC...',
-                      );
-                      try {
-                        final finalTrack = _buildTrackForMetadataEmbedding(
-                          trackToDownload,
-                          result,
-                          resolvedAlbumArtist,
-                        );
-
-                        final backendGenre = result['genre'] as String?;
-                        final backendLabel = result['label'] as String?;
-                        final backendCopyright = result['copyright'] as String?;
-
-                        if (backendGenre != null ||
-                            backendLabel != null ||
-                            backendCopyright != null) {
-                          _log.d(
-                            'Extended metadata from backend - Genre: $backendGenre, Label: $backendLabel, Copyright: $backendCopyright',
-                          );
-                        }
-
-                        await _embedMetadataToFile(
-                          flacPath,
-                          finalTrack,
-                          format: 'flac',
-                          genre: backendGenre ?? genre,
-                          label: backendLabel ?? label,
-                          copyright: backendCopyright,
-                          downloadService: item.service,
-                        );
-                        _log.d('Metadata and cover embedded successfully');
-                      } catch (e) {
-                        _log.w('Warning: Failed to embed metadata/cover: $e');
-                      }
-                    } else {
-                      _log.w(
-                        'FFmpeg conversion returned null, keeping M4A file',
-                      );
-                    }
+                    await _embedMetadataToFile(
+                      targetPath,
+                      finalTrack,
+                      format: 'm4a',
+                      genre: backendGenre ?? genre,
+                      label: backendLabel ?? label,
+                      copyright: backendCopyright,
+                      downloadService: item.service,
+                    );
                   }
                 }
               } catch (e) {
-                _log.w(
-                  'FFmpeg conversion process failed: $e, keeping M4A file',
-                );
+                _log.w('Native M4A handling failed: $e');
               }
             }
           }

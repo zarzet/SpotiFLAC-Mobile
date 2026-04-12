@@ -72,7 +72,7 @@ func (c *MusixmatchClient) fetchLyricsPayload(trackName, artistName string, dura
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", appUserAgent())
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

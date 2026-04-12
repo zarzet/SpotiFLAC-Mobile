@@ -147,6 +147,7 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 		return nil, fmt.Errorf("failed to create resolve request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgentForURL(req.URL))
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -164,9 +165,9 @@ func (s *SongLinkClient) doResolveRequest(payload []byte) (map[string]songLinkPl
 	}
 
 	var resolveResp struct {
-		Success  bool                           `json:"success"`
-		ISRC     string                         `json:"isrc"`
-		SongUrls map[string]json.RawMessage     `json:"songUrls"`
+		Success  bool                       `json:"success"`
+		ISRC     string                     `json:"isrc"`
+		SongUrls map[string]json.RawMessage `json:"songUrls"`
 	}
 	if err := json.Unmarshal(body, &resolveResp); err != nil {
 		return nil, fmt.Errorf("failed to decode resolve response: %w", err)

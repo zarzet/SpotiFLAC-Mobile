@@ -22,6 +22,9 @@ import Gobackend  // Import Go framework
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            GobackendSetAppVersion(version)
+        }
         
         let controller = window?.rootViewController as! FlutterViewController
         let channel = FlutterMethodChannel(

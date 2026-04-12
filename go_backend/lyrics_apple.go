@@ -114,7 +114,7 @@ func (c *AppleMusicClient) SearchSong(trackName, artistName string, durationSec 
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", appUserAgent())
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.httpClient.Do(req)
@@ -147,7 +147,8 @@ func (c *AppleMusicClient) FetchLyricsByID(songID string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("User-Agent", getRandomUserAgent())
+	req.Header.Set("User-Agent", appUserAgent())
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
