@@ -796,37 +796,45 @@ class _MetadataSourceSelector extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _SourceChip(
-                icon: Icons.graphic_eq,
-                label: defaultProviderLabel,
-                isSelected: searchProvider.isEmpty,
-                onTap: () {
-                  if (hasNonDefaultProvider) {
-                    ref.read(settingsProvider.notifier).setSearchProvider(null);
-                  }
-                },
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.graphic_eq,
+                  label: defaultProviderLabel,
+                  isSelected: searchProvider.isEmpty,
+                  onTap: () {
+                    if (hasNonDefaultProvider) {
+                      ref.read(settingsProvider.notifier).setSearchProvider(
+                        null,
+                      );
+                    }
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              _SourceChip(
-                icon: Icons.waves,
-                label: 'Tidal',
-                isSelected: searchProvider == 'tidal',
-                onTap: () {
-                  ref
-                      .read(settingsProvider.notifier)
-                      .setSearchProvider('tidal');
-                },
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.waves,
+                  label: 'Tidal',
+                  isSelected: searchProvider == 'tidal',
+                  onTap: () {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setSearchProvider('tidal');
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              _SourceChip(
-                icon: Icons.album,
-                label: 'Qobuz',
-                isSelected: searchProvider == 'qobuz',
-                onTap: () {
-                  ref
-                      .read(settingsProvider.notifier)
-                      .setSearchProvider('qobuz');
-                },
+              Expanded(
+                child: _SourceChip(
+                  icon: Icons.album,
+                  label: 'Qobuz',
+                  isSelected: searchProvider == 'qobuz',
+                  onTap: () {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setSearchProvider('qobuz');
+                  },
+                ),
               ),
             ],
           ),
@@ -907,6 +915,14 @@ class _DefaultSearchTabSelector extends ConsumerWidget {
                     .setDefaultSearchTab('track'),
               ),
               _SourceChip(
+                icon: Icons.person,
+                label: context.l10n.searchArtists,
+                isSelected: selectedTab == 'artist',
+                onTap: () => ref
+                    .read(settingsProvider.notifier)
+                    .setDefaultSearchTab('artist'),
+              ),
+              _SourceChip(
                 icon: Icons.album,
                 label: context.l10n.searchAlbums,
                 isSelected: selectedTab == 'album',
@@ -947,39 +963,38 @@ class _SourceChip extends StatelessWidget {
           )
         : colorScheme.surfaceContainerHigh;
 
-    return Expanded(
-      child: Material(
-        color: isSelected ? colorScheme.primaryContainer : unselectedColor,
+    return Material(
+      color: isSelected ? colorScheme.primaryContainer : unselectedColor,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              children: [
-                Icon(
-                  icon,
-                  size: 28,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: isSelected
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected
+                      ? FontWeight.w600
+                      : FontWeight.normal,
                   color: isSelected
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color: isSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

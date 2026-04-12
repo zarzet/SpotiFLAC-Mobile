@@ -18,7 +18,7 @@ final _log = AppLogger('SettingsProvider');
 
 class SettingsNotifier extends Notifier<AppSettings> {
   static final RegExp _isoRegionPattern = RegExp(r'^[A-Z]{2}$');
-  static const Set<String> _searchTabValues = {'all', 'track', 'album'};
+  static const Set<String> _searchTabValues = {'all', 'track', 'artist', 'album'};
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();

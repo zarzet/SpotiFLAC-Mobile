@@ -584,6 +584,7 @@ class TrackNotifier extends Notifier<TrackState> {
   }) async {
     final requestId = ++_currentRequestId;
     final currentFilter = filterOverride ?? state.selectedSearchFilter;
+    final requestFilter = currentFilter == 'all' ? null : currentFilter;
     final settings = ref.read(settingsProvider);
     final extensionState = ref.read(extensionProvider);
 
@@ -647,7 +648,7 @@ class TrackNotifier extends Notifier<TrackState> {
         extensionState.extensions.any(
           (ext) => ext.enabled && ext.id == resolvedProvider,
         )) {
-      final resolvedFilter = currentFilter ?? 'track';
+      final resolvedFilter = requestFilter ?? 'track';
       Map<String, dynamic>? options;
       options = {'filter': resolvedFilter};
       await customSearch(
@@ -692,7 +693,7 @@ class TrackNotifier extends Notifier<TrackState> {
       final effectiveProvider = effectiveBuiltInProvider;
 
       _log.i(
-        'Search started: provider=$effectiveProvider, query="$query", includeExtensions=$includeExtensions, filter=$currentFilter',
+        'Search started: provider=$effectiveProvider, query="$query", includeExtensions=$includeExtensions, filter=$requestFilter',
       );
 
       Map<String, dynamic> results;
@@ -705,7 +706,7 @@ class TrackNotifier extends Notifier<TrackState> {
             query,
             trackLimit: 20,
             artistLimit: 2,
-            filter: currentFilter,
+            filter: requestFilter,
           );
           break;
         case 'qobuz':
@@ -714,7 +715,7 @@ class TrackNotifier extends Notifier<TrackState> {
             query,
             trackLimit: 20,
             artistLimit: 2,
-            filter: currentFilter,
+            filter: requestFilter,
           );
           break;
         default:

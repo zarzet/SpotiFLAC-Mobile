@@ -492,15 +492,17 @@ class _HomeTabState extends ConsumerState<HomeTab>
       return null;
     }
 
+    final canonicalFilter = _canonicalSearchFilterId(filter);
+
     if (currentSearchProvider == null ||
         currentSearchProvider.isEmpty ||
         _builtInSearchProviders.contains(currentSearchProvider)) {
-      switch (filter) {
+      switch (canonicalFilter) {
         case 'track':
         case 'artist':
         case 'album':
         case 'playlist':
-          return filter;
+          return canonicalFilter;
         default:
           return null;
       }
@@ -515,9 +517,44 @@ class _HomeTabState extends ConsumerState<HomeTab>
     }
 
     final match = filters
-        .where((candidate) => candidate.id == filter)
+        .where(
+          (candidate) =>
+              _canonicalSearchFilterId(candidate.id) == canonicalFilter ||
+              (candidate.label != null &&
+                  _canonicalSearchFilterId(candidate.label!) ==
+                      canonicalFilter) ||
+              (candidate.icon != null &&
+                  _canonicalSearchFilterId(candidate.icon!) ==
+                      canonicalFilter),
+        )
         .firstOrNull;
     return match?.id;
+  }
+
+  String _canonicalSearchFilterId(String value) {
+    final normalized = value.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]+'),
+      '',
+    );
+    switch (normalized) {
+      case 'track':
+      case 'tracks':
+      case 'song':
+      case 'songs':
+      case 'music':
+        return 'track';
+      case 'artist':
+      case 'artists':
+        return 'artist';
+      case 'album':
+      case 'albums':
+        return 'album';
+      case 'playlist':
+      case 'playlists':
+        return 'playlist';
+      default:
+        return normalized;
+    }
   }
 
   String? _preferredSearchFilter(
@@ -527,6 +564,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
   ) {
     final preferred = switch (preferredSearchTab) {
       'track' => 'track',
+      'artist' => 'artist',
       'album' => 'album',
       _ => null,
     };
@@ -536,6 +574,31 @@ class _HomeTabState extends ConsumerState<HomeTab>
       currentSearchProvider,
       extensions,
     );
+  }
+
+  String _displaySearchFilterSelection(
+    String? selectedSearchFilter,
+    String preferredSearchTab,
+    String? currentSearchProvider,
+    List<Extension> extensions,
+  ) {
+    if (selectedSearchFilter == 'all') {
+      return 'all';
+    }
+    if (selectedSearchFilter != null && selectedSearchFilter.isNotEmpty) {
+      return _sanitizeSearchFilterForProvider(
+            selectedSearchFilter,
+            currentSearchProvider,
+            extensions,
+          ) ??
+          'all';
+    }
+    return _preferredSearchFilter(
+          preferredSearchTab,
+          currentSearchProvider,
+          extensions,
+        ) ??
+        'all';
   }
 
   _SearchResultBuckets _getSearchResultBuckets(List<Track> tracks) {
@@ -695,22 +758,28 @@ class _HomeTabState extends ConsumerState<HomeTab>
       settings.searchProvider,
       extState.extensions,
     );
-    final selectedFilter =
-        _sanitizeSearchFilterForProvider(
-          filterOverride,
+    final storedFilter = ref.read(trackProvider).selectedSearchFilter;
+    final selectedFilter = switch (filterOverride) {
+      'all' => null,
+      final explicit? => _sanitizeSearchFilterForProvider(
+        explicit,
+        searchProvider,
+        extState.extensions,
+      ),
+      null => switch (storedFilter) {
+        'all' => null,
+        final stored? => _sanitizeSearchFilterForProvider(
+          stored,
           searchProvider,
           extState.extensions,
-        ) ??
-        _sanitizeSearchFilterForProvider(
-          ref.read(trackProvider).selectedSearchFilter,
-          searchProvider,
-          extState.extensions,
-        ) ??
-        _preferredSearchFilter(
+        ),
+        null => _preferredSearchFilter(
           settings.defaultSearchTab,
           searchProvider,
           extState.extensions,
-        );
+        ),
+      },
+    };
 
     final searchKey =
         '${searchProvider ?? 'default'}:$query:${selectedFilter ?? 'all'}';
@@ -1176,6 +1245,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final hasSearchedBefore = ref.watch(
       settingsProvider.select((s) => s.hasSearchedBefore),
     );
+    final defaultSearchTab = ref.watch(
+      settingsProvider.select((s) => s.defaultSearchTab),
+    );
 
     final hasExploreContent = ref.watch(
       exploreProvider.select((s) => s.sections.isNotEmpty),
@@ -1216,6 +1288,29 @@ class _HomeTabState extends ConsumerState<HomeTab>
         !showRecentAccess &&
         (hasHomeFeedExtension || hasExploreContent) &&
         hasExploreContent;
+
+    ref.listen<String>(
+      settingsProvider.select((s) => s.defaultSearchTab),
+      (previous, next) {
+        if (previous == next) return;
+        final selectedSearchFilter = ref.read(
+          trackProvider.select((s) => s.selectedSearchFilter),
+        );
+        if (selectedSearchFilter != null && selectedSearchFilter.isNotEmpty) {
+          return;
+        }
+
+        final text = _urlController.text.trim();
+        if (text.isEmpty || text.length < _minLiveSearchChars) return;
+        if (text.startsWith('http') || text.startsWith('spotify:')) return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _lastSearchQuery = null;
+          _performSearch(text);
+        });
+      },
+    );
 
     if (hasActualResults &&
         isShowingRecentAccess &&
@@ -1360,7 +1455,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
                     return SliverToBoxAdapter(
                       child: _buildSearchFilterBar(
                         searchFilters,
-                        selectedSearchFilter,
+                        _displaySearchFilterSelection(
+                          selectedSearchFilter,
+                          defaultSearchTab,
+                          currentSearchProvider,
+                          extensions,
+                        ),
                         colorScheme,
                       ),
                     );
@@ -3269,10 +3369,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
                 label: Text(context.l10n.historyFilterAll),
-                selected: selectedFilter == null,
+                selected: selectedFilter == 'all',
                 onSelected: (_) {
-                  ref.read(trackProvider.notifier).setSearchFilter(null);
-                  _triggerSearchWithFilter(null);
+                  ref.read(trackProvider.notifier).setSearchFilter('all');
+                  _triggerSearchWithFilter('all');
                 },
                 showCheckmark: false,
               ),

@@ -805,9 +805,6 @@ func sanitizeDownloadProviderPriority(providerIDs []string) []string {
 		}
 
 		normalizedBuiltIn := strings.ToLower(providerID)
-		if normalizedBuiltIn == "deezer" {
-			continue
-		}
 		if isBuiltInDownloadProvider(normalizedBuiltIn) {
 			providerID = normalizedBuiltIn
 		}

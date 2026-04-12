@@ -603,6 +603,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       final list = await PlatformBridge.getInstalledExtensions();
       final extensions = list.map((e) => Extension.fromJson(e)).toList();
       state = state.copyWith(extensions: extensions);
+      await _reconcileDownloadProviderPriority();
       _log.d('Loaded ${extensions.length} extensions');
 
       for (final ext in extensions) {
@@ -698,6 +699,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }).toList();
 
       state = state.copyWith(extensions: extensions);
+      await _reconcileDownloadProviderPriority();
 
       if (!enabled && ext != null) {
         final settings = ref.read(settingsProvider);
@@ -720,6 +722,23 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       _log.e('Failed to set extension enabled: $e');
       state = state.copyWith(error: e.toString());
     }
+  }
+
+  Future<void> _reconcileDownloadProviderPriority() async {
+    if (state.providerPriority.isEmpty) {
+      return;
+    }
+
+    final sanitized = _sanitizeDownloadProviderPriority(state.providerPriority);
+    if (jsonEncode(sanitized) == jsonEncode(state.providerPriority)) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_providerPriorityKey, jsonEncode(sanitized));
+    await PlatformBridge.setProviderPriority(sanitized);
+    state = state.copyWith(providerPriority: sanitized);
+    _log.d('Reconciled provider priority after extension update: $sanitized');
   }
 
   Future<bool> ensureSpotifyWebExtensionReady({
@@ -849,6 +868,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
   List<String> _sanitizeDownloadProviderPriority(List<String> input) {
     final allowed = getAllDownloadProviders().toSet();
+    final preferredOrder = getAllDownloadProviders();
     final result = <String>[];
 
     for (final provider in input) {
@@ -857,7 +877,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       }
     }
 
-    for (final provider in const ['tidal', 'qobuz']) {
+    for (final provider in preferredOrder) {
       if (!result.contains(provider)) {
         result.add(provider);
       }
