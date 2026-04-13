@@ -688,6 +688,10 @@ func findTidalArtistPageModule(page *tidalPublicArtistPage, moduleType string) *
 
 func (t *TidalDownloader) GetAvailableAPIs() []string {
 	return []string{
+		"https://eu-central.monochrome.tf",
+		"https://us-west.monochrome.tf",
+		"https://api.monochrome.tf",
+		"https://monochrome-api.samidy.com",
 		"https://tidal-api.binimum.org",
 		"https://tidal.kinoplus.online",
 		"https://triton.squid.wtf",

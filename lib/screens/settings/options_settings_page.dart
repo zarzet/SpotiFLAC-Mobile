@@ -742,8 +742,10 @@ class _MetadataSourceSelector extends ConsumerWidget {
     final rawSearchProvider = settings.searchProvider?.trim() ?? '';
     final isValidBuiltIn = _builtInProviders.containsKey(rawSearchProvider);
     final primarySearchExtension = _defaultSearchExtension(extState.extensions);
+    final defaultProviderTarget =
+        primarySearchExtension?.displayName ?? 'Tidal';
     final defaultProviderLabel =
-        primarySearchExtension?.displayName ?? 'Deezer';
+        '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
     final searchProvider =
         isValidBuiltIn ||
             extState.extensions.any(

@@ -480,7 +480,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             ))) {
       return explicit;
     }
-    return _defaultSearchExtension(extensions)?.id;
+    return _defaultSearchExtension(extensions)?.id ?? 'tidal';
   }
 
   String? _sanitizeSearchFilterForProvider(
@@ -524,8 +524,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                   _canonicalSearchFilterId(candidate.label!) ==
                       canonicalFilter) ||
               (candidate.icon != null &&
-                  _canonicalSearchFilterId(candidate.icon!) ==
-                      canonicalFilter),
+                  _canonicalSearchFilterId(candidate.icon!) == canonicalFilter),
         )
         .firstOrNull;
     return match?.id;
@@ -1289,28 +1288,28 @@ class _HomeTabState extends ConsumerState<HomeTab>
         (hasHomeFeedExtension || hasExploreContent) &&
         hasExploreContent;
 
-    ref.listen<String>(
-      settingsProvider.select((s) => s.defaultSearchTab),
-      (previous, next) {
-        if (previous == next) return;
-        final selectedSearchFilter = ref.read(
-          trackProvider.select((s) => s.selectedSearchFilter),
-        );
-        if (selectedSearchFilter != null && selectedSearchFilter.isNotEmpty) {
-          return;
-        }
+    ref.listen<String>(settingsProvider.select((s) => s.defaultSearchTab), (
+      previous,
+      next,
+    ) {
+      if (previous == next) return;
+      final selectedSearchFilter = ref.read(
+        trackProvider.select((s) => s.selectedSearchFilter),
+      );
+      if (selectedSearchFilter != null && selectedSearchFilter.isNotEmpty) {
+        return;
+      }
 
-        final text = _urlController.text.trim();
-        if (text.isEmpty || text.length < _minLiveSearchChars) return;
-        if (text.startsWith('http') || text.startsWith('spotify:')) return;
+      final text = _urlController.text.trim();
+      if (text.isEmpty || text.length < _minLiveSearchChars) return;
+      if (text.startsWith('http') || text.startsWith('spotify:')) return;
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _lastSearchQuery = null;
-          _performSearch(text);
-        });
-      },
-    );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _lastSearchQuery = null;
+        _performSearch(text);
+      });
+    });
 
     if (hasActualResults &&
         isShowingRecentAccess &&
@@ -3554,8 +3553,10 @@ class _SearchProviderDropdown extends ConsumerWidget {
         .where((ext) => ext.enabled && ext.hasCustomSearch)
         .toList();
     final primarySearchExtension = _defaultSearchExtension(searchProviders);
+    final defaultProviderTarget =
+        primarySearchExtension?.displayName ?? 'Tidal';
     final defaultProviderLabel =
-        primarySearchExtension?.displayName ?? 'Deezer';
+        '${context.l10n.extensionsHomeFeedAuto} ($defaultProviderTarget)';
     final defaultProviderIconPath = primarySearchExtension?.iconPath;
     final currentProvider =
         rawCurrentProvider != null &&

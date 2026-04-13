@@ -609,17 +609,16 @@ class TrackNotifier extends Notifier<TrackState> {
                 .map((ext) => ext.id)
                 .firstOrNull;
       }
+      resolvedProvider ??= 'tidal';
     }
 
     final isEnabledExtensionProvider =
-        resolvedProvider != null &&
         resolvedProvider.isNotEmpty &&
         extensionState.extensions.any(
           (ext) => ext.enabled && ext.id == resolvedProvider,
         );
 
-    if (resolvedProvider != null &&
-        resolvedProvider.isNotEmpty &&
+    if (resolvedProvider.isNotEmpty &&
         resolvedProvider != 'tidal' &&
         resolvedProvider != 'qobuz' &&
         !isEnabledExtensionProvider &&
@@ -639,10 +638,10 @@ class TrackNotifier extends Notifier<TrackState> {
               .where((ext) => ext.enabled && ext.hasCustomSearch)
               .map((ext) => ext.id)
               .firstOrNull;
+      resolvedProvider ??= 'tidal';
     }
 
-    if (resolvedProvider != null &&
-        resolvedProvider.isNotEmpty &&
+    if (resolvedProvider.isNotEmpty &&
         resolvedProvider != 'tidal' &&
         resolvedProvider != 'qobuz' &&
         extensionState.extensions.any(
@@ -663,7 +662,9 @@ class TrackNotifier extends Notifier<TrackState> {
     final effectiveBuiltInProvider =
         resolvedProvider == 'tidal' || resolvedProvider == 'qobuz'
         ? resolvedProvider
-        : builtInSearchProvider;
+        : (builtInSearchProvider?.isNotEmpty == true
+              ? builtInSearchProvider
+              : 'tidal');
 
     if (effectiveBuiltInProvider == null || effectiveBuiltInProvider.isEmpty) {
       state = TrackState(
