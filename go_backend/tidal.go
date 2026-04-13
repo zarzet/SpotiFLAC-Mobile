@@ -2049,18 +2049,6 @@ func resolveTidalTrackForRequest(req DownloadRequest, downloader *TidalDownloade
 		}
 	}
 
-	if !gotTidalID && req.ISRC != "" {
-		GoLog("[%s] Trying direct Tidal ISRC search: %s\n", logPrefix, req.ISRC)
-		directTrack, directErr := downloader.SearchTrackByISRC(req.ISRC)
-		if directErr == nil && directTrack != nil && directTrack.ID > 0 {
-			trackID = directTrack.ID
-			gotTidalID = true
-			GoLog("[%s] Got Tidal ID %d from direct ISRC search\n", logPrefix, trackID)
-		} else if directErr != nil {
-			GoLog("[%s] Direct Tidal ISRC search failed: %v\n", logPrefix, directErr)
-		}
-	}
-
 	if !gotTidalID && req.ISRC != "" && req.TrackName != "" && req.ArtistName != "" {
 		GoLog("[%s] Trying Tidal public metadata search with ISRC\n", logPrefix)
 		searchTrack, searchErr := downloader.SearchTrackByMetadataWithISRC(
