@@ -1319,8 +1319,8 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 
 	if req.Source != "" &&
 		!isBuiltInProvider(strings.ToLower(req.Source)) &&
-		(!strictMode || selectedProvider == "" || strings.EqualFold(selectedProvider, req.Source)) {
-		GoLog("[DownloadWithExtensionFallback] Track source is extension '%s', trying it first\n", req.Source)
+		selectedProvider == req.Source {
+		GoLog("[DownloadWithExtensionFallback] Track source is extension '%s' matching selected provider, trying it first\n", req.Source)
 
 		ext, err := extManager.GetExtension(req.Source)
 		if err == nil && ext.Enabled && ext.Error == "" && ext.Manifest.IsDownloadProvider() {
