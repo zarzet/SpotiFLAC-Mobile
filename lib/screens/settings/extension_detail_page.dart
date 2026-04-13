@@ -443,7 +443,9 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
   }
 
   /// Extensions may return `setting_updates` from button actions (e.g. OAuth URL field).
-  Future<void> _handleExtensionActionPayload(Map<String, dynamic> payload) async {
+  Future<void> _handleExtensionActionPayload(
+    Map<String, dynamic> payload,
+  ) async {
     final raw = payload['setting_updates'];
     if (raw is! Map) return;
     final partial = <String, dynamic>{};
@@ -511,19 +513,19 @@ class _OauthLoginLinkPreview extends StatelessWidget {
       return Text(
         'Tap Connect to Spotify to fill this field.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontStyle: FontStyle.italic,
-            ),
+          color: colorScheme.onSurfaceVariant,
+          fontStyle: FontStyle.italic,
+        ),
       );
     }
     return SelectionArea(
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.primary,
-              fontFamily: 'monospace',
-              fontSize: 11,
-            ),
+          color: colorScheme.primary,
+          fontFamily: 'monospace',
+          fontSize: 11,
+        ),
       ),
     );
   }
@@ -878,7 +880,7 @@ class _SettingItemState extends State<_SettingItem> {
         Map<String, dynamic> payload = result;
         final nested = result['result'];
         if (nested is Map) {
-          payload = Map<String, dynamic>.from(nested as Map);
+          payload = Map<String, dynamic>.from(nested);
         }
 
         final success = payload['success'] as bool? ?? false;

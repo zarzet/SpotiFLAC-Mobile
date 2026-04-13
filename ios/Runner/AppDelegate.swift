@@ -70,21 +70,22 @@ import Gobackend  // Import Go framework
         
         GeneratedPluginRegistrant.register(with: self)
         if let url = launchOptions?[.url] as? URL {
-            handleExtensionOAuthRedirect(url: url)
+            _ = handleExtensionOAuthRedirect(url: url)
         }
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 
     /// PKCE OAuth return URL: spotiflac://callback?code=...&state=<extension_id>
-    private func handleExtensionOAuthRedirect(url: URL) {
-        guard let scheme = url.scheme?.lowercased(), scheme == "spotiflac" else { return }
+    @discardableResult
+    private func handleExtensionOAuthRedirect(url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(), scheme == "spotiflac" else { return false }
         let host = (url.host ?? "").lowercased()
         let path = url.path.lowercased()
         let ok =
             host == "callback" || host == "spotify-callback" || path.contains("callback")
-        guard ok else { return }
+        guard ok else { return false }
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return
+            return false
         }
         let q = components.queryItems ?? []
         let code =
@@ -93,10 +94,10 @@ import Gobackend  // Import Go framework
         let state =
             q.first { $0.name == "state" }?.value?.trimmingCharacters(
                 in: .whitespacesAndNewlines) ?? ""
-        if code.isEmpty { return }
+        if code.isEmpty { return false }
         if state.isEmpty {
             NSLog("SpotiFLAC: Extension OAuth redirect missing state (extension id)")
-            return
+            return false
         }
         streamQueue.async {
             var err: NSError?
@@ -107,6 +108,7 @@ import Gobackend  // Import Go framework
                     "SpotiFLAC: Extension OAuth complete failed: \(err.localizedDescription)")
             }
         }
+        return true
     }
 
     override func application(
@@ -114,7 +116,9 @@ import Gobackend  // Import Go framework
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
-        handleExtensionOAuthRedirect(url: url)
+        if handleExtensionOAuthRedirect(url: url) {
+            return true
+        }
         return super.application(app, open: url, options: options)
     }
 
