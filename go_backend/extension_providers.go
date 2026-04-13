@@ -1564,6 +1564,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				continue
 			}
 
+			req.OutputExt = ""
 			outputPath := buildOutputPathForExtension(req, ext)
 			if req.ItemID != "" {
 				StartItemProgress(req.ItemID)
