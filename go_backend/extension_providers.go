@@ -951,6 +951,19 @@ func isBuiltInDownloadProvider(providerID string) bool {
 	}
 }
 
+func normalizeQualityForBuiltIn(quality string) string {
+	switch strings.ToLower(strings.TrimSpace(quality)) {
+	case "alac", "hi_res_lossless", "lossless":
+		return "HI_RES_LOSSLESS"
+	case "atmos", "ac3", "dolby_atmos":
+		return "LOSSLESS"
+	case "aac", "aac-legacy":
+		return "LOSSLESS"
+	default:
+		return quality
+	}
+}
+
 func normalizeBuiltInMetadataTrack(track TrackMetadata, providerID string) ExtTrackMetadata {
 	deezerID := ""
 	tidalID := ""
@@ -1496,7 +1509,10 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				enrichExtraMetadataByISRC("DownloadWithExtensionFallback", req.ISRC, &req.Genre, &req.Label, &req.Copyright)
 			}
 
+			origQuality := req.Quality
+			req.Quality = normalizeQualityForBuiltIn(req.Quality)
 			result, err := tryBuiltInProvider(providerIDNormalized, req)
+			req.Quality = origQuality
 			if err == nil && result.Success {
 				result.Service = providerIDNormalized
 				if req.Label != "" {
