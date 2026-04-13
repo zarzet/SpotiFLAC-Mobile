@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -136,10 +137,58 @@ func newExtensionRuntime(ext *loadedExtension) *extensionRuntime {
 		storageFlushDelay: defaultStorageFlushDelay,
 	}
 
-	runtime.httpClient = newExtensionHTTPClient(ext, jar, 30*time.Second)
+	runtime.httpClient = newExtensionHTTPClient(ext, jar, extensionHTTPTimeout(ext, 30*time.Second))
 	runtime.downloadClient = newExtensionHTTPClient(ext, jar, DownloadTimeout)
 
 	return runtime
+}
+
+func extensionHTTPTimeout(ext *loadedExtension, fallback time.Duration) time.Duration {
+	if ext == nil || ext.Manifest == nil || ext.Manifest.Capabilities == nil {
+		return fallback
+	}
+
+	raw, ok := ext.Manifest.Capabilities["networkTimeoutSeconds"]
+	if !ok {
+		return fallback
+	}
+
+	seconds := parseExtensionTimeoutSeconds(raw)
+	if seconds <= 0 {
+		return fallback
+	}
+
+	if seconds < 5 {
+		seconds = 5
+	}
+	if seconds > 300 {
+		seconds = 300
+	}
+
+	return time.Duration(seconds) * time.Second
+}
+
+func parseExtensionTimeoutSeconds(raw interface{}) int {
+	switch v := raw.(type) {
+	case int:
+		return v
+	case int32:
+		return int(v)
+	case int64:
+		return int(v)
+	case float32:
+		return int(v)
+	case float64:
+		return int(v)
+	case string:
+		parsed, err := strconv.Atoi(strings.TrimSpace(v))
+		if err != nil {
+			return 0
+		}
+		return parsed
+	default:
+		return 0
+	}
 }
 
 func (r *extensionRuntime) setActiveDownloadItemID(itemID string) {
