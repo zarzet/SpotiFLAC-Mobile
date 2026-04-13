@@ -401,6 +401,43 @@ class MainActivity: FlutterFragmentActivity() {
         return current
     }
 
+    private fun createOrReuseDocumentFile(
+        parent: DocumentFile,
+        mimeType: String,
+        fileName: String
+    ): DocumentFile? {
+        val safeFileName = sanitizeFilename(fileName)
+        if (safeFileName.isBlank()) return null
+
+        synchronized(safDirLock) {
+            val existing = parent.findFile(safeFileName)
+            if (existing != null && existing.isFile) {
+                return existing
+            }
+
+            val created = parent.createFile(mimeType, safeFileName) ?: return null
+            val createdName = created.name ?: safeFileName
+            if (createdName == safeFileName) {
+                return created
+            }
+
+            // SAF can auto-rename to "name (1)" when another writer wins the race
+            // between findFile() and createFile(). Prefer the exact sibling if it
+            // appeared, and discard the duplicate document we just created.
+            val winner = parent.findFile(safeFileName)
+            if (winner != null && winner.isFile) {
+                if (winner.uri != created.uri) {
+                    try {
+                        created.delete()
+                    } catch (_: Exception) {}
+                }
+                return winner
+            }
+
+            return created
+        }
+    }
+
     private fun resetSafScanProgress() {
         synchronized(safScanLock) {
             safScanProgress = SafScanProgress()
@@ -951,8 +988,7 @@ class MainActivity: FlutterFragmentActivity() {
         val targetDir = ensureDocumentDir(treeUri, relativeDir)
             ?: return errorJson("Failed to access SAF directory")
 
-        val existingFile = targetDir.findFile(fileName)
-        var document = existingFile ?: targetDir.createFile(mimeType, fileName)
+        var document = createOrReuseDocumentFile(targetDir, mimeType, fileName)
             ?: return errorJson("Failed to create SAF file")
 
         val pfd = contentResolver.openFileDescriptor(document.uri, "rw")
@@ -984,8 +1020,11 @@ class MainActivity: FlutterFragmentActivity() {
                         if (actualExt.isNotBlank() && actualExt != outputExt) {
                             val actualFileName = buildSafFileName(req, actualExt)
                             val actualMimeType = mimeTypeForExt(actualExt)
-                            val replacement = targetDir.findFile(actualFileName)
-                                ?: targetDir.createFile(actualMimeType, actualFileName)
+                            val replacement = createOrReuseDocumentFile(
+                                targetDir,
+                                actualMimeType,
+                                actualFileName,
+                            )
                                 ?: throw IllegalStateException("failed to create SAF output with actual extension")
                             if (replacement.uri != document.uri) {
                                 document.delete()
@@ -2326,7 +2365,8 @@ class MainActivity: FlutterFragmentActivity() {
                                 val dir = ensureDocumentDir(Uri.parse(treeUriStr), relativeDir) ?: return@withContext null
                                 val existing = dir.findFile(fileName)
                                 val createdNew = existing == null
-                                val doc = existing ?: dir.createFile(mimeType, fileName) ?: return@withContext null
+                                val doc = createOrReuseDocumentFile(dir, mimeType, fileName)
+                                    ?: return@withContext null
                                 if (!writeUriFromPath(doc.uri, srcPath)) {
                                     if (createdNew) {
                                         doc.delete()
