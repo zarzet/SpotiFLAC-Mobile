@@ -615,6 +615,10 @@ func (p *extensionProviderWrapper) Download(trackID, quality, outputPath, itemID
 		p.extension.runtime.setActiveDownloadItemID(itemID)
 		defer p.extension.runtime.clearActiveDownloadItemID()
 	}
+	if itemID != "" {
+		initDownloadCancel(itemID)
+		defer clearDownloadCancel(itemID)
+	}
 
 	p.vm.Set("__onProgress", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) > 0 {

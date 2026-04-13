@@ -308,6 +308,21 @@ class MainActivity: FlutterFragmentActivity() {
         }
     }
 
+    private fun forceFilenameExt(name: String, outputExt: String): String {
+        val normalizedExt = normalizeExt(outputExt)
+        if (normalizedExt.isBlank()) return sanitizeFilename(name)
+
+        val safeName = sanitizeFilename(name)
+        val lower = safeName.lowercase(Locale.ROOT)
+        val knownExts = listOf(".flac", ".m4a", ".mp3", ".opus", ".lrc")
+        for (knownExt in knownExts) {
+            if (lower.endsWith(knownExt)) {
+                return safeName.dropLast(knownExt.length) + normalizedExt
+            }
+        }
+        return safeName + normalizedExt
+    }
+
     private fun sanitizeFilename(name: String): String {
         var sanitized = name
             .replace("/", " ")
@@ -617,12 +632,12 @@ class MainActivity: FlutterFragmentActivity() {
 
     private fun buildSafFileName(req: JSONObject, outputExt: String): String {
         val provided = req.optString("saf_file_name", "")
-        if (provided.isNotBlank()) return sanitizeFilename(provided)
+        if (provided.isNotBlank()) return forceFilenameExt(provided, outputExt)
 
         val trackName = req.optString("track_name", "track")
         val artistName = req.optString("artist_name", "")
         val baseName = if (artistName.isNotBlank()) "$artistName - $trackName" else trackName
-        return sanitizeFilename(baseName) + outputExt
+        return forceFilenameExt(baseName, outputExt)
     }
 
     private fun errorJson(message: String): String {
@@ -937,7 +952,7 @@ class MainActivity: FlutterFragmentActivity() {
             ?: return errorJson("Failed to access SAF directory")
 
         val existingFile = targetDir.findFile(fileName)
-        val document = existingFile ?: targetDir.createFile(mimeType, fileName)
+        var document = existingFile ?: targetDir.createFile(mimeType, fileName)
             ?: return errorJson("Failed to create SAF file")
 
         val pfd = contentResolver.openFileDescriptor(document.uri, "rw")
@@ -964,6 +979,18 @@ class MainActivity: FlutterFragmentActivity() {
                         val srcFile = java.io.File(goFilePath)
                         if (!srcFile.exists() || srcFile.length() <= 0) {
                             throw IllegalStateException("extension output missing or empty: $goFilePath")
+                        }
+                        val actualExt = normalizeExt(srcFile.extension)
+                        if (actualExt.isNotBlank() && actualExt != outputExt) {
+                            val actualFileName = buildSafFileName(req, actualExt)
+                            val actualMimeType = mimeTypeForExt(actualExt)
+                            val replacement = targetDir.findFile(actualFileName)
+                                ?: targetDir.createFile(actualMimeType, actualFileName)
+                                ?: throw IllegalStateException("failed to create SAF output with actual extension")
+                            if (replacement.uri != document.uri) {
+                                document.delete()
+                                document = replacement
+                            }
                         }
                         contentResolver.openOutputStream(document.uri, "wt")?.use { output ->
                             srcFile.inputStream().use { input ->

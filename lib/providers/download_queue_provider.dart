@@ -2378,6 +2378,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return '.m4a';
     }
     final q = quality.toLowerCase();
+    if (q == 'alac' || q.startsWith('aac')) return '.m4a';
     if (q.startsWith('opus')) return '.opus';
     if (q.startsWith('mp3')) return '.mp3';
     return '.flac';

@@ -10,6 +10,7 @@ import (
 var ErrDownloadCancelled = errors.New("download cancelled")
 
 type cancelEntry struct {
+	ctx      context.Context
 	cancel   context.CancelFunc
 	canceled bool
 }
@@ -27,8 +28,21 @@ func initDownloadCancel(itemID string) context.Context {
 	cancelMu.Lock()
 	defer cancelMu.Unlock()
 
+	if entry, ok := cancelMap[itemID]; ok {
+		if entry.ctx == nil {
+			ctx, cancel := context.WithCancel(context.Background())
+			entry.ctx = ctx
+			entry.cancel = cancel
+			if entry.canceled && entry.cancel != nil {
+				entry.cancel()
+			}
+		}
+		return entry.ctx
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	cancelMap[itemID] = &cancelEntry{
+		ctx:      ctx,
 		cancel:   cancel,
 		canceled: false,
 	}

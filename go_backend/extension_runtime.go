@@ -160,6 +160,19 @@ func (r *extensionRuntime) getActiveDownloadItemID() string {
 	return r.activeDownloadItemID
 }
 
+func (r *extensionRuntime) bindDownloadCancelContext(req *http.Request) *http.Request {
+	if req == nil {
+		return nil
+	}
+
+	itemID := r.getActiveDownloadItemID()
+	if itemID == "" {
+		return req
+	}
+
+	return req.WithContext(initDownloadCancel(itemID))
+}
+
 func newExtensionHTTPClient(ext *loadedExtension, jar http.CookieJar, timeout time.Duration) *http.Client {
 	// Extension sandbox enforces HTTPS-only domains. Do not apply global
 	// allow_http scheme downgrade here, because some extension APIs (e.g.

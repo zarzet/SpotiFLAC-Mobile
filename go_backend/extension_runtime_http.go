@@ -81,6 +81,7 @@ func (r *extensionRuntime) httpGet(call goja.FunctionCall) goja.Value {
 			"error": err.Error(),
 		})
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -175,6 +176,7 @@ func (r *extensionRuntime) httpPost(call goja.FunctionCall) goja.Value {
 			"error": err.Error(),
 		})
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -284,6 +286,7 @@ func (r *extensionRuntime) httpRequest(call goja.FunctionCall) goja.Value {
 			"error": err.Error(),
 		})
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -410,6 +413,7 @@ func (r *extensionRuntime) httpMethodShortcut(method string, call goja.FunctionC
 			"error": err.Error(),
 		})
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)

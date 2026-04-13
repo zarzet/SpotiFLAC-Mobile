@@ -1,8 +1,10 @@
 package gobackend
 
 import (
+	"net/http"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/dop251/goja"
 )
@@ -287,6 +289,76 @@ func TestExtensionRuntime_UtilityFunctions(t *testing.T) {
 	}
 	if result.ToBoolean() {
 		t.Error("Expected sleep to abort when download is cancelled")
+	}
+}
+
+func TestExtensionRuntime_BindDownloadCancelContext(t *testing.T) {
+	ext := &loadedExtension{
+		ID: "test-ext",
+		Manifest: &ExtensionManifest{
+			Name: "test-ext",
+		},
+		DataDir: t.TempDir(),
+	}
+
+	runtime := newExtensionRuntime(ext)
+	runtime.setActiveDownloadItemID("test-item")
+	t.Cleanup(func() {
+		clearDownloadCancel("test-item")
+		runtime.clearActiveDownloadItemID()
+	})
+
+	req, err := http.NewRequest("GET", "https://api.example.com/test", nil)
+	if err != nil {
+		t.Fatalf("NewRequest failed: %v", err)
+	}
+
+	req = runtime.bindDownloadCancelContext(req)
+	cancelDownload("test-item")
+
+	select {
+	case <-req.Context().Done():
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Expected bound request context to be cancelled")
+	}
+
+	if req.Context().Err() == nil {
+		t.Fatal("Expected request context error after cancellation")
+	}
+}
+
+func TestExtensionRuntime_BindDownloadCancelContextPreservesPreCancelledState(t *testing.T) {
+	ext := &loadedExtension{
+		ID: "test-ext",
+		Manifest: &ExtensionManifest{
+			Name: "test-ext",
+		},
+		DataDir: t.TempDir(),
+	}
+
+	runtime := newExtensionRuntime(ext)
+	runtime.setActiveDownloadItemID("test-item")
+	cancelDownload("test-item")
+	t.Cleanup(func() {
+		clearDownloadCancel("test-item")
+		runtime.clearActiveDownloadItemID()
+	})
+
+	req, err := http.NewRequest("GET", "https://api.example.com/test", nil)
+	if err != nil {
+		t.Fatalf("NewRequest failed: %v", err)
+	}
+
+	req = runtime.bindDownloadCancelContext(req)
+
+	select {
+	case <-req.Context().Done():
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Expected pre-cancelled request context to stay cancelled")
+	}
+
+	if req.Context().Err() == nil {
+		t.Fatal("Expected request context error for pre-cancelled item")
 	}
 }
 

@@ -166,6 +166,7 @@ func (r *extensionRuntime) fileDownload(call goja.FunctionCall) goja.Value {
 			"error":   err.Error(),
 		})
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)

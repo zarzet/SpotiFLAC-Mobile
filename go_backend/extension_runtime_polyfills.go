@@ -69,6 +69,7 @@ func (r *extensionRuntime) fetchPolyfill(call goja.FunctionCall) goja.Value {
 	if err != nil {
 		return r.createFetchError(err.Error())
 	}
+	req = r.bindDownloadCancelContext(req)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
