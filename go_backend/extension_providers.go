@@ -1503,6 +1503,7 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 		GoLog("[DownloadWithExtensionFallback] Trying provider: %s\n", providerID)
 
 		if isBuiltInDownloadProvider(providerIDNormalized) {
+			req.OutputExt = ""
 			if (req.Genre == "" || req.Label == "" || req.Copyright == "") &&
 				req.ISRC != "" {
 				GoLog("[DownloadWithExtensionFallback] Enriching extra metadata from ISRC: %s\n", req.ISRC)
