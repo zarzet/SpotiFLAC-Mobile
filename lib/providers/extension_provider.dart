@@ -179,6 +179,20 @@ class Extension {
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
   }
+
+  List<String> get preservedNativeOutputExtensions {
+    final value = capabilities['preserveNativeOutputExtensions'];
+    if (value is! List) return const [];
+
+    final normalized = <String>[];
+    for (final item in value) {
+      if (item is! String) continue;
+      final trimmed = item.trim().toLowerCase();
+      if (trimmed.isEmpty) continue;
+      normalized.add(trimmed.startsWith('.') ? trimmed : '.$trimmed');
+    }
+    return normalized;
+  }
 }
 
 class SearchFilter {

@@ -2369,6 +2369,21 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     return null;
   }
 
+  bool _extensionPreservesNativeOutputExt(String service, String ext) {
+    final normalizedService = service.trim().toLowerCase();
+    final normalizedExt = ext.trim().toLowerCase();
+    if (normalizedService.isEmpty || normalizedExt.isEmpty) return false;
+
+    final extensionState = ref.read(extensionProvider);
+    return extensionState.extensions.any(
+      (ext) =>
+          ext.enabled &&
+          ext.hasDownloadProvider &&
+          ext.id.toLowerCase() == normalizedService &&
+          ext.preservedNativeOutputExtensions.contains(normalizedExt),
+    );
+  }
+
   String _determineOutputExt(String quality, String service) {
     final extensionPreferred = _extensionPreferredOutputExt(service);
     if (extensionPreferred != null) {
@@ -4874,7 +4889,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             ((result['service'] as String?)?.toLowerCase()) ??
             item.service.toLowerCase();
         final preferredOutputExt = _extensionPreferredOutputExt(actualService);
-        final shouldPreserveNativeM4a = preferredOutputExt == '.m4a';
+        final shouldPreserveNativeM4a =
+            preferredOutputExt == '.m4a' ||
+            _extensionPreservesNativeOutputExt(actualService, '.m4a');
         final decryptionDescriptor =
             DownloadDecryptionDescriptor.fromDownloadResult(result);
         trackToDownload = _buildTrackForMetadataEmbedding(
