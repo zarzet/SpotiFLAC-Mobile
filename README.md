@@ -168,7 +168,7 @@ Interested in contributing? Check out the [Contributing Guide](CONTRIBUTING.md) 
 |---|---|---|---|---|
 | [hifi-api](https://github.com/binimum/hifi-api) | [music.binimum.org](https://music.binimum.org) | [qqdl.site](https://qqdl.site) | [squid.wtf](https://squid.wtf) | [spotisaver.net](https://spotisaver.net) |
 | [dabmusic.xyz](https://dabmusic.xyz) | [AfkarXYZ](https://github.com/afkarxyz) | [LRCLib](https://lrclib.net) | [Paxsenix](https://lyrics.paxsenix.org) | [Cobalt](https://cobalt.tools) |
-| [qwkuns.me](https://qwkuns.me) | [SpotubeDL](https://spotubedl.com) | [Song.link](https://song.link) | [IDHS](https://github.com/sjdonado/idonthavespotify) | |
+| [qwkuns.me](https://qwkuns.me) | [SpotubeDL](https://spotubedl.com) | [Song.link](https://song.link) | [IDHS](https://github.com/sjdonado/idonthavespotify) | [Monochrome](https://monochrome.tf) |
 
 ---
 

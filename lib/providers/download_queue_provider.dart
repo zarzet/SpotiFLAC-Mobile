@@ -3704,6 +3704,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   ) {
     final backendTrackNum = _parsePositiveInt(backendResult['track_number']);
     final backendDiscNum = _parsePositiveInt(backendResult['disc_number']);
+    final backendTotalTracks = _parsePositiveInt(backendResult['total_tracks']);
+    final backendTotalDiscs = _parsePositiveInt(backendResult['total_discs']);
     final backendYear = normalizeOptionalString(
       backendResult['release_date'] as String?,
     );
@@ -3731,7 +3733,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         backendIsrc != null ||
         backendCoverUrl != null ||
         backendAlbumArtist != null ||
-        backendComposer != null;
+        backendComposer != null ||
+        backendTotalTracks != null ||
+        backendTotalDiscs != null;
 
     if (!hasOverrides) {
       return baseTrack;
@@ -3750,12 +3754,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       isrc: backendIsrc ?? baseTrack.isrc,
       trackNumber: backendTrackNum ?? baseTrack.trackNumber,
       discNumber: backendDiscNum ?? baseTrack.discNumber,
-      totalDiscs: baseTrack.totalDiscs,
+      totalDiscs: backendTotalDiscs ?? baseTrack.totalDiscs,
       releaseDate: backendYear ?? baseTrack.releaseDate,
       deezerId: baseTrack.deezerId,
       availability: baseTrack.availability,
       albumType: baseTrack.albumType,
-      totalTracks: baseTrack.totalTracks,
+      totalTracks: backendTotalTracks ?? baseTrack.totalTracks,
       composer: backendComposer ?? baseTrack.composer,
       source: baseTrack.source,
     );
@@ -5808,12 +5812,15 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final backendYear = result['release_date'] as String?;
           final backendTrackNum = result['track_number'] as int?;
           final backendDiscNum = result['disc_number'] as int?;
+          final backendTotalTracks = result['total_tracks'] as int?;
+          final backendTotalDiscs = result['total_discs'] as int?;
           final backendBitDepth = result['actual_bit_depth'] as int?;
           final backendSampleRate = result['actual_sample_rate'] as int?;
           final backendISRC = result['isrc'] as String?;
           final backendGenre = result['genre'] as String?;
           final backendLabel = result['label'] as String?;
           final backendCopyright = result['copyright'] as String?;
+          final backendComposer = result['composer'] as String?;
           final effectiveGenre =
               normalizeOptionalString(backendGenre) ??
               normalizeOptionalString(genre) ??
@@ -5921,11 +5928,17 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   trackNumber: (backendTrackNum != null && backendTrackNum > 0)
                       ? backendTrackNum
                       : trackToDownload.trackNumber,
-                  totalTracks: trackToDownload.totalTracks,
+                  totalTracks:
+                      (backendTotalTracks != null && backendTotalTracks > 0)
+                      ? backendTotalTracks
+                      : trackToDownload.totalTracks,
                   discNumber: (backendDiscNum != null && backendDiscNum > 0)
                       ? backendDiscNum
                       : trackToDownload.discNumber,
-                  totalDiscs: trackToDownload.totalDiscs,
+                  totalDiscs:
+                      (backendTotalDiscs != null && backendTotalDiscs > 0)
+                      ? backendTotalDiscs
+                      : trackToDownload.totalDiscs,
                   duration: trackToDownload.duration,
                   releaseDate: (backendYear != null && backendYear.isNotEmpty)
                       ? backendYear
@@ -5934,7 +5947,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                   bitDepth: historyBitDepth,
                   sampleRate: historySampleRate,
                   genre: effectiveGenre,
-                  composer: trackToDownload.composer,
+                  composer:
+                      (backendComposer != null && backendComposer.isNotEmpty)
+                      ? backendComposer
+                      : trackToDownload.composer,
                   label: effectiveLabel,
                   copyright: effectiveCopyright,
                 ),

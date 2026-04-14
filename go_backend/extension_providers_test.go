@@ -185,6 +185,10 @@ func TestCanEmbedGenreLabelRequiresExistingAbsoluteLocalFile(t *testing.T) {
 	if err := os.WriteFile(tempFile, []byte("fLaC"), 0644); err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
+	tempM4A := filepath.Join(t.TempDir(), "track.m4a")
+	if err := os.WriteFile(tempM4A, []byte("not-flac"), 0644); err != nil {
+		t.Fatalf("failed to create temp m4a file: %v", err)
+	}
 
 	if canEmbedGenreLabel("relative.flac") {
 		t.Fatal("expected relative path to be rejected")
@@ -194,6 +198,9 @@ func TestCanEmbedGenreLabelRequiresExistingAbsoluteLocalFile(t *testing.T) {
 	}
 	if canEmbedGenreLabel(filepath.Join(t.TempDir(), "missing.flac")) {
 		t.Fatal("expected missing file to be rejected")
+	}
+	if canEmbedGenreLabel(tempM4A) {
+		t.Fatalf("expected non-FLAC file %q to be rejected", tempM4A)
 	}
 	if !canEmbedGenreLabel(tempFile) {
 		t.Fatalf("expected existing absolute file %q to be accepted", tempFile)
