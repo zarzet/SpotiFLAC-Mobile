@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 /// App version and info constants
 /// Update version here only - all other files will reference this
 class AppInfo {
-  static const String version = '4.3.0';
-  static const String buildNumber = '125';
+  static const String version = '4.3.1';
+  static const String buildNumber = '126';
   static const String fullVersion = '$version+$buildNumber';
 
   /// Shows "Internal" in debug builds, actual version in release.
