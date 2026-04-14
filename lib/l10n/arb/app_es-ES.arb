@@ -158,6 +158,14 @@
       }
     }
   },
+  "optionsDefaultSearchTab": "Default Search Tab",
+  "@optionsDefaultSearchTab": {
+    "description": "Title for the preferred default search tab setting"
+  },
+  "optionsDefaultSearchTabSubtitle": "Choose which tab opens first for new search results.",
+  "@optionsDefaultSearchTabSubtitle": {
+    "description": "Subtitle for the preferred default search tab setting"
+  },
   "optionsSwitchBack": "Toque Deezer o Spotify para volver desde la extensión",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
@@ -421,6 +429,10 @@
   "aboutPCSource": "Código fuente de PC",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
+  },
+  "aboutKeepAndroidOpen": "Keep Android Open",
+  "@aboutKeepAndroidOpen": {
+    "description": "Link to Keep Android Open campaign website"
   },
   "aboutReportIssue": "Reportar un problema",
   "@aboutReportIssue": {
