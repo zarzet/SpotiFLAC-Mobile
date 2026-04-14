@@ -4333,6 +4333,40 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             ),
           ),
 
+        if (filterMode == 'all' &&
+            totalTrackCount == 0 &&
+            !showFilteringIndicator &&
+            (_activeFilterCount > 0 || unifiedItems.isNotEmpty))
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  if (!_isSelectionMode)
+                    _buildFilterButton(context, unifiedItems),
+                ],
+              ),
+            ),
+          ),
+
+        if (filterMode == 'singles' &&
+            totalTrackCount == 0 &&
+            !showFilteringIndicator &&
+            (_activeFilterCount > 0 || unifiedItems.isNotEmpty))
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  if (!_isSelectionMode)
+                    _buildFilterButton(context, unifiedItems),
+                ],
+              ),
+            ),
+          ),
+
         if (historyItems.isNotEmpty && hasQueueItems)
           SliverToBoxAdapter(
             child: Padding(
