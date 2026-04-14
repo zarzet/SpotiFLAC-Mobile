@@ -429,11 +429,9 @@ func TestResolveQobuzTrackForRequestRejectsOdesliMismatch(t *testing.T) {
 		t.Fatal("ISRC fallback should not run without an ISRC")
 		return nil, nil
 	}
-	qobuzSearchTrackByMetadataWithDurationFunc = func(_ *QobuzDownloader, trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
-		if trackName != "Taste Back" || artistName != "Harry Styles" || expectedDurationSec != 181 {
-			t.Fatalf("unexpected metadata fallback arguments: %q / %q / %d", trackName, artistName, expectedDurationSec)
-		}
-		return testQobuzTrack(444, "Taste Back", "Harry Styles", 181), nil
+	qobuzSearchTrackByMetadataWithDurationFunc = func(_ *QobuzDownloader, _, _ string, _ int) (*QobuzTrack, error) {
+		t.Fatal("metadata fallback should not run")
+		return nil, nil
 	}
 	songLinkCheckTrackAvailabilityFunc = func(_ *SongLinkClient, _, _ string) (*TrackAvailability, error) {
 		t.Fatal("SongLink should not run when Odesli QobuzID is provided")
@@ -448,11 +446,11 @@ func TestResolveQobuzTrackForRequestRejectsOdesliMismatch(t *testing.T) {
 	}
 
 	track, err := resolveQobuzTrackForRequest(req, &QobuzDownloader{}, "Test")
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	if err == nil {
+		t.Fatalf("expected error, got track %+v", track)
 	}
-	if track == nil || track.ID != 444 || track.Title != "Taste Back" {
-		t.Fatalf("unexpected resolved track: %+v", track)
+	if track != nil {
+		t.Fatalf("expected nil track, got %+v", track)
 	}
 }
 

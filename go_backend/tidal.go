@@ -51,6 +51,7 @@ type TidalTrack struct {
 	ID           int64  `json:"id"`
 	Title        string `json:"title"`
 	ISRC         string `json:"isrc"`
+	Copyright    string `json:"copyright"`
 	AudioQuality string `json:"audioQuality"`
 	TrackNumber  int    `json:"trackNumber"`
 	VolumeNumber int    `json:"volumeNumber"`
@@ -135,6 +136,7 @@ type tidalPublicAlbum struct {
 	Type           string              `json:"type"`
 	Cover          string              `json:"cover"`
 	ReleaseDate    string              `json:"releaseDate"`
+	Copyright      string              `json:"copyright"`
 	URL            string              `json:"url"`
 	NumberOfTracks int                 `json:"numberOfTracks"`
 	Explicit       bool                `json:"explicit"`
@@ -306,6 +308,29 @@ func tidalTrackArtistsDisplay(track *TidalTrack) string {
 	return strings.TrimSpace(track.Artist.Name)
 }
 
+func tidalTrackAlbumArtistDisplay(track *TidalTrack) string {
+	if track == nil {
+		return ""
+	}
+
+	if len(track.Artists) > 0 {
+		names := make([]string, 0, len(track.Artists))
+		for _, artist := range track.Artists {
+			if strings.ToUpper(strings.TrimSpace(artist.Type)) != "MAIN" {
+				continue
+			}
+			if trimmed := strings.TrimSpace(artist.Name); trimmed != "" {
+				names = append(names, trimmed)
+			}
+		}
+		if len(names) > 0 {
+			return strings.Join(names, ", ")
+		}
+	}
+
+	return strings.TrimSpace(track.Artist.Name)
+}
+
 func tidalAlbumArtistsDisplay(album *tidalPublicAlbum) string {
 	if album == nil {
 		return ""
@@ -354,7 +379,7 @@ func tidalTrackToTrackMetadata(track *TidalTrack) TrackMetadata {
 		Artists:     tidalTrackArtistsDisplay(track),
 		Name:        strings.TrimSpace(track.Title),
 		AlbumName:   strings.TrimSpace(track.Album.Title),
-		AlbumArtist: strings.TrimSpace(track.Artist.Name),
+		AlbumArtist: tidalTrackAlbumArtistDisplay(track),
 		DurationMS:  track.Duration * 1000,
 		Images:      tidalImageURL(track.Album.Cover, "1280x1280"),
 		ReleaseDate: strings.TrimSpace(track.Album.ReleaseDate),
@@ -377,7 +402,7 @@ func tidalTrackToAlbumTrackMetadata(track *TidalTrack) AlbumTrackMetadata {
 		Artists:     tidalTrackArtistsDisplay(track),
 		Name:        strings.TrimSpace(track.Title),
 		AlbumName:   strings.TrimSpace(track.Album.Title),
-		AlbumArtist: strings.TrimSpace(track.Artist.Name),
+		AlbumArtist: tidalTrackAlbumArtistDisplay(track),
 		DurationMS:  track.Duration * 1000,
 		Images:      tidalImageURL(track.Album.Cover, "1280x1280"),
 		ReleaseDate: strings.TrimSpace(track.Album.ReleaseDate),
@@ -407,6 +432,7 @@ func tidalAlbumToAlbumInfo(album *tidalPublicAlbum) AlbumInfoMetadata {
 		Artists:     tidalAlbumArtistsDisplay(album),
 		ArtistId:    artistID,
 		Images:      tidalImageURL(album.Cover, "1280x1280"),
+		Copyright:   strings.TrimSpace(album.Copyright),
 	}
 }
 
@@ -1740,6 +1766,7 @@ type TidalDownloadResult struct {
 	TrackNumber int
 	DiscNumber  int
 	ISRC        string
+	Copyright   string
 	LyricsLRC   string // LRC content for embedding in converted files
 }
 
@@ -2348,6 +2375,10 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 	if actualDiscNumber == 0 {
 		actualDiscNumber = track.VolumeNumber
 	}
+	copyright := strings.TrimSpace(req.Copyright)
+	if copyright == "" {
+		copyright = strings.TrimSpace(track.Copyright)
+	}
 
 	metadata := Metadata{
 		Title:         req.TrackName,
@@ -2363,7 +2394,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		ISRC:          track.ISRC,
 		Genre:         req.Genre,
 		Label:         req.Label,
-		Copyright:     req.Copyright,
+		Copyright:     copyright,
 		Composer:      req.Composer,
 	}
 
@@ -2474,6 +2505,7 @@ func downloadFromTidal(req DownloadRequest) (TidalDownloadResult, error) {
 		TrackNumber: resultTrackNumber,
 		DiscNumber:  resultDiscNumber,
 		ISRC:        track.ISRC,
+		Copyright:   copyright,
 		LyricsLRC:   lyricsLRC,
 	}, nil
 }

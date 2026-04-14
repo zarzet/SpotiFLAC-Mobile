@@ -1978,8 +1978,14 @@ class FFmpegService {
           break;
         case 'DATE':
           vorbis['DATE'] = value;
+          final yearMatch = RegExp(r'^(\d{4})').firstMatch(value);
+          if (yearMatch != null &&
+              (!vorbis.containsKey('YEAR') || vorbis['YEAR']!.isEmpty)) {
+            vorbis['YEAR'] = yearMatch.group(1)!;
+          }
           break;
         case 'YEAR':
+          vorbis['YEAR'] = value;
           if (!vorbis.containsKey('DATE') || vorbis['DATE']!.isEmpty) {
             vorbis['DATE'] = value;
           }

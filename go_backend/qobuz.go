@@ -2655,17 +2655,8 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 		}
 	}
 
-	// Strategy 5: Metadata search with strict matching (duration tolerance: 10 seconds)
 	if track == nil {
-		GoLog("[%s] Trying metadata search: '%s' by '%s'\n", logPrefix, req.TrackName, req.ArtistName)
-		track, err = qobuzSearchTrackByMetadataWithDurationFunc(downloader, req.TrackName, req.ArtistName, expectedDurationSec)
-		if track != nil && !qobuzTrackMatchesRequest(req, track, logPrefix, "metadata search", false) {
-			track = nil
-		}
-	}
-
-	if track == nil {
-		errMsg := "could not find matching track on Qobuz (artist/duration mismatch)"
+		errMsg := "could not find matching track on Qobuz without identifier match"
 		if err != nil {
 			errMsg = err.Error()
 		}
