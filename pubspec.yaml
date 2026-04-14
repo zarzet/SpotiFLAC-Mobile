@@ -31,7 +31,7 @@ dependencies:
 
 # HTTP & Network
   http: ^1.6.0
-  connectivity_plus: 7.0.0
+  connectivity_plus: 7.1.1
 
   # UI Components
   cached_network_image: ^3.4.1
