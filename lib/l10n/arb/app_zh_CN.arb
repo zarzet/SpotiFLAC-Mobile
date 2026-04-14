@@ -158,6 +158,14 @@
       }
     }
   },
+  "optionsDefaultSearchTab": "Default Search Tab",
+  "@optionsDefaultSearchTab": {
+    "description": "Title for the preferred default search tab setting"
+  },
+  "optionsDefaultSearchTabSubtitle": "Choose which tab opens first for new search results.",
+  "@optionsDefaultSearchTabSubtitle": {
+    "description": "Subtitle for the preferred default search tab setting"
+  },
   "optionsSwitchBack": "点击 Deezer 或 Spotify 即可从扩展程序切换回来",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
@@ -421,6 +429,10 @@
   "aboutPCSource": "桌面版本源代码",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
+  },
+  "aboutKeepAndroidOpen": "Keep Android Open",
+  "@aboutKeepAndroidOpen": {
+    "description": "Link to Keep Android Open campaign website"
   },
   "aboutReportIssue": "报告一个问题",
   "@aboutReportIssue": {
