@@ -574,6 +574,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     if (trimmed.startsWith('content://')) return true;
     return trimmed.endsWith('.flac') ||
         trimmed.endsWith('.m4a') ||
+        trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.aac') ||
         trimmed.endsWith('.mp3') ||
         trimmed.endsWith('.opus') ||
@@ -595,6 +596,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
         !hasResolvedSpecs &&
         (trimmedPath.endsWith('.flac') ||
             trimmedPath.endsWith('.m4a') ||
+            trimmedPath.endsWith('.mp4') ||
             trimmedPath.endsWith('.aac') ||
             trimmedPath.startsWith('content://'));
 
@@ -2359,6 +2361,9 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       final normalized = preferred.startsWith('.')
           ? preferred.toLowerCase()
           : '.${preferred.toLowerCase()}';
+      if (normalized == '.mp4') {
+        return '.m4a';
+      }
       const allowed = <String>{'.flac', '.m4a', '.mp3', '.opus'};
       if (allowed.contains(normalized)) {
         return normalized;
@@ -2402,6 +2407,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   String _mimeTypeForExt(String ext) {
     switch (ext.toLowerCase()) {
       case '.m4a':
+      case '.mp4':
         return 'audio/mp4';
       case '.mp3':
         return 'audio/mpeg';
@@ -5021,6 +5027,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final isM4aFile =
             filePath != null &&
             (filePath.endsWith('.m4a') ||
+                filePath.endsWith('.mp4') ||
                 (mimeType != null && mimeType.contains('mp4')));
         final isFlacFile =
             filePath != null &&
@@ -5375,7 +5382,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 if (!await file.exists()) {
                   _log.e('File does not exist at path: $filePath');
                 } else {
-                  if (!targetPath.toLowerCase().endsWith('.m4a')) {
+                  if (!(targetPath.toLowerCase().endsWith('.m4a') ||
+                      targetPath.toLowerCase().endsWith('.mp4'))) {
                     final renamedPath = targetPath.replaceAll(
                       RegExp(r'\.[^.]+$'),
                       '.m4a',
@@ -5841,6 +5849,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               filePath.startsWith('content://') ||
               lowerFilePath.endsWith('.flac') ||
               lowerFilePath.endsWith('.m4a') ||
+              lowerFilePath.endsWith('.mp4') ||
               lowerFilePath.endsWith('.aac') ||
               lowerFilePath.endsWith('.mp3') ||
               lowerFilePath.endsWith('.opus') ||
