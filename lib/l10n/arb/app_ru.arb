@@ -17,7 +17,7 @@
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Магазин",
+  "navStore": "Repo",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Вставьте ссылку Spotify или ищите по названию",
+  "homeSubtitle": "Paste a supported URL or search by name",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -263,11 +263,11 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Магазин расширений",
+  "optionsExtensionStore": "Extension Repo",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Показывать вкладку Магазин в гл. меню",
+  "optionsExtensionStoreSubtitle": "Show Repo tab in navigation",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
@@ -370,7 +370,7 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Магазин расширений",
+  "storeTitle": "Extension Repo",
   "@storeTitle": {
     "description": "Store screen title"
   },
@@ -788,7 +788,7 @@
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
-  "dialogDeleteSelectedMessage": "Delete {count} {count, plural, =1{track} other{tracks}} from history?\n\nThis will also delete the files from storage.",
+  "dialogDeleteSelectedMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из истории?\n\nЭто также удалит файлы из хранилища.",
   "@dialogDeleteSelectedMessage": {
     "description": "Dialog message - delete selected tracks",
     "placeholders": {
@@ -867,7 +867,7 @@
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "Deleted {count} {count, plural, =1{track} other{tracks}}",
+  "snackbarDeletedTracks": "Удалено {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -1482,7 +1482,7 @@
       }
     }
   },
-  "tracksCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "tracksCount": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@tracksCount": {
     "description": "Track count display",
     "placeholders": {
@@ -1742,7 +1742,7 @@
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
-  "extensionDefaultProvider": "По умолчанию (Deezer/Spotify)",
+  "extensionDefaultProvider": "Default (Deezer)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -2125,7 +2125,7 @@
   "@downloadedAlbumDeleteSelected": {
     "description": "Button - delete selected tracks"
   },
-  "downloadedAlbumDeleteMessage": "Delete {count} {count, plural, =1{track} other{tracks}} from this album?\n\nThis will also delete the files from storage.",
+  "downloadedAlbumDeleteMessage": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}} из этого альбома?\n\nЭто также удалит файлы из хранилища.",
   "@downloadedAlbumDeleteMessage": {
     "description": "Delete confirmation with count",
     "placeholders": {
@@ -2151,7 +2151,7 @@
   "@downloadedAlbumTapToSelect": {
     "description": "Selection hint"
   },
-  "downloadedAlbumDeleteCount": "Delete {count} {count, plural, =1{track} other{tracks}}",
+  "downloadedAlbumDeleteCount": "Удалить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@downloadedAlbumDeleteCount": {
     "description": "Delete button text with count",
     "placeholders": {
@@ -2474,7 +2474,7 @@
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
-  "libraryTracksUnit": "{count, plural, =1{track} other{tracks}}",
+  "libraryTracksUnit": "{count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@libraryTracksUnit": {
     "description": "Unit label for tracks count (without the number itself)",
     "placeholders": {
@@ -2666,7 +2666,7 @@
   "@timeJustNow": {
     "description": "Relative time - less than a minute ago"
   },
-  "timeMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "timeMinutesAgo": "{count, plural, one {{count} минуту} few {{count} минуты} many {{count} минут} =1 {1 минуту} other {{count} минут}} назад",
   "@timeMinutesAgo": {
     "description": "Relative time - minutes ago",
     "placeholders": {
@@ -2675,7 +2675,7 @@
       }
     }
   },
-  "timeHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "timeHoursAgo": "{count, plural, one {{count} час} few {{count} часа} many {{count} часов} =1 {1 час} other {{count} часов}} назад",
   "@timeHoursAgo": {
     "description": "Relative time - hours ago",
     "placeholders": {
@@ -2748,7 +2748,7 @@
   "@tutorialExtensionsDesc": {
     "description": "Tutorial extensions page description"
   },
-  "tutorialExtensionsTip1": "Просмотрите вкладку Магазина, чтобы найти полезные расширения",
+  "tutorialExtensionsTip1": "Browse the Repo tab to discover useful extensions",
   "@tutorialExtensionsTip1": {
     "description": "Tutorial extensions tip 1"
   },
@@ -3142,7 +3142,7 @@
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Конвертировать в MP3 или Opus",
+  "trackConvertFormatSubtitle": "Convert to MP3, Opus, ALAC, or FLAC",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
@@ -3334,7 +3334,7 @@
   "@collectionNoPlaylistsSubtitle": {
     "description": "Empty state subtitle when user has no playlists"
   },
-  "collectionPlaylistTracks": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "collectionPlaylistTracks": "{count, plural, one {{count} трек} few {{count} трека} many {{count} треков} =1 {1 трек} other {{count} треков}}",
   "@collectionPlaylistTracks": {
     "description": "Track count label for custom playlists",
     "placeholders": {
@@ -3499,7 +3499,7 @@
   "@collectionPlaylistRemoveCover": {
     "description": "Bottom sheet action to remove custom cover image from a playlist"
   },
-  "selectionShareCount": "Share {count} {count, plural, =1{track} other{tracks}}",
+  "selectionShareCount": "Отправить {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@selectionShareCount": {
     "description": "Share button text with count in selection mode",
     "placeholders": {
@@ -3512,7 +3512,7 @@
   "@selectionShareNoFiles": {
     "description": "Snackbar when no selected files exist on disk"
   },
-  "selectionConvertCount": "Convert {count} {count, plural, =1{track} other{tracks}}",
+  "selectionConvertCount": "Конвертировать {count} {count, plural, one {трек} few {трека} many {треков} =1{трек} other{треков}}",
   "@selectionConvertCount": {
     "description": "Convert button text with count in selection mode",
     "placeholders": {
