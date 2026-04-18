@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Tempel URL yang didukung atau cari berdasarkan nama",
+  "homeSubtitle": "Paste a supported URL or search by name",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -158,11 +158,11 @@
       }
     }
   },
-  "optionsDefaultSearchTab": "Tab Pencarian Default",
+  "optionsDefaultSearchTab": "Default Search Tab",
   "@optionsDefaultSearchTab": {
     "description": "Title for the preferred default search tab setting"
   },
-  "optionsDefaultSearchTabSubtitle": "Pilih tab yang dibuka lebih dulu untuk hasil pencarian baru.",
+  "optionsDefaultSearchTabSubtitle": "Choose which tab opens first for new search results.",
   "@optionsDefaultSearchTabSubtitle": {
     "description": "Subtitle for the preferred default search tab setting"
   },
@@ -263,11 +263,11 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Repo Ekstensi",
+  "optionsExtensionStore": "Extension Repo",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Tampilkan tab Repo di navigasi",
+  "optionsExtensionStoreSubtitle": "Show Repo tab in navigation",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
@@ -370,7 +370,7 @@
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Repo Ekstensi",
+  "storeTitle": "Extension Repo",
   "@storeTitle": {
     "description": "Store screen title"
   },
@@ -957,15 +957,15 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
-  "errorUrlNotRecognized": "Link tidak dikenali",
+  "errorUrlNotRecognized": "Tautan tidak dikenali",
   "@errorUrlNotRecognized": {
     "description": "Error title - URL not handled by any extension or service"
   },
-  "errorUrlNotRecognizedMessage": "Link ini tidak didukung. Pastikan URL benar dan ekstensi yang kompatibel sudah terpasang.",
+  "errorUrlNotRecognizedMessage": "Tautan ini tidak didukung. Pastikan URL sudah benar dan ekstensi yang kompatibel telah terpasang.",
   "@errorUrlNotRecognizedMessage": {
     "description": "Error message - URL not recognized explanation"
   },
-  "errorUrlFetchFailed": "Gagal memuat konten dari link ini. Silakan coba lagi.",
+  "errorUrlFetchFailed": "Konten dari tautan ini gagal dimuat. Silakan coba lagi.",
   "@errorUrlFetchFailed": {
     "description": "Error message - generic URL fetch failure"
   },
@@ -1215,15 +1215,15 @@
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
-  "providerPriorityFallbackExtensionsTitle": "Fallback Ekstensi",
+  "providerPriorityFallbackExtensionsTitle": "Extension Fallback",
   "@providerPriorityFallbackExtensionsTitle": {
     "description": "Section title for choosing which download extensions can be used as fallback providers"
   },
-  "providerPriorityFallbackExtensionsDescription": "Pilih ekstensi unduhan terpasang mana yang boleh dipakai saat fallback otomatis. Provider bawaan tetap mengikuti urutan prioritas di atas.",
+  "providerPriorityFallbackExtensionsDescription": "Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.",
   "@providerPriorityFallbackExtensionsDescription": {
     "description": "Section description for extension fallback selection"
   },
-  "providerPriorityFallbackExtensionsHint": "Hanya ekstensi aktif dengan kemampuan download provider yang ditampilkan di sini.",
+  "providerPriorityFallbackExtensionsHint": "Only enabled extensions with download-provider capability are listed here.",
   "@providerPriorityFallbackExtensionsHint": {
     "description": "Hint below the extension fallback selection list"
   },
@@ -1730,7 +1730,7 @@
   "@storeNewRepoUrlLabel": {
     "description": "Label for the new repository URL field inside the dialog"
   },
-  "storeLoadError": "Gagal memuat repo",
+  "storeLoadError": "Failed to load repository",
   "@storeLoadError": {
     "description": "Error heading when the store cannot be loaded"
   },
@@ -1742,7 +1742,7 @@
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
-  "extensionDefaultProvider": "Bawaan (Deezer/Spotify)",
+  "extensionDefaultProvider": "Default (Deezer)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -1885,7 +1885,7 @@
   "@extensionsFallbackTitle": {
     "description": "Setting and page title for choosing which download extensions can be used during fallback"
   },
-  "extensionsFallbackSubtitle": "Pilih ekstensi unduhan terpasang yang boleh dipakai saat fallback",
+  "extensionsFallbackSubtitle": "Choose which installed download extensions can be used as fallback",
   "@extensionsFallbackSubtitle": {
     "description": "Subtitle for download fallback extensions menu"
   },
@@ -2748,7 +2748,7 @@
   "@tutorialExtensionsDesc": {
     "description": "Tutorial extensions page description"
   },
-  "tutorialExtensionsTip1": "Buka tab Repo untuk menemukan ekstensi yang berguna",
+  "tutorialExtensionsTip1": "Browse the Repo tab to discover useful extensions",
   "@tutorialExtensionsTip1": {
     "description": "Tutorial extensions tip 1"
   },
@@ -3088,11 +3088,11 @@
   "@trackReEnrichFfmpegFailed": {
     "description": "Snackbar when FFmpeg embed fails for MP3/Opus"
   },
-  "queueFlacAction": "Antrekan FLAC",
+  "queueFlacAction": "Queue FLAC",
   "@queueFlacAction": {
     "description": "Action/button label for queueing FLAC redownloads for local tracks"
   },
-  "queueFlacConfirmMessage": "Cari kecocokan online untuk track yang dipilih lalu antrekan download FLAC.\n\nFile yang sudah ada tidak akan diubah atau dihapus.\n\nHanya kecocokan dengan keyakinan tinggi yang akan diantrikan otomatis.\n\n{count} dipilih",
+  "queueFlacConfirmMessage": "Search online matches for the selected tracks and queue FLAC downloads.\n\nExisting files will not be modified or deleted.\n\nOnly high-confidence matches are queued automatically.\n\n{count} selected",
   "@queueFlacConfirmMessage": {
     "description": "Confirmation dialog body before queueing FLAC redownloads for local tracks",
     "placeholders": {
@@ -3101,7 +3101,7 @@
       }
     }
   },
-  "queueFlacFindingProgress": "Mencari kecocokan FLAC... ({current}/{total})",
+  "queueFlacFindingProgress": "Finding FLAC matches... ({current}/{total})",
   "@queueFlacFindingProgress": {
     "description": "Snackbar while resolving remote matches for local FLAC redownloads",
     "placeholders": {
@@ -3113,11 +3113,11 @@
       }
     }
   },
-  "queueFlacNoReliableMatches": "Tidak ada kecocokan online yang cukup meyakinkan untuk pilihan ini",
+  "queueFlacNoReliableMatches": "No reliable online matches found for the selection",
   "@queueFlacNoReliableMatches": {
     "description": "Snackbar when no safe FLAC redownload matches were found"
   },
-  "queueFlacQueuedWithSkipped": "Menambahkan {addedCount} track ke antrean, melewati {skippedCount}",
+  "queueFlacQueuedWithSkipped": "Added {addedCount} tracks to queue, skipped {skippedCount}",
   "@queueFlacQueuedWithSkipped": {
     "description": "Snackbar when some selected local tracks were queued for FLAC redownload and some were skipped",
     "placeholders": {
@@ -3142,7 +3142,7 @@
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Konversi ke MP3, Opus, ALAC, atau FLAC",
+  "trackConvertFormatSubtitle": "Convert to MP3, Opus, ALAC, or FLAC",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
@@ -3177,7 +3177,7 @@
       }
     }
   },
-  "trackConvertConfirmMessageLossless": "Konversi dari {sourceFormat} ke {targetFormat}? (Lossless — tanpa kehilangan kualitas)\n\nFile asli akan dihapus setelah konversi.",
+  "trackConvertConfirmMessageLossless": "Convert from {sourceFormat} to {targetFormat}? (Lossless — no quality loss)\n\nThe original file will be deleted after conversion.",
   "@trackConvertConfirmMessageLossless": {
     "description": "Confirmation dialog message for lossless-to-lossless conversion",
     "placeholders": {
@@ -3189,7 +3189,7 @@
       }
     }
   },
-  "trackConvertLosslessHint": "Konversi lossless — tanpa kehilangan kualitas",
+  "trackConvertLosslessHint": "Lossless conversion — no quality loss",
   "@trackConvertLosslessHint": {
     "description": "Hint shown when converting between lossless formats"
   },
@@ -3814,19 +3814,19 @@
   "@downloadArtistNameFilters": {
     "description": "Setting title for artist folder filter options"
   },
-  "downloadCreatePlaylistSourceFolder": "Buat folder sumber playlist",
+  "downloadCreatePlaylistSourceFolder": "Create playlist source folder",
   "@downloadCreatePlaylistSourceFolder": {
     "description": "Setting title for adding a playlist folder prefix before the normal organization structure"
   },
-  "downloadCreatePlaylistSourceFolderEnabled": "Unduhan dari playlist memakai Playlist/ lalu struktur folder normal Anda.",
+  "downloadCreatePlaylistSourceFolderEnabled": "Playlist downloads use Playlist/ plus your normal folder structure.",
   "@downloadCreatePlaylistSourceFolderEnabled": {
     "description": "Subtitle when playlist source folder prefix is enabled"
   },
-  "downloadCreatePlaylistSourceFolderDisabled": "Unduhan dari playlist hanya memakai struktur folder normal.",
+  "downloadCreatePlaylistSourceFolderDisabled": "Playlist downloads use the normal folder structure only.",
   "@downloadCreatePlaylistSourceFolderDisabled": {
     "description": "Subtitle when playlist source folder prefix is disabled"
   },
-  "downloadCreatePlaylistSourceFolderRedundant": "Mode Berdasarkan Playlist sudah menaruh unduhan ke dalam folder playlist.",
+  "downloadCreatePlaylistSourceFolderRedundant": "By Playlist already places downloads inside a playlist folder.",
   "@downloadCreatePlaylistSourceFolderRedundant": {
     "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
   },
