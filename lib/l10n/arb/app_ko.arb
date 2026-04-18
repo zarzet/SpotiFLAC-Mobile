@@ -1099,7 +1099,7 @@
   "@tooltipPlay": {
     "description": "Tooltip - play button"
   },
-  "filenameFormat": "",
+  "filenameFormat": "Filename Format",
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },

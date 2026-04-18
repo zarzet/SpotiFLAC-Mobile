@@ -129,7 +129,7 @@
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "",
+  "appearanceHistoryViewList": "List",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },

@@ -1,19 +1,19 @@
 {
-  "@@locale": "zh-CN",
+  "@@locale": "es-ES",
   "@@last_modified": "2026-01-16",
   "appName": "SpotiFLAC",
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
-  "navHome": "主页",
+  "navHome": "Home",
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "乐库",
+  "navLibrary": "Library",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
-  "navSettings": "设置",
+  "navSettings": "Settings",
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
@@ -21,7 +21,7 @@
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
-  "homeTitle": "主页",
+  "homeTitle": "Home",
   "@homeTitle": {
     "description": "Home screen title"
   },
@@ -29,63 +29,63 @@
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "支持：歌曲、专辑、播放列表、艺人网址",
+  "homeSupports": "Supports: Track, Album, Playlist, Artist URLs",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
-  "homeRecent": "最近",
+  "homeRecent": "Recent",
   "@homeRecent": {
     "description": "Section header for recent searches"
   },
-  "historyFilterAll": "全部",
+  "historyFilterAll": "All",
   "@historyFilterAll": {
     "description": "Filter chip - show all items"
   },
-  "historyFilterAlbums": "专辑",
+  "historyFilterAlbums": "Albums",
   "@historyFilterAlbums": {
     "description": "Filter chip - show albums only"
   },
-  "historyFilterSingles": "单曲",
+  "historyFilterSingles": "Singles",
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historySearchHint": "搜索历史……",
+  "historySearchHint": "Search history...",
   "@historySearchHint": {
     "description": "Search bar placeholder in history"
   },
-  "settingsTitle": "设置",
+  "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Settings screen title"
   },
-  "settingsDownload": "下载",
+  "settingsDownload": "Download",
   "@settingsDownload": {
     "description": "Settings section - download options"
   },
-  "settingsAppearance": "外观",
+  "settingsAppearance": "Appearance",
   "@settingsAppearance": {
     "description": "Settings section - visual customization"
   },
-  "settingsOptions": "选项",
+  "settingsOptions": "Options",
   "@settingsOptions": {
     "description": "Settings section - app options"
   },
-  "settingsExtensions": "扩展",
+  "settingsExtensions": "Extensions",
   "@settingsExtensions": {
     "description": "Settings section - extension management"
   },
-  "settingsAbout": "关于",
+  "settingsAbout": "About",
   "@settingsAbout": {
     "description": "Settings section - app info"
   },
-  "downloadTitle": "下载",
+  "downloadTitle": "Download",
   "@downloadTitle": {
     "description": "Download settings page title"
   },
-  "downloadAskQualitySubtitle": "为每次下载显示质量选择器",
+  "downloadAskQualitySubtitle": "Show quality picker for each download",
   "@downloadAskQualitySubtitle": {
     "description": "Subtitle for ask quality toggle"
   },
-  "downloadFilenameFormat": "文件名格式",
+  "downloadFilenameFormat": "Filename Format",
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
@@ -97,59 +97,59 @@
   "@downloadSingleFilenameFormatDescription": {
     "description": "Subtitle description for single filename format setting"
   },
-  "downloadFolderOrganization": "文件夹结构",
+  "downloadFolderOrganization": "Folder Organization",
   "@downloadFolderOrganization": {
     "description": "Title of the folder organization picker bottom sheet"
   },
-  "appearanceTitle": "外观",
+  "appearanceTitle": "Appearance",
   "@appearanceTitle": {
     "description": "Appearance settings page title"
   },
-  "appearanceThemeSystem": "系统",
+  "appearanceThemeSystem": "System",
   "@appearanceThemeSystem": {
     "description": "Follow system theme"
   },
-  "appearanceThemeLight": "浅色",
+  "appearanceThemeLight": "Light",
   "@appearanceThemeLight": {
     "description": "Light theme"
   },
-  "appearanceThemeDark": "深色",
+  "appearanceThemeDark": "Dark",
   "@appearanceThemeDark": {
     "description": "Dark theme"
   },
-  "appearanceDynamicColor": "动态色彩",
+  "appearanceDynamicColor": "Dynamic Color",
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "使用壁纸的颜色",
+  "appearanceDynamicColorSubtitle": "Use colors from your wallpaper",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
-  "appearanceHistoryView": "历史记录",
+  "appearanceHistoryView": "History View",
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "列表",
+  "appearanceHistoryViewList": "List",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
-  "appearanceHistoryViewGrid": "网格",
+  "appearanceHistoryViewGrid": "Grid",
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
-  "optionsTitle": "选项",
+  "optionsTitle": "Options",
   "@optionsTitle": {
     "description": "Options settings page title"
   },
-  "optionsPrimaryProvider": "主要提供者",
+  "optionsPrimaryProvider": "Primary Provider",
   "@optionsPrimaryProvider": {
     "description": "Main search provider setting"
   },
-  "optionsPrimaryProviderSubtitle": "按歌曲名称搜索时使用的服务。",
+  "optionsPrimaryProviderSubtitle": "Service used when searching by track name.",
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
-  "optionsUsingExtension": "使用扩展：{extensionName}",
+  "optionsUsingExtension": "Using extension: {extensionName}",
   "@optionsUsingExtension": {
     "description": "Shows active extension name",
     "placeholders": {
@@ -166,43 +166,43 @@
   "@optionsDefaultSearchTabSubtitle": {
     "description": "Subtitle for the preferred default search tab setting"
   },
-  "optionsSwitchBack": "点击 Deezer 或 Spotify 即可从扩展程序切换回来",
+  "optionsSwitchBack": "Tap Deezer or Spotify to switch back from extension",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
-  "optionsAutoFallback": "自动回退",
+  "optionsAutoFallback": "Auto Fallback",
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
-  "optionsAutoFallbackSubtitle": "如果下载失败，请尝试其他服务",
+  "optionsAutoFallbackSubtitle": "Try other services if download fails",
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsUseExtensionProviders": "使用扩展提供商",
+  "optionsUseExtensionProviders": "Use Extension Providers",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
-  "optionsUseExtensionProvidersOn": "扩展会被最先尝试",
+  "optionsUseExtensionProvidersOn": "Extensions will be tried first",
   "@optionsUseExtensionProvidersOn": {
     "description": "Status when extension providers enabled"
   },
-  "optionsUseExtensionProvidersOff": "仅使用内置提供商",
+  "optionsUseExtensionProvidersOff": "Using built-in providers only",
   "@optionsUseExtensionProvidersOff": {
     "description": "Status when extension providers disabled"
   },
-  "optionsEmbedLyrics": "内嵌歌词",
+  "optionsEmbedLyrics": "Embed Lyrics",
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "嵌入已同步歌词到 FLAC 文件",
+  "optionsEmbedLyricsSubtitle": "Embed synced lyrics into FLAC files",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
-  "optionsMaxQualityCover": "最高质量封面",
+  "optionsMaxQualityCover": "Max Quality Cover",
   "@optionsMaxQualityCover": {
     "description": "Download highest quality album art"
   },
-  "optionsMaxQualityCoverSubtitle": "下载最高分辨率封面",
+  "optionsMaxQualityCoverSubtitle": "Download highest resolution cover art",
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
@@ -242,15 +242,15 @@
   "@optionsArtistTagModeSplitVorbisSubtitle": {
     "description": "Subtitle for split Vorbis artist tag mode"
   },
-  "optionsConcurrentDownloads": "并行下载数",
+  "optionsConcurrentDownloads": "Concurrent Downloads",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
   },
-  "optionsConcurrentSequential": "按顺序下载（一次一首）",
+  "optionsConcurrentSequential": "Sequential (1 at a time)",
   "@optionsConcurrentSequential": {
     "description": "Download one at a time"
   },
-  "optionsConcurrentParallel": "同时下载 {count} 首",
+  "optionsConcurrentParallel": "{count} parallel downloads",
   "@optionsConcurrentParallel": {
     "description": "Multiple parallel downloads",
     "placeholders": {
@@ -259,7 +259,7 @@
       }
     }
   },
-  "optionsConcurrentWarning": "并行下载可能会触发速率限制",
+  "optionsConcurrentWarning": "Parallel downloads may trigger rate limiting",
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
@@ -271,55 +271,55 @@
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
-  "optionsCheckUpdates": "检查更新",
+  "optionsCheckUpdates": "Check for Updates",
   "@optionsCheckUpdates": {
     "description": "Auto update check toggle"
   },
-  "optionsCheckUpdatesSubtitle": "当有新版本可用时通知",
+  "optionsCheckUpdatesSubtitle": "Notify when new version is available",
   "@optionsCheckUpdatesSubtitle": {
     "description": "Subtitle for update check"
   },
-  "optionsUpdateChannel": "更新频道",
+  "optionsUpdateChannel": "Update Channel",
   "@optionsUpdateChannel": {
     "description": "Stable vs preview releases"
   },
-  "optionsUpdateChannelStable": "仅稳定版本",
+  "optionsUpdateChannelStable": "Stable releases only",
   "@optionsUpdateChannelStable": {
     "description": "Only stable updates"
   },
-  "optionsUpdateChannelPreview": "获取预览版本",
+  "optionsUpdateChannelPreview": "Get preview releases",
   "@optionsUpdateChannelPreview": {
     "description": "Include beta/preview updates"
   },
-  "optionsUpdateChannelWarning": "预览版本可能包含错误或者尚未完善的功能",
+  "optionsUpdateChannelWarning": "Preview may contain bugs or incomplete features",
   "@optionsUpdateChannelWarning": {
     "description": "Warning about preview channel"
   },
-  "optionsClearHistory": "清除下载历史记录",
+  "optionsClearHistory": "Clear Download History",
   "@optionsClearHistory": {
     "description": "Delete all download history"
   },
-  "optionsClearHistorySubtitle": "从历史记录中清除所有已下载的曲目",
+  "optionsClearHistorySubtitle": "Remove all downloaded tracks from history",
   "@optionsClearHistorySubtitle": {
     "description": "Subtitle for clear history"
   },
-  "optionsDetailedLogging": "详细日志",
+  "optionsDetailedLogging": "Detailed Logging",
   "@optionsDetailedLogging": {
     "description": "Enable verbose logs for debugging"
   },
-  "optionsDetailedLoggingOn": "正在记录详细日志",
+  "optionsDetailedLoggingOn": "Detailed logs are being recorded",
   "@optionsDetailedLoggingOn": {
     "description": "Status when logging enabled"
   },
-  "optionsDetailedLoggingOff": "为错误报告启用",
+  "optionsDetailedLoggingOff": "Enable for bug reports",
   "@optionsDetailedLoggingOff": {
     "description": "Status when logging disabled"
   },
-  "optionsSpotifyCredentials": "Spotify 凭据",
+  "optionsSpotifyCredentials": "Spotify Credentials",
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
-  "optionsSpotifyCredentialsConfigured": "客户端 ID：{clientId}……",
+  "optionsSpotifyCredentialsConfigured": "Client ID: {clientId}...",
   "@optionsSpotifyCredentialsConfigured": {
     "description": "Shows configured client ID preview",
     "placeholders": {
@@ -328,27 +328,27 @@
       }
     }
   },
-  "optionsSpotifyCredentialsRequired": "必填 - 点击配置",
+  "optionsSpotifyCredentialsRequired": "Required - tap to configure",
   "@optionsSpotifyCredentialsRequired": {
     "description": "Prompt to set up credentials"
   },
-  "optionsSpotifyWarning": "Spotify 需要您自己的 API 凭据。在 developer.spotify.com 免费获取",
+  "optionsSpotifyWarning": "Spotify requires your own API credentials. Get them free from developer.spotify.com",
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify 搜索将在 2026 年 3 月 3 日因 Spotify API 更改而被废弃。请切换到 Deezer。",
+  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
-  "extensionsTitle": "扩展",
+  "extensionsTitle": "Extensions",
   "@extensionsTitle": {
     "description": "Extensions page title"
   },
-  "extensionsDisabled": "禁用",
+  "extensionsDisabled": "Disabled",
   "@extensionsDisabled": {
     "description": "Extension status - inactive"
   },
-  "extensionsVersion": "版本 {version}",
+  "extensionsVersion": "Version {version}",
   "@extensionsVersion": {
     "description": "Extension version display",
     "placeholders": {
@@ -357,7 +357,7 @@
       }
     }
   },
-  "extensionsAuthor": "来自 {author}",
+  "extensionsAuthor": "by {author}",
   "@extensionsAuthor": {
     "description": "Extension author credit",
     "placeholders": {
@@ -366,7 +366,7 @@
       }
     }
   },
-  "extensionsUninstall": "卸载",
+  "extensionsUninstall": "Uninstall",
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
@@ -374,59 +374,59 @@
   "@storeTitle": {
     "description": "Store screen title"
   },
-  "storeSearch": "搜索扩展……",
+  "storeSearch": "Search extensions...",
   "@storeSearch": {
     "description": "Store search placeholder"
   },
-  "storeInstall": "安装",
+  "storeInstall": "Install",
   "@storeInstall": {
     "description": "Install extension button"
   },
-  "storeInstalled": "已安装",
+  "storeInstalled": "Installed",
   "@storeInstalled": {
     "description": "Already installed badge"
   },
-  "storeUpdate": "更新",
+  "storeUpdate": "Update",
   "@storeUpdate": {
     "description": "Update available button"
   },
-  "aboutTitle": "关于",
+  "aboutTitle": "About",
   "@aboutTitle": {
     "description": "About page title"
   },
-  "aboutContributors": "贡献者",
+  "aboutContributors": "Contributors",
   "@aboutContributors": {
     "description": "Section for contributors"
   },
-  "aboutMobileDeveloper": "移动版本开发者",
+  "aboutMobileDeveloper": "Mobile version developer",
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
-  "aboutOriginalCreator": "原 SpotiLDAC 创建者",
+  "aboutOriginalCreator": "Creator of the original SpotiFLAC",
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "有才华的艺术家创建了我们美丽的应用图标！",
+  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutTranslators": "译者",
+  "aboutTranslators": "Translators",
   "@aboutTranslators": {
     "description": "Section for translators"
   },
-  "aboutSpecialThanks": "特别鸣谢",
+  "aboutSpecialThanks": "Special Thanks",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
   },
-  "aboutLinks": "相关链接",
+  "aboutLinks": "Links",
   "@aboutLinks": {
     "description": "Section for external links"
   },
-  "aboutMobileSource": "移动版本源代码",
+  "aboutMobileSource": "Mobile source code",
   "@aboutMobileSource": {
     "description": "Link to mobile GitHub repo"
   },
-  "aboutPCSource": "桌面版本源代码",
+  "aboutPCSource": "PC source code",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
@@ -434,11 +434,11 @@
   "@aboutKeepAndroidOpen": {
     "description": "Link to Keep Android Open campaign website"
   },
-  "aboutReportIssue": "报告一个问题",
+  "aboutReportIssue": "Report an issue",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "报告您遇到的任何问题",
+  "aboutReportIssueSubtitle": "Report any problems you encounter",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
@@ -659,23 +659,23 @@
   "@setupNotificationGranted": {
     "description": "Success message for notification permission"
   },
-  "setupNotificationEnable": "启用通知",
+  "setupNotificationEnable": "Enable Notifications",
   "@setupNotificationEnable": {
     "description": "Button to enable notifications"
   },
-  "setupFolderChoose": "选择下载文件夹",
+  "setupFolderChoose": "Choose Download Folder",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
-  "setupFolderDescription": "选择保存您下载的音乐的文件夹。",
+  "setupFolderDescription": "Select a folder where your downloaded music will be saved.",
   "@setupFolderDescription": {
     "description": "Explanation for folder selection"
   },
-  "setupSelectFolder": "选择文件夹",
+  "setupSelectFolder": "Select Folder",
   "@setupSelectFolder": {
     "description": "Button to select folder"
   },
-  "setupEnableNotifications": "启用通知",
+  "setupEnableNotifications": "Enable Notifications",
   "@setupEnableNotifications": {
     "description": "Button to enable notifications"
   },
@@ -949,11 +949,11 @@
   "@errorRateLimited": {
     "description": "Error title - too many requests"
   },
-  "errorRateLimitedMessage": "请求过多。请等一会再搜索。",
+  "errorRateLimitedMessage": "Too many requests. Please wait a moment before searching again.",
   "@errorRateLimitedMessage": {
     "description": "Error message - rate limit explanation"
   },
-  "errorNoTracksFound": "未找到曲目",
+  "errorNoTracksFound": "No tracks found",
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },

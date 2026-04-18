@@ -250,7 +250,7 @@
   "@optionsConcurrentSequential": {
     "description": "Download one at a time"
   },
-  "optionsConcurrentParallel": "",
+  "optionsConcurrentParallel": "{count} parallel downloads",
   "@optionsConcurrentParallel": {
     "description": "Multiple parallel downloads",
     "placeholders": {
@@ -398,7 +398,7 @@
   "@aboutContributors": {
     "description": "Section for contributors"
   },
-  "aboutMobileDeveloper": "",
+  "aboutMobileDeveloper": "Mobile version developer",
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
