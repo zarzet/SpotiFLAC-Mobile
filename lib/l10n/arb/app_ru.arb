@@ -1055,11 +1055,11 @@
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
-  "searchSortTitle": "Sort Results",
+  "searchSortTitle": "Упорядочить результаты",
   "@searchSortTitle": {
     "description": "Bottom sheet title for search sort options"
   },
-  "searchSortDefault": "Default",
+  "searchSortDefault": "По умолчанию",
   "@searchSortDefault": {
     "description": "Sort option - default API order"
   },
@@ -1742,7 +1742,7 @@
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
-  "extensionDefaultProvider": "Default (Deezer)",
+  "extensionDefaultProvider": "По умолчанию (Deezer)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -1949,15 +1949,15 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "downloadLossy320": "Lossy 320kbps",
+  "downloadLossy320": "С потерями 320 кбит/с",
   "@downloadLossy320": {
     "description": "Quality option label for Tidal lossy 320kbps"
   },
-  "downloadLossyFormat": "Lossy Format",
+  "downloadLossyFormat": "Формат с потерями",
   "@downloadLossyFormat": {
     "description": "Setting title to pick output format for Tidal lossy downloads"
   },
-  "downloadLossy320Format": "Lossy 320kbps Format",
+  "downloadLossy320Format": "Формат с потерями 320 кбит/с",
   "@downloadLossy320Format": {
     "description": "Title of the Tidal lossy format picker bottom sheet"
   },
@@ -1965,15 +1965,15 @@
   "@downloadLossy320FormatDesc": {
     "description": "Description in the Tidal lossy format picker"
   },
-  "downloadLossyMp3": "MP3 320кбит/с",
+  "downloadLossyMp3": "MP3 320 кбит/с",
   "@downloadLossyMp3": {
     "description": "Tidal lossy format option - MP3 320kbps"
   },
-  "downloadLossyMp3Subtitle": "Best compatibility, ~10MB per track",
+  "downloadLossyMp3Subtitle": "Наилучшая совместимость, ~10 Мб на трек",
   "@downloadLossyMp3Subtitle": {
     "description": "Subtitle for MP3 320kbps Tidal lossy option"
   },
-  "downloadLossyOpus256": "Opus 256kbps",
+  "downloadLossyOpus256": "Opus 256 кбит/с",
   "@downloadLossyOpus256": {
     "description": "Tidal lossy format option - Opus 256kbps"
   },
@@ -1981,11 +1981,11 @@
   "@downloadLossyOpus256Subtitle": {
     "description": "Subtitle for Opus 256kbps Tidal lossy option"
   },
-  "downloadLossyOpus128": "Opus 128kbps",
+  "downloadLossyOpus128": "Opus 128 кбит/с",
   "@downloadLossyOpus128": {
     "description": "Tidal lossy format option - Opus 128kbps"
   },
-  "downloadLossyOpus128Subtitle": "Smallest size, ~4MB per track",
+  "downloadLossyOpus128Subtitle": "Минимальный размер, ~4 Мб на трек",
   "@downloadLossyOpus128Subtitle": {
     "description": "Subtitle for Opus 128kbps Tidal lossy option"
   },
@@ -2402,7 +2402,7 @@
   "@libraryShowDuplicateIndicatorSubtitle": {
     "description": "Subtitle for duplicate indicator toggle"
   },
-  "libraryAutoScan": "Auto Scan",
+  "libraryAutoScan": "Автосканирование",
   "@libraryAutoScan": {
     "description": "Setting for automatic library scanning"
   },
@@ -2414,15 +2414,15 @@
   "@libraryAutoScanOff": {
     "description": "Auto scan disabled"
   },
-  "libraryAutoScanOnOpen": "Every app open",
+  "libraryAutoScanOnOpen": "Каждое открытие приложения",
   "@libraryAutoScanOnOpen": {
     "description": "Auto scan when app opens"
   },
-  "libraryAutoScanDaily": "Daily",
+  "libraryAutoScanDaily": "Ежедневно",
   "@libraryAutoScanDaily": {
     "description": "Auto scan once per day"
   },
-  "libraryAutoScanWeekly": "Weekly",
+  "libraryAutoScanWeekly": "Еженедельно",
   "@libraryAutoScanWeekly": {
     "description": "Auto scan once per week"
   },
@@ -2509,7 +2509,7 @@
   "@libraryScanning": {
     "description": "Status during scan"
   },
-  "libraryScanFinalizing": "Finalizing library...",
+  "libraryScanFinalizing": "Завершение работы с библиотекой...",
   "@libraryScanFinalizing": {
     "description": "Status shown after file scanning finishes but library persistence is still running"
   },
@@ -2602,7 +2602,7 @@
   "@libraryFilterQualityCD": {
     "description": "Filter option - CD quality audio"
   },
-  "libraryFilterQualityLossy": "Lossy",
+  "libraryFilterQualityLossy": "С потерями",
   "@libraryFilterQualityLossy": {
     "description": "Filter option - lossy compressed audio"
   },
@@ -2618,15 +2618,15 @@
   "@libraryFilterMetadataComplete": {
     "description": "Filter option - items with complete metadata"
   },
-  "libraryFilterMetadataMissingAny": "Missing any metadata",
+  "libraryFilterMetadataMissingAny": "Не хватает метаданных",
   "@libraryFilterMetadataMissingAny": {
     "description": "Filter option - items missing any tracked metadata field"
   },
-  "libraryFilterMetadataMissingYear": "Missing year",
+  "libraryFilterMetadataMissingYear": "Отсутствует год",
   "@libraryFilterMetadataMissingYear": {
     "description": "Filter option - items missing release year/date"
   },
-  "libraryFilterMetadataMissingGenre": "Missing genre",
+  "libraryFilterMetadataMissingGenre": "Отсутствует жанр",
   "@libraryFilterMetadataMissingGenre": {
     "description": "Filter option - items missing genre"
   },
@@ -2646,19 +2646,19 @@
   "@libraryFilterSortOldest": {
     "description": "Sort option - oldest first"
   },
-  "libraryFilterSortAlbumAsc": "Album (A-Z)",
+  "libraryFilterSortAlbumAsc": "Альбом (А-Я)",
   "@libraryFilterSortAlbumAsc": {
     "description": "Sort option - album ascending"
   },
-  "libraryFilterSortAlbumDesc": "Album (Z-A)",
+  "libraryFilterSortAlbumDesc": "Альбом (Я-А)",
   "@libraryFilterSortAlbumDesc": {
     "description": "Sort option - album descending"
   },
-  "libraryFilterSortGenreAsc": "Genre (A-Z)",
+  "libraryFilterSortGenreAsc": "Жанр (А-Я)",
   "@libraryFilterSortGenreAsc": {
     "description": "Sort option - genre ascending"
   },
-  "libraryFilterSortGenreDesc": "Genre (Z-A)",
+  "libraryFilterSortGenreDesc": "Жанр (Я-А)",
   "@libraryFilterSortGenreDesc": {
     "description": "Sort option - genre descending"
   },
@@ -3014,35 +3014,35 @@
   "@trackReEnrichOnlineSubtitle": {
     "description": "Subtitle for re-enrich metadata action for local items"
   },
-  "trackReEnrichFieldsTitle": "Fields to update",
+  "trackReEnrichFieldsTitle": "Поля для обновления",
   "@trackReEnrichFieldsTitle": {
     "description": "Section title for field selection in re-enrich dialog"
   },
-  "trackReEnrichFieldCover": "Cover Art",
+  "trackReEnrichFieldCover": "Обложка",
   "@trackReEnrichFieldCover": {
     "description": "Checkbox label for cover art field in re-enrich"
   },
-  "trackReEnrichFieldLyrics": "Lyrics",
+  "trackReEnrichFieldLyrics": "Текст песни",
   "@trackReEnrichFieldLyrics": {
     "description": "Checkbox label for lyrics field in re-enrich"
   },
-  "trackReEnrichFieldBasicTags": "Album, Album Artist",
+  "trackReEnrichFieldBasicTags": "Альбом, Исполнитель альбома",
   "@trackReEnrichFieldBasicTags": {
     "description": "Checkbox label for basic tags in re-enrich (title/artist are never overwritten)"
   },
-  "trackReEnrichFieldTrackInfo": "Track & Disc Number",
+  "trackReEnrichFieldTrackInfo": "Номер трека и диска",
   "@trackReEnrichFieldTrackInfo": {
     "description": "Checkbox label for track info in re-enrich"
   },
-  "trackReEnrichFieldReleaseInfo": "Date & ISRC",
+  "trackReEnrichFieldReleaseInfo": "Дата и ISRC",
   "@trackReEnrichFieldReleaseInfo": {
     "description": "Checkbox label for release info in re-enrich"
   },
-  "trackReEnrichFieldExtra": "Genre, Label, Copyright",
+  "trackReEnrichFieldExtra": "Жанр, Название, Авторские права",
   "@trackReEnrichFieldExtra": {
     "description": "Checkbox label for extra metadata in re-enrich"
   },
-  "trackReEnrichSelectAll": "Select All",
+  "trackReEnrichSelectAll": "Выбрать всё",
   "@trackReEnrichSelectAll": {
     "description": "Select all fields checkbox in re-enrich"
   },
@@ -3088,7 +3088,7 @@
   "@trackReEnrichFfmpegFailed": {
     "description": "Snackbar when FFmpeg embed fails for MP3/Opus"
   },
-  "queueFlacAction": "Queue FLAC",
+  "queueFlacAction": "Очередь FLAC",
   "@queueFlacAction": {
     "description": "Action/button label for queueing FLAC redownloads for local tracks"
   },
@@ -3142,7 +3142,7 @@
   "@trackConvertFormat": {
     "description": "Menu item - convert audio format"
   },
-  "trackConvertFormatSubtitle": "Convert to MP3, Opus, ALAC, or FLAC",
+  "trackConvertFormatSubtitle": "Конвертировать в MP3, Opus, ALAC, или FLAC",
   "@trackConvertFormatSubtitle": {
     "description": "Subtitle for convert format menu item"
   },
@@ -3612,7 +3612,7 @@
   "@lyricsProvidersInfoText": {
     "description": "Info tip on lyrics provider priority page"
   },
-  "lyricsProvidersEnabledSection": "Enabled ({count})",
+  "lyricsProvidersEnabledSection": "Включено ({count})",
   "@lyricsProvidersEnabledSection": {
     "description": "Section header for enabled providers",
     "placeholders": {
@@ -3621,7 +3621,7 @@
       }
     }
   },
-  "lyricsProvidersDisabledSection": "Disabled ({count})",
+  "lyricsProvidersDisabledSection": "Выключено ({count})",
   "@lyricsProvidersDisabledSection": {
     "description": "Section header for disabled providers",
     "placeholders": {
@@ -3638,7 +3638,7 @@
   "@lyricsProvidersSaved": {
     "description": "Snackbar after saving lyrics provider priority"
   },
-  "lyricsProvidersDiscardContent": "You have unsaved changes that will be lost.",
+  "lyricsProvidersDiscardContent": "У вас есть несохранённые изменения, которые будут потеряны.",
   "@lyricsProvidersDiscardContent": {
     "description": "Body text of the discard-changes dialog on lyrics provider page"
   },
@@ -3646,7 +3646,7 @@
   "@lyricsProviderLrclibDesc": {
     "description": "Description for LRCLIB provider"
   },
-  "lyricsProviderNeteaseDesc": "NetEase Cloud Music (good for Asian songs)",
+  "lyricsProviderNeteaseDesc": "NetEase Cloud Music (хорош для азиатских песен)",
   "@lyricsProviderNeteaseDesc": {
     "description": "Description for Netease provider"
   },
@@ -3658,11 +3658,11 @@
   "@lyricsProviderAppleMusicDesc": {
     "description": "Description for Apple Music provider"
   },
-  "lyricsProviderQqMusicDesc": "QQ Music (good for Chinese songs, via proxy)",
+  "lyricsProviderQqMusicDesc": "QQ Музыка (хорошо подходит для китайских песен, через прокси)",
   "@lyricsProviderQqMusicDesc": {
     "description": "Description for QQ Music provider"
   },
-  "lyricsProviderExtensionDesc": "Extension provider",
+  "lyricsProviderExtensionDesc": "Поставщик расширений",
   "@lyricsProviderExtensionDesc": {
     "description": "Generic description for extension-based lyrics providers"
   },
@@ -3694,7 +3694,7 @@
   "@tooltipLoveAll": {
     "description": "Tooltip for the Love All button on album/playlist screens"
   },
-  "tooltipAddToPlaylist": "Add to Playlist",
+  "tooltipAddToPlaylist": "Добавить в плейлист",
   "@tooltipAddToPlaylist": {
     "description": "Tooltip for the Add to Playlist button"
   },
@@ -3733,7 +3733,7 @@
   "@homeSkipAlreadyDownloaded": {
     "description": "Checkbox label in import dialog to skip already-downloaded songs"
   },
-  "homeGoToAlbum": "Go to Album",
+  "homeGoToAlbum": "Перейти к альбому",
   "@homeGoToAlbum": {
     "description": "Context menu item to navigate to the album page"
   },
@@ -3741,11 +3741,11 @@
   "@homeAlbumInfoUnavailable": {
     "description": "Snackbar when album info cannot be loaded"
   },
-  "snackbarLoadingCueSheet": "Loading CUE sheet...",
+  "snackbarLoadingCueSheet": "Загрузка CUE разметки...",
   "@snackbarLoadingCueSheet": {
     "description": "Snackbar while loading a CUE sheet file"
   },
-  "snackbarMetadataSaved": "Metadata saved successfully",
+  "snackbarMetadataSaved": "Метаданные успешно сохранены",
   "@snackbarMetadataSaved": {
     "description": "Snackbar after successfully saving track metadata"
   },
@@ -3778,7 +3778,7 @@
   "@downloadLocationSubtitle": {
     "description": "Subtitle text in Android download location bottom sheet"
   },
-  "storageModeAppFolder": "App folder (non-SAF)",
+  "storageModeAppFolder": "Папка приложения (не SAF)",
   "@storageModeAppFolder": {
     "description": "Storage mode option - use legacy app folder"
   },
@@ -3786,7 +3786,7 @@
   "@storageModeAppFolderSubtitle": {
     "description": "Subtitle for app folder storage mode"
   },
-  "storageModeSaf": "SAF folder",
+  "storageModeSaf": "Папка SAF",
   "@storageModeSaf": {
     "description": "Storage mode option - use Android SAF picker"
   },
@@ -3798,7 +3798,7 @@
   "@downloadFilenameDescription": {
     "description": "Description text in filename format bottom sheet"
   },
-  "downloadFilenameInsertTag": "Tap to insert tag:",
+  "downloadFilenameInsertTag": "Нажмите для вставки тега:",
   "@downloadFilenameInsertTag": {
     "description": "Label above filename tag chips"
   },
@@ -3830,7 +3830,7 @@
   "@downloadCreatePlaylistSourceFolderRedundant": {
     "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
   },
-  "downloadSongLinkRegion": "SongLink Region",
+  "downloadSongLinkRegion": "Регион SongLink",
   "@downloadSongLinkRegion": {
     "description": "Setting title for SongLink country region"
   },
@@ -3858,7 +3858,7 @@
   "@downloadEmbedLyricsDisabled": {
     "description": "Subtitle for Embed Lyrics when Embed Metadata is disabled"
   },
-  "downloadNeteaseIncludeTranslation": "Netease: Include Translation",
+  "downloadNeteaseIncludeTranslation": "Netease: включение перевода",
   "@downloadNeteaseIncludeTranslation": {
     "description": "Toggle title for including Netease translated lyrics"
   },
@@ -3866,7 +3866,7 @@
   "@downloadNeteaseIncludeTranslationEnabled": {
     "description": "Subtitle when Netease translation is enabled"
   },
-  "downloadNeteaseIncludeTranslationDisabled": "Use original lyrics only",
+  "downloadNeteaseIncludeTranslationDisabled": "Использовать только оригинальный текст",
   "@downloadNeteaseIncludeTranslationDisabled": {
     "description": "Subtitle when Netease translation is disabled"
   },
@@ -3894,11 +3894,11 @@
   "@downloadAppleQqMultiPersonDisabled": {
     "description": "Subtitle when multi-person word-by-word is disabled"
   },
-  "downloadMusixmatchLanguage": "Musixmatch Language",
+  "downloadMusixmatchLanguage": "Язык Musixmatch",
   "@downloadMusixmatchLanguage": {
     "description": "Setting title for Musixmatch language preference"
   },
-  "downloadMusixmatchLanguageAuto": "Auto (original)",
+  "downloadMusixmatchLanguageAuto": "Автоматически (оригинал)",
   "@downloadMusixmatchLanguageAuto": {
     "description": "Option label when Musixmatch uses original language"
   },
@@ -3918,7 +3918,7 @@
   "@downloadProvidersNoneEnabled": {
     "description": "Subtitle for lyrics providers setting when no providers are enabled"
   },
-  "downloadMusixmatchLanguageCode": "Language code",
+  "downloadMusixmatchLanguageCode": "Код языка",
   "@downloadMusixmatchLanguageCode": {
     "description": "Label for the Musixmatch language code text field"
   },
@@ -3946,7 +3946,7 @@
   "@downloadSongLinkRegionDesc": {
     "description": "Description in the SongLink region picker"
   },
-  "snackbarUnsupportedAudioFormat": "Unsupported audio format",
+  "snackbarUnsupportedAudioFormat": "Неподдерживаемый аудио формат",
   "@snackbarUnsupportedAudioFormat": {
     "description": "Snackbar when the audio format is not supported for the requested operation"
   },
@@ -4025,23 +4025,23 @@
   "@editMetadataAutoFillNoneSelected": {
     "description": "Snackbar when user taps Fetch without selecting any fields"
   },
-  "editMetadataFieldTitle": "Title",
+  "editMetadataFieldTitle": "Название",
   "@editMetadataFieldTitle": {
     "description": "Chip label for title field in auto-fill selector"
   },
-  "editMetadataFieldArtist": "Artist",
+  "editMetadataFieldArtist": "Исполнитель",
   "@editMetadataFieldArtist": {
     "description": "Chip label for artist field in auto-fill selector"
   },
-  "editMetadataFieldAlbum": "Album",
+  "editMetadataFieldAlbum": "Альбом",
   "@editMetadataFieldAlbum": {
     "description": "Chip label for album field in auto-fill selector"
   },
-  "editMetadataFieldAlbumArtist": "Album Artist",
+  "editMetadataFieldAlbumArtist": "Исполнитель альбома",
   "@editMetadataFieldAlbumArtist": {
     "description": "Chip label for album artist field in auto-fill selector"
   },
-  "editMetadataFieldDate": "Date",
+  "editMetadataFieldDate": "Дата",
   "@editMetadataFieldDate": {
     "description": "Chip label for date field in auto-fill selector"
   },
@@ -4061,11 +4061,11 @@
   "@editMetadataFieldIsrc": {
     "description": "Chip label for ISRC field in auto-fill selector"
   },
-  "editMetadataFieldLabel": "Label",
+  "editMetadataFieldLabel": "Заголовок",
   "@editMetadataFieldLabel": {
     "description": "Chip label for label field in auto-fill selector"
   },
-  "editMetadataFieldCopyright": "Copyright",
+  "editMetadataFieldCopyright": "Авторские права",
   "@editMetadataFieldCopyright": {
     "description": "Chip label for copyright field in auto-fill selector"
   },
@@ -4094,7 +4094,7 @@
   "@queueDownloadedHeader": {
     "description": "Header label for downloaded items section in library"
   },
-  "queueFilteringIndicator": "Filtering...",
+  "queueFilteringIndicator": "Фильтрация...",
   "@queueFilteringIndicator": {
     "description": "Shown while filter results are being computed"
   },
@@ -4164,19 +4164,19 @@
   "@audioAnalysisAnalyzing": {
     "description": "Loading text while analyzing audio"
   },
-  "audioAnalysisSampleRate": "Sample Rate",
+  "audioAnalysisSampleRate": "Частота дискретизации",
   "@audioAnalysisSampleRate": {
     "description": "Sample rate metric label"
   },
-  "audioAnalysisBitDepth": "Bit Depth",
+  "audioAnalysisBitDepth": "Разрядность",
   "@audioAnalysisBitDepth": {
     "description": "Bit depth metric label"
   },
-  "audioAnalysisChannels": "Channels",
+  "audioAnalysisChannels": "Каналы",
   "@audioAnalysisChannels": {
     "description": "Channels metric label"
   },
-  "audioAnalysisDuration": "Duration",
+  "audioAnalysisDuration": "Продолжительность",
   "@audioAnalysisDuration": {
     "description": "Duration metric label"
   },
@@ -4184,11 +4184,11 @@
   "@audioAnalysisNyquist": {
     "description": "Nyquist frequency metric label"
   },
-  "audioAnalysisFileSize": "Size",
+  "audioAnalysisFileSize": "Размер",
   "@audioAnalysisFileSize": {
     "description": "File size metric label"
   },
-  "audioAnalysisDynamicRange": "Dynamic Range",
+  "audioAnalysisDynamicRange": "Динамический диапазон",
   "@audioAnalysisDynamicRange": {
     "description": "Dynamic range metric label"
   },
@@ -4200,11 +4200,11 @@
   "@audioAnalysisRms": {
     "description": "RMS level metric label"
   },
-  "audioAnalysisSamples": "Samples",
+  "audioAnalysisSamples": "Сэмплы",
   "@audioAnalysisSamples": {
     "description": "Total samples metric label"
   },
-  "extensionsSearchWith": "Search with {providerName}",
+  "extensionsSearchWith": "Искать с помощью {providerName}",
   "@extensionsSearchWith": {
     "description": "Extensions page - subtitle for built-in search provider option",
     "placeholders": {
@@ -4267,11 +4267,11 @@
   "@cancelDownloadKeep": {
     "description": "Dialog button - keep the active download (do not cancel)"
   },
-  "metadataSaveFailedFfmpeg": "Failed to save metadata via FFmpeg",
+  "metadataSaveFailedFfmpeg": "Не удалось сохранить метаданные через FFmpeg",
   "@metadataSaveFailedFfmpeg": {
     "description": "Snackbar error when FFmpeg fails to write metadata"
   },
-  "metadataSaveFailedStorage": "Failed to write metadata back to storage",
+  "metadataSaveFailedStorage": "Не удалось записать метаданные обратно в хранилище",
   "@metadataSaveFailedStorage": {
     "description": "Snackbar error when writing metadata file back to storage fails"
   },
@@ -4304,7 +4304,7 @@
   "@notifChannelDownloadDesc": {
     "description": "Android notification channel description for download progress"
   },
-  "notifChannelLibraryScanName": "Library Scan",
+  "notifChannelLibraryScanName": "Сканирование библиотеки",
   "@notifChannelLibraryScanName": {
     "description": "Android notification channel name for library scan"
   },
@@ -4350,7 +4350,7 @@
   "@notifAlreadyInLibrary": {
     "description": "Notification title when track is already in library"
   },
-  "notifDownloadCompleteCount": "Download Complete ({completed}/{total})",
+  "notifDownloadCompleteCount": "Загрузка завершена ({completed}/{total})",
   "@notifDownloadCompleteCount": {
     "description": "Notification title when download is complete, with count",
     "placeholders": {
