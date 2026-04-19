@@ -1965,7 +1965,7 @@
   "@downloadLossy320FormatDesc": {
     "description": "Description in the Tidal lossy format picker"
   },
-  "downloadLossyMp3": "MP3 320kbps",
+  "downloadLossyMp3": "MP3 320кбит/с",
   "@downloadLossyMp3": {
     "description": "Tidal lossy format option - MP3 320kbps"
   },
@@ -2610,7 +2610,7 @@
   "@libraryFilterFormat": {
     "description": "Filter section - file format"
   },
-  "libraryFilterMetadata": "Metadata",
+  "libraryFilterMetadata": "Метаданные",
   "@libraryFilterMetadata": {
     "description": "Filter section - metadata completeness"
   },
@@ -3682,7 +3682,7 @@
   "@safMigrationSuccess": {
     "description": "Snackbar after successfully migrating to SAF"
   },
-  "settingsDonate": "Donate",
+  "settingsDonate": "Пожертвовать",
   "@settingsDonate": {
     "description": "Settings menu item - donate"
   },
@@ -3716,7 +3716,7 @@
       }
     }
   },
-  "dialogDownloadAllTitle": "Download All",
+  "dialogDownloadAllTitle": "Скачать всё",
   "@dialogDownloadAllTitle": {
     "description": "Dialog title for bulk download confirmation"
   },
@@ -3757,7 +3757,7 @@
   "@snackbarFailedToWriteStorage": {
     "description": "Snackbar when writing metadata back to file fails"
   },
-  "snackbarError": "Error: {error}",
+  "snackbarError": "Ошибка: {error}",
   "@snackbarError": {
     "description": "Generic error snackbar with error detail",
     "placeholders": {
@@ -3878,7 +3878,7 @@
   "@downloadNeteaseIncludeRomanizationEnabled": {
     "description": "Subtitle when Netease romanization is enabled"
   },
-  "downloadNeteaseIncludeRomanizationDisabled": "Disabled",
+  "downloadNeteaseIncludeRomanizationDisabled": "Выключено",
   "@downloadNeteaseIncludeRomanizationDisabled": {
     "description": "Subtitle when Netease romanization is disabled"
   },
@@ -3930,11 +3930,11 @@
   "@downloadMusixmatchLanguageDesc": {
     "description": "Description in the Musixmatch language picker"
   },
-  "downloadMusixmatchAuto": "Auto",
+  "downloadMusixmatchAuto": "Авто",
   "@downloadMusixmatchAuto": {
     "description": "Button to reset Musixmatch language to automatic"
   },
-  "downloadNetworkAnySubtitle": "WiFi + Mobile Data",
+  "downloadNetworkAnySubtitle": "WiFi и Мобильная сеть",
   "@downloadNetworkAnySubtitle": {
     "description": "Subtitle for 'Any' network mode option"
   },
@@ -3950,7 +3950,7 @@
   "@snackbarUnsupportedAudioFormat": {
     "description": "Snackbar when the audio format is not supported for the requested operation"
   },
-  "cacheRefresh": "Refresh",
+  "cacheRefresh": "Обновить",
   "@cacheRefresh": {
     "description": "Tooltip for refresh button on cache management page"
   },
@@ -4069,19 +4069,19 @@
   "@editMetadataFieldCopyright": {
     "description": "Chip label for copyright field in auto-fill selector"
   },
-  "editMetadataFieldCover": "Cover Art",
+  "editMetadataFieldCover": "Обложка",
   "@editMetadataFieldCover": {
     "description": "Chip label for cover art field in auto-fill selector"
   },
-  "editMetadataSelectAll": "All",
+  "editMetadataSelectAll": "Все",
   "@editMetadataSelectAll": {
     "description": "Button to select all fields for auto-fill"
   },
-  "editMetadataSelectEmpty": "Empty only",
+  "editMetadataSelectEmpty": "Только пустые",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
   },
-  "queueDownloadingCount": "Downloading ({count})",
+  "queueDownloadingCount": "Скачивание ({count})",
   "@queueDownloadingCount": {
     "description": "Header for active downloads section with count",
     "placeholders": {
@@ -4090,7 +4090,7 @@
       }
     }
   },
-  "queueDownloadedHeader": "Downloaded",
+  "queueDownloadedHeader": "Скачано",
   "@queueDownloadedHeader": {
     "description": "Header label for downloaded items section in library"
   },
@@ -4221,7 +4221,7 @@
   "@extensionsHomeFeedDescription": {
     "description": "Extensions page - description for home feed provider picker"
   },
-  "extensionsHomeFeedAuto": "Auto",
+  "extensionsHomeFeedAuto": "Авто",
   "@extensionsHomeFeedAuto": {
     "description": "Extensions page - home feed provider option: auto"
   },
@@ -4242,15 +4242,15 @@
   "@extensionsNoHomeFeedExtensions": {
     "description": "Extensions page - shown when no installed extension has home feed"
   },
-  "sortAlphaAsc": "A-Z",
+  "sortAlphaAsc": "А-Я",
   "@sortAlphaAsc": {
     "description": "Sort option - alphabetical ascending"
   },
-  "sortAlphaDesc": "Z-A",
+  "sortAlphaDesc": "Я-А",
   "@sortAlphaDesc": {
     "description": "Sort option - alphabetical descending"
   },
-  "cancelDownloadTitle": "Cancel download?",
+  "cancelDownloadTitle": "Отменить скачивание?",
   "@cancelDownloadTitle": {
     "description": "Dialog title when confirming cancellation of an active download"
   },
@@ -4263,7 +4263,7 @@
       }
     }
   },
-  "cancelDownloadKeep": "Keep",
+  "cancelDownloadKeep": "Удерживать",
   "@cancelDownloadKeep": {
     "description": "Dialog button - keep the active download (do not cancel)"
   },
@@ -4275,7 +4275,7 @@
   "@metadataSaveFailedStorage": {
     "description": "Snackbar error when writing metadata file back to storage fails"
   },
-  "snackbarFolderPickerFailed": "Failed to open folder picker: {error}",
+  "snackbarFolderPickerFailed": "Не удалось открыть выбор папок: {error}",
   "@snackbarFolderPickerFailed": {
     "description": "Snackbar shown when folder picker fails to open",
     "placeholders": {
@@ -4284,19 +4284,19 @@
       }
     }
   },
-  "errorLoadAlbum": "Failed to load album",
+  "errorLoadAlbum": "Не удалось загрузить альбом",
   "@errorLoadAlbum": {
     "description": "Error state shown when album fails to load"
   },
-  "errorLoadPlaylist": "Failed to load playlist",
+  "errorLoadPlaylist": "Не удалось загрузить плейлист",
   "@errorLoadPlaylist": {
     "description": "Error state shown when playlist fails to load"
   },
-  "errorLoadArtist": "Failed to load artist",
+  "errorLoadArtist": "Не удалось загрузить исполнителя",
   "@errorLoadArtist": {
     "description": "Error state shown when artist fails to load"
   },
-  "notifChannelDownloadName": "Download Progress",
+  "notifChannelDownloadName": "Прогресс скачивания",
   "@notifChannelDownloadName": {
     "description": "Android notification channel name for download progress"
   },
@@ -4330,11 +4330,11 @@
       }
     }
   },
-  "notifEmbeddingMetadata": "Embedding metadata...",
+  "notifEmbeddingMetadata": "Встраивание метаданных...",
   "@notifEmbeddingMetadata": {
     "description": "Notification body while embedding metadata into a downloaded track"
   },
-  "notifAlreadyInLibraryCount": "Already in Library ({completed}/{total})",
+  "notifAlreadyInLibraryCount": "Уже в библиотеке ({completed}/{total})",
   "@notifAlreadyInLibraryCount": {
     "description": "Notification title when track is already in library, with count",
     "placeholders": {
@@ -4346,7 +4346,7 @@
       }
     }
   },
-  "notifAlreadyInLibrary": "Already in Library",
+  "notifAlreadyInLibrary": "Уже в библиотеке",
   "@notifAlreadyInLibrary": {
     "description": "Notification title when track is already in library"
   },
@@ -4362,7 +4362,7 @@
       }
     }
   },
-  "notifDownloadComplete": "Download Complete",
+  "notifDownloadComplete": "Скачивание завершено",
   "@notifDownloadComplete": {
     "description": "Notification title when a single download is complete"
   },
@@ -4378,7 +4378,7 @@
       }
     }
   },
-  "notifAllDownloadsComplete": "All Downloads Complete",
+  "notifAllDownloadsComplete": "Все загрузки завершены",
   "@notifAllDownloadsComplete": {
     "description": "Notification title when all downloads finish successfully"
   },
@@ -4391,7 +4391,7 @@
       }
     }
   },
-  "notifScanningLibrary": "Scanning local library",
+  "notifScanningLibrary": "Сканирование локальной библиотеки",
   "@notifScanningLibrary": {
     "description": "Notification title while scanning local library"
   },
@@ -4422,7 +4422,7 @@
       }
     }
   },
-  "notifLibraryScanComplete": "Library scan complete",
+  "notifLibraryScanComplete": "Сканирование библиотеки завершено",
   "@notifLibraryScanComplete": {
     "description": "Notification title when library scan finishes"
   },
@@ -4444,7 +4444,7 @@
       }
     }
   },
-  "notifLibraryScanErrors": "{count} errors",
+  "notifLibraryScanErrors": "{count} ошибок",
   "@notifLibraryScanErrors": {
     "description": "Library scan complete suffix - error count",
     "placeholders": {
@@ -4502,7 +4502,7 @@
       }
     }
   },
-  "notifUpdateFailed": "Update Failed",
+  "notifUpdateFailed": "Ошибка обновления",
   "@notifUpdateFailed": {
     "description": "Notification title when app update download fails"
   },
