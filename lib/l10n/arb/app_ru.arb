@@ -158,7 +158,7 @@
       }
     }
   },
-  "optionsDefaultSearchTab": "Default Search Tab",
+  "optionsDefaultSearchTab": "Вкладка поиска по умолчанию",
   "@optionsDefaultSearchTab": {
     "description": "Title for the preferred default search tab setting"
   },
@@ -1722,7 +1722,7 @@
   "@storeRepoDialogTitle": {
     "description": "Title of the change/remove repository dialog"
   },
-  "storeRepoDialogCurrent": "Current repository:",
+  "storeRepoDialogCurrent": "Текущий репозиторий:",
   "@storeRepoDialogCurrent": {
     "description": "Label shown above the current repository URL in the dialog"
   },
@@ -1738,7 +1738,7 @@
   "@storeEmptyNoExtensions": {
     "description": "Message when store has no extensions"
   },
-  "storeEmptyNoResults": "No extensions found",
+  "storeEmptyNoResults": "Расширения не найдены",
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
@@ -3101,7 +3101,7 @@
       }
     }
   },
-  "queueFlacFindingProgress": "Finding FLAC matches... ({current}/{total})",
+  "queueFlacFindingProgress": "Поиск совпадений FLAC... ({current}/{total})",
   "@queueFlacFindingProgress": {
     "description": "Snackbar while resolving remote matches for local FLAC redownloads",
     "placeholders": {
@@ -3600,7 +3600,7 @@
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
     "description": "Subtitle when Track Artist is used for folder naming"
   },
-  "lyricsProvidersTitle": "Lyrics Providers",
+  "lyricsProvidersTitle": "Провайдеры текстов",
   "@lyricsProvidersTitle": {
     "description": "Title for the lyrics provider priority page"
   },
@@ -3686,7 +3686,7 @@
   "@settingsDonate": {
     "description": "Settings menu item - donate"
   },
-  "settingsDonateSubtitle": "Support SpotiFLAC-Mobile development",
+  "settingsDonateSubtitle": "Поддержать разработку мобильного SpotiFLAC",
   "@settingsDonateSubtitle": {
     "description": "Subtitle for donate menu item"
   },
@@ -3914,7 +3914,7 @@
   "@downloadFilterContributingDisabled": {
     "description": "Subtitle when contributing artist filter is disabled"
   },
-  "downloadProvidersNoneEnabled": "None enabled",
+  "downloadProvidersNoneEnabled": "Ничего не включено",
   "@downloadProvidersNoneEnabled": {
     "description": "Subtitle for lyrics providers setting when no providers are enabled"
   },
@@ -4000,11 +4000,11 @@
   "@editMetadataAutoFillDesc": {
     "description": "Description for the auto-fill section"
   },
-  "editMetadataAutoFillFetch": "Fetch & Fill",
+  "editMetadataAutoFillFetch": "Получить и заполнить",
   "@editMetadataAutoFillFetch": {
     "description": "Button label to fetch online metadata and fill selected fields"
   },
-  "editMetadataAutoFillSearching": "Searching online...",
+  "editMetadataAutoFillSearching": "Поиск в сети...",
   "@editMetadataAutoFillSearching": {
     "description": "Snackbar shown while searching for online metadata"
   },
@@ -4045,15 +4045,15 @@
   "@editMetadataFieldDate": {
     "description": "Chip label for date field in auto-fill selector"
   },
-  "editMetadataFieldTrackNum": "Track #",
+  "editMetadataFieldTrackNum": "Трек #",
   "@editMetadataFieldTrackNum": {
     "description": "Chip label for track number field in auto-fill selector"
   },
-  "editMetadataFieldDiscNum": "Disc #",
+  "editMetadataFieldDiscNum": "Диск #",
   "@editMetadataFieldDiscNum": {
     "description": "Chip label for disc number field in auto-fill selector"
   },
-  "editMetadataFieldGenre": "Genre",
+  "editMetadataFieldGenre": "Жанр",
   "@editMetadataFieldGenre": {
     "description": "Chip label for genre field in auto-fill selector"
   },
@@ -4132,15 +4132,15 @@
   "@queueEmptySinglesSubtitle": {
     "description": "Empty state subtitle for single track downloads"
   },
-  "queueEmptyHistory": "No download history",
+  "queueEmptyHistory": "Нет истории скачиваний",
   "@queueEmptyHistory": {
     "description": "Empty state title when download history is empty"
   },
-  "queueEmptyHistorySubtitle": "Downloaded tracks will appear here",
+  "queueEmptyHistorySubtitle": "Скачанные треки появятся здесь",
   "@queueEmptyHistorySubtitle": {
     "description": "Empty state subtitle for download history"
   },
-  "selectionAllPlaylistsSelected": "All playlists selected",
+  "selectionAllPlaylistsSelected": "Выбраны все плейлисты",
   "@selectionAllPlaylistsSelected": {
     "description": "Shown when all playlists are selected in selection mode"
   },
@@ -4366,7 +4366,7 @@
   "@notifDownloadComplete": {
     "description": "Notification title when a single download is complete"
   },
-  "notifDownloadsFinished": "Downloads Finished ({completed} done, {failed} failed)",
+  "notifDownloadsFinished": "Загрузка завершена ({completed} завершено, {failed} не удалось)",
   "@notifDownloadsFinished": {
     "description": "Notification title when queue finishes with some failures",
     "placeholders": {
@@ -4426,7 +4426,7 @@
   "@notifLibraryScanComplete": {
     "description": "Notification title when library scan finishes"
   },
-  "notifLibraryScanCompleteBody": "{count} tracks indexed",
+  "notifLibraryScanCompleteBody": "{count} треков индексировано",
   "@notifLibraryScanCompleteBody": {
     "description": "Notification body for library scan complete - number of indexed tracks",
     "placeholders": {
@@ -4435,7 +4435,7 @@
       }
     }
   },
-  "notifLibraryScanExcluded": "{count} excluded",
+  "notifLibraryScanExcluded": "{count} исключено",
   "@notifLibraryScanExcluded": {
     "description": "Library scan complete suffix - excluded track count",
     "placeholders": {
@@ -4453,19 +4453,19 @@
       }
     }
   },
-  "notifLibraryScanFailed": "Library scan failed",
+  "notifLibraryScanFailed": "Ошибка сканирования библиотеки",
   "@notifLibraryScanFailed": {
     "description": "Notification title when library scan fails"
   },
-  "notifLibraryScanCancelled": "Library scan cancelled",
+  "notifLibraryScanCancelled": "Сканирование библиотеки отменено",
   "@notifLibraryScanCancelled": {
     "description": "Notification title when library scan is cancelled by the user"
   },
-  "notifLibraryScanStopped": "Scan stopped before completion.",
+  "notifLibraryScanStopped": "Сканирование остановлено перед завершением.",
   "@notifLibraryScanStopped": {
     "description": "Notification body when library scan is cancelled"
   },
-  "notifDownloadingUpdate": "Downloading SpotiFLAC v{version}",
+  "notifDownloadingUpdate": "Скачивание SpotiFLAC v{version}",
   "@notifDownloadingUpdate": {
     "description": "Notification title while downloading an app update",
     "placeholders": {
@@ -4474,7 +4474,7 @@
       }
     }
   },
-  "notifUpdateProgress": "{received} / {total} MB • {percentage}%",
+  "notifUpdateProgress": "{received} / {total} МБ • {percentage}%",
   "@notifUpdateProgress": {
     "description": "Notification body showing update download progress",
     "placeholders": {
@@ -4489,11 +4489,11 @@
       }
     }
   },
-  "notifUpdateReady": "Update Ready",
+  "notifUpdateReady": "Обновление готово",
   "@notifUpdateReady": {
     "description": "Notification title when app update download is complete"
   },
-  "notifUpdateReadyBody": "SpotiFLAC v{version} downloaded. Tap to install.",
+  "notifUpdateReadyBody": "SpotiFLAC v{version} скачано. Нажмите, чтобы установить.",
   "@notifUpdateReadyBody": {
     "description": "Notification body when app update is ready to install",
     "placeholders": {
@@ -4506,7 +4506,7 @@
   "@notifUpdateFailed": {
     "description": "Notification title when app update download fails"
   },
-  "notifUpdateFailedBody": "Could not download update. Try again later.",
+  "notifUpdateFailedBody": "Не удалось скачать обновление. Попробуйте позже.",
   "@notifUpdateFailedBody": {
     "description": "Notification body when app update download fails"
   }
