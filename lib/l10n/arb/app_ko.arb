@@ -109,11 +109,11 @@
   "@appearanceThemeSystem": {
     "description": "Follow system theme"
   },
-  "appearanceThemeLight": "Light",
+  "appearanceThemeLight": "밝은",
   "@appearanceThemeLight": {
     "description": "Light theme"
   },
-  "appearanceThemeDark": "Dark",
+  "appearanceThemeDark": "다크",
   "@appearanceThemeDark": {
     "description": "Dark theme"
   },
