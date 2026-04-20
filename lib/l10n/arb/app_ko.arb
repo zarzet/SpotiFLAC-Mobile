@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Paste a supported URL or search by name",
+  "homeSubtitle": "지원되는 URL을 붙여 넣거나, 이름을 검색",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
