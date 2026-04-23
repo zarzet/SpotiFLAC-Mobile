@@ -182,7 +182,7 @@
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
-  "optionsUseExtensionProvidersOn": "Extensions will be tried first",
+  "optionsUseExtensionProvidersOn": "Les extensions seront d'abord essayées",
   "@optionsUseExtensionProvidersOn": {
     "description": "Status when extension providers enabled"
   },
@@ -418,23 +418,23 @@
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
   },
-  "aboutLinks": "Links",
+  "aboutLinks": "Liens",
   "@aboutLinks": {
     "description": "Section for external links"
   },
-  "aboutMobileSource": "Mobile source code",
+  "aboutMobileSource": "Code source pour mobile",
   "@aboutMobileSource": {
     "description": "Link to mobile GitHub repo"
   },
-  "aboutPCSource": "PC source code",
+  "aboutPCSource": "Code source pour PC",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
-  "aboutKeepAndroidOpen": "Keep Android Open",
+  "aboutKeepAndroidOpen": "Garder Android ouvert",
   "@aboutKeepAndroidOpen": {
     "description": "Link to Keep Android Open campaign website"
   },
-  "aboutReportIssue": "Report an issue",
+  "aboutReportIssue": "Signaler un problème",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
@@ -442,7 +442,7 @@
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
-  "aboutFeatureRequest": "Feature request",
+  "aboutFeatureRequest": "Demande de fonctionnalité",
   "@aboutFeatureRequest": {
     "description": "Link to suggest features"
   },
@@ -466,11 +466,11 @@
   "@aboutTelegramChatSubtitle": {
     "description": "Subtitle for Telegram chat"
   },
-  "aboutSocial": "Social",
+  "aboutSocial": "Réseaux sociaux",
   "@aboutSocial": {
     "description": "Section for social links"
   },
-  "aboutApp": "App",
+  "aboutApp": "Application",
   "@aboutApp": {
     "description": "Section for app info"
   },
@@ -564,7 +564,7 @@
   "@setupStorageAccessRequired": {
     "description": "Title when storage access needed"
   },
-  "setupStorageAccessMessageAndroid11": "Android 11+ requires \"All files access\" permission to save files to your chosen download folder.",
+  "setupStorageAccessMessageAndroid11": "Depuis Android 11, l'autorisation « Accès à tous les fichiers » est requise pour enregistrer des fichiers dans le dossier de téléchargement de votre choix.",
   "@setupStorageAccessMessageAndroid11": {
     "description": "Android 11+ specific explanation"
   },
@@ -572,7 +572,7 @@
   "@setupOpenSettings": {
     "description": "Button to open system settings"
   },
-  "setupPermissionDeniedMessage": "Permission denied. Please grant all permissions to continue.",
+  "setupPermissionDeniedMessage": "Autorisation refusée. Veuillez accorder toutes les autorisations pour continuer.",
   "@setupPermissionDeniedMessage": {
     "description": "Error when permission denied"
   },
@@ -759,15 +759,15 @@
   "@dialogRemoveExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogRemoveExtensionMessage": "Are you sure you want to remove this extension? This cannot be undone.",
+  "dialogRemoveExtensionMessage": "Êtes-vous sûr de vouloir supprimer cette extension ? Cette action ne peut pas être annulée.",
   "@dialogRemoveExtensionMessage": {
     "description": "Dialog message - uninstall confirmation"
   },
-  "dialogUninstallExtension": "Uninstall Extension?",
+  "dialogUninstallExtension": "Supprimer l'extension ?",
   "@dialogUninstallExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogUninstallExtensionMessage": "Are you sure you want to remove {extensionName}?",
+  "dialogUninstallExtensionMessage": "Êtes-vous sûr de vouloir supprimer {extensionName} ?",
   "@dialogUninstallExtensionMessage": {
     "description": "Dialog message - uninstall specific extension",
     "placeholders": {
@@ -776,15 +776,15 @@
       }
     }
   },
-  "dialogClearHistoryTitle": "Clear History",
+  "dialogClearHistoryTitle": "Effacer l'historique",
   "@dialogClearHistoryTitle": {
     "description": "Dialog title - clear download history"
   },
-  "dialogClearHistoryMessage": "Are you sure you want to clear all download history? This cannot be undone.",
+  "dialogClearHistoryMessage": "Êtes-vous sûr de vouloir effacer tout l'historique des téléchargements ? Cette action ne peut pas être annulée.",
   "@dialogClearHistoryMessage": {
     "description": "Dialog message - clear history confirmation"
   },
-  "dialogDeleteSelectedTitle": "Delete Selected",
+  "dialogDeleteSelectedTitle": "Supprimer la sélection",
   "@dialogDeleteSelectedTitle": {
     "description": "Dialog title - delete selected items"
   },
@@ -876,7 +876,7 @@
       }
     }
   },
-  "snackbarCannotOpenFile": "Cannot open file: {error}",
+  "snackbarCannotOpenFile": "Impossible d'ouvrir le fichier : {error}",
   "@snackbarCannotOpenFile": {
     "description": "Snackbar - file open error",
     "placeholders": {
@@ -903,7 +903,7 @@
       }
     }
   },
-  "snackbarFileNotFound": "File not found",
+  "snackbarFileNotFound": "Fichier introuvable",
   "@snackbarFileNotFound": {
     "description": "Snackbar - file doesn't exist"
   },
@@ -919,7 +919,7 @@
   "@snackbarMetadataProviderSaved": {
     "description": "Snackbar - metadata provider order saved"
   },
-  "snackbarExtensionInstalled": "{extensionName} installed.",
+  "snackbarExtensionInstalled": "{extensionName} est installée.",
   "@snackbarExtensionInstalled": {
     "description": "Snackbar - extension installed successfully",
     "placeholders": {
@@ -928,7 +928,7 @@
       }
     }
   },
-  "snackbarExtensionUpdated": "{extensionName} updated.",
+  "snackbarExtensionUpdated": "{extensionName} a été mis à jour.",
   "@snackbarExtensionUpdated": {
     "description": "Snackbar - extension updated successfully",
     "placeholders": {
@@ -937,11 +937,11 @@
       }
     }
   },
-  "snackbarFailedToInstall": "Failed to install extension",
+  "snackbarFailedToInstall": "Échec de l'installation de l'extension",
   "@snackbarFailedToInstall": {
     "description": "Snackbar - extension install error"
   },
-  "snackbarFailedToUpdate": "Failed to update extension",
+  "snackbarFailedToUpdate": "Échec de la mise à jour de l'extension",
   "@snackbarFailedToUpdate": {
     "description": "Snackbar - extension update error"
   },
@@ -986,7 +986,7 @@
   "@actionResume": {
     "description": "Action button - resume download"
   },
-  "actionCancel": "Cancel",
+  "actionCancel": "Annuler",
   "@actionCancel": {
     "description": "Action button - cancel operation"
   },
