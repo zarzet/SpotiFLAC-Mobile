@@ -25,7 +25,7 @@
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Paste a supported URL or search by name",
+  "homeSubtitle": "Collez une URL prise en charge ou effectuez une recherche par nom",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
@@ -89,7 +89,7 @@
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
-  "downloadSingleFilenameFormat": "Single Filename Format",
+  "downloadSingleFilenameFormat": "Format de nom de fichier unique",
   "@downloadSingleFilenameFormat": {
     "description": "Setting for output filename pattern for singles/EPs"
   },
@@ -125,11 +125,11 @@
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
-  "appearanceHistoryView": "Historique Vue",
+  "appearanceHistoryView": "Historique",
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "List",
+  "appearanceHistoryViewList": "Liste",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
@@ -149,7 +149,7 @@
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
-  "optionsUsingExtension": "Utilisation de l'extension: {extensionName}",
+  "optionsUsingExtension": "Utilisation de l'extension : {extensionName}",
   "@optionsUsingExtension": {
     "description": "Shows active extension name",
     "placeholders": {
@@ -190,7 +190,7 @@
   "@optionsUseExtensionProvidersOff": {
     "description": "Status when extension providers disabled"
   },
-  "optionsEmbedLyrics": "Embed Lyrics",
+  "optionsEmbedLyrics": "Intégrer les paroles",
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
@@ -390,7 +390,7 @@
   "@storeUpdate": {
     "description": "Update available button"
   },
-  "aboutTitle": "À propos de",
+  "aboutTitle": "À propos",
   "@aboutTitle": {
     "description": "About page title"
   },
@@ -402,7 +402,7 @@
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
-  "aboutOriginalCreator": "Créateur de SpotiFLAC original",
+  "aboutOriginalCreator": "Créateur de la version originale de SpotiFLAC",
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
@@ -655,7 +655,7 @@
   "@setupStorageDescription": {
     "description": "Explanation for storage permission"
   },
-  "setupNotificationGranted": "Autorisation de notifications accordée!",
+  "setupNotificationGranted": "Autorisation de notification accordée !",
   "@setupNotificationGranted": {
     "description": "Success message for notification permission"
   },
@@ -663,7 +663,7 @@
   "@setupNotificationEnable": {
     "description": "Button to enable notifications"
   },
-  "setupFolderChoose": "Choisissez le dossier pour télécharger",
+  "setupFolderChoose": "Choisissez le dossier de téléchargement",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
@@ -695,7 +695,7 @@
   "@setupGetStarted": {
     "description": "Final setup button"
   },
-  "setupAllowAccessToManageFiles": "Veuillez activer \"Autoriser l'accès à tous les fichiers\" sur l'écran suivant.",
+  "setupAllowAccessToManageFiles": "Veuillez cocher la case « Autoriser l'accès pour gérer tous les fichiers » sur l'écran suivant.",
   "@setupAllowAccessToManageFiles": {
     "description": "Instruction for file access permission"
   },
