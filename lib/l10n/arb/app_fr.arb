@@ -406,7 +406,7 @@
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
+  "aboutLogoArtist": "Le talentueux artiste qui a créé le magnifique logo de notre application !",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
@@ -599,7 +599,7 @@
   "@setupUseDefaultFolder": {
     "description": "Dialog title for default folder"
   },
-  "setupNoFolderSelected": "No folder selected. Would you like to use the default Music folder?",
+  "setupNoFolderSelected": "Aucun dossier n'est sélectionné. Souhaitez-vous utiliser le dossier Musique par défaut ?",
   "@setupNoFolderSelected": {
     "description": "Prompt when no folder selected"
   },
