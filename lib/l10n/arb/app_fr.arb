@@ -949,7 +949,7 @@
   "@errorRateLimited": {
     "description": "Error title - too many requests"
   },
-  "errorRateLimitedMessage": "Too many requests. Please wait a moment before searching again.",
+  "errorRateLimitedMessage": "Trop de requêtes. Veuillez patienter quelques instants avant de relancer la recherche.",
   "@errorRateLimitedMessage": {
     "description": "Error message - rate limit explanation"
   },
@@ -957,19 +957,19 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
-  "errorUrlNotRecognized": "Link not recognized",
+  "errorUrlNotRecognized": "Lien non reconnu",
   "@errorUrlNotRecognized": {
     "description": "Error title - URL not handled by any extension or service"
   },
-  "errorUrlNotRecognizedMessage": "This link is not supported. Make sure the URL is correct and a compatible extension is installed.",
+  "errorUrlNotRecognizedMessage": "Ce lien n'est pas pris en charge. Vérifiez que l'URL est correcte et qu'une extension compatible est installée.",
   "@errorUrlNotRecognizedMessage": {
     "description": "Error message - URL not recognized explanation"
   },
-  "errorUrlFetchFailed": "Failed to load content from this link. Please try again.",
+  "errorUrlFetchFailed": "Impossible de charger le contenu de ce lien. Veuillez réessayer.",
   "@errorUrlFetchFailed": {
     "description": "Error message - generic URL fetch failure"
   },
-  "errorMissingExtensionSource": "Cannot load {item}: missing extension source",
+  "errorMissingExtensionSource": "Impossible de charger {item} : source de l'extension manquante",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
     "placeholders": {
@@ -1039,11 +1039,11 @@
   "@progressReadingCsv": {
     "description": "Progress indicator - parsing CSV file"
   },
-  "searchSongs": "Songs",
+  "searchSongs": "Titres",
   "@searchSongs": {
     "description": "Search result category - songs"
   },
-  "searchArtists": "Artists",
+  "searchArtists": "Artistes",
   "@searchArtists": {
     "description": "Search result category - artists"
   },
@@ -1131,51 +1131,51 @@
   "@folderOrganizationByAlbum": {
     "description": "Folder option - album folders"
   },
-  "folderOrganizationByArtistAlbum": "Artist/Album",
+  "folderOrganizationByArtistAlbum": "Artiste/Album",
   "@folderOrganizationByArtistAlbum": {
     "description": "Folder option - nested folders"
   },
-  "folderOrganizationDescription": "Organize downloaded files into folders",
+  "folderOrganizationDescription": "Classer les fichiers téléchargés dans des dossiers",
   "@folderOrganizationDescription": {
     "description": "Folder organization sheet description"
   },
-  "folderOrganizationNoneSubtitle": "All files in download folder",
+  "folderOrganizationNoneSubtitle": "Tous les fichiers du dossier « Téléchargements »",
   "@folderOrganizationNoneSubtitle": {
     "description": "Subtitle for no organization option"
   },
-  "folderOrganizationByArtistSubtitle": "Separate folder for each artist",
+  "folderOrganizationByArtistSubtitle": "Un dossier distinct pour chaque artiste",
   "@folderOrganizationByArtistSubtitle": {
     "description": "Subtitle for artist folder option"
   },
-  "folderOrganizationByAlbumSubtitle": "Separate folder for each album",
+  "folderOrganizationByAlbumSubtitle": "Un dossier distinct pour chaque album",
   "@folderOrganizationByAlbumSubtitle": {
     "description": "Subtitle for album folder option"
   },
-  "folderOrganizationByArtistAlbumSubtitle": "Nested folders for artist and album",
+  "folderOrganizationByArtistAlbumSubtitle": "Dossiers imbriqués pour les artistes et les albums",
   "@folderOrganizationByArtistAlbumSubtitle": {
     "description": "Subtitle for nested folder option"
   },
-  "updateAvailable": "Update Available",
+  "updateAvailable": "Mise à jour disponible",
   "@updateAvailable": {
     "description": "Update dialog title"
   },
-  "updateLater": "Later",
+  "updateLater": "Plus tard",
   "@updateLater": {
     "description": "Update button - dismiss"
   },
-  "updateStartingDownload": "Starting download...",
+  "updateStartingDownload": "Début du téléchargement...",
   "@updateStartingDownload": {
     "description": "Update status - initializing"
   },
-  "updateDownloadFailed": "Download failed",
+  "updateDownloadFailed": "Échec du téléchargement",
   "@updateDownloadFailed": {
     "description": "Update error title"
   },
-  "updateFailedMessage": "Failed to download update",
+  "updateFailedMessage": "Échec du téléchargement de la mise à jour",
   "@updateFailedMessage": {
     "description": "Update error message"
   },
-  "updateNewVersionReady": "A new version is ready",
+  "updateNewVersionReady": "Une nouvelle version est disponible",
   "@updateNewVersionReady": {
     "description": "Update subtitle"
   },
@@ -1187,47 +1187,47 @@
   "@updateNew": {
     "description": "Label for new version"
   },
-  "updateDownloading": "Downloading...",
+  "updateDownloading": "Téléchargement en cours...",
   "@updateDownloading": {
     "description": "Update status - downloading"
   },
-  "updateWhatsNew": "What's New",
+  "updateWhatsNew": "Quoi de neuf ?",
   "@updateWhatsNew": {
     "description": "Changelog section title"
   },
-  "updateDownloadInstall": "Download & Install",
+  "updateDownloadInstall": "Télécharger & Installer",
   "@updateDownloadInstall": {
     "description": "Update button - download and install"
   },
-  "updateDontRemind": "Don't remind",
+  "updateDontRemind": "Ne plus me le rappeler",
   "@updateDontRemind": {
     "description": "Update button - skip this version"
   },
-  "providerPriorityTitle": "Provider Priority",
+  "providerPriorityTitle": "Priorité accordée aux prestataires",
   "@providerPriorityTitle": {
     "description": "Provider priority page title"
   },
-  "providerPriorityDescription": "Drag to reorder download providers. The app will try providers from top to bottom when downloading tracks.",
+  "providerPriorityDescription": "Faites glisser pour réorganiser les fournisseurs de téléchargement. L'application testera les fournisseurs dans l'ordre indiqué, de haut en bas, lors du téléchargement des morceaux.",
   "@providerPriorityDescription": {
     "description": "Provider priority page description"
   },
-  "providerPriorityInfo": "If a track is not available on the first provider, the app will automatically try the next one.",
+  "providerPriorityInfo": "Si un morceau n'est pas disponible chez le premier fournisseur, l'application essaiera automatiquement le suivant.",
   "@providerPriorityInfo": {
     "description": "Info tip about fallback behavior"
   },
-  "providerPriorityFallbackExtensionsTitle": "Extension Fallback",
+  "providerPriorityFallbackExtensionsTitle": "Solution de secours pour les extensions",
   "@providerPriorityFallbackExtensionsTitle": {
     "description": "Section title for choosing which download extensions can be used as fallback providers"
   },
-  "providerPriorityFallbackExtensionsDescription": "Choose which installed download extensions can be used during automatic fallback. Built-in providers still follow the priority order above.",
+  "providerPriorityFallbackExtensionsDescription": "Sélectionnez les extensions de téléchargement installées qui peuvent être utilisées lors du basculement automatique. Les fournisseurs intégrés continuent de respecter l'ordre de priorité indiqué ci-dessus.",
   "@providerPriorityFallbackExtensionsDescription": {
     "description": "Section description for extension fallback selection"
   },
-  "providerPriorityFallbackExtensionsHint": "Only enabled extensions with download-provider capability are listed here.",
+  "providerPriorityFallbackExtensionsHint": "Seules les extensions activées disposant de la fonctionnalité « fournisseur de téléchargement » sont répertoriées ici.",
   "@providerPriorityFallbackExtensionsHint": {
     "description": "Hint below the extension fallback selection list"
   },
-  "providerBuiltIn": "Built-in",
+  "providerBuiltIn": "Intégré",
   "@providerBuiltIn": {
     "description": "Label for built-in providers (Tidal/Qobuz)"
   },
@@ -1235,15 +1235,15 @@
   "@providerExtension": {
     "description": "Label for extension-provided providers"
   },
-  "metadataProviderPriorityTitle": "Metadata Priority",
+  "metadataProviderPriorityTitle": "Priorité des métadonnées",
   "@metadataProviderPriorityTitle": {
     "description": "Metadata priority page title"
   },
-  "metadataProviderPriorityDescription": "Drag to reorder metadata providers. The app will try providers from top to bottom when searching for tracks and fetching metadata.",
+  "metadataProviderPriorityDescription": "Faites glisser pour réorganiser les fournisseurs de métadonnées. L'application testera les fournisseurs dans l'ordre de haut en bas lors de la recherche de morceaux et de la récupération des métadonnées.",
   "@metadataProviderPriorityDescription": {
     "description": "Metadata priority page description"
   },
-  "metadataProviderPriorityInfo": "Deezer has no rate limits and is recommended as primary. Spotify may rate limit after many requests.",
+  "metadataProviderPriorityInfo": "Deezer n'impose aucune limite de débit et est recommandé comme service principal. Spotify peut limiter le débit après un certain nombre de requêtes.",
   "@metadataProviderPriorityInfo": {
     "description": "Info tip about rate limits"
   },
@@ -1255,15 +1255,15 @@
   "@metadataMayRateLimit": {
     "description": "Spotify provider description"
   },
-  "logTitle": "Logs",
+  "logTitle": "Journaux",
   "@logTitle": {
     "description": "Logs screen title"
   },
-  "logCopied": "Logs copied to clipboard",
+  "logCopied": "Journaux copiés dans le presse-papiers",
   "@logCopied": {
     "description": "Snackbar - logs copied"
   },
-  "logSearchHint": "Search logs...",
+  "logSearchHint": "Recherche dans les journaux...",
   "@logSearchHint": {
     "description": "Log search placeholder"
   },
