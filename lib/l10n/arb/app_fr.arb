@@ -438,7 +438,7 @@
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Report any problems you encounter",
+  "aboutReportIssueSubtitle": "Signalez tout problème que vous rencontrez",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
@@ -446,7 +446,7 @@
   "@aboutFeatureRequest": {
     "description": "Link to suggest features"
   },
-  "aboutFeatureRequestSubtitle": "Suggest new features for the app",
+  "aboutFeatureRequestSubtitle": "Proposez de nouvelles fonctionnalités pour l'application",
   "@aboutFeatureRequestSubtitle": {
     "description": "Subtitle for feature request"
   },
@@ -462,7 +462,7 @@
   "@aboutTelegramChat": {
     "description": "Link to Telegram chat group"
   },
-  "aboutTelegramChatSubtitle": "Chat with other users",
+  "aboutTelegramChatSubtitle": "Discutez avec d'autres utilisateurs",
   "@aboutTelegramChatSubtitle": {
     "description": "Subtitle for Telegram chat"
   },
@@ -478,23 +478,23 @@
   "@aboutVersion": {
     "description": "Version info label"
   },
-  "aboutBinimumDesc": "The creator of QQDL & HiFi API. Without this API, Tidal downloads wouldn't exist!",
+  "aboutBinimumDesc": "Le créateur de QQDL et de l'API HiFi. Sans cette API, les téléchargements depuis Tidal n'existeraient pas !",
   "@aboutBinimumDesc": {
     "description": "Credit description for binimum"
   },
-  "aboutSachinsenalDesc": "The original HiFi project creator. The foundation of Tidal integration!",
+  "aboutSachinsenalDesc": "Le créateur du projet HiFi original. La base de l'intégration de Tidal !",
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
-  "aboutSjdonadoDesc": "Creator of I Don't Have Spotify (IDHS). The fallback link resolver that saves the day!",
+  "aboutSjdonadoDesc": "Créateur de « I Don't Have Spotify » (IDHS). Le résolveur de liens de secours qui sauve la mise !",
   "@aboutSjdonadoDesc": {
     "description": "Credit description for sjdonado"
   },
-  "aboutDabMusic": "DAB Music",
+  "aboutDabMusic": "Musique DAB",
   "@aboutDabMusic": {
     "description": "Name of Qobuz API service - DO NOT TRANSLATE"
   },
-  "aboutDabMusicDesc": "The best Qobuz streaming API. Hi-Res downloads wouldn't be possible without this!",
+  "aboutDabMusicDesc": "La meilleure API de streaming Qobuz. Sans elle, les téléchargements en haute résolution ne seraient pas possibles !",
   "@aboutDabMusicDesc": {
     "description": "Credit for DAB Music API"
   },
@@ -502,11 +502,11 @@
   "@aboutSpotiSaver": {
     "description": "Name of SpotiSaver API service - DO NOT TRANSLATE"
   },
-  "aboutSpotiSaverDesc": "Tidal Hi-Res FLAC streaming endpoints. A key piece of the lossless puzzle!",
+  "aboutSpotiSaverDesc": "Terminaux de diffusion en continu FLAC haute résolution Tidal. Une pièce maîtresse du puzzle du son sans perte !",
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal and Qobuz.",
+  "aboutAppDescription": "Téléchargez des morceaux Spotify en qualité sans perte depuis Tidal et Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -522,11 +522,11 @@
   "@artistCompilations": {
     "description": "Section header for compilations"
   },
-  "artistPopular": "Popular",
+  "artistPopular": "Populaire",
   "@artistPopular": {
     "description": "Section header for popular/top tracks"
   },
-  "artistMonthlyListeners": "{count} monthly listeners",
+  "artistMonthlyListeners": "{count} auditeurs mensuels",
   "@artistMonthlyListeners": {
     "description": "Monthly listener count display",
     "placeholders": {
@@ -552,7 +552,7 @@
   "@trackMetadataDelete": {
     "description": "Action button - delete track"
   },
-  "setupGrantPermission": "Grant Permission",
+  "setupGrantPermission": "Accorder l'autorisation",
   "@setupGrantPermission": {
     "description": "Button to request permission"
   },
