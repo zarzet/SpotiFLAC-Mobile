@@ -651,7 +651,7 @@
   "@setupStorageRequired": {
     "description": "Title when storage permission needed"
   },
-  "setupStorageDescription": "SpotiFLAC needs storage permission to save your downloaded music files.",
+  "setupStorageDescription": "SpotiFLAC a besoin d'une autorisation d'accès au stockage pour enregistrer vos fichiers musicaux téléchargés.",
   "@setupStorageDescription": {
     "description": "Explanation for storage permission"
   },
@@ -679,7 +679,7 @@
   "@setupEnableNotifications": {
     "description": "Button to enable notifications"
   },
-  "setupNotificationBackgroundDescription": "Get notified about download progress and completion. This helps you track downloads when the app is in background.",
+  "setupNotificationBackgroundDescription": "Recevez des notifications sur la progression et la fin du téléchargement. Cela vous permet de suivre les téléchargements lorsque l'application est en arrière-plan.",
   "@setupNotificationBackgroundDescription": {
     "description": "Detailed notification explanation"
   },
@@ -855,7 +855,7 @@
       }
     }
   },
-  "snackbarHistoryCleared": "History cleared",
+  "snackbarHistoryCleared": "Historique effacé",
   "@snackbarHistoryCleared": {
     "description": "Snackbar - history deleted"
   },
