@@ -2466,7 +2466,7 @@
   "@libraryClearConfirmMessage": {
     "description": "Dialog message for clear confirmation"
   },
-  "libraryAbout": "About Local Library",
+  "libraryAbout": "À propos de la bibliothèque locale",
   "@libraryAbout": {
     "description": "Section header for about info"
   },
