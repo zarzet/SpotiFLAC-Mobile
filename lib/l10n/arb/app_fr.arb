@@ -29,7 +29,7 @@
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "Supports: Piste, Album, Playlist, Artiste URLs",
+  "homeSupports": "Prise en charge : URL de titres, d’albums, de playlists et d’artistes",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
@@ -93,7 +93,7 @@
   "@downloadSingleFilenameFormat": {
     "description": "Setting for output filename pattern for singles/EPs"
   },
-  "downloadSingleFilenameFormatDescription": "Filename pattern for singles and EPs. Uses the same tags as the album format.",
+  "downloadSingleFilenameFormatDescription": "Modèle de nom de fichier pour les singles et les EP. Utilise les mêmes balises que le format album.",
   "@downloadSingleFilenameFormatDescription": {
     "description": "Subtitle description for single filename format setting"
   },
@@ -170,7 +170,7 @@
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
-  "optionsAutoFallback": "Auto Fallback",
+  "optionsAutoFallback": "Récupération automatique",
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
@@ -198,7 +198,7 @@
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
-  "optionsMaxQualityCover": "Max Quality Cover",
+  "optionsMaxQualityCover": "Pochette de qualité supérieure",
   "@optionsMaxQualityCover": {
     "description": "Download highest quality album art"
   },
@@ -210,15 +210,15 @@
   "@optionsReplayGain": {
     "description": "Title for ReplayGain setting toggle"
   },
-  "optionsReplayGainSubtitleOn": "Scan loudness and embed ReplayGain tags (EBU R128)",
+  "optionsReplayGainSubtitleOn": "Analyser le niveau sonore et intégrer des balises ReplayGain (EBU R128)",
   "@optionsReplayGainSubtitleOn": {
     "description": "Subtitle when ReplayGain is enabled"
   },
-  "optionsReplayGainSubtitleOff": "Disabled: no loudness normalization tags",
+  "optionsReplayGainSubtitleOff": "Désactivé : aucune balise de normalisation du volume",
   "@optionsReplayGainSubtitleOff": {
     "description": "Subtitle when ReplayGain is disabled"
   },
-  "optionsArtistTagMode": "Artist Tag Mode",
+  "optionsArtistTagMode": "Mode « Artiste »",
   "@optionsArtistTagMode": {
     "description": "Setting title for how artist metadata is written into files"
   },
@@ -230,11 +230,11 @@
   "@optionsArtistTagModeJoined": {
     "description": "Artist tag mode option that joins multiple artists into one value"
   },
-  "optionsArtistTagModeJoinedSubtitle": "Write one ARTIST value like \"Artist A, Artist B\" for maximum player compatibility.",
+  "optionsArtistTagModeJoinedSubtitle": "Indiquez une seule valeur ARTIST, par exemple « Artiste A, Artiste B », pour garantir une compatibilité maximale avec les lecteurs.",
   "@optionsArtistTagModeJoinedSubtitle": {
     "description": "Subtitle for joined artist tag mode"
   },
-  "optionsArtistTagModeSplitVorbis": "Split tags for FLAC/Opus",
+  "optionsArtistTagModeSplitVorbis": "Diviser les balises pour FLAC/Opus",
   "@optionsArtistTagModeSplitVorbis": {
     "description": "Artist tag mode option that writes repeated ARTIST tags for Vorbis formats"
   },
@@ -242,7 +242,7 @@
   "@optionsArtistTagModeSplitVorbisSubtitle": {
     "description": "Subtitle for split Vorbis artist tag mode"
   },
-  "optionsConcurrentDownloads": "Concurrent Downloads",
+  "optionsConcurrentDownloads": "Téléchargements simultanés",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
   },
@@ -263,7 +263,7 @@
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Extension Repo",
+  "optionsExtensionStore": "Référentiel d'extensions",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
@@ -319,7 +319,7 @@
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
-  "optionsSpotifyCredentialsConfigured": "Client ID: {clientId}...",
+  "optionsSpotifyCredentialsConfigured": "Identifiant client : {clientId}...",
   "@optionsSpotifyCredentialsConfigured": {
     "description": "Shows configured client ID preview",
     "placeholders": {
@@ -332,11 +332,11 @@
   "@optionsSpotifyCredentialsRequired": {
     "description": "Prompt to set up credentials"
   },
-  "optionsSpotifyWarning": "Spotify requires your own API credentials. Get them free from developer.spotify.com",
+  "optionsSpotifyWarning": "Spotify nécessite vos propres identifiants API. Vous pouvez les obtenir gratuitement sur developer.spotify.com",
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
+  "optionsSpotifyDeprecationWarning": "La fonction de recherche Spotify sera supprimée le 3 mars 2026 en raison de modifications apportées à l'API Spotify. Veuillez passer à Deezer.",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
@@ -560,7 +560,7 @@
   "@setupSkip": {
     "description": "Skip current step button"
   },
-  "setupStorageAccessRequired": "Storage Access Required",
+  "setupStorageAccessRequired": "Accès au stockage requis",
   "@setupStorageAccessRequired": {
     "description": "Title when storage access needed"
   },
@@ -1865,7 +1865,7 @@
   "@extensionsInstallButton": {
     "description": "Button to install extension from file"
   },
-  "extensionsInfoTip": "Extensions can add new metadata and download providers. Only install extensions from trusted sources.",
+  "extensionsInfoTip": "Les extensions permettent d'ajouter de nouvelles métadonnées et de nouveaux fournisseurs de téléchargement. N'installez que des extensions provenant de sources fiables.",
   "@extensionsInfoTip": {
     "description": "Security warning about extensions"
   },
@@ -1989,7 +1989,7 @@
   "@downloadLossyOpus128Subtitle": {
     "description": "Subtitle for Opus 128kbps Tidal lossy option"
   },
-  "qualityNote": "Actual quality depends on track availability from the service",
+  "qualityNote": "La qualité réelle dépend de la disponibilité des pistes sur le service",
   "@qualityNote": {
     "description": "Note about quality availability"
   },
@@ -2470,7 +2470,7 @@
   "@libraryAbout": {
     "description": "Section header for about info"
   },
-  "libraryAboutDescription": "Scans your existing music collection to detect duplicates when downloading. Supports FLAC, M4A, MP3, Opus, and OGG formats. Metadata is read from file tags when available.",
+  "libraryAboutDescription": "Analyse votre bibliothèque musicale existante pour détecter les doublons lors du téléchargement. Prend en charge les formats FLAC, M4A, MP3, Opus et OGG. Les métadonnées sont extraites des balises des fichiers lorsqu'elles sont disponibles.",
   "@libraryAboutDescription": {
     "description": "Description of local library feature"
   },
