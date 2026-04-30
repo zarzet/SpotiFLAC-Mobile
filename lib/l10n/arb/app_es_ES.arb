@@ -1,7 +1,7 @@
 {
   "@@locale": "es-ES",
   "@@last_modified": "2026-01-16",
-  "appName": "",
+  "appName": "SpotiFLAC",
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
@@ -158,7 +158,7 @@
       }
     }
   },
-  "optionsDefaultSearchTab": "Default Search Tab",
+  "optionsDefaultSearchTab": "Pestaña de búsqueda por defecto",
   "@optionsDefaultSearchTab": {
     "description": "Title for the preferred default search tab setting"
   },
@@ -2297,7 +2297,7 @@
   "@discographyDownloadSelected": {
     "description": "Button - download selected albums"
   },
-  "discographyAddedToQueue": "Added {count} tracks to queue",
+  "discographyAddedToQueue": "Se agregaron {count} canciones a la lista de espera",
   "@discographyAddedToQueue": {
     "description": "Snackbar - tracks added from discography",
     "placeholders": {
@@ -2306,7 +2306,7 @@
       }
     }
   },
-  "discographySkippedDownloaded": "{added} added, {skipped} already downloaded",
+  "discographySkippedDownloaded": "{added} añadidas, {skipped} ya fueron descargadas",
   "@discographySkippedDownloaded": {
     "description": "Snackbar - with skipped tracks count",
     "placeholders": {
@@ -2318,27 +2318,27 @@
       }
     }
   },
-  "discographyNoAlbums": "No albums available",
+  "discographyNoAlbums": "No hay albums disponibles",
   "@discographyNoAlbums": {
     "description": "Error - no albums found for artist"
   },
-  "discographyFailedToFetch": "Failed to fetch some albums",
+  "discographyFailedToFetch": "Hubo un error para encontrar algunos albums",
   "@discographyFailedToFetch": {
     "description": "Error - some albums failed to load"
   },
-  "sectionStorageAccess": "Storage Access",
+  "sectionStorageAccess": "Permiso de Almacenamiento",
   "@sectionStorageAccess": {
     "description": "Section header for storage access settings"
   },
-  "allFilesAccess": "All Files Access",
+  "allFilesAccess": "Acceso a todos los archivos",
   "@allFilesAccess": {
     "description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"
   },
-  "allFilesAccessEnabledSubtitle": "Can write to any folder",
+  "allFilesAccessEnabledSubtitle": "Puede escribir en cualquier carpeta",
   "@allFilesAccessEnabledSubtitle": {
     "description": "Subtitle when all files access is enabled"
   },
-  "allFilesAccessDisabledSubtitle": "Limited to media folders only",
+  "allFilesAccessDisabledSubtitle": "Limitado a carpetas de media",
   "@allFilesAccessDisabledSubtitle": {
     "description": "Subtitle when all files access is disabled"
   },
