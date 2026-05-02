@@ -4509,5 +4509,77 @@
   "notifUpdateFailedBody": "Could not download update. Try again later.",
   "@notifUpdateFailedBody": {
     "description": "Notification body when app update download fails"
+  },
+  "settingsFiles": "Files & Folders",
+  "@settingsFiles": {
+    "description": "Settings menu item - file and folder settings"
+  },
+  "settingsFilesSubtitle": "Download location, filename, folder structure",
+  "@settingsFilesSubtitle": {
+    "description": "Subtitle for files & folders settings"
+  },
+  "settingsMetadata": "Metadata",
+  "@settingsMetadata": {
+    "description": "Settings menu item - metadata settings"
+  },
+  "settingsMetadataSubtitle": "Cover art, tags, ReplayGain, providers",
+  "@settingsMetadataSubtitle": {
+    "description": "Subtitle for metadata settings"
+  },
+  "settingsLyrics": "Lyrics",
+  "@settingsLyrics": {
+    "description": "Settings menu item - lyrics settings"
+  },
+  "settingsLyricsSubtitle": "Embed, mode, providers, language options",
+  "@settingsLyricsSubtitle": {
+    "description": "Subtitle for lyrics settings"
+  },
+  "settingsApp": "App",
+  "@settingsApp": {
+    "description": "Settings menu item - app settings"
+  },
+  "settingsAppSubtitle": "Updates, data, extension repo, debug",
+  "@settingsAppSubtitle": {
+    "description": "Subtitle for app settings"
+  },
+  "sectionMetadataProviders": "Providers",
+  "@sectionMetadataProviders": {
+    "description": "Settings section header for metadata providers"
+  },
+  "sectionDuplicates": "Duplicates",
+  "@sectionDuplicates": {
+    "description": "Settings section header for deduplication"
+  },
+  "sectionLyricsProviderOptions": "Provider Options",
+  "@sectionLyricsProviderOptions": {
+    "description": "Settings section header for per-provider lyrics options"
+  },
+  "metadataProvidersTitle": "Metadata Provider Priority",
+  "@metadataProvidersTitle": {
+    "description": "Settings item title for metadata provider order"
+  },
+  "metadataProvidersSubtitle": "Drag to set search and metadata source order",
+  "@metadataProvidersSubtitle": {
+    "description": "Subtitle for metadata provider priority item"
+  },
+  "downloadDeduplication": "Skip Duplicate Downloads",
+  "@downloadDeduplication": {
+    "description": "Setting - skip tracks already in download history"
+  },
+  "downloadDeduplicationEnabled": "Already-downloaded tracks will be skipped",
+  "@downloadDeduplicationEnabled": {
+    "description": "Subtitle when deduplication is on"
+  },
+  "downloadDeduplicationDisabled": "All tracks will be downloaded regardless of history",
+  "@downloadDeduplicationDisabled": {
+    "description": "Subtitle when deduplication is off"
+  },
+  "downloadFallbackExtensions": "Fallback Extensions",
+  "@downloadFallbackExtensions": {
+    "description": "Settings item for configuring fallback extension providers"
+  },
+  "downloadFallbackExtensionsSubtitle": "Choose which extensions can be used as fallback",
+  "@downloadFallbackExtensionsSubtitle": {
+    "description": "Subtitle for fallback extensions item"
   }
 }
