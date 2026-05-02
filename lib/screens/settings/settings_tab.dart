@@ -4,9 +4,12 @@ import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/screens/settings/appearance_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/download_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/files_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/lyrics_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/metadata_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/extensions_page.dart';
 import 'package:spotiflac_android/screens/settings/library_settings_page.dart';
-import 'package:spotiflac_android/screens/settings/options_settings_page.dart';
+import 'package:spotiflac_android/screens/settings/app_settings_page.dart';
 import 'package:spotiflac_android/screens/settings/about_page.dart';
 import 'package:spotiflac_android/screens/settings/cache_management_page.dart';
 import 'package:spotiflac_android/screens/settings/donate_page.dart';
@@ -48,7 +51,7 @@ class SettingsTab extends ConsumerWidget {
                 title: Text(
                   context.l10n.settingsTitle,
                   style: TextStyle(
-                    fontSize: 20 + (14 * expandRatio), // 20 -> 34
+                    fontSize: 20 + (14 * expandRatio),
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
@@ -58,6 +61,7 @@ class SettingsTab extends ConsumerWidget {
           ),
         ),
 
+        // ── Group 1: Appearance & Content ──────────────────────────────
         SliverToBoxAdapter(
           child: Builder(
             builder: (context) {
@@ -73,6 +77,34 @@ class SettingsTab extends ConsumerWidget {
                         _navigateTo(context, const AppearanceSettingsPage()),
                   ),
                   SettingsItem(
+                    icon: Icons.library_music_outlined,
+                    title: l10n.settingsLocalLibrary,
+                    subtitle: l10n.settingsLocalLibrarySubtitle,
+                    onTap: () =>
+                        _navigateTo(context, const LibrarySettingsPage()),
+                  ),
+                  SettingsItem(
+                    icon: Icons.extension_outlined,
+                    title: l10n.settingsExtensions,
+                    subtitle: l10n.settingsExtensionsSubtitle,
+                    onTap: () => _navigateTo(context, const ExtensionsPage()),
+                    showDivider: false,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        // ── Group 2: Download ──────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Builder(
+            builder: (context) {
+              final l10n = context.l10n;
+              return SettingsGroup(
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                children: [
+                  SettingsItem(
                     icon: Icons.download_outlined,
                     title: l10n.settingsDownload,
                     subtitle: l10n.settingsDownloadSubtitle,
@@ -80,12 +112,41 @@ class SettingsTab extends ConsumerWidget {
                         _navigateTo(context, const DownloadSettingsPage()),
                   ),
                   SettingsItem(
-                    icon: Icons.library_music_outlined,
-                    title: l10n.settingsLocalLibrary,
-                    subtitle: l10n.settingsLocalLibrarySubtitle,
+                    icon: Icons.folder_outlined,
+                    title: l10n.settingsFiles,
+                    subtitle: l10n.settingsFilesSubtitle,
                     onTap: () =>
-                        _navigateTo(context, const LibrarySettingsPage()),
+                        _navigateTo(context, const FilesSettingsPage()),
                   ),
+                  SettingsItem(
+                    icon: Icons.sell_outlined,
+                    title: l10n.settingsMetadata,
+                    subtitle: l10n.settingsMetadataSubtitle,
+                    onTap: () =>
+                        _navigateTo(context, const MetadataSettingsPage()),
+                  ),
+                  SettingsItem(
+                    icon: Icons.lyrics_outlined,
+                    title: l10n.settingsLyrics,
+                    subtitle: l10n.settingsLyricsSubtitle,
+                    onTap: () =>
+                        _navigateTo(context, const LyricsSettingsPage()),
+                    showDivider: false,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+
+        // ── Group 3: App ───────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Builder(
+            builder: (context) {
+              final l10n = context.l10n;
+              return SettingsGroup(
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                children: [
                   SettingsItem(
                     icon: Icons.storage_outlined,
                     title: l10n.settingsCache,
@@ -95,41 +156,22 @@ class SettingsTab extends ConsumerWidget {
                   ),
                   SettingsItem(
                     icon: Icons.tune_outlined,
-                    title: l10n.settingsOptions,
-                    subtitle: l10n.settingsOptionsSubtitle,
+                    title: l10n.settingsApp,
+                    subtitle: l10n.settingsAppSubtitle,
                     onTap: () =>
-                        _navigateTo(context, const OptionsSettingsPage()),
+                        _navigateTo(context, const AppSettingsPage()),
                   ),
                   SettingsItem(
-                    icon: Icons.extension_outlined,
-                    title: l10n.settingsExtensions,
-                    subtitle: l10n.settingsExtensionsSubtitle,
-                    onTap: () => _navigateTo(context, const ExtensionsPage()),
+                    icon: Icons.article_outlined,
+                    title: l10n.logTitle,
+                    subtitle: l10n.settingsLogsSubtitle,
+                    onTap: () => _navigateTo(context, const LogScreen()),
                   ),
                   SettingsItem(
                     icon: Icons.favorite_outline,
                     title: l10n.settingsDonate,
                     subtitle: l10n.settingsDonateSubtitle,
                     onTap: () => _navigateTo(context, const DonatePage()),
-                    showDivider: false,
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Builder(
-            builder: (context) {
-              final l10n = context.l10n;
-              return SettingsGroup(
-                children: [
-                  SettingsItem(
-                    icon: Icons.article_outlined,
-                    title: l10n.logTitle,
-                    subtitle: l10n.settingsLogsSubtitle,
-                    onTap: () => _navigateTo(context, const LogScreen()),
                   ),
                   SettingsItem(
                     icon: Icons.info_outline,

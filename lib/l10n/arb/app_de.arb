@@ -121,7 +121,7 @@
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "Farben von Ihrem Hintergrundbild verwenden",
+  "appearanceDynamicColorSubtitle": "Farben deines Hintergrundbilds verwenden",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
@@ -178,7 +178,7 @@
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsUseExtensionProviders": "Erweiterungs-Anbieter verwenden",
+  "optionsUseExtensionProviders": "Erweiterungsanbieter verwenden",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
@@ -194,7 +194,7 @@
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Synchronisierte Lyrics in FLAC-Dateien einbetten",
+  "optionsEmbedLyricsSubtitle": "Synchronisierte Songtexte neben heruntergeladenen Titeln speichern",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
@@ -230,7 +230,7 @@
   "@optionsArtistTagModeJoined": {
     "description": "Artist tag mode option that joins multiple artists into one value"
   },
-  "optionsArtistTagModeJoinedSubtitle": "Einen Künstler wert wie \"Artist A, Artist B\" für maximale Spieler-Kompatibilität schreiben.",
+  "optionsArtistTagModeJoinedSubtitle": "Einen Künstler-Wert wie \"Künstler A, Künstler B\" für maximale Player-Kompatibilität schreiben.",
   "@optionsArtistTagModeJoinedSubtitle": {
     "description": "Subtitle for joined artist tag mode"
   },
@@ -438,7 +438,7 @@
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Melde jedes Problem, die dir auftreten",
+  "aboutReportIssueSubtitle": "Melde Probleme, die dir auffallen",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
@@ -486,7 +486,7 @@
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
-  "aboutSjdonadoDesc": "Ersteller von I Don't Have Spotify (IDHS). Der Fallback-Link-Resolver, der den Tag rettete!",
+  "aboutSjdonadoDesc": "Ersteller von I Don't Have Spotify (IDHS). Der Fallback-Link-Resolver, der den Tag rettet!",
   "@aboutSjdonadoDesc": {
     "description": "Credit description for sjdonado"
   },
@@ -576,7 +576,7 @@
   "@setupPermissionDeniedMessage": {
     "description": "Error when permission denied"
   },
-  "setupPermissionRequired": "{permissionType} Zugriff verweigert",
+  "setupPermissionRequired": "{permissionType}-Berechtigung erforderlich",
   "@setupPermissionRequired": {
     "description": "Generic permission required title",
     "placeholders": {
@@ -586,7 +586,7 @@
       }
     }
   },
-  "setupPermissionRequiredMessage": "{permissionType} Berechtigung ist erforderlich für\ndie beste Benutzererfahrung. Für kannst dies später in den Einstellungen ändern.",
+  "setupPermissionRequiredMessage": "{permissionType}-Berechtigung ist erforderlich für\ndie beste Benutzererfahrung. Du kannst dies später in den Einstellungen ändern.",
   "@setupPermissionRequiredMessage": {
     "description": "Generic permission required message",
     "placeholders": {
@@ -603,7 +603,7 @@
   "@setupNoFolderSelected": {
     "description": "Prompt when no folder selected"
   },
-  "setupUseDefault": "Standart benutzen",
+  "setupUseDefault": "Standard verwenden",
   "@setupUseDefault": {
     "description": "Button to use default folder"
   },
@@ -663,7 +663,7 @@
   "@setupNotificationEnable": {
     "description": "Button to enable notifications"
   },
-  "setupFolderChoose": "Speicherort auwählen",
+  "setupFolderChoose": "Speicherort auswählen",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
@@ -747,7 +747,7 @@
   "@dialogDiscardChanges": {
     "description": "Dialog title - unsaved changes warning"
   },
-  "dialogUnsavedChanges": "Hast du noch nicht alle Änderungen gespeichert. Möchtest du die Änderungen verwerfen?",
+  "dialogUnsavedChanges": "Du hast ungespeicherte Änderungen. Möchtest du sie verwerfen?",
   "@dialogUnsavedChanges": {
     "description": "Dialog message - unsaved changes"
   },
@@ -759,7 +759,7 @@
   "@dialogRemoveExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogRemoveExtensionMessage": "Bist Du sicher, dass Du diese Erweiterung entfernen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
+  "dialogRemoveExtensionMessage": "Bist du sicher, dass du diese Erweiterung entfernen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.",
   "@dialogRemoveExtensionMessage": {
     "description": "Dialog message - uninstall confirmation"
   },
@@ -767,7 +767,7 @@
   "@dialogUninstallExtension": {
     "description": "Dialog title - uninstall extension"
   },
-  "dialogUninstallExtensionMessage": "Bist du dir sicher, dass du {extensionName} entfernen möchtest?",
+  "dialogUninstallExtensionMessage": "Bist du sicher, dass du {extensionName} entfernen möchtest?",
   "@dialogUninstallExtensionMessage": {
     "description": "Dialog message - uninstall specific extension",
     "placeholders": {
@@ -780,7 +780,7 @@
   "@dialogClearHistoryTitle": {
     "description": "Dialog title - clear download history"
   },
-  "dialogClearHistoryMessage": "Bist du dir sicher, dass du den gesamten Download verlauf löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+  "dialogClearHistoryMessage": "Bist du sicher, dass du den gesamten Downloadverlauf löschen möchtest? Dies kann nicht rückgängig gemacht werden.",
   "@dialogClearHistoryMessage": {
     "description": "Dialog message - clear history confirmation"
   },
@@ -846,7 +846,7 @@
       }
     }
   },
-  "snackbarAlreadyInLibrary": "\"{trackName}\" existiert bereits in Ihrer Bibliothek",
+  "snackbarAlreadyInLibrary": "\"{trackName}\" existiert bereits in deiner Bibliothek",
   "@snackbarAlreadyInLibrary": {
     "description": "Snackbar - track already exists in local library",
     "placeholders": {
@@ -867,7 +867,7 @@
   "@snackbarCredentialsCleared": {
     "description": "Snackbar - Spotify credentials removed"
   },
-  "snackbarDeletedTracks": "{count} {count, plural, one {}=1{Titel} other{Titel}}",
+  "snackbarDeletedTracks": "{count} {count, plural, =1{Titel gelöscht} other{Titel gelöscht}}",
   "@snackbarDeletedTracks": {
     "description": "Snackbar - tracks deleted",
     "placeholders": {
@@ -969,7 +969,7 @@
   "@errorUrlFetchFailed": {
     "description": "Error message - generic URL fetch failure"
   },
-  "errorMissingExtensionSource": "Kann {item} nicht lade wegen fehlender Erweiterungsquelle",
+  "errorMissingExtensionSource": "Kann {item} nicht laden wegen fehlender Erweiterungsquelle",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
     "placeholders": {
@@ -1287,7 +1287,7 @@
   "@logClearLogsTitle": {
     "description": "Clear logs dialog title"
   },
-  "logClearLogsMessage": "Bist du dir sicher, dass Sie alle Protokolle löschen möchtest?",
+  "logClearLogsMessage": "Bist du sicher, dass du alle Protokolle löschen möchtest?",
   "@logClearLogsMessage": {
     "description": "Clear logs confirmation message"
   },
@@ -2462,7 +2462,7 @@
   "@libraryClearConfirmTitle": {
     "description": "Dialog title for clear confirmation"
   },
-  "libraryClearConfirmMessage": "Dadurch werden alle gescannten Titel aus Ihrer Bibliothek entfernt. Ihre eigentlichen Musikdateien werden nicht gelöscht.",
+  "libraryClearConfirmMessage": "Dadurch werden alle gescannten Titel aus deiner Bibliothek entfernt. Deine eigentlichen Musikdateien werden nicht gelöscht.",
   "@libraryClearConfirmMessage": {
     "description": "Dialog message for clear confirmation"
   },
@@ -4509,5 +4509,77 @@
   "notifUpdateFailedBody": "Could not download update. Try again later.",
   "@notifUpdateFailedBody": {
     "description": "Notification body when app update download fails"
+  },
+  "settingsFiles": "Files & Folders",
+  "@settingsFiles": {
+    "description": "Settings menu item - file and folder settings"
+  },
+  "settingsFilesSubtitle": "Download location, filename, folder structure",
+  "@settingsFilesSubtitle": {
+    "description": "Subtitle for files & folders settings"
+  },
+  "settingsMetadata": "Metadata",
+  "@settingsMetadata": {
+    "description": "Settings menu item - metadata settings"
+  },
+  "settingsMetadataSubtitle": "Cover art, tags, ReplayGain, providers",
+  "@settingsMetadataSubtitle": {
+    "description": "Subtitle for metadata settings"
+  },
+  "settingsLyrics": "Lyrics",
+  "@settingsLyrics": {
+    "description": "Settings menu item - lyrics settings"
+  },
+  "settingsLyricsSubtitle": "Embed, mode, providers, language options",
+  "@settingsLyricsSubtitle": {
+    "description": "Subtitle for lyrics settings"
+  },
+  "settingsApp": "App",
+  "@settingsApp": {
+    "description": "Settings menu item - app settings"
+  },
+  "settingsAppSubtitle": "Updates, data, extension repo, debug",
+  "@settingsAppSubtitle": {
+    "description": "Subtitle for app settings"
+  },
+  "sectionMetadataProviders": "Providers",
+  "@sectionMetadataProviders": {
+    "description": "Settings section header for metadata providers"
+  },
+  "sectionDuplicates": "Duplicates",
+  "@sectionDuplicates": {
+    "description": "Settings section header for deduplication"
+  },
+  "sectionLyricsProviderOptions": "Provider Options",
+  "@sectionLyricsProviderOptions": {
+    "description": "Settings section header for per-provider lyrics options"
+  },
+  "metadataProvidersTitle": "Metadata Provider Priority",
+  "@metadataProvidersTitle": {
+    "description": "Settings item title for metadata provider order"
+  },
+  "metadataProvidersSubtitle": "Drag to set search and metadata source order",
+  "@metadataProvidersSubtitle": {
+    "description": "Subtitle for metadata provider priority item"
+  },
+  "downloadDeduplication": "Skip Duplicate Downloads",
+  "@downloadDeduplication": {
+    "description": "Setting - skip tracks already in download history"
+  },
+  "downloadDeduplicationEnabled": "Already-downloaded tracks will be skipped",
+  "@downloadDeduplicationEnabled": {
+    "description": "Subtitle when deduplication is on"
+  },
+  "downloadDeduplicationDisabled": "All tracks will be downloaded regardless of history",
+  "@downloadDeduplicationDisabled": {
+    "description": "Subtitle when deduplication is off"
+  },
+  "downloadFallbackExtensions": "Fallback Extensions",
+  "@downloadFallbackExtensions": {
+    "description": "Settings item for configuring fallback extension providers"
+  },
+  "downloadFallbackExtensionsSubtitle": "Choose which extensions can be used as fallback",
+  "@downloadFallbackExtensionsSubtitle": {
+    "description": "Subtitle for fallback extensions item"
   }
 }
