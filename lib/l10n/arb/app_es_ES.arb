@@ -166,6 +166,14 @@
   "@optionsDefaultSearchTabSubtitle": {
     "description": "Subtitle for the preferred default search tab setting"
   },
+  "optionsDefaultSearchTabAlbums": "Albums",
+  "@optionsDefaultSearchTabAlbums": {
+    "description": "Default search tab option - Albums tab"
+  },
+  "optionsDefaultSearchTabTracks": "Tracks",
+  "@optionsDefaultSearchTabTracks": {
+    "description": "Default search tab option - Tracks tab"
+  },
   "optionsSwitchBack": "Toque Deezer o Spotify para volver desde la extensión",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
