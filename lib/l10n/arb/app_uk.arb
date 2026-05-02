@@ -1,6 +1,6 @@
 {
   "@@locale": "uk",
-  "@@last_modified": "2026-01-16",
+  "@@last_modified": "2026-04-28",
   "appName": "SpotiFLAC",
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
@@ -145,7 +145,7 @@
   "@optionsPrimaryProvider": {
     "description": "Main search provider setting"
   },
-  "optionsPrimaryProviderSubtitle": "Розширення будуть випробувані першими",
+  "optionsPrimaryProviderSubtitle": "Service used for searching by track or album name",
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
@@ -194,7 +194,7 @@
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Вбудовувати синхронізовані тексти пісень у файли FLAC",
+  "optionsEmbedLyricsSubtitle": "Save synced lyrics alongside your downloaded tracks",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
@@ -1449,11 +1449,11 @@
   "@settingsAppearanceSubtitle": {
     "description": "Appearance settings description"
   },
-  "settingsDownloadSubtitle": "Сервіс, якість, формат назви файлу",
+  "settingsDownloadSubtitle": "Service, quality, fallback",
   "@settingsDownloadSubtitle": {
     "description": "Download settings description"
   },
-  "settingsOptionsSubtitle": "Резервний варіант, тексти пісень, обкладинка, оновлення",
+  "settingsOptionsSubtitle": "Fallback, metadata, lyrics, cover art",
   "@settingsOptionsSubtitle": {
     "description": "Options settings description"
   },
@@ -3592,17 +3592,17 @@
       }
     }
   },
-  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Папки виконавців використовують \"Виконавець альбому\", коли це можливо",
+  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Folder named after Album Artist tag",
   "@downloadUseAlbumArtistForFoldersAlbumSubtitle": {
-    "description": "Subtitle when Album Artist is used for folder naming"
+    "description": "Subtitle when album artist is used for folder names"
   },
-  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Папки виконавців використовують лише виконавця доріжки",
+  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Folder named after Track Artist tag",
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
-    "description": "Subtitle when Track Artist is used for folder naming"
+    "description": "Subtitle when track artist is used for folder names"
   },
-  "lyricsProvidersTitle": "Постачальники текстів пісень",
+  "lyricsProvidersTitle": "Lyrics Provider Priority",
   "@lyricsProvidersTitle": {
-    "description": "Title for the lyrics provider priority page"
+    "description": "Settings item title for lyrics provider order"
   },
   "lyricsProvidersDescription": "Увімкнення, вимкнення та зміна порядку джерел текстів пісень. Постачальники перевірятимуть зверху вниз, доки не буде знайдено текст пісні.",
   "@lyricsProvidersDescription": {
@@ -3682,11 +3682,11 @@
   "@safMigrationSuccess": {
     "description": "Snackbar after successfully migrating to SAF"
   },
-  "settingsDonate": "Пожертвувати кошти",
+  "settingsDonate": "Support Development",
   "@settingsDonate": {
-    "description": "Settings menu item - donate"
+    "description": "Settings menu item - donate page"
   },
-  "settingsDonateSubtitle": "Підтримка розробки SpotiFLAC для мобільних пристроїв",
+  "settingsDonateSubtitle": "Buy the developer a coffee",
   "@settingsDonateSubtitle": {
     "description": "Subtitle for donate menu item"
   },
@@ -3774,177 +3774,177 @@
   "@noTracksFoundForAlbum": {
     "description": "Empty state message when an album has no tracks"
   },
-  "downloadLocationSubtitle": "Виберіть режим зберігання для завантажених файлів.",
+  "downloadLocationSubtitle": "Choose where to save your downloaded tracks",
   "@downloadLocationSubtitle": {
-    "description": "Subtitle text in Android download location bottom sheet"
+    "description": "Subtitle shown in the download location picker sheet"
   },
-  "storageModeAppFolder": "Папка додатку (не SAF)",
+  "storageModeAppFolder": "App Folder (Recommended)",
   "@storageModeAppFolder": {
-    "description": "Storage mode option - use legacy app folder"
+    "description": "Storage mode option - app-managed folder"
   },
-  "storageModeAppFolderSubtitle": "Використовувати шлях Music/SpotiFLAC за замовчуванням",
+  "storageModeAppFolderSubtitle": "Saves to Music/SpotiFLAC by default",
   "@storageModeAppFolderSubtitle": {
     "description": "Subtitle for app folder storage mode"
   },
-  "storageModeSaf": "Папка SAF",
+  "storageModeSaf": "Custom Folder (SAF)",
   "@storageModeSaf": {
-    "description": "Storage mode option - use Android SAF picker"
+    "description": "Storage mode option - Storage Access Framework"
   },
-  "storageModeSafSubtitle": "Вибрати папку через Android Storage Access Framework",
+  "storageModeSafSubtitle": "Pick any folder, including SD card",
   "@storageModeSafSubtitle": {
     "description": "Subtitle for SAF storage mode"
   },
-  "downloadFilenameDescription": "Налаштувати спосіб іменування ваших файлів.",
+  "downloadFilenameDescription": "Use {artist}, {title}, {album}, {track}, {year}, {date}, {disc} as placeholders.",
   "@downloadFilenameDescription": {
-    "description": "Description text in filename format bottom sheet"
+    "description": "Description shown in filename format editor"
   },
   "downloadFilenameInsertTag": "Натисніть, щоб вставити тег:",
   "@downloadFilenameInsertTag": {
     "description": "Label above filename tag chips"
   },
-  "downloadSeparateSinglesEnabled": "Папки «Альбоми» та «Сингли»",
+  "downloadSeparateSinglesEnabled": "Singles and EPs saved in a separate folder",
   "@downloadSeparateSinglesEnabled": {
-    "description": "Subtitle when separate singles folder is enabled"
+    "description": "Subtitle when separate singles folder is on"
   },
-  "downloadSeparateSinglesDisabled": "Всі файли в одній структурі",
+  "downloadSeparateSinglesDisabled": "Singles and albums saved in the same folder",
   "@downloadSeparateSinglesDisabled": {
-    "description": "Subtitle when separate singles folder is disabled"
+    "description": "Subtitle when separate singles folder is off"
   },
   "downloadArtistNameFilters": "Фільтри імені виконавця",
   "@downloadArtistNameFilters": {
     "description": "Setting title for artist folder filter options"
   },
-  "downloadCreatePlaylistSourceFolder": "Створити папку джерела списку відтворення",
+  "downloadCreatePlaylistSourceFolder": "Playlist Source Folder",
   "@downloadCreatePlaylistSourceFolder": {
-    "description": "Setting title for adding a playlist folder prefix before the normal organization structure"
+    "description": "Setting to create a subfolder per playlist source"
   },
-  "downloadCreatePlaylistSourceFolderEnabled": "Завантаження списків відтворення використовує Playlist/ плюс вашу звичайну структуру папок.",
+  "downloadCreatePlaylistSourceFolderEnabled": "A subfolder is created for each playlist",
   "@downloadCreatePlaylistSourceFolderEnabled": {
-    "description": "Subtitle when playlist source folder prefix is enabled"
+    "description": "Subtitle when playlist folder is enabled"
   },
-  "downloadCreatePlaylistSourceFolderDisabled": "Завантаження списків відтворення використовують лише звичайну структуру папок.",
+  "downloadCreatePlaylistSourceFolderDisabled": "All tracks saved directly to download folder",
   "@downloadCreatePlaylistSourceFolderDisabled": {
-    "description": "Subtitle when playlist source folder prefix is disabled"
+    "description": "Subtitle when playlist folder is disabled"
   },
-  "downloadCreatePlaylistSourceFolderRedundant": "За допомогою списку відтворення завантаження вже розміщуються в папці зі списком відтворення.",
+  "downloadCreatePlaylistSourceFolderRedundant": "Handled by folder organization setting",
   "@downloadCreatePlaylistSourceFolderRedundant": {
-    "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
+    "description": "Subtitle when folder organization is already set to playlist"
   },
   "downloadSongLinkRegion": "Регіон SongLink",
   "@downloadSongLinkRegion": {
-    "description": "Setting title for SongLink country region"
+    "description": "Setting for SongLink region used during fallback resolution"
   },
-  "downloadNetworkCompatibilityMode": "Режим сумісності з мережею",
+  "downloadNetworkCompatibilityMode": "Network Compatibility Mode",
   "@downloadNetworkCompatibilityMode": {
-    "description": "Setting title for network compatibility toggle"
+    "description": "Setting for legacy TLS/network handling"
   },
-  "downloadNetworkCompatibilityModeEnabled": "Увімкнено: спробувати HTTP + прийняти недійсні сертифікати TLS (небезпечно)",
+  "downloadNetworkCompatibilityModeEnabled": "Using legacy TLS settings for older networks",
   "@downloadNetworkCompatibilityModeEnabled": {
-    "description": "Subtitle when network compatibility mode is enabled"
+    "description": "Subtitle when network compatibility mode is on"
   },
-  "downloadNetworkCompatibilityModeDisabled": "Вимкнено: сувора перевірка сертифіката HTTPS (рекомендовано)",
+  "downloadNetworkCompatibilityModeDisabled": "Using standard network settings",
   "@downloadNetworkCompatibilityModeDisabled": {
-    "description": "Subtitle when network compatibility mode is disabled"
+    "description": "Subtitle when network compatibility mode is off"
   },
-  "downloadSelectServiceToEnable": "Виберіть вбудовану службу, яку потрібно ввімкнути",
+  "downloadSelectServiceToEnable": "Select Tidal or Qobuz to enable this option",
   "@downloadSelectServiceToEnable": {
-    "description": "Hint shown instead of Ask-quality subtitle when no built-in service selected"
+    "description": "Subtitle when quality picker is disabled due to extension service"
   },
-  "downloadSelectTidalQobuz": "Виберіть Tidal або Qobuz вище, щоб налаштувати якість",
+  "downloadSelectTidalQobuz": "Select Tidal or Qobuz to choose audio quality",
   "@downloadSelectTidalQobuz": {
-    "description": "Info hint when non-Tidal/Qobuz service is selected"
+    "description": "Info shown when a non-built-in service is selected"
   },
-  "downloadEmbedLyricsDisabled": "Вимкнено, якщо вимкнено функцію «Вбудувати метадані»",
+  "downloadEmbedLyricsDisabled": "Enable metadata embedding first",
   "@downloadEmbedLyricsDisabled": {
-    "description": "Subtitle for Embed Lyrics when Embed Metadata is disabled"
+    "description": "Subtitle when lyrics embedding is blocked by metadata toggle"
   },
   "downloadNeteaseIncludeTranslation": "Netease: Включити переклад",
   "@downloadNeteaseIncludeTranslation": {
-    "description": "Toggle title for including Netease translated lyrics"
+    "description": "Setting to include translated lyrics from Netease"
   },
-  "downloadNeteaseIncludeTranslationEnabled": "Додати перекладені тексти пісень, коли вони доступні",
+  "downloadNeteaseIncludeTranslationEnabled": "Chinese translation lines included",
   "@downloadNeteaseIncludeTranslationEnabled": {
-    "description": "Subtitle when Netease translation is enabled"
+    "description": "Subtitle when Netease translation is on"
   },
-  "downloadNeteaseIncludeTranslationDisabled": "Використовувати лише оригінальні тексти пісень",
+  "downloadNeteaseIncludeTranslationDisabled": "Original lyrics only",
   "@downloadNeteaseIncludeTranslationDisabled": {
-    "description": "Subtitle when Netease translation is disabled"
+    "description": "Subtitle when Netease translation is off"
   },
   "downloadNeteaseIncludeRomanization": "Netease: Включити романізацію",
   "@downloadNeteaseIncludeRomanization": {
-    "description": "Toggle title for including Netease romanized lyrics"
+    "description": "Setting to include romanized lyrics from Netease"
   },
-  "downloadNeteaseIncludeRomanizationEnabled": "Додати романізовані тексти пісень, коли це можливо",
+  "downloadNeteaseIncludeRomanizationEnabled": "Romanization lines included",
   "@downloadNeteaseIncludeRomanizationEnabled": {
-    "description": "Subtitle when Netease romanization is enabled"
+    "description": "Subtitle when Netease romanization is on"
   },
-  "downloadNeteaseIncludeRomanizationDisabled": "Вимкнути",
+  "downloadNeteaseIncludeRomanizationDisabled": "No romanization",
   "@downloadNeteaseIncludeRomanizationDisabled": {
-    "description": "Subtitle when Netease romanization is disabled"
+    "description": "Subtitle when Netease romanization is off"
   },
-  "downloadAppleQqMultiPerson": "Apple/QQ Багатокористувацький переклад слово за словом",
+  "downloadAppleQqMultiPerson": "Apple / QQ: Multi-Person Lyrics",
   "@downloadAppleQqMultiPerson": {
-    "description": "Toggle title for Apple/QQ multi-person word-by-word lyrics"
+    "description": "Setting for word-by-word multi-person lyrics from Apple Music and QQ Music"
   },
-  "downloadAppleQqMultiPersonEnabled": "Увімкнути теги динаміка v1/v2 та [bg:]",
+  "downloadAppleQqMultiPersonEnabled": "Speaker labels included for duets and group tracks",
   "@downloadAppleQqMultiPersonEnabled": {
-    "description": "Subtitle when multi-person word-by-word is enabled"
+    "description": "Subtitle when multi-person lyrics is on"
   },
-  "downloadAppleQqMultiPersonDisabled": "Спрощене послівне форматування",
+  "downloadAppleQqMultiPersonDisabled": "Standard lyrics without speaker labels",
   "@downloadAppleQqMultiPersonDisabled": {
-    "description": "Subtitle when multi-person word-by-word is disabled"
+    "description": "Subtitle when multi-person lyrics is off"
   },
   "downloadMusixmatchLanguage": "Мова Musixmatch",
   "@downloadMusixmatchLanguage": {
-    "description": "Setting title for Musixmatch language preference"
+    "description": "Setting for Musixmatch lyrics translation language"
   },
-  "downloadMusixmatchLanguageAuto": "Авто (оригінал)",
+  "downloadMusixmatchLanguageAuto": "Auto (original language)",
   "@downloadMusixmatchLanguageAuto": {
-    "description": "Option label when Musixmatch uses original language"
+    "description": "Subtitle when no language is set"
   },
-  "downloadFilterContributing": "Фільтрувати виконавців-учасників у розділі «Виконавець альбому»",
+  "downloadFilterContributing": "Filter Contributing Artists",
   "@downloadFilterContributing": {
-    "description": "Toggle title for filtering contributing artists in Album Artist metadata"
+    "description": "Setting to strip contributing artists from Album Artist folder name"
   },
-  "downloadFilterContributingEnabled": "Метадані виконавця альбому використовують лише основного виконавця",
+  "downloadFilterContributingEnabled": "Contributing artists removed from Album Artist folder name",
   "@downloadFilterContributingEnabled": {
-    "description": "Subtitle when contributing artist filter is enabled"
+    "description": "Subtitle when contributing artist filter is on"
   },
-  "downloadFilterContributingDisabled": "Зберегти повне значення метаданих виконавця альбому",
+  "downloadFilterContributingDisabled": "Full Album Artist string used",
   "@downloadFilterContributingDisabled": {
-    "description": "Subtitle when contributing artist filter is disabled"
+    "description": "Subtitle when contributing artist filter is off"
   },
-  "downloadProvidersNoneEnabled": "Не ввімкнено",
+  "downloadProvidersNoneEnabled": "No providers enabled",
   "@downloadProvidersNoneEnabled": {
-    "description": "Subtitle for lyrics providers setting when no providers are enabled"
+    "description": "Shown when no lyrics providers are active"
   },
   "downloadMusixmatchLanguageCode": "Код мови",
   "@downloadMusixmatchLanguageCode": {
-    "description": "Label for the Musixmatch language code text field"
+    "description": "Label for Musixmatch language input field"
   },
-  "downloadMusixmatchLanguageHint": "авто / en / es / ja",
+  "downloadMusixmatchLanguageHint": "e.g. en, de, ja",
   "@downloadMusixmatchLanguageHint": {
-    "description": "Hint text for the Musixmatch language code field"
+    "description": "Placeholder for Musixmatch language input"
   },
-  "downloadMusixmatchLanguageDesc": "Встановити потрібний код мови (наприклад: en, es, ja). Залиште поле порожнім для автоматичного вибору.",
+  "downloadMusixmatchLanguageDesc": "Enter a BCP-47 language code (e.g. en, de, ja) to request translated lyrics from Musixmatch.",
   "@downloadMusixmatchLanguageDesc": {
-    "description": "Description in the Musixmatch language picker"
+    "description": "Description in Musixmatch language picker"
   },
   "downloadMusixmatchAuto": "Авто",
   "@downloadMusixmatchAuto": {
-    "description": "Button to reset Musixmatch language to automatic"
+    "description": "Button to clear Musixmatch language (use auto)"
   },
-  "downloadNetworkAnySubtitle": "Wi-Fi + мобільний інтернет",
+  "downloadNetworkAnySubtitle": "Use WiFi or mobile data",
   "@downloadNetworkAnySubtitle": {
-    "description": "Subtitle for 'Any' network mode option"
+    "description": "Subtitle for any-network option in picker"
   },
-  "downloadNetworkWifiOnlySubtitle": "Призупинити завантаження через мобільний інтернет",
+  "downloadNetworkWifiOnlySubtitle": "Downloads pause when on mobile data",
   "@downloadNetworkWifiOnlySubtitle": {
-    "description": "Subtitle for 'WiFi only' network mode option"
+    "description": "Subtitle for WiFi-only option in picker"
   },
-  "downloadSongLinkRegionDesc": "Використовувати як userCountry для пошуку SongLink API.",
+  "downloadSongLinkRegionDesc": "Region used when resolving track links via SongLink. Choose the country where your streaming services are available.",
   "@downloadSongLinkRegionDesc": {
-    "description": "Description in the SongLink region picker"
+    "description": "Description in SongLink region picker"
   },
   "snackbarUnsupportedAudioFormat": "Непідтримуваний аудіоформат",
   "@snackbarUnsupportedAudioFormat": {
@@ -4223,7 +4223,7 @@
   },
   "extensionsHomeFeedAuto": "Авто",
   "@extensionsHomeFeedAuto": {
-    "description": "Extensions page - home feed provider option: auto"
+    "description": "Label for auto-selected search provider"
   },
   "extensionsHomeFeedAutoSubtitle": "Автоматично вибирати найкращий доступний",
   "@extensionsHomeFeedAutoSubtitle": {
@@ -4509,5 +4509,77 @@
   "notifUpdateFailedBody": "Не вдалося завантажити оновлення. Спробуйте пізніше.",
   "@notifUpdateFailedBody": {
     "description": "Notification body when app update download fails"
+  },
+  "settingsFiles": "Files & Folders",
+  "@settingsFiles": {
+    "description": "Settings menu item - file and folder settings"
+  },
+  "settingsFilesSubtitle": "Download location, filename, folder structure",
+  "@settingsFilesSubtitle": {
+    "description": "Subtitle for files & folders settings"
+  },
+  "settingsMetadata": "Metadata",
+  "@settingsMetadata": {
+    "description": "Settings menu item - metadata settings"
+  },
+  "settingsMetadataSubtitle": "Cover art, tags, ReplayGain, providers",
+  "@settingsMetadataSubtitle": {
+    "description": "Subtitle for metadata settings"
+  },
+  "settingsLyrics": "Lyrics",
+  "@settingsLyrics": {
+    "description": "Settings menu item - lyrics settings"
+  },
+  "settingsLyricsSubtitle": "Embed, mode, providers, language options",
+  "@settingsLyricsSubtitle": {
+    "description": "Subtitle for lyrics settings"
+  },
+  "settingsApp": "App",
+  "@settingsApp": {
+    "description": "Settings menu item - app settings"
+  },
+  "settingsAppSubtitle": "Updates, data, extension repo, debug",
+  "@settingsAppSubtitle": {
+    "description": "Subtitle for app settings"
+  },
+  "sectionMetadataProviders": "Providers",
+  "@sectionMetadataProviders": {
+    "description": "Settings section header for metadata providers"
+  },
+  "sectionDuplicates": "Duplicates",
+  "@sectionDuplicates": {
+    "description": "Settings section header for deduplication"
+  },
+  "sectionLyricsProviderOptions": "Provider Options",
+  "@sectionLyricsProviderOptions": {
+    "description": "Settings section header for per-provider lyrics options"
+  },
+  "metadataProvidersTitle": "Metadata Provider Priority",
+  "@metadataProvidersTitle": {
+    "description": "Settings item title for metadata provider order"
+  },
+  "metadataProvidersSubtitle": "Drag to set search and metadata source order",
+  "@metadataProvidersSubtitle": {
+    "description": "Subtitle for metadata provider priority item"
+  },
+  "downloadDeduplication": "Skip Duplicate Downloads",
+  "@downloadDeduplication": {
+    "description": "Setting - skip tracks already in download history"
+  },
+  "downloadDeduplicationEnabled": "Already-downloaded tracks will be skipped",
+  "@downloadDeduplicationEnabled": {
+    "description": "Subtitle when deduplication is on"
+  },
+  "downloadDeduplicationDisabled": "All tracks will be downloaded regardless of history",
+  "@downloadDeduplicationDisabled": {
+    "description": "Subtitle when deduplication is off"
+  },
+  "downloadFallbackExtensions": "Fallback Extensions",
+  "@downloadFallbackExtensions": {
+    "description": "Settings item for configuring fallback extension providers"
+  },
+  "downloadFallbackExtensionsSubtitle": "Choose which extensions can be used as fallback",
+  "@downloadFallbackExtensionsSubtitle": {
+    "description": "Subtitle for fallback extensions item"
   }
 }
